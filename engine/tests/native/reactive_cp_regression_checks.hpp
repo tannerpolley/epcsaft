@@ -47,7 +47,7 @@ void check_reactive_cp() {
         field("optimizer_jacobian",result.optimizer_jacobian),field("physical_jacobian",result.physical_jacobian),
         field("iteration_seconds",result.iteration_seconds),field("iteration_costs",result.iteration_costs)});
     truth("F7/recovery/rank","Rank two interior local recovery with conditional covariance",result.covariance.rank==2
-  &&result.covariance.singular_values.size()==2&&result.covariance.active_bounds.empty()&&result.covariance.status=="available",evidence,"reactive-cp");
+        &&result.covariance.singular_values.size()==2&&result.covariance.active_bounds.empty()&&result.covariance.status=="available",evidence,"reactive-cp");
     agree("F7/recovery/epsilon","epsilon","K",result.physical[0],191.42,0,1e-6,evidence,"Known epsilon recovery","reactive-cp");
     agree("F7/recovery/b","b","K",result.physical[2],200,0,1e-6,evidence,"Known b recovery","reactive-cp");
     agree("F7/recovery/cost","cost","1",result.final_cost,0,1e-20,0,evidence,"Noise-free final cost","reactive-cp");
@@ -91,7 +91,7 @@ void check_reactive_cp() {
                     mapped.residual_optimizer_gradient[2*row+k],sigma,k?2/b.scale:0.02/epsilon.scale,value,diagnostics);
             }
             agree("F7/grouped/H/"+std::to_string(point)+"/"+std::to_string(row),"H","J",*hp.value,
-          endpoint_enthalpy(model,h.problem,*hp.compiled,*hp.solved).enthalpy,1e-5,1e-10,diagnostics,"H and Cp coexist without losing row identity","reactive-cp");
+                endpoint_enthalpy(model,h.problem,*hp.compiled,*hp.solved).enthalpy,1e-5,1e-10,diagnostics,"H and Cp coexist without losing row identity","reactive-cp");
         }
     }
     auto signed_row=request.observations.front();signed_row.form=ResidualForm::LogRatio;
@@ -99,6 +99,6 @@ void check_reactive_cp() {
     negative_record.component_intervals[0][0].correlation.form=IdealPolynomial{{-1000.0},300,0,0};
     const auto negative=predict(HelmholtzModel(request.parameters,{},negative_record),signed_row);
     truth("F7/nonpositive-log","Finite nonpositive Cp retains its value and named logarithm failure",
-  negative.value&&*negative.value<0&&negative.status==ObservationStatus::NonpositiveLogArgument,
-  fields({field("value",negative.value.value_or(0)),field("message",negative.message)}),"reactive-cp");
+        negative.value&&*negative.value<0&&negative.status==ObservationStatus::NonpositiveLogArgument,
+        fields({field("value",negative.value.value_or(0)),field("message",negative.message)}),"reactive-cp");
 }

@@ -648,13 +648,13 @@ void check_affine_start_signed() {
     for (const auto& target : cs.coordinates[0].targets) {
         const double old = detail::family_values(p,target.family).first[1], value = detail::family_values(mapped,target.family).first[1];
         agree("r1-f2/coupled-roundtrip/" + std::to_string(static_cast<int>(target.family)), "diameter", "angstrom",
-      value, old, 8*EPS*std::max(std::abs(old),std::abs(value)), 0, field("v",v),
-      "coefficient-first inversion preserves all three lengths", "r1-f2");
+            value, old, 8*EPS*std::max(std::abs(old),std::abs(value)), 0, field("v",v),
+            "coefficient-first inversion preserves all three lengths", "r1-f2");
     }
     auto broken = p; broken.debye_huckel_diameter_angstrom[1] += 1e-8;
     const auto message = rejection([&] { (void)cs.start(broken); });
     truth("r1-f2/coupled-disagreement", "start rejects a violated proportional equality",
-  message.find("tied values disagree") != std::string::npos, field("message",message), "r1-f2");
+        message.find("tied values disagree") != std::string::npos, field("message",message), "r1-f2");
     FitRequest request; request.parameters = properties_support::neutral_binary();
     request.parameters.k_ij[1] = request.parameters.k_ij[2] = -0.088;
     request.coordinates = {{{{{ParameterFamily::Kij, {1,2}, -0.88}}, 0.1, 0.2, -1, 1}}};
@@ -666,8 +666,8 @@ void check_affine_start_signed() {
         const auto columns = evaluated_columns(request,{0});
         const double residual = columns.residual_optimizer_gradient[0], expected = exact/scale;
         agree("r1-f2/residual-basis/"+std::to_string(scale), "density_residual_action", "per optimizer unit",
-      residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("scale",scale),
-      "native Difference columns retain their declared scale", "r1-f2");
+            residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("scale",scale),
+            "native Difference columns retain their declared scale", "r1-f2");
     }
     const auto value = [&](double v) {
         auto physical = request.parameters; physical.k_ij[1] = physical.k_ij[2] = -0.88*(0.1+0.2*v);
@@ -675,7 +675,7 @@ void check_affine_start_signed() {
     };
     affine_difference("r1-f2/signed-pair",exact,value,1e-3,1,"r1-f2");
     truth("r1-f2/signed-signal", "signed reciprocal action exceeds its criterion",
-  std::abs(exact)>1e-7+2e-5*std::abs(exact), field("exact",exact),"r1-f2");
+        std::abs(exact)>1e-7+2e-5*std::abs(exact), field("exact",exact),"r1-f2");
 }
 void check_coupled_columns() {
     FitRequest request; request.parameters = coupled_lengths(3.2); request.coordinates = coupled_coordinate();
@@ -686,7 +686,7 @@ void check_coupled_columns() {
         const auto exact = evaluated_columns(request,{1});
         for (std::size_t r = 0; r < 3; ++r)
             agree("affine-columns/map/"+std::to_string(held)+"/"+std::to_string(r), "D", "angstrom per v",
-          exact.chart.map[r], r==1 ? 0.2 : 0.176, 1e-16,0,"","target coefficient and scale enter once","affine-columns");
+                exact.chart.map[r], r==1 ? 0.2 : 0.176, 1e-16,0,"","target coefficient and scale enter once","affine-columns");
         std::size_t root_row = 0;
         const auto rebuilt = [&](double shift) {
             auto physical = coupled_lengths(3.2+shift);
@@ -694,7 +694,7 @@ void check_coupled_columns() {
                 const CoordinateSet single{{{{{ParameterFamily::SigmaConstant,{1}}},0,1}}};
                 const auto root = evaluate_coordinates(physical,single,{3.2+shift},{hold});
                 agree("affine-columns/root/"+std::to_string(root_row++), "hydration_error", "J/mol", root.holds[0].energy_error,
-              0,1e-6,0,field("q",3.2+shift),"rebuilt reference holds hydration","affine-columns");
+                    0,1e-6,0,field("q",3.2+shift),"rebuilt reference holds hydration","affine-columns");
                 physical = root.parameters;
             }
             return physical;
@@ -705,14 +705,14 @@ void check_coupled_columns() {
                 exact.residual_optimizer_gradient[row],value,1e-3,0.2,"affine-columns");
             const double residual = exact.residual_optimizer_gradient[row], expected = exact.optimizer_gradient[row]/exact.predictions[row];
             agree("affine-columns/residual-basis/"+std::to_string(held)+"/"+std::to_string(row), "log_ratio_action", "per optimizer unit",
-          residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("prediction",exact.predictions[row]),
-          "native natural-log columns equal prediction columns divided by prediction", "affine-columns");
+                residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("prediction",exact.predictions[row]),
+                "native natural-log columns equal prediction columns divided by prediction", "affine-columns");
         }
         if (held) {
             const auto value = [&](double shift) { return rebuilt(shift).born_diameter_angstrom[1]; };
             affine_difference("affine-columns/Born",exact.chart.map[3],value,1e-3,0.2,"affine-columns");
             agree("affine-columns/held-energy", "hydration_error", "J/mol",exact.chart.holds[0].energy_error,
-          0,1e-6,0,"","coupled chart holds hydration","affine-columns");
+                0,1e-6,0,"","coupled chart holds hydration","affine-columns");
         }
     }
 }
@@ -727,17 +727,17 @@ void check_coupled_recovery() {
     const auto result = fit(request);
     CHECK(result.usable);
     agree("affine-recovery/sigma", "sigma", "angstrom",result.parameters.sigma_constant[1],3.2,1e-6,0,
-  summary(result),"one scalar recovers the manufactured diameter","affine-recovery");
+        summary(result),"one scalar recovers the manufactured diameter","affine-recovery");
     for (const auto family : {ParameterFamily::PackingDiameter,ParameterFamily::DebyeHuckelDiameter})
         agree("affine-recovery/"+std::to_string(static_cast<int>(family)), "proportional_diameter", "angstrom",
-      detail::family_values(result.parameters,family).first[1],0.88*3.2,0.88e-6,0,"","proportional lengths recover","affine-recovery");
+            detail::family_values(result.parameters,family).first[1],0.88*3.2,0.88e-6,0,"","proportional lengths recover","affine-recovery");
     agree("affine-recovery/stored-hydration", "energy_error", "J/mol",
-  *predict(HelmholtzModel(result.parameters),request.holds[0].reference).value-request.holds[0].reference.observed,
-  0,1e-6,0,"","stored Born value holds hydration without resolving","affine-recovery");
+        *predict(HelmholtzModel(result.parameters),request.holds[0].reference).value-request.holds[0].reference.observed,
+        0,1e-6,0,"","stored Born value holds hydration without resolving","affine-recovery");
     for (std::size_t row=0;row<request.observations.size();++row)
         agree("affine-recovery/decade/"+std::to_string(row),"log10_ratio","decade",
-      std::log10(*predict(HelmholtzModel(result.parameters),request.observations[row]).value/request.observations[row].observed),
-      0,1e-8,0,"","all six stored predictions recover","affine-recovery");
+            std::log10(*predict(HelmholtzModel(result.parameters),request.observations[row]).value/request.observations[row].observed),
+            0,1e-8,0,"","all six stored predictions recover","affine-recovery");
 }
 
 void check_d86() {
@@ -898,9 +898,9 @@ void check_j1() {
             const double reference = factor * gradient.value[1];
             const double allowance = 1.0e-12 + 1.0e-8 * std::abs(reference);
             agree("r2-j1/reciprocal-temperature-factor", "dy_db", "1/K",
-          gradient.value[3], reference, allowance, 0.0,
-          fields({field("factor_per_K", factor), field("dy_dkij", gradient.value[1])}),
-          "dy/db = (1/T - 1/Tref) dy/dkij", "r2-j1");
+                gradient.value[3], reference, allowance, 0.0,
+                fields({field("factor_per_K", factor), field("dy_dkij", gradient.value[1])}),
+                "dy/db = (1/T - 1/Tref) dy/dkij", "r2-j1");
             CHECK(std::abs(reference) > allowance);
             auto at_reference = item.observation;
             at_reference.problem.temperature = FreeValue::fixed(200.0);
@@ -909,8 +909,8 @@ void check_j1() {
             CHECK(prediction_at_reference.status == ObservationStatus::Available
                 && gradient_at_reference.status == ObservationStatus::Available);
             agree("r2-j1/reciprocal-temperature-zero", "dy_db", "1/K",
-          gradient_at_reference.value[3], 0.0, 1.0e-12, 0.0, field("T_K", 200.0),
-          "the reciprocal-temperature slope column is zero at Tref", "r2-j1");
+                gradient_at_reference.value[3], 0.0, 1.0e-12, 0.0, field("T_K", 200.0),
+                "the reciprocal-temperature slope column is zero at Tref", "r2-j1");
         }
         for (std::size_t c = 0; c < 4; ++c) {
             const auto value = [&](double shift) {
@@ -1114,9 +1114,9 @@ void check_cp_derivatives() {
         const std::string id = std::string("cp-a/") + c.name;
         const auto inputs = fields({field("T_K", c.T), field("P_Pa", c.P), field("x", c.x)});
         agree(id + "/ideal-value", "ideal_cp", "J/(mol K)",
-      *value.value - *state.residual_isobaric_heat_capacity, 4.0 * GAS_CONSTANT_J_PER_MOL_K,
-      1e-12 * std::max(1.0, *value.value), 0.0, inputs,
-      "the total prediction contains the known constant ideal contribution", "cp-a");
+            *value.value - *state.residual_isobaric_heat_capacity, 4.0 * GAS_CONSTANT_J_PER_MOL_K,
+            1e-12 * std::max(1.0, *value.value), 0.0, inputs,
+            "the total prediction contains the known constant ideal contribution", "cp-a");
         double lift_ratio = 0.0;
         for (std::size_t k = 0; k < c.active.size(); ++k) {
             const auto& active = c.active[k];
@@ -1142,9 +1142,9 @@ void check_cp_derivatives() {
                       4.0 * FIRST_ORDER * std::abs(rungs.fine), 0.0, column_inputs,
                       "the coarse relative rung carries at most four times the criterion", "cp-a");
                 truth(column + "/resolved", "finite-difference refinement resolves the relative criterion",
-              std::isfinite(rungs.fine) && rungs.fine != 0.0
-              && std::abs(rungs.fine - rungs.coarse) < FIRST_ORDER * std::abs(rungs.fine)
-              && std::abs(richardson - rungs.fine) < FIRST_ORDER * std::abs(rungs.fine), column_inputs, "cp-a");
+                    std::isfinite(rungs.fine) && rungs.fine != 0.0
+                    && std::abs(rungs.fine - rungs.coarse) < FIRST_ORDER * std::abs(rungs.fine)
+                    && std::abs(richardson - rungs.fine) < FIRST_ORDER * std::abs(rungs.fine), column_inputs, "cp-a");
             } else {
                 ladder_agrees(column, "dcp_dtheta", gradient.value[k], rungs, column_inputs,
                              "the fixed-pressure action agrees with rebuilt-model central differences", "cp-a");
@@ -1176,13 +1176,13 @@ void check_cp_derivatives() {
     item.kind = ObservationKind::IsobaricHeatCapacity;
     const auto missing = predict(HelmholtzModel(properties_support::ethane()), item);
     truth("cp-a/missing", "missing thermochemistry is typed and never a value",
-  missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value,
-  field("message", missing.message), "cp-a");
+        missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value,
+        field("message", missing.message), "cp-a");
     item.pressure = 1e10;
     const auto absent = predict(HelmholtzModel(properties_support::ethane(), {}, constant_cp(1)), item);
     truth("cp-a/root", "an absent density root retains its typed cause",
-  absent.status == ObservationStatus::DensityUnavailable && !absent.value && !absent.message.empty(),
-  field("message", absent.message), "cp-a");
+        absent.status == ObservationStatus::DensityUnavailable && !absent.value && !absent.message.empty(),
+        field("message", absent.message), "cp-a");
 }
 
 void check_cp_recovery() {
@@ -1212,11 +1212,11 @@ void check_cp_recovery() {
     const auto inputs = fields({summary(result), field("singular_values", result.covariance.singular_values),
                                field("rank", result.covariance.rank)});
     truth("cp-b/converged", "five-coordinate recovery converges",
-  result.status == "converged" && result.usable, inputs, "cp-b");
+        result.status == "converged" && result.usable, inputs, "cp-b");
     for (std::size_t k = 0; k < 5; ++k)
         agree("cp-b/value/" + std::to_string(k), "parameter", "native", result.physical[k],
-      request.coordinates.coordinates[k].origin, 0.0, 1e-6, inputs,
-      "the known physical coordinate is recovered", "cp-b");
+            request.coordinates.coordinates[k].origin, 0.0, 1e-6, inputs,
+            "the known physical coordinate is recovered", "cp-b");
     agree("cp-b/cost", "cost", "1", result.final_cost, 0.0, 1e-14, 0.0, inputs,
           "the manufactured residual cost vanishes", "cp-b");
     truth("cp-b/rank", "the conditional covariance is available with rank five",
@@ -1482,11 +1482,11 @@ void regular_reaction_state(const HelmholtzModel& model, const Observation& obse
     const auto batch = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved, {observable}, {direction}).front();
     const auto& result = batch.results.front();
     truth(id + "/regular", "the central state admits a finite nonzero first reaction action",
-  result.status == equilibrium::SolvedStateActionStatus::Available && result.action && std::abs(*result.action) > 0.0
-  && prediction.solved->topology_event == equilibrium::TopologyEvent::None,
-  fields({field("central_residual", batch.diagnostics.central_residual.value_or(std::numeric_limits<double>::quiet_NaN())),
-          field("dx_dlnK", result.action.value_or(std::numeric_limits<double>::quiet_NaN())),
-          field("condition", batch.diagnostics.condition_estimate.value_or(std::numeric_limits<double>::quiet_NaN()))}), "reaction-fit");
+        result.status == equilibrium::SolvedStateActionStatus::Available && result.action && std::abs(*result.action) > 0.0
+        && prediction.solved->topology_event == equilibrium::TopologyEvent::None,
+        fields({field("central_residual", batch.diagnostics.central_residual.value_or(std::numeric_limits<double>::quiet_NaN())),
+                field("dx_dlnK", result.action.value_or(std::numeric_limits<double>::quiet_NaN())),
+                field("condition", batch.diagnostics.condition_estimate.value_or(std::numeric_limits<double>::quiet_NaN()))}), "reaction-fit");
 }
 
 void reaction_data(FitRequest& request) {
@@ -1659,13 +1659,13 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
 
 void check_minimax_kkt(const std::string& id, const MinimaxResult& m, const std::string& inputs) {
     agree(id + "/primal", "scaled_primal_norm", "1", m.primal, 0.0, 1.0e-8, 0.0,
-  inputs, "scaled primal feasibility is within tolerance", "r2-minimax");
+        inputs, "scaled primal feasibility is within tolerance", "r2-minimax");
     agree(id + "/stationarity", "scaled_stationarity_norm", "1", m.stationarity, 0.0, 1.0e-8, 0.0,
-  inputs, "scaled stationarity is within tolerance", "r2-minimax");
+        inputs, "scaled stationarity is within tolerance", "r2-minimax");
     agree(id + "/dual_sign", "scaled_dual_sign_norm", "1", m.dual_sign, 0.0, 1.0e-8, 0.0,
-  inputs, "scaled dual signs are feasible", "r2-minimax");
+        inputs, "scaled dual signs are feasible", "r2-minimax");
     agree(id + "/complementarity", "scaled_complementarity_norm", "1", m.complementarity, 0.0,
-  1.0e-8, 0.0, inputs, "scaled complementarity is within tolerance", "r2-minimax");
+        1.0e-8, 0.0, inputs, "scaled complementarity is within tolerance", "r2-minimax");
 }
 
 void check_b1_minimax(const std::string& id, const FitRequest& request, const FitResult& result,
@@ -1776,15 +1776,15 @@ void check_d7_minimax() {
     }
     const auto ls_inputs = fields({field("a_per_decade", 0.01), field("equal_LogRatio_weights", 1.0)});
     agree("r2-d7-b2/least_squares_x", "x", "1", ls.chart.physical[0], 0.6, 1.0e-12, 0.0,
-  ls_inputs, "four ax rows and one a(x-3) row have their analytic least-squares minimum", "r2-minimax");
+        ls_inputs, "four ax rows and one a(x-3) row have their analytic least-squares minimum", "r2-minimax");
     agree("r2-d7-b2/least_squares_d", "d", "1", ls.chart.physical[1], 1.2, 1.0e-12, 0.0,
-  ls_inputs, "the least-squares point obeys d=2x", "r2-minimax");
+        ls_inputs, "the least-squares point obeys d=2x", "r2-minimax");
     agree("r2-d7-b2/least_squares_gradient", "least_squares_gradient", "decade_squared_per_x", ls_gradient, 0.0,
-  1.0e-14, 0.0, ls_inputs, "4x+(x-3)=0 is the equal-weight least-squares condition", "r2-minimax");
+        1.0e-14, 0.0, ls_inputs, "4x+(x-3)=0 is the equal-weight least-squares condition", "r2-minimax");
     agree("r2-d7-b2/least_squares_maximum", "maximum_target_error", "decade", ls_max, 0.024, 1.0e-12, 0.0,
-  ls_inputs, "the least-squares maximum is 0.024 decade", "r2-minimax");
+        ls_inputs, "the least-squares maximum is 0.024 decade", "r2-minimax");
     truth("r2-d7-b2/least_squares_guard", "the least-squares point misses the 0.02 decade maximum guard",
-  ls_max > 0.02, fields({ls_inputs, field("guard_decade", 0.02)}), "r2-minimax");
+        ls_max > 0.02, fields({ls_inputs, field("guard_decade", 0.02)}), "r2-minimax");
     for (const double x : {0.5, 2.5}) {
         const std::vector<double> start = {x};
         const auto result = solve_minimax(problem.request, start, problem.frozen, evaluate);
@@ -1793,26 +1793,26 @@ void check_d7_minimax() {
         CHECK(result.minimax.has_value());
         const auto& m = *result.minimax;
         truth(id + "/available", "the analytic minimax candidate and KKT diagnostics are available",
-      result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax");
+            result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax");
         agree(id + "/x", "x", "1", result.chart.physical[0], 1.5, 1.0e-7, 0.0,
-      inputs, "the opposing maximum errors balance at x=1.5", "r2-minimax");
+            inputs, "the opposing maximum errors balance at x=1.5", "r2-minimax");
         agree(id + "/d", "d", "1", result.chart.physical[1], 3.0, 1.0e-7, 0.0,
-      inputs, "the eliminated equality gives d=2x", "r2-minimax");
+            inputs, "the eliminated equality gives d=2x", "r2-minimax");
         agree(id + "/H", "H", "1", result.chart.physical[1] - 2.0 * result.chart.physical[0], 0.0,
-      1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax");
+            1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax");
         agree(id + "/t", "minimax_t", "decade", m.t, 0.015, 1.0e-9, 0.0,
-      inputs, "the epigraph is the maximum target error", "r2-minimax");
+            inputs, "the epigraph is the maximum target error", "r2-minimax");
         agree(id + "/target_maximum", "target_maximum", "decade", m.target_maximum, 0.015, 1.0e-9, 0.0,
-      inputs, "the reported maximum matches the analytic target", "r2-minimax");
+            inputs, "the reported maximum matches the analytic target", "r2-minimax");
         agree(id + "/gap", "epigraph_gap", "decade", m.gap, 0.0, 1.0e-9, 0.0,
-      inputs, "the epigraph is tight", "r2-minimax");
+            inputs, "the epigraph is tight", "r2-minimax");
         CHECK(m.rows.size() == m.physical_values.size());
         for (std::size_t i = 0; i < m.rows.size(); ++i) {
             const auto& row = m.rows[i];
             const double e = check_error(row.metric, problem.request.observations[row.row], result.predictions[row.row]).first;
             agree(id + "/row/" + std::to_string(i), "physical_constraint", "decade", m.physical_values[i],
-          row.sign * e - m.t, 1.0e-9, 0.0, inputs,
-          "the physical max rows retain their analytic errors", "r2-minimax");
+                row.sign * e - m.t, 1.0e-9, 0.0, inputs,
+                "the physical max rows retain their analytic errors", "r2-minimax");
         }
         check_minimax_kkt(id, m, inputs);
     }
@@ -1838,8 +1838,8 @@ void check_reaction_derivatives() {
         for (std::size_t c = 0; c < 3; ++c) {
             const std::size_t physical = c == 1 ? 2 : c == 2 ? 1 : 0;
             agree("reaction-a1/order/" + std::to_string(row) + "/" + std::to_string(c), "dlny_du", "1",
-          interleaved.optimizer_jacobian[row * 3 + c], slope * j[row * 3 + physical] * a1.coordinates.coordinates[c].scale, 0.0, 1.0e-12, "",
-          "optimizer declaration order and EOS-first physical-row order carry the same derivatives", "reaction-fit");
+                interleaved.optimizer_jacobian[row * 3 + c], slope * j[row * 3 + physical] * a1.coordinates.coordinates[c].scale, 0.0, 1.0e-12, "",
+                "optimizer declaration order and EOS-first physical-row order carry the same derivatives", "reaction-fit");
         }
     }
     for (const auto source_pressure : {std::optional<double>{}, std::optional<double>{2.0e5}}) {
@@ -2003,9 +2003,9 @@ void check_reaction_rejections() {
     const auto reject = [&](FitRequest candidate, const std::string& cause) {
         const auto result = fit(candidate);
         truth("reaction-rejection/" + cause, "an overdetermined or fixed reaction input is refused by name",
-      result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
-      && result.message.find("reaction_a") != std::string::npos,
-      fields({field("message", result.message)}), "reaction-fit");
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
+            && result.message.find("reaction_a") != std::string::npos,
+            fields({field("message", result.message)}), "reaction-fit");
     };
     auto affinity = request;
     affinity.observations[0].problem.reactions[0].equilibrium_constant.reset();
@@ -2084,8 +2084,8 @@ void check_log_constant() {
         const std::vector<double> expected{0.0, 1.0 / T, 1.0, 0.0, std::log(T / 300.0), T};
         for (std::size_t k = 0; k < expected.size(); ++k)
             agree(id + "/column/" + std::to_string(k), "dln_K_src_dtheta", "native",
-          gradient.value[k], expected[k], 0.0, 0.0, fields({field("T_K", T), field("Tref_K", 300.0)}),
-          "exact coefficient basis; EOS and other reaction columns vanish", "ln-k");
+                gradient.value[k], expected[k], 0.0, 0.0, fields({field("T_K", T), field("Tref_K", 300.0)}),
+                "exact coefficient basis; EOS and other reaction columns vanish", "ln-k");
     }
     // A referenced source value remains the source value even though its density-basis target differs.
     auto reference = log_constant(referenced_formula(std::nullopt), "H2O=Na++Cl-");
@@ -2126,9 +2126,9 @@ void check_log_constant() {
     const auto reject = [&](FitRequest candidate, const std::string& cause) {
         const auto result = fit(candidate);
         truth("ln-k/rejection/" + cause, "the direct source target is refused by reaction name",
-      result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
-      && result.message.find("reaction_a") != std::string::npos,
-      fields({field("message", result.message)}), "ln-k");
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
+            && result.message.find("reaction_a") != std::string::npos,
+            fields({field("message", result.message)}), "ln-k");
     };
     // At the last reversal reaction_a is first.
     auto affinity = rejected;
@@ -2402,15 +2402,15 @@ void check_ionic_addition_enthalpy() {
     const double oracle = (H_final - H_initial) / amount - feed_h(model);
     const double allowance = 1.0e-9 * (std::abs(H_initial) + std::abs(H_final)) / amount + 1.0e-6;
     agree("addition-ionic/value", "delta_h_add", "J/mol", *prediction.value, oracle, allowance, 0.0,
-  fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}),
-  "the ionic observation equals independently rebuilt endpoint and feed enthalpies", "addition-ionic");
+        fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}),
+        "the ionic observation equals independently rebuilt endpoint and feed enthalpies", "addition-ionic");
     const double centered_oracle = (endpoint(model, final, 0.0, true) - endpoint(model, initial, 0.0, true)) / amount;
     agree("addition-ionic/conserved-basis-value", "delta_h_add", "J/mol", centered_oracle, oracle, allowance, 0.0,
-  field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}),
-  "subtracting the feed on the conserved basis preserves the two-endpoint increment", "addition-ionic");
+        field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}),
+        "subtracting the feed on the conserved basis preserves the two-endpoint increment", "addition-ionic");
     const double shifted = (endpoint(model, final, 1.0e6) - endpoint(model, initial, 1.0e6)) / amount - feed_h(model);
     agree("addition-ionic/charge-gauge", "delta_h_add", "J/mol", shifted, oracle, allowance, 0.0,
-  field("charge_gauge_J_per_mol", 1.0e6), "a charge-neutral increment is invariant to ion enthalpy gauge", "addition-ionic");
+        field("charge_gauge_J_per_mol", 1.0e6), "a charge-neutral increment is invariant to ion enthalpy gauge", "addition-ionic");
     const auto residual_endpoint = [&](const EquilibriumProblem& problem) {
         const auto solved = equilibrium::solve_equilibrium(model, problem);
         CHECK(solved.success);
@@ -2418,8 +2418,8 @@ void check_ionic_addition_enthalpy() {
     };
     const double reference_share = (H_final - H_initial - residual_endpoint(final) + residual_endpoint(initial)) / amount + 241826.0;
     truth("addition-ionic/reference-signal", "the ionic reference contribution exceeds the subtraction allowance",
-  std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
-      field("allowance_J_per_mol", allowance)}), "addition-ionic");
+        std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
+            field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
     using reactive_caloric_checks::Wide;
     const std::vector<reactive_caloric_checks::Quantity> enthalpy{{"H", "J", 0.0, {}}};
@@ -2456,12 +2456,12 @@ void check_ionic_addition_enthalpy() {
         const double tolerance = 1.0e-6 * std::abs(reference);
         const double uncertainty = std::abs(reference - R1);
         truth("addition-ionic/column-refinement/" + std::to_string(column), "the binary128 endpoint/feed derivative is resolved to 1e-7",
-      uncertainty <= 1.0e-7 * std::abs(reference),
-      fields({field("coarse", double(d1) / scale), field("middle", double(d2) / scale), field("fine", double(d4) / scale),
-          field("uncertainty", uncertainty), field("relative_uncertainty", uncertainty / std::abs(reference))}), "addition-ionic");
+            uncertainty <= 1.0e-7 * std::abs(reference),
+            fields({field("coarse", double(d1) / scale), field("middle", double(d2) / scale), field("fine", double(d4) / scale),
+                field("uncertainty", uncertainty), field("relative_uncertainty", uncertainty / std::abs(reference))}), "addition-ionic");
         agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
-      tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
-      "one EOS and one source-law column agree with binary128 composed endpoint/feed differences", "addition-ionic");
+            tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
+            "one EOS and one source-law column agree with binary128 composed endpoint/feed differences", "addition-ionic");
     }
 }
 
@@ -2501,7 +2501,7 @@ void check_free_temperature_addition() {
         CHECK(incoming.total_enthalpy);
         const double value=(second.enthalpy-first.enthalpy)/0.01-*incoming.total_enthalpy;
         agree(id+"/value","delta_h_add","J/mol",*center.value,value,1e-5,1e-6,inputs,
-      "two solved endpoint extensive enthalpies and declared feed enthalpy compose the increment","reactive-caloric");
+            "two solved endpoint extensive enthalpies and declared feed enthalpy compose the increment","reactive-caloric");
         for(std::size_t column=0;column<2;++column) {
             const double action=column==0?exact.value[0]+exact.value[1]:exact.value[2];
             const double sigma=column==0?std::abs(exact.value[0])+std::abs(exact.value[1]):std::abs(action);
@@ -2592,7 +2592,7 @@ void check_addition_enthalpy() {
                 field("gradient", exact.value)});
             const std::string id = "addition-f3/" + variant.name + "/" + names[column];
             ladder_agrees(id, "d_delta_h_add_dtheta", action, rungs, inputs,
-          "the exact finite-addition gradient agrees with rebuilt-model prediction re-solves", "addition-f3");
+                "the exact finite-addition gradient agrees with rebuilt-model prediction re-solves", "addition-f3");
             if (column == 1 || column == 3) {
                 const double fine_tolerance = FIRST_ORDER * std::max(1.0, std::abs(rungs.fine));
                 double omitted = 0.0;
@@ -2620,9 +2620,9 @@ void check_addition_enthalpy() {
                 }
                 const std::string direct_name = column == 1 ? "C_Ttheta_borne_term" : "reaction_b_endpoint_term";
                 truth(id + "/omission_discrimination", "the independently calculated omitted endpoint term exceeds 1e3 times the fine criterion",
-              std::isfinite(omitted) && std::abs(omitted) > 1.0e3 * fine_tolerance,
-              fields({field("direct_term", omitted), field("fine_tolerance", fine_tolerance), field("term", direct_name)}),
-              "addition-f3");
+                    std::isfinite(omitted) && std::abs(omitted) > 1.0e3 * fine_tolerance,
+                    fields({field("direct_term", omitted), field("fine_tolerance", fine_tolerance), field("term", direct_name)}),
+                    "addition-f3");
             }
         }
         if (variant.observation.problem.temperature.value == variant.observation.final_problem.temperature.value) {
@@ -2632,21 +2632,21 @@ void check_addition_enthalpy() {
             // g_b = G/T - D/T^2, so recover the source-slope coefficient D from a and b.
             const double D = temperature * G - temperature * temperature * exact.value[4];
             agree("addition-f3/" + variant.name + "/basis_c", "d_delta_h_add_dc", "J/mol",
-          exact.value[5], G * std::log(temperature / tref) + D / temperature, 0.0, 1.0e-10,
-          fields({field("T_K", temperature), field("Tref_K", tref), field("G", G), field("D", D)}),
-          "the c column follows the source reaction basis identity before coordinate scaling", "addition-f3");
+                exact.value[5], G * std::log(temperature / tref) + D / temperature, 0.0, 1.0e-10,
+                fields({field("T_K", temperature), field("Tref_K", tref), field("G", G), field("D", D)}),
+                "the c column follows the source reaction basis identity before coordinate scaling", "addition-f3");
             agree("addition-f3/" + variant.name + "/basis_d", "d_delta_h_add_dd", "J/mol",
-          exact.value[6], G * temperature + D, 0.0, 1.0e-10,
-          fields({field("T_K", temperature), field("G", G), field("D", D)}),
-          "the d column follows the source reaction basis identity before coordinate scaling", "addition-f3");
+                exact.value[6], G * temperature + D, 0.0, 1.0e-10,
+                fields({field("T_K", temperature), field("G", G), field("D", D)}),
+                "the d column follows the source reaction basis identity before coordinate scaling", "addition-f3");
         } else {
             const double initial_b = total_b_amount(*center.solved);
             const double initial_c_term = -GAS_CONSTANT_J_PER_MOL_K * 260.0 * initial_b / amount;
             truth("addition-f3/unequal_temperature/initial_c_term", "c has a nonzero initial-endpoint caloric term at Tref with no state motion",
-          std::isfinite(initial_c_term) && initial_c_term != 0.0,
-          fields({field("phi_c", 0.0), field("phi_c_prime_per_K", 1.0 / 260.0),
-              field("initial_caloric_term_J_per_mol", initial_c_term), field("initial_n_B_mol", initial_b)}),
-          "addition-f3");
+                std::isfinite(initial_c_term) && initial_c_term != 0.0,
+                fields({field("phi_c", 0.0), field("phi_c_prime_per_K", 1.0 / 260.0),
+                    field("initial_caloric_term_J_per_mol", initial_c_term), field("initial_n_B_mol", initial_b)}),
+                "addition-f3");
         }
     }
 
@@ -2661,18 +2661,18 @@ void check_addition_enthalpy() {
     const auto shifted_prediction = predict(shifted_model, reference.observation);
     CHECK(shifted_prediction.status == ObservationStatus::Available && shifted_prediction.value);
     agree("addition-f4/value", "delta_h_add", "J/mol", *shifted_prediction.value, *reference.prediction.value,
-  0.0, 1.0e-9, fields({field("anchor_h_J_per_mol", 1.0e4)}),
-  "a common record enthalpy shift cancels from the finite addition", "addition-f4");
+        0.0, 1.0e-9, fields({field("anchor_h_J_per_mol", 1.0e4)}),
+        "a common record enthalpy shift cancels from the finite addition", "addition-f4");
     const auto base_gradient = differentiate_group(model, {&reference.observation}, reference.prediction, coordinates).front();
     const auto shifted_gradient = differentiate_group(shifted_model, {&reference.observation}, shifted_prediction, coordinates).front();
     CHECK(base_gradient.status == ObservationStatus::Available && shifted_gradient.status == ObservationStatus::Available
         && base_gradient.value.size() == shifted_gradient.value.size());
     for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column)
         agree("addition-f4/gradient/" + std::to_string(column), "d_delta_h_add_dtheta", "native",
-      addition_coordinate_gradient(shifted_gradient.value, column),
-      addition_coordinate_gradient(base_gradient.value, column), 0.0, 1.0e-9,
-      fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}),
-      "a common record enthalpy shift preserves every gradient column", "addition-f4");
+            addition_coordinate_gradient(shifted_gradient.value, column),
+            addition_coordinate_gradient(base_gradient.value, column), 0.0, 1.0e-9,
+            fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}),
+            "a common record enthalpy shift preserves every gradient column", "addition-f4");
     const double condition = (std::abs(first_h.enthalpy) + std::abs(second_h.enthalpy))
         / (amount * std::abs(*reference.prediction.value));
     recording_support::observe("addition-f4/conditioning", "enthalpy_cancellation_condition", "1", condition,
@@ -2680,7 +2680,7 @@ void check_addition_enthalpy() {
             field("n_add_mol", amount), field("delta_h_add_J_per_mol", *reference.prediction.value)}),
         "Observation", "endpoint_enthalpy_ratio", "the reference cancellation conditioning ratio", "addition-f4");
     truth("addition-f4/conditioning_limit", "the endpoint enthalpy cancellation ratio is at most 1e4",
-  std::isfinite(condition) && condition <= 1.0e4, field("condition", condition), "addition-f4");
+        std::isfinite(condition) && condition <= 1.0e4, field("condition", condition), "addition-f4");
 
     for (const double increment : {0.2, 2.0e-3}) {
         auto initial = addition_problem(260.0, 3.0e6, {2.0, 0.2});
@@ -2709,10 +2709,10 @@ void check_addition_enthalpy() {
         const auto h_final = endpoint_enthalpy(model, row.final_problem, *prediction.final_compiled, *prediction.final_solved);
         const double roundoff = 64.0 * EPS * (std::abs(h_initial.enthalpy) + std::abs(h_final.enthalpy)) / increment;
         reference_scale_agrees("addition-f5/" + number(increment), "finite_addition_limit", "J/mol", *prediction.value, q0,
-      roundoff, 1.0e-8, fields({field("n_add_mol", increment), field("D_n", *prediction.value),
-          field("q0", q0), field("H_initial_J", h_initial.enthalpy), field("H_final_J", h_final.enthalpy),
-          field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}),
-      "each finite quotient equals the Gibbs-Helmholtz limit for the linear case", "addition-f5");
+            roundoff, 1.0e-8, fields({field("n_add_mol", increment), field("D_n", *prediction.value),
+                field("q0", q0), field("H_initial_J", h_initial.enthalpy), field("H_final_J", h_final.enthalpy),
+                field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}),
+            "each finite quotient equals the Gibbs-Helmholtz limit for the linear case", "addition-f5");
     }
 
     FitRequest recovery;
@@ -2751,8 +2751,8 @@ void check_addition_enthalpy() {
     }
     const auto recovered = fit(recovery);
     truth("addition-f6/converged", "the noise-free known-parameter fit converges",
-  recovered.status == "converged" && recovered.usable,
-  fields({summary(recovered), field("trial_failures", recovered.trial_failures)}), "addition-f6");
+        recovered.status == "converged" && recovered.usable,
+        fields({summary(recovered), field("trial_failures", recovered.trial_failures)}), "addition-f6");
     for (std::size_t row = 0; row < recovery.observations.size(); ++row)
         recording_support::observe(("addition-f6/data/" + std::to_string(row)).c_str(), "delta_h_add", "J/mol",
             recovered.predictions[row], recovery.observations[row].observed,
@@ -2761,17 +2761,17 @@ void check_addition_enthalpy() {
             "Observation", "known_parameter_recovery", "synthetic datum and fitted prediction", "addition-f6");
     CHECK(recovered.physical.size() == 3);
     agree("addition-f6/epsilon_s0", "epsilon_over_k", "K", recovered.physical[0], 191.42, 0.0, 1.0e-6,
-  summary(recovered), "the tied epsilon coordinate recovers the known value on s0", "addition-f6");
+        summary(recovered), "the tied epsilon coordinate recovers the known value on s0", "addition-f6");
     agree("addition-f6/epsilon_s1", "epsilon_over_k", "K", recovered.physical[1], 191.42, 0.0, 1.0e-6,
-  summary(recovered), "the tied epsilon coordinate recovers the known value on s1", "addition-f6");
+        summary(recovered), "the tied epsilon coordinate recovers the known value on s1", "addition-f6");
     agree("addition-f6/reaction_b", "reaction_b", "K", recovered.physical[2], 200.0, 0.0, 1.0e-6,
-  summary(recovered), "the reaction b coordinate recovers the known value", "addition-f6");
+        summary(recovered), "the reaction b coordinate recovers the known value", "addition-f6");
     agree("addition-f6/cost", "cost", "1", recovered.final_cost, 0.0, 1.0e-14, 0.0,
-  summary(recovered), "the noise-free residual cost is at most 1e-14", "addition-f6");
+        summary(recovered), "the noise-free residual cost is at most 1e-14", "addition-f6");
     truth("addition-f6/covariance", "the fit has an available full-rank covariance",
-  recovered.covariance.status == "available" && recovered.covariance.rank == 2,
-  fields({field("covariance", recovered.covariance.status), field("rank", recovered.covariance.rank),
-      field("singular_values", recovered.covariance.singular_values)}), "addition-f6");
+        recovered.covariance.status == "available" && recovered.covariance.rank == 2,
+        fields({field("covariance", recovered.covariance.status), field("rank", recovered.covariance.rank),
+            field("singular_values", recovered.covariance.singular_values)}), "addition-f6");
 
     auto two_phase = std::find_if(variants.begin(), variants.end(), [](const AdditionVariant& item) {
         return item.name == "two_phase";
@@ -2790,8 +2790,8 @@ void check_addition_enthalpy() {
             std::tuple<const char*, double, double>{"initial", oracle_initial, public_initial.enthalpy},
             {"final", oracle_final, public_final.enthalpy}}) {
         reference_scale_agrees(std::string("addition-f8/") + label + "/endpoint_enthalpy", "H", "J", public_value, oracle,
-      1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}),
-      "each endpoint total enthalpy agrees with the independent pure-fluid oracle", "addition-f8");
+            1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}),
+            "each endpoint total enthalpy agrees with the independent pure-fluid oracle", "addition-f8");
     }
     const auto& solved_initial = *two_phase->prediction.solved;
     const auto& solved_final = *two_phase->prediction.final_solved;
@@ -2800,9 +2800,9 @@ void check_addition_enthalpy() {
     const double oracle_delta = (oracle_final - oracle_initial) / amount - hfeed;
     const double value_tolerance = 1.0e-9 * (std::abs(oracle_initial) + std::abs(oracle_final)) / amount + 1.0e-6;
     agree("addition-f8/value", "delta_h_add", "J/mol", *two_phase->prediction.value, oracle_delta,
-  value_tolerance, 0.0, fields({field("H_initial_J", oracle_initial), field("H_final_J", oracle_final),
-      field("h_feed_J_per_mol", hfeed), field("delta_h_add_J_per_mol", *two_phase->prediction.value)}),
-  "the total-system finite addition agrees with the independent endpoint oracle", "addition-f8");
+        value_tolerance, 0.0, fields({field("H_initial_J", oracle_initial), field("H_final_J", oracle_final),
+            field("h_feed_J_per_mol", hfeed), field("delta_h_add_J_per_mol", *two_phase->prediction.value)}),
+        "the total-system finite addition agrees with the independent endpoint oracle", "addition-f8");
     const double h_initial_vapor = addition_oracle_phase_enthalpy(pure, solved_initial,
         *two_phase->observation.problem.reactions[0].correlation, 1);
     const double h_final_vapor = addition_oracle_phase_enthalpy(pure, solved_final,
@@ -2810,10 +2810,10 @@ void check_addition_enthalpy() {
     const double vapor_contribution = std::abs(solved_final.amounts[1] * h_final_vapor
         - solved_initial.amounts[1] * h_initial_vapor) / amount;
     truth("addition-f8/vapor_discrimination", "the changed vapor contribution exceeds 1e3 times the value tolerance",
-  std::isfinite(vapor_contribution) && vapor_contribution > 1.0e3 * value_tolerance,
-  fields({field("vapor_contribution_J_per_mol", vapor_contribution), field("delta_h_tolerance_J_per_mol", value_tolerance),
-      field("nV_initial_mol", solved_initial.amounts[1]), field("nV_final_mol", solved_final.amounts[1]),
-      field("hV_initial_J_per_mol", h_initial_vapor), field("hV_final_J_per_mol", h_final_vapor)}), "addition-f8");
+        std::isfinite(vapor_contribution) && vapor_contribution > 1.0e3 * value_tolerance,
+        fields({field("vapor_contribution_J_per_mol", vapor_contribution), field("delta_h_tolerance_J_per_mol", value_tolerance),
+            field("nV_initial_mol", solved_initial.amounts[1]), field("nV_final_mol", solved_final.amounts[1]),
+            field("hV_initial_J_per_mol", h_initial_vapor), field("hV_final_J_per_mol", h_final_vapor)}), "addition-f8");
 
     auto failure = variants.front().observation;
     failure.temperature = 200.0;
@@ -2821,35 +2821,35 @@ void check_addition_enthalpy() {
     failure.branch = DensityBranch::Liquid;
     auto failed_feed = predict(model, failure);
     truth("addition-f7/feed_density", "the declared feed root failure is typed and names feed",
-  failed_feed.status == ObservationStatus::DensityUnavailable && !failed_feed.value
-      && failed_feed.message.find("feed:") != std::string::npos,
-  fields({field("status", observation_status_name(failed_feed.status)), field("message", failed_feed.message)}),
-  "addition-f7");
+        failed_feed.status == ObservationStatus::DensityUnavailable && !failed_feed.value
+            && failed_feed.message.find("feed:") != std::string::npos,
+        fields({field("status", observation_status_name(failed_feed.status)), field("message", failed_feed.message)}),
+        "addition-f7");
     auto missing_feed = variants.front().observation;
     missing_feed.composition = {0.0, 1.0};
     missing_feed.final_problem.feed.values = {2.0, 0.4};
     const auto missing = predict(model, missing_feed);
     truth("addition-f7/feed_record", "the balanced feed species without an ideal record is typed and names feed",
-  missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value
-      && missing.message.find("feed:") != std::string::npos,
-  fields({field("status", observation_status_name(missing.status)), field("message", missing.message),
-      field("feed_B_mol", 1.0), field("n_add_mol", amount)}), "addition-f7");
+        missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value
+            && missing.message.find("feed:") != std::string::npos,
+        fields({field("status", observation_status_name(missing.status)), field("message", missing.message),
+            field("feed_B_mol", 1.0), field("n_add_mol", amount)}), "addition-f7");
     ThermochemistryRecord no_records;
     no_records.standard_pressure = 1.0e5;
     no_records.component_intervals = {{}, {}};
     const HelmholtzModel undetermined_model(parameters, coordinates.active_parameters(), no_records);
     const auto undetermined = predict(undetermined_model, variants.front().observation);
     truth("addition-f7/initial_record", "undetermined endpoint calorics are typed and name initial",
-  undetermined.status == ObservationStatus::ThermochemistryUnavailable && !undetermined.value
-      && undetermined.message.find("initial:") != std::string::npos,
-  fields({field("status", observation_status_name(undetermined.status)), field("message", undetermined.message)}),
-  "addition-f7");
+        undetermined.status == ObservationStatus::ThermochemistryUnavailable && !undetermined.value
+            && undetermined.message.find("initial:") != std::string::npos,
+        fields({field("status", observation_status_name(undetermined.status)), field("message", undetermined.message)}),
+        "addition-f7");
     auto mismatch = variants.front().observation;
     mismatch.final_problem.feed.values[0] += 0.01;
     const auto mismatch_message = rejection([&] { validate(mismatch, model); });
     truth("addition-f7/material_balance", "a mismatched component balance is rejected by component name",
-  mismatch_message.find("component") != std::string::npos,
-  fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}), "addition-f7");
+        mismatch_message.find("component") != std::string::npos,
+        fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}), "addition-f7");
 }
 
 #include "reactive_cp_regression_checks.hpp"
@@ -2888,13 +2888,13 @@ void check_hydration_failures() {
         const bool accepted = evaluator.evaluate(rejected, true, values);
         const auto& cause = failures.failures.back().message;
         truth(singular ? "hydration-failure/singular" : "hydration-failure/no-root",
-      "A failed native held-coordinate trial publishes no diameter or Jacobian", !accepted && values.chart.physical.empty()
-      && values.chart.map.empty() && values.gradient.empty() && cause.find(singular ? "singular" : "outside bracket") != std::string::npos,
-      fields({field("target_J_per_mol", number(bad.holds[0].reference.observed)), field("cause", cause), field("optimizer", rejected)}), "issue-219");
+            "A failed native held-coordinate trial publishes no diameter or Jacobian", !accepted && values.chart.physical.empty()
+            && values.chart.map.empty() && values.gradient.empty() && cause.find(singular ? "singular" : "outside bracket") != std::string::npos,
+            fields({field("target_J_per_mol", number(bad.holds[0].reference.observed)), field("cause", cause), field("optimizer", rejected)}), "issue-219");
         CHECK((singular ? good : evaluator).evaluate(start, true, values));
         truth(singular ? "hydration-failure/reuse-singular" : "hydration-failure/reuse-no-root",
-      "A rejected trial preserves the admitted chart", values.chart.physical == admitted,
-      "{}", "issue-219");
+            "A rejected trial preserves the admitted chart", values.chart.physical == admitted,
+            "{}", "issue-219");
         CHECK(good.evaluate(start, true, values));
     }
 }
@@ -2935,7 +2935,7 @@ void check_minimax_consistency() {
     FitResult fresh_failures; ObservationEvaluator density_fresh(density_request, fresh_failures, {0});
     CHECK(density_fresh.evaluate(u1, true, density_cold));
     agree("density-seed/column", "density_column", "native", density_promoted.gradient[0], density_cold.gradient[0],
-  1e-12, 1e-10, "u0 to u1 then promotion", "independent cold density column", "issue-245");
+        1e-12, 1e-10, "u0 to u1 then promotion", "independent cold density column", "issue-245");
     HelmholtzModel old_model(first.chart.parameters), target(density_promoted.chart.parameters);
     const auto previous = predict(old_model, density);
     const auto prediction = predict(target, density, std::nullopt, std::nullopt, nullptr, &previous, &old_model, false);
@@ -2950,8 +2950,8 @@ void check_minimax_consistency() {
         const auto candidate = predict(target, row, {}, {}, nullptr, &offered, &old_model,
             mode == "outside-window" || mode == "empty-domain"), reference = predict(target, row);
         truth("density-seed/" + mode, "an offered density seed returns the cold route's value or typed cause",
-      candidate.status == reference.status && (candidate.value ? candidate.value == reference.value : candidate.message == reference.message),
-      fields({field("offered_density", offered.state->molar_density), field("cold_cause", reference.message)}), "issue-245");
+            candidate.status == reference.status && (candidate.value ? candidate.value == reference.value : candidate.message == reference.message),
+            fields({field("offered_density", offered.state->molar_density), field("cold_cause", reference.message)}), "issue-245");
     }
     auto refused = u1; refused[0] = -1;
     CHECK(!sequence.evaluate(refused, true, density_seeded) && sequence.evaluate(u1, true, density_cold));
@@ -3008,7 +3008,7 @@ void check_minimax_consistency() {
     for (const auto& pair : {std::pair{promoted.predictions, cold.predictions}, std::pair{promoted.gradient, cold.gradient}, std::pair{promoted.optimizer_gradient, cold.optimizer_gradient}})
         for (std::size_t i = 0; i < pair.first.size(); ++i)
             agree("density-seed/electrolyte/" + std::to_string(i), "value_or_column", "native", pair.first[i], pair.second[i],
-          1e-12, 1e-10, "held aqueous changed point and promotion", "fresh-point identity", "issue-245");
+                1e-12, 1e-10, "held aqueous changed point and promotion", "fresh-point identity", "issue-245");
     HelmholtzModel source_model(a.chart.parameters), shifted_model(promoted.chart.parameters);
     const auto prior = predict(source_model, gamma);
     const auto warm = predict(shifted_model, gamma, {}, {}, nullptr, &prior, &source_model, false);
@@ -3042,12 +3042,12 @@ void check_minimax_consistency() {
     const auto checks = evaluate_checks(request, b.parameters);
     for (std::size_t g = 0; g < checks.size(); ++g) {
         agree("minimax-consistency/check/" + std::to_string(g), "maximum", checks[g].unit.c_str(),
-      b.checks[g].maximum, checks[g].maximum, checks[g].maximum == 0 ? 1e-12 : 1e-12 * std::abs(checks[g].maximum), 0.0, "same stored diameters",
-      "B final checks use the A check owner", "r2-minimax");
+            b.checks[g].maximum, checks[g].maximum, checks[g].maximum == 0 ? 1e-12 : 1e-12 * std::abs(checks[g].maximum), 0.0, "same stored diameters",
+            "B final checks use the A check owner", "r2-minimax");
         agree("minimax-consistency/threshold/" + std::to_string(g), "maximum_threshold", checks[g].unit.c_str(),
-      *b.minimax->frozen_checks[g].maximum_threshold, *checks[g].maximum_threshold,
-      *checks[g].maximum_threshold == 0 ? 1e-12 : 1e-12 * std::abs(*checks[g].maximum_threshold), 0.0,
-      "same explicit thresholds", "B freezes declared unweighted checks", "r2-minimax");
+            *b.minimax->frozen_checks[g].maximum_threshold, *checks[g].maximum_threshold,
+            *checks[g].maximum_threshold == 0 ? 1e-12 : 1e-12 * std::abs(*checks[g].maximum_threshold), 0.0,
+            "same explicit thresholds", "B freezes declared unweighted checks", "r2-minimax");
     }
 }
 
@@ -3116,8 +3116,8 @@ void check_propane_inventory_boundary() {
         const auto result = equilibrium::solve_equilibrium(model, problem);
         check_inventory_boundary(model, problem, result, id, 1e-10);
         truth(id + "/absent-pair", "both manufactured carriers have literal zero composition in both phases",
-      result.mole_fractions[1] == 0 && result.mole_fractions[2] == 0 && result.mole_fractions[4] == 0 && result.mole_fractions[5] == 0,
-      fields({field("fractions", result.mole_fractions)}), "issue-269");
+            result.mole_fractions[1] == 0 && result.mole_fractions[2] == 0 && result.mole_fractions[4] == 0 && result.mole_fractions[5] == 0,
+            fields({field("fractions", result.mole_fractions)}), "issue-269");
         agree(id + "/pressure", "boundary_pressure", "Pa", result.pressure[0], 998660.8957398997, .01, 0, "teqp same-model reference", "independent propane coexistence pressure", "issue-269");
         for (std::size_t p = 0; p < 2; ++p)
             agree(id + "/density/" + std::to_string(p), "molar_density", "mol/m^3", result.molar_densities[p], p == 0 ? 11100.25123320962 : 482.5121268150332, 0, 1e-7, "teqp same-model reference", "independent mechanical branches", "issue-269");
@@ -3141,7 +3141,7 @@ void check_propane_inventory_boundary() {
     const auto refuse = [&](const HelmholtzModel& m, const EquilibriumProblem& request, const std::string& id, const std::string& reason) {
         const auto cause = rejection([&] { equilibrium::compile_problem(m, request); });
         truth("incipient/refusal/" + id, "excluded incipient domain returns no fabricated boundary", cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find(reason) != std::string::npos,
-      fields({field("cause", cause)}), "issue-269");
+            fields({field("cause", cause)}), "issue-269");
     };
     auto excluded = problem; excluded.phases[1].kind = PhaseKind::Liquid;
     refuse(model, excluded, "same-kind", "opposite liquid/vapor");
@@ -3153,15 +3153,15 @@ void check_propane_inventory_boundary() {
     excluded.phases[1].support = {0, 3}; excluded.phases[1].support_declared = true;
     const auto cause = rejection([&] { equilibrium::compile_problem(ionic, excluded); });
     truth("incipient/refusal/charge-infeasible", "one charge sign cannot form an electroneutral phase", cause.find("support z sign") != std::string::npos,
-  fields({field("cause", cause)}), "issue-269");
+        fields({field("cause", cause)}), "issue-269");
 }
 
 void check_inventory_face() {
     truth("inventory-face/exact-dot", "error-free conservation arithmetic distinguishes cancellation from a lost positive unit",
-  !equilibrium::exact_zero_dot({1e16, 1, -1e16}, {1, 1, 1})
-  && equilibrium::exact_zero_dot({1e16, 1, -1e16, -1}, {1, 1, 1, 1}),
-  fields({field("nonzero_left", std::vector<double>{1e16, 1, -1e16}), field("nonzero_right", std::vector<double>{1, 1, 1}),
-      field("zero_left", std::vector<double>{1e16, 1, -1e16, -1}), field("zero_right", std::vector<double>{1, 1, 1, 1})}), "issue-231");
+        !equilibrium::exact_zero_dot({1e16, 1, -1e16}, {1, 1, 1})
+        && equilibrium::exact_zero_dot({1e16, 1, -1e16, -1}, {1, 1, 1, 1}),
+        fields({field("nonzero_left", std::vector<double>{1e16, 1, -1e16}), field("nonzero_right", std::vector<double>{1, 1, 1}),
+            field("zero_left", std::vector<double>{1e16, 1, -1e16, -1}), field("zero_right", std::vector<double>{1, 1, 1, 1})}), "issue-231");
     HelmholtzModel model(properties_support::neutral_ternary());
     EquilibriumProblem problem;
     problem.temperature = FreeValue::fixed(300);
@@ -3179,26 +3179,26 @@ void check_inventory_face() {
     const std::vector<double> formal{0, 1, -1};
     CHECK(compiled.B.size() == 1);
     agree("inventory-face/formal-feed", "d_conserved_A_inventory", "mol",
-  std::inner_product(compiled.B[0].begin(), compiled.B[0].end(), formal.begin(), 0.0), -1, 1e-12, 0,
-  declarations() + ";" + fields({field("delta_feed_mol", formal), field("interpretation", "algebraic balance derivative only")}),
-  "the full reduced feed map retains the A+C inventory derivative", "issue-231");
+        std::inner_product(compiled.B[0].begin(), compiled.B[0].end(), formal.begin(), 0.0), -1, 1e-12, 0,
+        declarations() + ";" + fields({field("delta_feed_mol", formal), field("interpretation", "algebraic balance derivative only")}),
+        "the full reduced feed map retains the A+C inventory derivative", "issue-231");
     truth("inventory-face/vanished-feed", "the same signed feed direction preserves the vanished B+C inventory",
-  std::all_of(compiled.inventory_restrictions.begin(), compiled.inventory_restrictions.end(),
-      [&](const auto& row) { return equilibrium::exact_zero_dot(row, formal); }),
-  declarations() + ";" + field("delta_feed_mol", formal), "issue-231");
+        std::all_of(compiled.inventory_restrictions.begin(), compiled.inventory_restrictions.end(),
+            [&](const auto& row) { return equilibrium::exact_zero_dot(row, formal); }),
+        declarations() + ";" + field("delta_feed_mol", formal), "issue-231");
     const auto value = equilibrium::solve_equilibrium(model, problem);
     CHECK(value.success);
     agree("inventory-face/absent-B", "n_B", "mol", value.amounts[0] * value.mole_fractions[1], 0, 0, 0,
-  declarations(), "nonnegative B+C conservation forces both carriers absent", "issue-231");
+        declarations(), "nonnegative B+C conservation forces both carriers absent", "issue-231");
     problem.phases[0].support = {0};
     problem.phases[0].support_declared = true;
     CHECK(equilibrium::compile_problem(model, problem).feasible);
     auto uncovered = problem;
     uncovered.reactions[0].stoichiometry = {-1, 1, 1};
     truth("inventory-face/uncovered", "support-conditional mixed-sign certificates cannot erase attainable products",
-  rejection([&] { equilibrium::compile_problem(model, uncovered); }).find("has no support") != std::string::npos,
-  fields({field("stoichiometry", uncovered.reactions[0].stoichiometry), field("feed_mol", uncovered.feed.values),
-      field("L_support", "A")}), "issue-231");
+        rejection([&] { equilibrium::compile_problem(model, uncovered); }).find("has no support") != std::string::npos,
+        fields({field("stoichiometry", uncovered.reactions[0].stoichiometry), field("feed_mol", uncovered.feed.values),
+            field("L_support", "A")}), "issue-231");
     problem.phases[0].support.clear();
     problem.phases[0].support_declared = false;
     problem.reactions[0].stoichiometry = {0, -1, 1};
@@ -3206,8 +3206,8 @@ void check_inventory_face() {
         problem.feed.values[1] = inventory;
         const auto at = equilibrium::compile_problem(model, problem);
         truth("inventory-face/trace/" + number(inventory), "positive conserved inventories remain positive-species charts",
-      inventory == 0 ? at.removed_species == std::vector<std::size_t>{1, 2} : at.removed_species.empty(),
-      declarations() + ";" + field("B_plus_C_mol", inventory), "issue-231");
+            inventory == 0 ? at.removed_species == std::vector<std::size_t>{1, 2} : at.removed_species.empty(),
+            declarations() + ";" + field("B_plus_C_mol", inventory), "issue-231");
     }
     auto padded = properties_support::parameters(5);
     const auto ternary = equilibrium_support::synthetic_reactive_ternary();
@@ -3247,17 +3247,17 @@ void check_inventory_face() {
             std::abs(full_value.amounts[q] - reduced_value.amounts[q])
                 / (1e-12 + 1e-8 * std::max(std::abs(full_value.amounts[q]), std::abs(reduced_value.amounts[q]))));
     agree("inventory-face/supplied-guess", "maximum_scaled_physical_state_error", "1", scaled_state_error, 0, 1, 0,
-  fields({field("fixture", "synthetic_reactive_ternary plus two ethane records"),
-      field("T_K", full_guess.temperature.value), field("P_Pa", full_guess.pressure.value), field("feed_mol", full_guess.feed.values),
-      field("A_plus_B_to_C", full_guess.reactions[0].stoichiometry), field("D_to_E", full_guess.reactions[1].stoichiometry),
-      field("K_each", 1), field("full_support", "0,1,2,3,4"), field("reduced_support", "0,1,2"),
-      field("full_L1_guess", full_guess.phases[0].composition_guess), field("full_L2_guess", full_guess.phases[1].composition_guess),
-      field("reduced_L1_guess", reduced_guess.phases[0].composition_guess), field("reduced_L2_guess", reduced_guess.phases[1].composition_guess),
-      field("full_phase_fractions", full_value.mole_fractions), field("reduced_phase_fractions", reduced_value.mole_fractions),
-      field("full_amounts_mol", full_value.amounts), field("reduced_amounts_mol", reduced_value.amounts),
-      field("full_classified_residual", full_value.convergence.residual), field("reduced_classified_residual", reduced_value.convergence.residual),
-      field("full_iterations", full_value.convergence.iterations), field("reduced_iterations", reduced_value.convergence.iterations)}),
-  "restricting a supplied full-support guess preserves explicit-face phase fractions and amounts", "issue-231");
+        fields({field("fixture", "synthetic_reactive_ternary plus two ethane records"),
+            field("T_K", full_guess.temperature.value), field("P_Pa", full_guess.pressure.value), field("feed_mol", full_guess.feed.values),
+            field("A_plus_B_to_C", full_guess.reactions[0].stoichiometry), field("D_to_E", full_guess.reactions[1].stoichiometry),
+            field("K_each", 1), field("full_support", "0,1,2,3,4"), field("reduced_support", "0,1,2"),
+            field("full_L1_guess", full_guess.phases[0].composition_guess), field("full_L2_guess", full_guess.phases[1].composition_guess),
+            field("reduced_L1_guess", reduced_guess.phases[0].composition_guess), field("reduced_L2_guess", reduced_guess.phases[1].composition_guess),
+            field("full_phase_fractions", full_value.mole_fractions), field("reduced_phase_fractions", reduced_value.mole_fractions),
+            field("full_amounts_mol", full_value.amounts), field("reduced_amounts_mol", reduced_value.amounts),
+            field("full_classified_residual", full_value.convergence.residual), field("reduced_classified_residual", reduced_value.convergence.residual),
+            field("full_iterations", full_value.convergence.iterations), field("reduced_iterations", reduced_value.convergence.iterations)}),
+        "restricting a supplied full-support guess preserves explicit-face phase fractions and amounts", "issue-231");
     problem.feed.values[1] = 0;
     problem.pressure = FreeValue::variable(1e5);
     auto incipient = equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0));
@@ -3265,9 +3265,9 @@ void check_inventory_face() {
     problem.phases.push_back(incipient);
     const auto cause = rejection([&] { equilibrium::compile_problem(model, problem); });
     truth("inventory-face/incipient", "certified absence leaves the incipient effective support empty and is refused before solving",
-  cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find("component 2") != std::string::npos
-  && cause.find("phase V") != std::string::npos && cause.find("empty effective support") != std::string::npos,
-  declarations() + ";" + fields({field("V_support", "C"), field("V_amount_fraction", 0.0), field("cause", cause)}), "issue-231");
+        cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find("component 2") != std::string::npos
+        && cause.find("phase V") != std::string::npos && cause.find("empty effective support") != std::string::npos,
+        declarations() + ";" + fields({field("V_support", "C"), field("V_amount_fraction", 0.0), field("cause", cause)}), "issue-231");
 }
 
 void check_neutral_electrostatics() {
@@ -3287,9 +3287,9 @@ void check_neutral_electrostatics() {
     selected.association_energy_over_k = p.association_energy_over_k; selected.association_volume = p.association_volume;
     const auto control = HelmholtzModel(selected).state_at_pressure(298.15, 1e5, {1}, DensityBranch::Liquid);
     agree("neutral-electrostatics/density", "rho", "mol/m3", neutral.molar_density, control.molar_density,
-  0, 1e-9, water_inputs, "full ionic declaration agrees with neutral selection", "issue-231");
+        0, 1e-9, water_inputs, "full ionic declaration agrees with neutral selection", "issue-231");
     reference_scale_agrees("neutral-electrostatics/enthalpy", "h_res", "J/mol", neutral.residual_enthalpy,
-  control.residual_enthalpy, 1e-6, 1e-9, water_inputs, "neutral support retains the same residual calorics", "issue-231");
+        control.residual_enthalpy, 1e-6, 1e-9, water_inputs, "neutral support retains the same residual calorics", "issue-231");
     auto boundary = equilibrium_support::flash(3);
     boundary.temperature = FreeValue::fixed(298.15); boundary.pressure = FreeValue::variable(1e5);
     boundary.feed.values = {1, 0, 0};
@@ -3316,18 +3316,18 @@ void check_neutral_electrostatics() {
         const auto selected_state = water_model.state_at_pressure(seed.temperature, seed.pressure, {1},
             phase == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
         agree(id + "/density", "rho_seed", "mol/m3", density, selected_state.molar_density,
-      0, 1e-9, seed_inputs, "decoded full cold density agrees with selected water at the same T/P/branch", "issue-231");
+            0, 1e-9, seed_inputs, "decoded full cold density agrees with selected water at the same T/P/branch", "issue-231");
         reference_scale_agrees(id + "/enthalpy", "h_res_seed", "J/mol",
-      model.state(seed.temperature, density, seed.composition[phase]).residual_enthalpy,
-      selected_state.residual_enthalpy,
-      1e-6, 1e-9, seed_inputs, "cold seeds retain the same supported residual calorics", "issue-231");
+            model.state(seed.temperature, density, seed.composition[phase]).residual_enthalpy,
+            selected_state.residual_enthalpy,
+            1e-6, 1e-9, seed_inputs, "cold seeds retain the same supported residual calorics", "issue-231");
         agree(id + "/amount", "n_phase_seed", "mol", seed.amount[phase], selected_seed.amount[phase],
-      0, 0, seed_inputs, "cold seed phase amounts retain their declared basis", "issue-231");
+            0, 0, seed_inputs, "cold seed phase amounts retain their declared basis", "issue-231");
         agree(id + "/water", "x_water_seed", "1", seed.composition[phase][0], selected_seed.composition[phase][0],
-      0, 0, seed_inputs, "supported cold composition agrees with selected water", "issue-231");
+            0, 0, seed_inputs, "supported cold composition agrees with selected water", "issue-231");
         for (std::size_t species = 1; species < 3; ++species)
             agree(id + "/absent/" + std::to_string(species), "x_absent_seed", "1", seed.composition[phase][species],
-          0, 0, 0, seed_inputs, "globally removed cold seed entries remain literal zero", "issue-231");
+                0, 0, 0, seed_inputs, "globally removed cold seed entries remain literal zero", "issue-231");
     }
     for (const bool temperature : {true, false}) {
         const auto full_actions = model.pressure_actions(298.15, 1e5, {1, 0, 0}, DensityBranch::Liquid,
@@ -3338,23 +3338,23 @@ void check_neutral_electrostatics() {
         CHECK(full_actions.results[0].action && neutral_actions.results[0].action);
         const auto suffix = temperature ? "/T" : "/P";
         agree(std::string("neutral-electrostatics/density-action") + suffix, temperature ? "d_rho_dT_at_P" : "d_rho_dP_at_T",
-      temperature ? "mol/(m^3 K)" : "mol/(m^3 Pa)",
-      full_actions.density_action[0], neutral_actions.density_action[0], 0, FIRST_ORDER, water_inputs,
-      "supported pressure-closed density actions agree with neutral selection", "issue-231");
+            temperature ? "mol/(m^3 K)" : "mol/(m^3 Pa)",
+            full_actions.density_action[0], neutral_actions.density_action[0], 0, FIRST_ORDER, water_inputs,
+            "supported pressure-closed density actions agree with neutral selection", "issue-231");
         agree(std::string("neutral-electrostatics/enthalpy-action") + suffix, temperature ? "d_h_res_dT_at_P" : "d_h_res_dP_at_T",
-      temperature ? "J/(mol K)" : "J/(mol Pa)",
-      *full_actions.results[0].action, *neutral_actions.results[0].action, 0, FIRST_ORDER, water_inputs,
-      "supported caloric actions agree with neutral selection", "issue-231");
+            temperature ? "J/(mol K)" : "J/(mol Pa)",
+            *full_actions.results[0].action, *neutral_actions.results[0].action, 0, FIRST_ORDER, water_inputs,
+            "supported caloric actions agree with neutral selection", "issue-231");
     }
     const auto no_solvent = model.pressure_actions(298.15, 1e5, {0, .5, .5}, DensityBranch::Liquid, {}, {{0, 0, {0, 0, 0}, {}}});
     truth("neutral-electrostatics/ionic-no-solvent", "positive-ion solvent-free states preserve the existing density failure",
-  no_solvent.density_status != PropertyActionStatus::Available && !no_solvent.density_message.empty(),
-  fields({field("T_K", 298.15), field("P_Pa", 1e5), field("composition", std::vector<double>{0, .5, .5}),
-      field("cause", no_solvent.density_message)}), "issue-231");
+        no_solvent.density_status != PropertyActionStatus::Available && !no_solvent.density_message.empty(),
+        fields({field("T_K", 298.15), field("P_Pa", 1e5), field("composition", std::vector<double>{0, .5, .5}),
+            field("cause", no_solvent.density_message)}), "issue-231");
     truth("neutral-electrostatics/charged-slots", "absent charged potentials, fugacities and parameter columns are unavailable",
-  !neutral.residual_chemical_potential_over_rt[1] && !(*neutral.log_fugacity_coefficient)[1]
-  && !neutral.log_fugacity_parameter_derivative[1] && neutral.component_property_status[1] == PropertyActionStatus::IonicInsertion
-  && neutral.residual_chemical_potential_over_rt[0] && (*neutral.log_fugacity_coefficient)[0], water_inputs, "issue-231");
+        !neutral.residual_chemical_potential_over_rt[1] && !(*neutral.log_fugacity_coefficient)[1]
+        && !neutral.log_fugacity_parameter_derivative[1] && neutral.component_property_status[1] == PropertyActionStatus::IonicInsertion
+        && neutral.residual_chemical_potential_over_rt[0] && (*neutral.log_fugacity_coefficient)[0], water_inputs, "issue-231");
     std::array<double, 2> previous{1, 1};
     for (double salt : {0.0, 1e-4, 1e-6, 1e-8}) {
         const std::vector<double> x{1 - 2 * salt, salt, salt};
@@ -3377,7 +3377,7 @@ void check_neutral_electrostatics() {
             const auto third = tape.Forward(3, std::vector<double>{0, 0, 0});
             zero = zero && third[0] == 0 && third[1] == 0;
             truth("neutral-electrostatics/zero", "Born and DH and admitted mixed restriction actions are finite exact zeros",
-          zero && neutral.born == 0 && neutral.debye_huckel == 0, inputs, "issue-231");
+                zero && neutral.born == 0 && neutral.debye_huckel == 0, inputs, "issue-231");
             continue;
         }
         const double eps = neutral.bulk_relative_permittivity;
@@ -3401,9 +3401,9 @@ void check_neutral_electrostatics() {
             const double leading = i == 0 ? born : dh;
             const double error = std::abs(values[i] / leading - 1);
             truth("neutral-electrostatics/limit/" + number(salt) + (i == 0 ? "/Born" : "/DH"),
-          "the independent leading coefficient converges with the declared dilute path",
-          error < previous[i] && (salt != 1e-8 || error <= 1e-3),
-          inputs + ";" + fields({field("value", values[i]), field("leading", leading), field("normalized_error", error)}), "issue-231");
+                "the independent leading coefficient converges with the declared dilute path",
+                error < previous[i] && (salt != 1e-8 || error <= 1e-3),
+                inputs + ";" + fields({field("value", values[i]), field("leading", leading), field("normalized_error", error)}), "issue-231");
             previous[i] = error;
         }
         if (salt == 1e-8) {
@@ -3415,22 +3415,22 @@ void check_neutral_electrostatics() {
             const std::array<const char*, 6> units{"1/K", "1/K^2", "1/K", "1/K^2", "m^3/mol", "m^6/mol^2"};
             for (std::size_t i = 0; i < references.size(); ++i)
                 agree(std::string("neutral-electrostatics/coefficient-action/") + names[i], quantities[i], units[i],
-              actions[i], references[i], 0, 1e-3, inputs, "exact first and second T and density actions approach independent coefficient derivatives", "issue-231");
+                    actions[i], references[i], 0, 1e-3, inputs, "exact first and second T and density actions approach independent coefficient derivatives", "issue-231");
             for (std::size_t order = 1; order <= 2; ++order) {
                 const double reference = order == 1 ? -ion_born / point[2] : 2 * ion_born / (point[2] * point[2]);
                 agree("neutral-electrostatics/born-diameter/" + std::to_string(order),
-              order == 1 ? "d_a_Born_d_dBorn_Na" : "d2_a_Born_d_dBorn_Na2", order == 1 ? "1/Angstrom" : "1/Angstrom^2",
-              order == 1 ? gradient[2] : born_hessian[8], reference, 0, 1e-3, inputs,
-              "Born diameter first and second actions approach independent coefficient derivatives", "issue-231");
+                    order == 1 ? "d_a_Born_d_dBorn_Na" : "d2_a_Born_d_dBorn_Na2", order == 1 ? "1/Angstrom" : "1/Angstrom^2",
+                    order == 1 ? gradient[2] : born_hessian[8], reference, 0, 1e-3, inputs,
+                    "Born diameter first and second actions approach independent coefficient derivatives", "issue-231");
             }
         }
         const auto changed = model.state(298.15, neutral.molar_density, x);
         const auto repeated = model.state_at_pressure(298.15, 1e5, {1, 0, 0}, DensityBranch::Liquid);
         const auto fresh = HelmholtzModel(p, active).state(298.15, neutral.molar_density, x);
         agree("neutral-electrostatics/support-tape/" + number(salt), "h_res", "J/mol", changed.residual_enthalpy,
-      fresh.residual_enthalpy, 0, 1e-12, inputs, "alternating supports preserve fresh-model calorics", "issue-231");
+            fresh.residual_enthalpy, 0, 1e-12, inputs, "alternating supports preserve fresh-model calorics", "issue-231");
         agree("neutral-electrostatics/neutral-tape/" + number(salt), "h_res", "J/mol", repeated.residual_enthalpy,
-      neutral.residual_enthalpy, 0, 1e-12, inputs, "ionic evaluation cannot contaminate the neutral tape", "issue-231");
+            neutral.residual_enthalpy, 0, 1e-12, inputs, "ionic evaluation cannot contaminate the neutral tape", "issue-231");
     }
 }
 

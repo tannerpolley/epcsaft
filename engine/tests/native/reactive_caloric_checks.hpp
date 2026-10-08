@@ -944,7 +944,7 @@ inline void volume_partial_values() {
         CHECK(refused.results[k].status==PropertyActionStatus::SupportChange && !refused.results[k].action);
         Quantity q{k==0?"vT":"vP",k==0?"m^3/(mol K)":"m^3/(mol Pa)",k==0?1e-12:1e-18,{}};
         compare("reference-calorics/dependencies/retained-"+q.name,q,*refused.results[k].value,*center.results[k].value,
-      "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
+            "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
     }
 }
 inline void isothermal_row_columns() {
@@ -983,9 +983,9 @@ inline void isothermal_row_columns() {
         recording_support::field("caloric_completion_cause",consumed.column.message)});
     Quantity theta{"C_theta","1/angstrom",1e-10,{}},change{"C_Ttheta_scaled_change","1",0,{}};
     compare("reference-calorics/dependencies/lower-column/available-theta",theta,
-  *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
+        *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
     compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
-  lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
+        lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
     const auto shifted_rows=[&](double delta) {
         auto p=c.parameters;auto problem=c.problem;p.born_diameter_angstrom[1]+=delta;problem.feed.values[0]+=delta;
         HelmholtzModel shifted_model(p,c.active);const auto shifted_compiled=compile_problem(shifted_model,problem);
@@ -1150,7 +1150,7 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     for(const auto& name:std::vector<std::string>{"rho","x-0","total-h"}) {
         const auto k=index(liquid_quantities,name);
         compare("F6/"+c.name+"/fixed-center/"+name,liquid_quantities[k],center.values[index(q,name)],
-      fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
+            fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
     }
 }
 

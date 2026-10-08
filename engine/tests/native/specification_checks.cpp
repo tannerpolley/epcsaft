@@ -615,32 +615,32 @@ void check_e2_pins() {
     {
         epcsaft::core::Capture capture;
         record_rejection("e2-0/over-sum", "e2-0-pins", model, over,
-      "pinned phase fractions exceed one", pin_inputs(over));
+            "pinned phase fractions exceed one", pin_inputs(over));
         bool generic = false;
         for (const auto& span : capture.trace().spans)
             generic = generic || std::string(span.name) == "equilibrium_generic_point"
                 || std::string(span.name) == "boundary_start";
         record_bool("e2-0/over-sum-before-rank", "e2-0-pins",
-      "rejection precedes generic-point and start work", !generic, pin_inputs(over));
+            "rejection precedes generic-point and start work", !generic, pin_inputs(over));
     }
     auto under = two_phase({1.0, 1.0}, 0.4, 0.5);
     record_rejection("e2-0/all-pinned-under-sum", "e2-0-pins", model, under,
-  "all-pinned phase fractions must sum to one", pin_inputs(under));
+        "all-pinned phase fractions must sum to one", pin_inputs(under));
     auto bad = two_phase({1.0, 1.0}, 1.2, 0.0);
     bad.phases[1].amount = AmountSpec::free();
     bad.pressure = FreeValue::fixed(1.0e5);
     record_rejection("e2-0/above-one", "e2-0-pins", model, bad,
-  "invalid pinned phase fraction in phase L", pin_inputs(bad));
+        "invalid pinned phase fraction in phase L", pin_inputs(bad));
     // Sum-consistent but rank-deficient: pin admission passes and the pre-solve record is returned.
     auto exact = two_phase({1.0, 1.0}, 0.5, 0.5);
     const auto compiled = epcsaft::equilibrium::compile_problem(model, exact);
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, exact);
     record_bool("e2-0/exact-sum-not-run", "e2-0-pins",
-  "exact all-pinned sum passes admission and returns the pre-solve infeasible record",
-  !compiled.feasible && result.convergence.stop == epcsaft::core::Stop::infeasible
-      && result.message.find("invalid pinned") == std::string::npos,
-  recording_support::fields({pin_inputs(exact),
-      recording_support::field("generic_nullity", compiled.generic_nullity)}));
+        "exact all-pinned sum passes admission and returns the pre-solve infeasible record",
+        !compiled.feasible && result.convergence.stop == epcsaft::core::Stop::infeasible
+            && result.message.find("invalid pinned") == std::string::npos,
+        recording_support::fields({pin_inputs(exact),
+            recording_support::field("generic_nullity", compiled.generic_nullity)}));
     // Reactive counterexamples: A <-> B conserves moles (rules apply, both orientations).
     for (const double sign : {1.0, -1.0}) {
         auto reactive_over = two_phase({1.0, 0.0}, 0.6, 0.5);
@@ -649,14 +649,14 @@ void check_e2_pins() {
         reactive_over.phases[1].support = {0, 1};
         const auto id = std::string("e2-0/isomerisation-over-sum/") + (sign > 0.0 ? "forward" : "reversed");
         record_rejection(id.c_str(), "e2-0-pins", model, reactive_over,
-      "pinned phase fractions exceed one", pin_inputs(reactive_over));
+            "pinned phase fractions exceed one", pin_inputs(reactive_over));
         auto reactive_under = two_phase({1.0, 0.0}, 0.4, 0.5);
         reactive_under.reactions = reactive_over.reactions;
         reactive_under.phases[0].support = {0, 1};
         reactive_under.phases[1].support = {0, 1};
         const auto under_id = std::string("e2-0/isomerisation-under-sum/") + (sign > 0.0 ? "forward" : "reversed");
         record_rejection(under_id.c_str(), "e2-0-pins", model, reactive_under,
-      "all-pinned phase fractions must sum to one", pin_inputs(reactive_under));
+            "all-pinned phase fractions must sum to one", pin_inputs(reactive_under));
     }
     // A <-> 2B: amounts (0.75, 0.5) satisfy B n = B feed and sum to 1.25; no sum rejection.
     auto doubling = two_phase({1.0, 0.0}, 0.625, 0.625);
@@ -674,11 +674,11 @@ void check_e2_pins() {
     };
     const double doubling_balance = balance_gap(doubling_basis, {0.75, 0.5}, doubling.feed.values);
     record_bool("e2-0/doubling-no-sum-rejection", "e2-0-pins",
-  "nonconserving A=2B pins are not rejected by a total-mole sum rule",
-  doubling_message.find("pinned phase fractions") == std::string::npos
-      && doubling_message.find("all-pinned") == std::string::npos && doubling_balance <= 1.0e-12,
-  recording_support::fields({pin_inputs(doubling), recording_support::field("balance_residual", doubling_balance),
-      recording_support::field("message", doubling_message)}));
+        "nonconserving A=2B pins are not rejected by a total-mole sum rule",
+        doubling_message.find("pinned phase fractions") == std::string::npos
+            && doubling_message.find("all-pinned") == std::string::npos && doubling_balance <= 1.0e-12,
+        recording_support::fields({pin_inputs(doubling), recording_support::field("balance_residual", doubling_balance),
+            recording_support::field("message", doubling_message)}));
     if (doubling_message.empty()) {
         const auto doubling_compiled = epcsaft::equilibrium::compile_problem(model, doubling);
         recording_support::observe("e2-0/doubling-generic-nullity", "generic_nullity", "count",
@@ -698,11 +698,11 @@ void check_e2_pins() {
     const auto halving_basis = epcsaft::equilibrium::balance_basis(2, halving.reactions);
     const double halving_balance = balance_gap(halving_basis, {0.5, 0.25}, halving.feed.values);
     record_bool("e2-0/halving-no-sum-rejection", "e2-0-pins",
-  "nonconserving 2A=B pin passes the sum stage",
-  halving_message.find("pinned phase fractions") == std::string::npos
-      && halving_message.find("all-pinned") == std::string::npos && halving_balance <= 1.0e-12,
-  recording_support::fields({pin_inputs(halving), recording_support::field("balance_residual", halving_balance),
-      recording_support::field("message", halving_message)}));
+        "nonconserving 2A=B pin passes the sum stage",
+        halving_message.find("pinned phase fractions") == std::string::npos
+            && halving_message.find("all-pinned") == std::string::npos && halving_balance <= 1.0e-12,
+        recording_support::fields({pin_inputs(halving), recording_support::field("balance_residual", halving_balance),
+            recording_support::field("message", halving_message)}));
 }
 
 void check_e2_support() {
@@ -716,9 +716,9 @@ void check_e2_support() {
     full.phases[0].support = {0, 1};
     const auto explicit_full = epcsaft::equilibrium::compile_problem(model, full);
     record_bool("e2-3/omitted-and-full", "e2-3-support", "omitted and explicit full support agree",
-  omitted.problem.phases[0].support == std::vector<std::size_t>{0, 1}
-      && explicit_full.problem.phases[0].support == std::vector<std::size_t>{0, 1}
-      && omitted.removed_species.empty() && explicit_full.removed_species.empty(), inputs);
+        omitted.problem.phases[0].support == std::vector<std::size_t>{0, 1}
+            && explicit_full.problem.phases[0].support == std::vector<std::size_t>{0, 1}
+            && omitted.removed_species.empty() && explicit_full.removed_species.empty(), inputs);
     auto empty = base;
     empty.phases[0].support_declared = true;
     record_rejection("e2-3/explicit-empty", "e2-3-support", model, empty, "empty support in phase L", inputs);
@@ -738,12 +738,12 @@ void check_e2_support() {
     pruned_omitted.feed.values = {0.5, 0.0};
     const auto pruned_omitted_compiled = epcsaft::equilibrium::compile_problem(model, pruned_omitted);
     record_bool("e2-3/zero-feed-pruning", "e2-3-support",
-  "zero-feed nonparticipant is removed exactly once from explicit and omitted support",
-  pruned_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
-      && pruned_compiled.removed_species == std::vector<std::size_t>{1}
-      && pruned_omitted_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
-      && pruned_omitted_compiled.removed_species == std::vector<std::size_t>{1},
-  recording_support::fields({recording_support::field("feed", pruned.feed.values)}));
+        "zero-feed nonparticipant is removed exactly once from explicit and omitted support",
+        pruned_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
+            && pruned_compiled.removed_species == std::vector<std::size_t>{1}
+            && pruned_omitted_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
+            && pruned_omitted_compiled.removed_species == std::vector<std::size_t>{1},
+        recording_support::fields({recording_support::field("feed", pruned.feed.values)}));
 }
 
 void check_e2_reaction() {
@@ -763,12 +763,12 @@ void check_e2_reaction() {
     const auto inputs = recording_support::fields({recording_support::field("feed", forward.feed.values),
         recording_support::field("nu", forward.reactions[0].stoichiometry), recording_support::field("K", 2.0)});
     record_bool("e2-2/orientation", "e2-2-reaction",
-  "support, rank, balance subspace and rows are independent of reaction orientation",
-  left.problem.phases[0].support == std::vector<std::size_t>{0, 1}
-      && right.problem.phases[0].support == std::vector<std::size_t>{0, 1}
-      && left.removed_species == std::vector<std::size_t>{2} && right.removed_species == std::vector<std::size_t>{2}
-      && left.rank == 1 && right.rank == 1 && same_subspace(left.B, right.B, 1.0e-12)
-      && same_rows, inputs);
+        "support, rank, balance subspace and rows are independent of reaction orientation",
+        left.problem.phases[0].support == std::vector<std::size_t>{0, 1}
+            && right.problem.phases[0].support == std::vector<std::size_t>{0, 1}
+            && left.removed_species == std::vector<std::size_t>{2} && right.removed_species == std::vector<std::size_t>{2}
+            && left.rank == 1 && right.rank == 1 && same_subspace(left.B, right.B, 1.0e-12)
+            && same_rows, inputs);
     auto dependent = forward;
     dependent.reactions.push_back({"twice", {-2.0, 2.0, 0.0}, 4.0, std::nullopt});
     record_rejection("e2-2/dependent", "e2-2-reaction", model, dependent, "dependent reaction twice", inputs);
@@ -813,12 +813,12 @@ void check_e2_reaction() {
     free_t.pressure = FreeValue::fixed(1.0e5);
     free_t.phases[0].amount = AmountSpec::pinned(1.0);
     record_rejection("e2-2/free-T-point-consistent", "e2-2-reaction", model, free_t,
-  "temperature-dependent standard state required", inputs);
+        "temperature-dependent standard state required", inputs);
     auto affinity_free_t = free_t;
     affinity_free_t.reactions = {{"A=B", {-1.0, 1.0, 0.0}, std::nullopt, g_b}};
     record_bool("e2-2/free-T-affinity-admitted", "e2-2-reaction",
-  "a constant affinity target admits a free temperature with a consistent supplied vector",
-  rejection(model, affinity_free_t).empty(), inputs);
+        "a constant affinity target admits a free temperature with a consistent supplied vector",
+        rejection(model, affinity_free_t).empty(), inputs);
     // Charged compiler/permutation algebra: (water, Na+, Cl-), feed (0,1,1), nu = (2,-1,-1), K = 4.
     epcsaft::HelmholtzModel salt(properties_support::aqueous_electrolyte());
     auto charged = equilibrium_support::flash(3);
@@ -848,28 +848,28 @@ void check_e2_reaction() {
     auto charge_reaction = charged;
     charge_reaction.reactions = {{"bad", {0.0, 1.0, 0.0}, 1.0, std::nullopt}};
     record_bool("e2-2/charged-permutation", "e2-2-reaction",
-  "charged reaction rank, balance subspace, participant support and rows follow species identity",
-  charged_compiled.rank == 2 && permuted_compiled.rank == 2
-      && charged_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
-      && permuted_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
-      && same_topology
-      && charged_compiled.charge_row_count == permuted_compiled.charge_row_count
-      && same_subspace(charged_compiled.B, mapped_basis, 1.0e-12)
-      && rejection(salt, charge_feed).find("feed carries net z") != std::string::npos
-      && rejection(salt, charge_reaction).find("violates z") != std::string::npos,
-  recording_support::fields({recording_support::field("feed", charged.feed.values),
-      recording_support::field("nu", charged.reactions[0].stoichiometry), recording_support::field("K", 4.0),
-      recording_support::field("permutation", std::vector<double>{2, 0, 1})}));
+        "charged reaction rank, balance subspace, participant support and rows follow species identity",
+        charged_compiled.rank == 2 && permuted_compiled.rank == 2
+            && charged_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
+            && permuted_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
+            && same_topology
+            && charged_compiled.charge_row_count == permuted_compiled.charge_row_count
+            && same_subspace(charged_compiled.B, mapped_basis, 1.0e-12)
+            && rejection(salt, charge_feed).find("feed carries net z") != std::string::npos
+            && rejection(salt, charge_reaction).find("violates z") != std::string::npos,
+        recording_support::fields({recording_support::field("feed", charged.feed.values),
+            recording_support::field("nu", charged.reactions[0].stoichiometry), recording_support::field("K", 4.0),
+            recording_support::field("permutation", std::vector<double>{2, 0, 1})}));
     // The charge test scales sqrt(eps) by max(1, ||nu||_1): |z.nu| = 3 sqrt(eps) lies above the old signed-sum
     // scale (sum nu = -3 sqrt(eps), so 1) and below the L1 scale (4 + 3 sqrt(eps)), and is admitted.
     const double defect = 3.0 * std::sqrt(std::numeric_limits<double>::epsilon());
     auto near_neutral = charged;
     near_neutral.reactions[0].stoichiometry = {2.0, -1.0, -1.0 - defect};
     record_bool("e2-2/charge-scale-l1", "e2-2-reaction",
-  "a reaction charge defect within sqrt(eps) of the L1 stoichiometric scale is admitted",
-  rejection(salt, near_neutral).find("violates z") == std::string::npos,
-  recording_support::fields({recording_support::field("nu", near_neutral.reactions[0].stoichiometry),
-      recording_support::field("z_dot_nu", defect)}));
+        "a reaction charge defect within sqrt(eps) of the L1 stoichiometric scale is admitted",
+        rejection(salt, near_neutral).find("violates z") == std::string::npos,
+        recording_support::fields({recording_support::field("nu", near_neutral.reactions[0].stoichiometry),
+            recording_support::field("z_dot_nu", defect)}));
 }
 
 void check_e2_charge() {

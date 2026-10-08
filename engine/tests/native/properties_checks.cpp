@@ -4302,9 +4302,9 @@ void born_parameter_columns() {
             const double atol = reference[column] == 0.0 ? 1e-12 : 0.0;
             const bool ok = std::abs(actual[column] - reference[column]) <= atol + 1e-12 * std::abs(reference[column]);
             recording_support::compare(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
-          actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
-          "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
-          atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column");
+                actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
+                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
+                atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column");
         }
     }
 }
@@ -4727,15 +4727,15 @@ void residual_cv_temperature_extraction() {
     CHECK(batch.results.front().action);
     const double action = *batch.results.front().action / T; // restore the 1 K action
     recording_support::compare("residual-cv/temperature-extraction/A1", "residual cv A1", "J/(mol K)",
-  action, 0.04758556315383267,
-  recording_support::fields({recording_support::field("T_K", T),
-      recording_support::field("V_m3_per_mol", V), recording_support::field("x", x),
-      recording_support::field("normalized_delta_T_K", direction.temperature),
-      recording_support::field("normalized_delta_rho_mol_per_m3", direction.molar_density),
-      recording_support::field("normalized_delta_x", direction.composition),
-      recording_support::field("physical_delta_T_K", 1.0)}),
-  "Numerical", "binary128 nested exact T derivatives", "Frozen residual cv first action",
-  "absolute", 1e-12, 0.0, std::abs(action - 0.04758556315383267) <= 1e-12);
+        action, 0.04758556315383267,
+        recording_support::fields({recording_support::field("T_K", T),
+            recording_support::field("V_m3_per_mol", V), recording_support::field("x", x),
+            recording_support::field("normalized_delta_T_K", direction.temperature),
+            recording_support::field("normalized_delta_rho_mol_per_m3", direction.molar_density),
+            recording_support::field("normalized_delta_x", direction.composition),
+            recording_support::field("physical_delta_T_K", 1.0)}),
+        "Numerical", "binary128 nested exact T derivatives", "Frozen residual cv first action",
+        "absolute", 1e-12, 0.0, std::abs(action - 0.04758556315383267) <= 1e-12);
 }
 
 int main(int argc, char** argv) {

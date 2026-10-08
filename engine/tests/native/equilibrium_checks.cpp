@@ -2518,15 +2518,15 @@ void check_e2_thermal() {
     try { (void)epcsaft::equilibrium::compile_problem(thermal, unconverted); }
     catch (const std::invalid_argument& error) { mismatch = error.what(); }
     record_bool("e2-2/a-to-2b/reference-basis-mismatch", "e2-2-thermal", "reference-basis-mismatch",
-  mismatch.find("reference-basis-mismatch") != std::string::npos,
-  recording_support::fields({recording_support::field("identity", pressure_law.standard_state_id), recording_support::field("message", mismatch)}));
+        mismatch.find("reference-basis-mismatch") != std::string::npos,
+        recording_support::fields({recording_support::field("identity", pressure_law.standard_state_id), recording_support::field("message", mismatch)}));
     epcsaft::HelmholtzModel mismatched(identical_ethane_pair(), {}, species_record(30.0, 21.0));
     std::string inconsistency;
     try { (void)epcsaft::equilibrium::compile_problem(mismatched, doubling); }
     catch (const std::invalid_argument& error) { inconsistency = error.what(); }
     record_bool("e2-2/a-to-2b/heat-capacity-inconsistency", "e2-2-thermal", "reference inconsistency",
-  inconsistency.find("reference inconsistency") != std::string::npos,
-  recording_support::fields({recording_support::field("cp_B", 21.0), recording_support::field("message", inconsistency)}));
+        inconsistency.find("reference inconsistency") != std::string::npos,
+        recording_support::fields({recording_support::field("cp_B", 21.0), recording_support::field("message", inconsistency)}));
     // Solved charged reaction with a manufactured consistent standard state at an admitted EOS state.
     const std::vector<double> x_star = {0.98, 0.01, 0.01};
     const std::vector<double> nu = {2.0, -1.0, -1.0};
@@ -2594,11 +2594,11 @@ void check_e2_solve() {
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, *item);
         const auto id = std::string("e2-6/all-pinned-not-run/") + std::to_string(item->phases.size());
         record_bool(id.c_str(), "e2-6-solve", "nonreactive all-pinned declaration returns the exact pre-solve NOT_RUN record",
-      compiled.generic_nullity > 0 && not_run_record(result, compiled),
-      recording_support::fields({recording_support::field("phases", item->phases.size()),
-          recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
-          recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
-          recording_support::field("message", result.message)}));
+            compiled.generic_nullity > 0 && not_run_record(result, compiled),
+            recording_support::fields({recording_support::field("phases", item->phases.size()),
+                recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
+                recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
+                recording_support::field("message", result.message)}));
     }
     // Positive pin in both orientations, then the count-deficient fixed-T/fixed-P form.
     epcsaft::HelmholtzModel ternary(properties_support::neutral_ternary());
@@ -2634,8 +2634,8 @@ void check_e2_solve() {
     try { (void)epcsaft::equilibrium::compile_problem(ternary, overdetermined); }
     catch (const std::invalid_argument& error) { message = error.what(); }
     record_bool("e2-6/positive-pin/fixed-T-fixed-P", "e2-6-solve", "positive pin with fixed T and P is a named structural rejection",
-  message.find("pinned") != std::string::npos && message.find("free T or P") != std::string::npos,
-  recording_support::fields({recording_support::field("message", message)}));
+        message.find("pinned") != std::string::npos && message.find("free T or P") != std::string::npos,
+        recording_support::fields({recording_support::field("message", message)}));
     // E2-7: explicit kind under a renamed phase, the single pure vapor phase, and the caller criterion.
     auto named = equilibrium_support::flash(2);
     auto renamed = named;
@@ -2643,9 +2643,9 @@ void check_e2_solve() {
     const auto named_result = epcsaft::equilibrium::solve_equilibrium(model, named);
     const auto renamed_result = epcsaft::equilibrium::solve_equilibrium(model, renamed);
     record_bool("e2-7/rename", "e2-7-criterion", "renaming an explicitly typed phase changes nothing physical",
-  named_result.success && renamed_result.success && named_result.mole_fractions == renamed_result.mole_fractions
-      && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
-  solve_inputs(renamed, renamed_result));
+        named_result.success && renamed_result.success && named_result.mole_fractions == renamed_result.mole_fractions
+            && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
+        solve_inputs(renamed, renamed_result));
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     auto vapor = equilibrium_support::flash(1);
     vapor.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
@@ -2711,10 +2711,10 @@ void check_e2_solve() {
         && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
                                    copied->amplification) == copied->stop;
     record_bool("e2-7/owned-criterion-lifetime", "e2-7-criterion",
-  "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
-  recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
-      recording_support::field("floor", copied ? epcsaft::core::optional_number(copied->floor) : "absent"),
-      recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")}));
+        "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
+        recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
+            recording_support::field("floor", copied ? epcsaft::core::optional_number(copied->floor) : "absent"),
+            recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")}));
 }
 
 void check_e2_reuse() {

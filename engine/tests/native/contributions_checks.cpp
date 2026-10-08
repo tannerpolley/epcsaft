@@ -1310,16 +1310,16 @@ void dippr_limits_and_pressure_shift_are_exact() {
     const auto original = epcsaft::evaluate_ideal_correlation(zero, T, 2.0e5);
     const auto shifted_value = epcsaft::evaluate_ideal_correlation(shifted, T, 2.0e5);
     recording_support::compare(
-  "signed-cp", "cp", "J/mol/K", left.cp, right.cp, "T:300;C:+/-700;E:+/-500",
-  "Relationship", "even_argument", "signed DIPPR arguments are invariant", "reference_or_one",
-  0.0, 1.0e-14, close(left.cp, right.cp, 1.0e-14), "c1-dippr", "signed-cp",
-  "C_p", "T,C,E", "f(C,E)=f(-C,-E)", "T");
+        "signed-cp", "cp", "J/mol/K", left.cp, right.cp, "T:300;C:+/-700;E:+/-500",
+        "Relationship", "even_argument", "signed DIPPR arguments are invariant", "reference_or_one",
+        0.0, 1.0e-14, close(left.cp, right.cp, 1.0e-14), "c1-dippr", "signed-cp",
+        "C_p", "T,C,E", "f(C,E)=f(-C,-E)", "T");
     recording_support::compare(
-  "source-pressure", "s", "J/mol/K", original.s, shifted_value.s,
-  "T:300;P:200000;Psrc:100000->200000;sentropy-anchor-shifted",
-  "Relationship", "standard_state_shift", "consistent source pressure/entropy shift is invariant",
-  "reference_or_one", 0.0, 1.0e-14, close(original.s, shifted_value.s, 1.0e-14),
-  "c1-dippr", "source-pressure", "s", "T,P,P_{src}", "s_{shifted}=s", "pressure");
+        "source-pressure", "s", "J/mol/K", original.s, shifted_value.s,
+        "T:300;P:200000;Psrc:100000->200000;sentropy-anchor-shifted",
+        "Relationship", "standard_state_shift", "consistent source pressure/entropy shift is invariant",
+        "reference_or_one", 0.0, 1.0e-14, close(original.s, shifted_value.s, 1.0e-14),
+        "c1-dippr", "source-pressure", "s", "T,P,P_{src}", "s_{shifted}=s", "pressure");
 }
 
 void ideal_intervals_require_owned_endpoints() {

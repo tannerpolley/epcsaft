@@ -674,7 +674,7 @@ void check_e4_a() {
     bool path_ok = result.success && result.path_values.size() == 5 && result.states.size() == 5;
     for (std::size_t k = 0; path_ok && k < 5; ++k) path_ok = std::abs(result.path_values[k] - expected[k]) <= 1.0e-15;
     record_bool("e4-a/path", "e4-a", "declared bubble branch reaches 181 K at the declared path values",
-  path_ok && !result.event_phase.has_value() && !result.event_pair.has_value(), summary(result));
+        path_ok && !result.event_phase.has_value() && !result.event_pair.has_value(), summary(result));
     for (std::size_t k = 0; k < 5; ++k) {
         const auto cold = epcsaft::equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0 + expected[k]));
         const auto& state = result.states[k];
@@ -760,11 +760,11 @@ void check_e4_c() {
     for (std::size_t k = 1; k < result.states.size(); ++k)
         distinct = distinct && result.states[k].amounts != result.states[k - 1].amounts;
     record_bool("e4-c/event", "e4-c", "the vapor phase disappears before twice the bubble pressure",
-  !result.success && result.stop == ContinuationStop::phase_disappeared && result.event_phase == std::optional<std::size_t>(1)
-      && result.attempted_path > result.reached_path && distinct && result.states.size() == result.path_values.size(),
-  recording_support::fields({summary(result), recording_support::field("P_bubble", start.bubble_pressure),
-      recording_support::field("feed", start.feed), recording_support::field("start_coordinates", start.start.coordinates),
-      recording_support::field("states", result.states.size())}));
+        !result.success && result.stop == ContinuationStop::phase_disappeared && result.event_phase == std::optional<std::size_t>(1)
+            && result.attempted_path > result.reached_path && distinct && result.states.size() == result.path_values.size(),
+        recording_support::fields({summary(result), recording_support::field("P_bubble", start.bubble_pressure),
+            recording_support::field("feed", start.feed), recording_support::field("start_coordinates", start.start.coordinates),
+            recording_support::field("states", result.states.size())}));
     branch_rows("e4-c", "prefix", model, start.problem, result);
     attempt_rows("e4-c", capture.trace());
 }
@@ -793,9 +793,9 @@ void check_e4_d() {
     // (owner decision 2026-09-16). A step or window limit is a failed event row here.
     const bool coalesced = result.stop == ContinuationStop::phases_coalesced && result.event_pair == std::make_pair(std::size_t{0}, std::size_t{1});
     record_bool("e4-d/event", "e4-d", "the bubble branch ends at the named coalescence of L and V, never at the target",
-  !result.success && coalesced && !result.states.empty() && result.reached_path < 1.0 && result.last_result.has_value(),
-  recording_support::fields({summary(result), recording_support::field("last_T", 260.0 + 20.0 * result.reached_path),
-      recording_support::field("states", result.states.size())}));
+        !result.success && coalesced && !result.states.empty() && result.reached_path < 1.0 && result.last_result.has_value(),
+        recording_support::fields({summary(result), recording_support::field("last_T", 260.0 + 20.0 * result.reached_path),
+            recording_support::field("states", result.states.size())}));
     branch_rows("e4-d", "bubble", model, request.start_problem, result);
     // The swap itself: every nonzero component of the inter-phase difference vector (delta ln eta,
     // delta x_i) changes sign between the last accepted state and the rejected swapped state.
@@ -912,7 +912,7 @@ void check_e4_paths() {
         request.options = opts;
         const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
         record_bool(id, "e4-paths", phrase, !result.success && result.stop == ContinuationStop::invalid_path
-      && result.states.empty() && result.attempts == 0 && result.message.find(phrase) != std::string::npos, summary(result));
+            && result.states.empty() && result.attempts == 0 && result.message.find(phrase) != std::string::npos, summary(result));
     };
     ContinuationRequest base;
     base.start_problem = equilibrium_support::bubble_at(180.0);
