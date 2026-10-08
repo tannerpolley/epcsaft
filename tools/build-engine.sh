@@ -13,6 +13,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 python="$PWD/.venv/bin/python"
 [[ -x "$python" ]] || { echo "missing root environment: run bash .codex/environments/setup.sh" >&2; exit 1; }
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
+# locked-ninja locks build/engine-meson/ninja.lock, so the directory must exist before any Ninja run.
+mkdir -p build/engine-meson
 
 # Four jobs: a cold build peaks at 4.2 GiB (#319). The cap is the CPUs this process may use;
 # plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
@@ -45,11 +47,11 @@ exec {highs_lock_fd}>"$highs_prefix.lock"
 flock "$highs_lock_fd"
 if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" || ! -f "$highs_library" ]]; then
     rm -rf -- "$highs_prefix"
-    meson subprojects download --sourcedir engine highs >/dev/null
+    meson subprojects download --sourcedir engine highs >&2
     mkdir -p "$highs_prefix/pkgconfig"
     cp -r "engine/build/subprojects/$highs_source" "$highs_prefix/src"
-    meson setup "${highs_options[@]}" "$highs_prefix/build" "$highs_prefix/src" >/dev/null
-    meson compile -C "$highs_prefix/build" -j "$build_jobs" >/dev/null
+    meson setup "${highs_options[@]}" "$highs_prefix/build" "$highs_prefix/src" >&2
+    meson compile -C "$highs_prefix/build" -j "$build_jobs" >&2
     s="$highs_prefix/src"
     printf '%s\n' 'Name: epcsaft-highs' 'Description: HiGHS for the Engine build' \
         "Version: ${highs_source#HiGHS-}" "Libs: $highs_library" \
@@ -63,7 +65,7 @@ flock -u "$highs_lock_fd"
 build_dir="$PWD/build/engine-meson/shared"
 [[ "$(cat "$build_dir/toolchain-key" 2>/dev/null)" == "$highs_key" ]] || rm -rf -- "$build_dir"
 records=build/environment-wheel
-mkdir -p "$records" build/engine-meson
+mkdir -p "$records"
 printf '%s\n' "$build_dir" >"$records/meson-build-dir"
 printf '%s\n' "$build_jobs" >"$records/build-jobs"
 config=(-C "build-dir=$build_dir" -C "setup-args=-Dpkg_config_path=$highs_prefix/pkgconfig"
