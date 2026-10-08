@@ -505,7 +505,10 @@ Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
 ordered search. Remaining iterations and time enter the shared Ipopt options and
 callbacks, of the seed sub-solves too; polish and final admission check the same deadline.
 The driver does not run once the sub-solves exhaust the iterations, and the plain
-solve's retry after a failed seeded attempt is not repeated. A bounded inner
+solve's retry after a failed seeded attempt is not repeated. The default attempt
+limit, `EQUILIBRIUM_MAX_ITERATIONS` (200), covers all of an attempt's stages together,
+whereas the plain solve gives each driver run its own 200; a default start therefore
+differs from the plain solve once its stages add up to more than 200 iterations. A bounded inner
 kernel may finish after its deadline: elapsed time and overrun remain visible,
 and a post-deadline state is unavailable. Elapsed exhaustion is a controller cause,
 not a relabelled numerical stop: the common classifier retains its
