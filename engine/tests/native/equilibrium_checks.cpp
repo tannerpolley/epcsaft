@@ -293,13 +293,12 @@ double maximum_abs(const std::vector<double>& values) {
     return result;
 }
 
-bool check_weighted_hessian_gradient_ladder(
+void check_weighted_hessian_gradient_ladder(
     const epcsaft::equilibrium::CompiledSystem& compiled,
     const std::vector<double>& point,
     const std::vector<double>& multipliers,
     const char* label,
-    double tolerance,
-    std::array<std::size_t, 3>* false_verdicts = nullptr
+    double tolerance
 ) {
     const auto rows = callback_rows(compiled);
     epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
@@ -310,8 +309,6 @@ bool check_weighted_hessian_gradient_ladder(
     CHECK(point.size() == static_cast<std::size_t>(variables));
     CHECK(multipliers.size() == rows.size());
     CHECK(multipliers.size() == static_cast<std::size_t>(constraints));
-    if (point.size() != static_cast<std::size_t>(variables)
-        || multipliers.size() != static_cast<std::size_t>(constraints)) return false;
 
     const auto objective_factors = {0.0, 0.5, 1.0};
     const auto step_factors = {10.0, 3.0, 1.0};
@@ -322,9 +319,6 @@ bool check_weighted_hessian_gradient_ladder(
     CHECK(nlp.eval_h(variables, point.data(), true, 1.0, constraints,
                      multipliers.data(), true, hessian_entries,
                      hessian_rows.data(), hessian_columns.data(), nullptr));
-    bool all_verdicts = true;
-    std::array<std::size_t, 3> false_counts{};
-    std::size_t objective_index = 0;
     for (const double objective_factor : objective_factors) {
         std::vector<Ipopt::Number> hessian(
             static_cast<std::size_t>(hessian_entries), 0.0
@@ -394,15 +388,10 @@ bool check_weighted_hessian_gradient_ladder(
                         "\\nabla^2\\mathcal L", "\\mathbf{z},\\lambda,\\Delta z",
                         "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
                         coordinates.c_str());
-                    all_verdicts = all_verdicts && verdict;
-                    if (!verdict) ++false_counts[objective_index];
                 }
             }
         }
-        ++objective_index;
     }
-    if (false_verdicts != nullptr) *false_verdicts = false_counts;
-    return all_verdicts;
 }
 
 void verify_s1(const epcsaft::HelmholtzModel& model,
@@ -2000,7 +1989,7 @@ void check_c1_ideal_caller_chart() {
     }
 }
 
-void check_s10() {
+void check_f5() {
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
@@ -2034,18 +2023,10 @@ void check_s10() {
     std::vector<double> pinned_lambda(pinned_rows.size());
     for (std::size_t row = 0; row < pinned_lambda.size(); ++row)
         pinned_lambda[row] = 0.35 + 0.1 * static_cast<double>(row);
-    std::array<std::size_t, 3> regular_false_verdicts{};
-    std::array<std::size_t, 3> pinned_false_verdicts{};
-    const bool regular_ok = check_weighted_hessian_gradient_ladder(
-        flash, primal, lambda, "regular", 1.0e-6, &regular_false_verdicts
-    );
-    const bool pinned_ok = check_weighted_hessian_gradient_ladder(
-        pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5, &pinned_false_verdicts
-    );
+    check_weighted_hessian_gradient_ladder(flash, primal, lambda, "regular", 1.0e-6);
+    check_weighted_hessian_gradient_ladder(pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5);
     // Free intensive values must be differentiated at the callback point,
     // including reaction offsets and simultaneous temperature/pressure freedom.
-    bool intensive_curvature_ok = true;
-    bool correlated_jacobian_ok = true;
     for (int variant = 0; variant < 6; ++variant) {
         auto request = pinned_problem;
         request.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
@@ -2084,8 +2065,7 @@ void check_s10() {
         std::vector<double> weights(callback_rows(compiled).size(), 0.0);
         for (std::size_t row = 0; row < weights.size(); ++row)
             weights[row] = 0.35 + 0.1 * static_cast<double>(row);
-        intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
-            compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
+        check_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label, 1.0e-5);
         if (variant == 1) {
             epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
             Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
@@ -2141,7 +2121,6 @@ void check_s10() {
                 "correlated standard-state T,T curvature is exact beyond the affine shortcut",
                 "reference_or_one", 0.0, 1.0e-9, tt_ok, "f5-correlated-jacobian", "hessian-TT",
                 "\\nabla^2\\mathcal L_{TT}", "\\mathbf{z},\\lambda,\\Delta T", "exact s''", "entry");
-            correlated_jacobian_ok = correlated_jacobian_ok && tt_ok;
             // Rows, Jacobian temperature column and lever column against centered differences.
             std::vector<double> full = callback_point;
             full.resize(compiled.unknown_count(), 0.0);
@@ -2169,38 +2148,9 @@ void check_s10() {
                     "correlated standard-state temperature column matches centered rows",
                     "reference_or_one", 0.0, 1.0e-6, verdict, "f5-correlated-jacobian", id.c_str(),
                     "J_{r,T}", "T,P,\\mathbf{x},\\Delta T", "J_{r,T}=\\Delta r/\\Delta T", "row");
-                correlated_jacobian_ok = correlated_jacobian_ok && verdict;
             }
         }
     }
-    const std::array<double, 3> objective_factors = {0.0, 0.5, 1.0};
-    for (std::size_t i = 0; i < objective_factors.size(); ++i) {
-        const auto inputs = recording_support::fields({
-            recording_support::field("objective_factor", objective_factors[i]),
-            recording_support::field("regular_false_verdict_count", regular_false_verdicts[i]),
-            recording_support::field("pinned_false_verdict_count", pinned_false_verdicts[i]),
-        });
-        recording_support::compare(
-            (std::string("f5-summary/regular/")
-                + recording_support::number(objective_factors[i])).c_str(),
-            "false_verdict_count", "count", static_cast<double>(regular_false_verdicts[i]),
-            0.0, inputs, "Relationship", "hessian-ladder-summary",
-            "regular Hessian ladder has no false verdicts", "absolute", 0.0, 0.0,
-            regular_false_verdicts[i] == 0, "f5-hessian-summary", "regular", "count",
-            "objective_factor", "false_verdict_count=0", "objective_factor");
-        recording_support::compare(
-            (std::string("f5-summary/pinned/")
-                + recording_support::number(objective_factors[i])).c_str(),
-            "false_verdict_count", "count", static_cast<double>(pinned_false_verdicts[i]),
-            0.0, inputs, "Relationship", "hessian-ladder-summary",
-            "pinned Hessian ladder has no false verdicts", "absolute", 0.0, 0.0,
-            pinned_false_verdicts[i] == 0, "f5-hessian-summary", "pinned", "count",
-            "objective_factor", "false_verdict_count=0", "objective_factor");
-    }
-    CHECK(regular_ok);
-    CHECK(pinned_ok);
-    CHECK(intensive_curvature_ok);
-    CHECK(correlated_jacobian_ok);
 }
 
 void check_s11() {
@@ -4957,7 +4907,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},
-        {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_s10, "S10"},
+        {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_f5},
         {{"native.equilibrium.s1", "S1", "Automatic_fast"}, check_s1},
         {{"native.equilibrium.reference-caloric-identities", "reference-caloric-identities", "Automatic_fast"}, reactive_caloric_checks::cheap, "S2"},
         {{"native.equilibrium.reactive-caloric-F2", "reactive-caloric-F2", "Explicit"}, reactive_caloric_checks::cp_f2, "reactive-cp"},

@@ -65,9 +65,6 @@ inline void roundtrips() {
     for(bool h:{true,false}) {
         recovered(pure,q,ref,h,300,h?"PH3":"PS3");
         const auto result=solve_equilibrium(pure,condition(q,h,total(pure,ref,h),300));
-        // G = N_L g_sat + N_V g_sat: the split curvature is declared analytically zero, not computed.
-        recording_support::observe((std::string(h?"PH3":"PS3")+"/flat-split").c_str(),"gibbs-split-curvature","J/mol^2",0,std::nullopt,
-            "","Observation","declared-analytic-value","pure coexistence flat Gibbs split","caloric-specification");
         for(std::size_t i=0;i<2;++i) {
             const auto state=pure.state(result.temperature[0],result.molar_densities[i],{1});
             CHECK(state.pressure_density_derivative>0);
@@ -112,7 +109,9 @@ inline double action(const CompiledSystem& c,const EquilibriumResult& r,const st
     const auto batch=solved_state_actions(c,r,{{{kind}},d});
     const auto& value=batch.results[0];
     if(!value.action) throw std::runtime_error("PH/PS action unavailable: "+value.diagnostic_message.value_or("no diagnostic"));
-    static std::size_t call=0;
+    // Numbered within the running case, so a row's id does not depend on which cases ran before it.
+    static const char* numbered_case=nullptr;static std::size_t call=0;
+    if(numbered_case!=recording_support::active_test_id()) {numbered_case=recording_support::active_test_id();call=0;}
     recording_support::observe(("PH4/action-call-"+std::to_string(++call)).c_str(),kind==SolvedStateObservableKind::SystemEnthalpy?"system-enthalpy-action":"solved-temperature-action",value.unit.c_str(),*value.action,std::nullopt,
         recording_support::fields({recording_support::field("order",d.size()),recording_support::field("T_K",r.temperature[0]),
             recording_support::field("P_Pa",r.pressure[0]),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),

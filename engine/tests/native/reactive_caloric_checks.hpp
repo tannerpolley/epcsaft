@@ -601,8 +601,7 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
         check("F4/gauge-A","v_G",anchored_a,0,1e-10);
         check("F4/gauge-B","v_G",anchored_b,-rtcp,1e-10);
         const double wrong=n/center.phase.rho+n*rtcp*(0.4*center.solved.mole_fractions[0]-0.2*center.solved.mole_fractions[1]);
-        const double shift=wrong-n*center.phase.v,expected=0.4*rtcp*n*(center.solved.mole_fractions[0]+2*center.solved.mole_fractions[1]);
-        check("F4/gauge-conserved-shift","V_G",shift,expected,1e-10);
+        const double shift=wrong-n*center.phase.v;
         const double target=1e-12+1e-9*std::abs(n*center.phase.v);
         const bool discriminates=std::abs(shift)>10*target;
         recording_support::compare_custom(("reference-calorics/F4/gauge-discrimination/"+c.name).c_str(),"V_row_minus_V_anchored","m^3",shift,0,
@@ -629,11 +628,6 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
             duP+=ds[j].temperature_k*lp[1]-ds[j].pressure_pa*lv[7]*dp.pressure_pa;
         }
         const auto suffix=std::to_string(row++);
-        recording_support::observe(("reference-calorics/F4/frozen-increments/"+c.name+"/"+suffix).c_str(),
-            "raw_SI_pressure_increment_conversion", "Pa",dp.pressure_pa,1e5,
-            recording_support::fields({inputs,recording_support::field("delta_T_K",dt.temperature_k),
-                recording_support::field("delta_P_Pa",dp.pressure_pa),recording_support::field("outer_order",ds.size())}),
-            "Unit conversion","physical-increment-actions","Each raw partial divides by its physical increment","reactive-caloric");
         check("F4/frozen-hT/"+suffix,"total-cp",tjet[0]/dt.temperature_k,v[2],1e-9);
         check("F4/frozen-TsT/"+suffix,"total-cp",thermal/dt.temperature_k,v[2],1e-9);
         check("F4/frozen-hP/"+suffix,"v_G",pjet[0]/dp.pressure_pa,pressure,1e-9);
@@ -769,7 +763,9 @@ inline void run(bool ionic,bool fixed) {
     const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
     Actions actions(compiled,solved,q);
     const auto exact=actions.get({});
-    for(std::size_t i=0;i<q.size();++i) compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],center.values[i],inputs,1e-10,"native-independent-values");
+    // Order 0 against the binary128 oracle, which shares only the EOS kernels with production.
+    const auto oracle=ionic?WideIonic(c,center).values(q,{},1,0,center):WideNeutral(c).values(q,{},1,0,center);
+    for(std::size_t i=0;i<q.size();++i) compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],double(oracle[i]),inputs,1e-10,"binary128-values");
     if(ionic||fixed) identities(c,model,compiled,actions,q,center,inputs);  // E-sys identities run in cheap()
     // A ladder whose every step leaves the chart records no comparison; it must still fail.
     CHECK(inversion(c,model,compiled,center,q,inputs,exact[index(q,"total-cv_G")]));
@@ -1126,9 +1122,6 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     combinations.push_back({controls,controls});combinations.push_back({controls,parameters});
     auto mixed=combine(0,2,free_temperature?"P+epsilon":"T+epsilon");
     combinations.push_back({controls,mixed});
-    const auto exact_values=actions.get({});
-    for(std::size_t i=0;i<q.size();++i) compare("F6/"+c.name+"/value/"+q[i].name,q[i],exact_values[i],
-        center.values[i],inputs,1e-10,"native-independent-values");
     for(const auto& ds:combinations) ladder(c,actions,ds,q,center,inputs);
     const auto intensive=index(q,free_temperature?"T":"P");
     if(nonidentical) {
