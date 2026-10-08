@@ -1,3 +1,9 @@
+import hashlib
+import json
+from importlib import metadata
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+
 from . import _core
 from .eos import (
     ActiveParameter,
@@ -37,6 +43,15 @@ ConvergenceError = _core.ConvergenceError
 tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
 
+
+def installed_wheel() -> tuple[Path, str]:
+    """Return the path and SHA-256 of the wheel file this package was installed from (its direct_url.json)."""
+    url = json.loads(metadata.distribution("epcsaft").read_text("direct_url.json") or "{}").get("url", "")
+    path = Path(unquote(urlparse(url).path)).resolve()
+    if not url.startswith("file:") or not path.is_file():
+        raise FileNotFoundError(f"epcsaft was not installed from a wheel file that still exists: {url!r}")
+    return path, hashlib.sha256(path.read_bytes()).hexdigest()
+
 __all__ = (
     "ActiveParameter",
     "Activity",
@@ -72,6 +87,7 @@ __all__ = (
     "Stop",
     "ThermochemistryRecord",
     "ThermochemistryStatus",
+    "installed_wheel",
     "tolerances",
     "trace",
 )

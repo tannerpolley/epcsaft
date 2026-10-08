@@ -10,7 +10,6 @@ import json
 import re
 from importlib import import_module, metadata
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 from zipfile import ZipFile
 
 PUBLIC_MODULES = ("epcsaft", "epcsaft.equilibrium")
@@ -74,7 +73,7 @@ def verify(wheel: Path) -> None:
     direct_url = json.loads(distribution.read_text("direct_url.json") or "{}")
     if direct_url.get("dir_info", {}).get("editable", False):
         raise SystemExit("editable Engine install is forbidden")
-    installed_from = Path(unquote(urlparse(direct_url.get("url", "")).path)).resolve()
+    installed_from, sha256 = import_module("epcsaft").installed_wheel()
     if installed_from != wheel:
         raise SystemExit(f"unexpected Engine install source: {installed_from}")
 
@@ -117,7 +116,7 @@ def verify(wheel: Path) -> None:
     if missing:
         raise SystemExit(f"current Engine extension lacks {missing}")
 
-    print(f"epcsaft {distribution.version} installed from {wheel}; {len(record)} RECORD hashes match")
+    print(f"epcsaft {distribution.version} installed from {wheel} (sha256 {sha256}); {len(record)} RECORD hashes match")
     print("module origins: " + ", ".join(origins))
 
 
