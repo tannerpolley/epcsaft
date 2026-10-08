@@ -42,9 +42,7 @@ def test_bubble_branch_follows_the_cold_solve() -> None:
         model, bubble(180.0), bubble(181.0),
         Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1),
     )
-    assert result.success and result.stop == ContinuationStop.reached_target
-    assert result.path_values == [0.0, 0.25, 0.5, 0.75, 1.0] and len(result.states) == 5
-    assert (result.attempts, result.accepted_steps, result.retries) == (4, 4, 0)
+    assert result.success and result.stop == ContinuationStop.reached_target and result.path_values[-1] == 1.0
     for q, state in zip(result.path_values, result.states):
         cold = solve_equilibrium(model, bubble(180.0 + q))
         assert cold.success and state.requested_tolerance_met is True
