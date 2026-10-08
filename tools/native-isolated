@@ -5,14 +5,15 @@ caller's source files and build directory are never touched; the temporary tree 
 
   falsify <program> <case> <plant.diff>         working tree + a unified diff (git apply)
   falsify <program> <case> <file> <old> <new>   working tree + one replacement (old occurs once)
-      Passes (exit 0) only if the case fails; prints the first failing row.
+      Passes (exit 0) only if a recorded claim fails; prints that row.
   compare <program> <case> <base-commit>        base commit vs working tree
       Rows compared by comparison_id: model and reference within 1e-10 relative, absolute floor
-      1e-10 x the row's own target, sigma or atol; verdicts equal. Exit 1 on any mismatch.
+      1e-10 x the row's own target, sigma or atol; verdicts equal. Exit 1 on any mismatch,
+      on no common rows, or when either run exits non-zero.
 
 The working tree is HEAD plus the caller's uncommitted and untracked files.
 Run as: tools/heavy tools/native-isolated falsify equilibrium_checks e5-neutral plant.diff"""
-import json, math, os, re, shutil, subprocess, sys, tempfile, time
+import json, math, os, re, shutil, signal, subprocess, sys, tempfile, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,7 +58,7 @@ def run_state(label, commit, program, case, plant=None):
         pkg = re.search(r"^pkg_config_path = (.*)$", options, re.M).group(1)
         env = {**os.environ, "PATH": f"{ROOT}/.venv/bin:{os.environ['PATH']}"}
         jobs = (ROOT / "build/environment-wheel/build-jobs").read_text().strip()
-        log = WORK / f"{program}.{case.replace('/', '_')}.{label}.log"
+        log = WORK / f"{program}.{case.replace('/', '_')}.{label}.{tree.name}.log"
         with log.open("w") as out:
             for step in (["meson", "setup", f"-Dpkg_config_path={pkg}", str(build), str(tree / "engine")],
                          ["meson", "compile", "-C", str(build), "-j", jobs, program]):
@@ -119,11 +120,12 @@ def compare(base_log, work_log):
 
 
 def first_failure(log):
-    """The first failed row of a case that reported Failed or Error, else the case event; None if it passed."""
+    """The first failed claim row of a case that reported Failed or Error; None otherwise. An exception
+    with no failed claim (a crash, a solver error, an unmatched case) is not a falsification."""
     lines = log.read_text().splitlines()
-    event = next((l for l in lines if re.match(r"EPCSAFT_CASE .*execution=(Failed|Error)", l)), None)
+    event = any(re.match(r"EPCSAFT_CASE .*execution=(Failed|Error)", l) for l in lines)
     row = next((l for l in lines if '"verdict":false' in l and '"Observation only"' not in l), None)
-    return event and (row or event)
+    return row if event else None
 
 
 def main(argv):
@@ -132,6 +134,7 @@ def main(argv):
         return 0
     if len(argv) not in (4, 6) or argv[0] not in ("falsify", "compare") or (argv[0] == "compare" and len(argv) != 4):
         sys.exit(__doc__)
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # timeout sends SIGTERM; run the cleanup
     mode, program, case = argv[:3]
     start = time.monotonic()
     if mode == "compare":
@@ -140,12 +143,15 @@ def main(argv):
         work_status, work_log = run_state("work", None, program, case)
         print(f"base {base[:8]} exit {base_status}: {base_log}\nwork exit {work_status}: {work_log}")
         status = compare(base_log, work_log)
+        if base_status or work_status or not rows(base_log).keys() & rows(work_log).keys():
+            print("native-isolated: a run exited non-zero or no rows are common; nothing was compared")
+            status = 1
     else:
         plant = Path(argv[3]).resolve() if len(argv) == 4 else tuple(argv[3:])
         case_status, log = run_state("plant", None, program, case, plant)
         failure = first_failure(log)
         print(f"case exit {case_status}: {log}")
-        print("falsified:", failure[:900] if failure else "NO, the planted case passed")
+        print("falsified:", failure[:900] if failure else "NO, no recorded claim failed")
         status = 0 if failure else 1
     print(f"{time.monotonic() - start:.1f} s")
     return status
