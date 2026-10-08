@@ -1,32 +1,10 @@
-import hashlib
-import json
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Convergence, Mixture, Parameters, Stop, _core, trace
+from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
-
-REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-
-
-def _parameter_metadata(path: Path, packet_id: str, version: int, components: tuple[str, ...]) -> dict[str, object]:
-    supplied_mapping = json.loads(path.read_text())
-    return {
-        "packet_id": packet_id,
-        "packet_version": version,
-        "parameter_file": {
-            "path": str(path.relative_to(REPOSITORY_ROOT)),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "size_bytes": path.stat().st_size,
-        },
-        "effective_parameters": {
-            "supplied_mapping": supplied_mapping,
-            "selected_components": list(components),
-        },
-    }
-
 
 def _stopping_criterion(*, threshold: float, verdict: bool, name: str) -> dict[str, object]:
     return {
@@ -65,12 +43,7 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
         "pressure_target_Pa": pressure_target,
         "composition": list(composition),
         "phase": phase,
-        "_parameters": _parameter_metadata(
-            parameter_path,
-            "gross-2001-methane-ethane",
-            2,
-            components,
-        ),
+        "_parameters": packet_metadata(parameter_path, components),
     }
     exact = {
         "type": "scalar",

@@ -2,6 +2,7 @@
 
 `ROWS` holds the C++ values recorded by oracle/record_native_rows.py for these same inputs.
 """
+import hashlib
 import math
 from collections.abc import Sequence
 from pathlib import Path
@@ -38,6 +39,20 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
     evidence.compare(name, model=model, reference=reference, **inputs,
                      criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
     assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+
+
+def packet_metadata(path: Path, components: Sequence[str]) -> dict[str, Any]:
+    """Evidence identity of data/packets/<id>/<version>/parameters/parameters.json: id, version and hash."""
+    return {
+        "packet_id": path.parts[-4],
+        "packet_version": int(path.parts[-3]),
+        "parameter_file": {
+            "path": str(path.relative_to(path.parents[5])),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "size_bytes": path.stat().st_size,
+        },
+        "selected_components": list(components),
+    }
 
 
 def parameters(

@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from epcsaft import DensityBranch, Mixture, ParameterError, Parameters, Pure
+from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -23,23 +24,6 @@ _MEA_ORDER = (
     "hydronium-cation",
     "hydroxide-anion",
 )
-
-
-def _parameter_metadata(path: Path, packet_id: str, version: int, components: tuple[str, ...]) -> dict[str, Any]:
-    supplied_mapping = json.loads(path.read_text())
-    return {
-        "packet_id": packet_id,
-        "packet_version": version,
-        "parameter_file": {
-            "path": str(path.relative_to(REPOSITORY_ROOT)),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "size_bytes": path.stat().st_size,
-        },
-        "effective_parameters": {
-            "supplied_mapping": supplied_mapping,
-            "selected_components": list(components),
-        },
-    }
 
 
 def close(left: float, right: float, relative: float) -> None:
@@ -79,16 +63,7 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     anchored = mixture.state(
         temperature, P=pressure_target, x=x, phase=phase, anchor=state
     )
-    parameter_metadata = _parameter_metadata(
-        packet,
-        "mea-co2-h2o-nine-species-estimation",
-        3,
-        order,
-    )
-    parameter_metadata["effective_parameters"] = {
-        **parameter_metadata["effective_parameters"],
-        "relabelled_selected_components": list(reverse),
-    }
+    parameter_metadata = {**packet_metadata(packet, order), "relabelled_selected_components": list(reverse)}
     inputs = {
         "T_K": temperature,
         "rho_mol_m3": density,
@@ -307,17 +282,7 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
     mixture = Mixture(Parameters.from_json(packet, components=mixture_components)).state(
         temperature, rho=density, x=composition
     )
-    parameter_metadata = _parameter_metadata(
-        packet,
-        "gross-2001-methane-ethane",
-        2,
-        mixture_components,
-    )
-    parameter_metadata["effective_parameters"] = {
-        **parameter_metadata["effective_parameters"],
-        "pure_components": list(pure_components),
-        "mixture_components": list(mixture_components),
-    }
+    parameter_metadata = packet_metadata(packet, mixture_components)
     evidence.compare(
         "pure_mixture_identity", quantity="pressure", model=float(pure.pressure),
         reference=float(mixture.pressure), unit="Pa",
@@ -379,7 +344,7 @@ def test_pressure_branch_selects_sub_cell_loop_root(
                 "stable_root_count": state.stable_root_count,
                 "density_branch": str(state.density_branch),
                 "pressure_density_derivative": float(state.pressure_density_derivative),
-                "_parameters": _parameter_metadata(packet, "gross-2001-methane-ethane", 3, ("ethane",))},
+                "_parameters": packet_metadata(packet, ("ethane",))},
         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 0.0, "rtol": 1e-8,
                    "scale": "max(abs(model), abs(reference))",
                    "combining_rule": "max(atol, rtol*scale)"},

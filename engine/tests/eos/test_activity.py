@@ -1,11 +1,11 @@
 import csv
 import hashlib
-import json
 import math
 from pathlib import Path
 from typing import Any
 
 from epcsaft import Mixture, Parameters, Stop
+from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
 
 # Figiel, Yu & Held 2025 SI S2: retained NaBr candidates require AARD < 10%.
@@ -42,23 +42,7 @@ def _parameter_inputs(
     packet_id: str, version: int, components: tuple[str, ...]
 ) -> tuple[Parameters, dict[str, Any]]:
     path = parameters_json(packet_id, version)
-    document = json.loads(path.read_text())
-    parameters = Parameters.from_mapping(document, components=components)
-    model_choices = {
-        str(item["kind"]): str(item["choice"])
-        for item in document.get("model_families", ())
-        if isinstance(item, dict) and "kind" in item and "choice" in item
-    }
-    return parameters, {
-        "packet_id": packet_id,
-        "packet_version": version,
-        "parameter_file": _file_identity(path),
-        "effective_parameters": {
-            "supplied_mapping": document,
-            "selected_components": list(components),
-            "model_choices": model_choices,
-        },
-    }
+    return Parameters.from_json(path, components=components), packet_metadata(path, components)
 
 
 def _hamer_wu_reference(salt: str) -> dict[str, Any]:

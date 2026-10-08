@@ -1,8 +1,6 @@
-import hashlib
 import itertools
 import math
 from collections.abc import Callable, Sequence
-from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -17,21 +15,8 @@ from epcsaft import (
     PropertyObservable,
     Pure,
 )
+from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
-
-
-def _parameter_metadata(path: Path, components: tuple[str, ...]) -> dict[str, Any]:
-    repository = Path(__file__).resolve().parents[3]
-    return {
-        "packet_id": "gross-2001-methane-ethane",
-        "packet_version": 2,
-        "parameter_file": {
-            "path": str(path.relative_to(repository)),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "size_bytes": path.stat().st_size,
-        },
-        "effective_parameters": {"selected_components": list(components)},
-    }
 
 
 def _mixed_difference(
@@ -84,7 +69,7 @@ def test_public_residual_actions_match_independent_stencils(evidence: Any) -> No
     )
     density_directions = tuple(DensityActionDirection(*item) for item in raw_density_directions)
     pressure_directions = tuple(PressureActionDirection(*item) for item in raw_pressure_directions)
-    metadata = _parameter_metadata(path, components)
+    metadata = packet_metadata(path, components)
     criterion = {
         "type": "scalar",
         "rule": "symmetric_close",
