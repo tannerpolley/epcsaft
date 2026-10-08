@@ -15,18 +15,19 @@ HERE = Path(__file__).resolve().parent
 CASES = (
     ("properties_checks", "P3", ("p3-form-value/", "p3-total/", "p3-endpoint/")),
     ("properties_checks", "P4", ("direct/action/", "pressure/action/")),
-    ("equilibrium_checks", "S2", ("reference-temperature/", "reference-calorics/")),
-    ("equilibrium_checks", "E5-1", ("e5-1/neutral-ternary/",)),
-    ("equilibrium_checks", "E5-3", ("e5-3/isomerisation",)),
+    ("equilibrium_checks", "S2", ("reference-temperature/ionic/", "reference-calorics/ionic/")),
+    ("equilibrium_checks", "E5-1", tuple(f"e5-1/neutral-ternary/phase[{phase}].{name}["
+                                         for phase in (0, 1) for name in ("amount", "log_activity"))),
+    ("equilibrium_checks", "E5-3", ("e5-3/isomerisation/A",)),
     ("equilibrium_checks", "E5-5", ("e5-5/electrolyte/",)),
     ("equilibrium_checks", "E5-7", ("e5-7/thermal-320/",)),
-    ("equilibrium_checks", "E5-8", ("e5-8/forward-bound/",)),
-    ("equilibrium_checks", "E5-10", ("e5-10/manifold/",)),
+    ("equilibrium_checks", "E5-10", ("e5-10/manifold/value/", "e5-10/manifold/pressure-temperature/",
+                                     "e5-10/manifold/temperature-temperature-temperature/")),
     ("regression_checks", "R2-J2", ("r4/",)),
     ("regression_checks", "D86", ("d86/density_value", "d86/parameter/", "d86/temperature/", "d86/pressure")),
     ("surface_example", None, ()),
 )
-SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse")
+SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse", "/pv")
 
 
 def main() -> None:

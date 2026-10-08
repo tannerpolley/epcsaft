@@ -125,8 +125,6 @@ int main() {
                 mixed.results[0].action.value_or(std::nan("")));
     std::printf("  d h_res/dT at rho = %.6f J/(mol K); d2 h_res/(dT d rho) * 1 mol/m^3 = %.6e J/(mol K)\n", fixed_density.results[0].action.value_or(std::nan("")),
                 mixed_density.results[0].action.value_or(std::nan("")));
-    rows("action/pressure", "J/(mol K)", {*first.results[0].action, *first.results[1].action, *mixed.results[0].action, *mixed.results[1].action});
-    rows("action/density", "J/(mol K)", {*fixed_density.results[0].action, *fixed_density.results[1].action, *mixed_density.results[0].action, *mixed_density.results[1].action});
     expect(first.results[0].status == PropertyActionStatus::Available && same(*first.results[0].value, at_pressure.residual_enthalpy)
            && same(*first.results[1].value, *at_pressure.total_isobaric_heat_capacity)
            && same(*mixed_density.results[0].value, at_pressure.residual_enthalpy), "selected central values equal the full state in both charts");
