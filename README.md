@@ -74,7 +74,7 @@ from epcsaft import equilibrium
 ```
 
 `tools/build-engine.sh` owns every Engine build. Wheels exist only where an exact
-artifact is recorded: `tools/build-engine.sh --wheel <dir>` for application pins
+wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
 and A/B timing, and `tools/build-engine.sh --install-wheel` for an analysis that
 records an installed wheel (re-run setup afterwards to return to the editable
 install). `epcsaft.provenance()` identifies the running Engine: the commit and
