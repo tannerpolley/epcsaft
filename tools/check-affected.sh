@@ -126,7 +126,7 @@ prepare_native_build=0
 if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
     prepare_native_build=1
 fi
-if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 

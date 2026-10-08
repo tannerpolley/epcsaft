@@ -6,7 +6,7 @@ build-backend = "mesonpy"
 name = "epcsaft"
 dynamic = ["version"]
 description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
-readme = "README.md"
+# No readme: engine/README.md stays out of METADATA so a docs edit keeps the wheel SHA-256 (#355).
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
 dependencies = []
