@@ -1,5 +1,6 @@
-// Numerical falsifiers of the regression layer (#46 R1, #86 density actions, #47 R2, #48 R3)
-// and the native rows the public R4 transport reproduces (#49).
+// Numerical falsifiers of the regression layer: observations, fits and their exact columns
+// (#46 R1, #86 density actions, #47 R2, #48 R3 and later issues), and the native rows the
+// public R4 transport reproduces (#49).
 #include "regression/fit.hpp"
 
 #include "equilibrium/gibbs_minimizer.hpp"
@@ -14,7 +15,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -305,7 +305,7 @@ void check_f5_f6() {
     free_t.temperature = FreeValue::variable(190.0);
     free_t.pressure = FreeValue::fixed(*pressure.value);
     const auto temperature = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
-    truth("r1-f5/bubble_temperature_status", "the cold pinned-zero free-T solve from above is accepted (new route)",
+    truth("r1-f5/bubble_temperature_status", "the cold pinned-zero free-T solve from above is accepted",
           temperature.status == ObservationStatus::Available, field("status", observation_status_name(temperature.status)), "r1-f5");
     if (temperature.status == ObservationStatus::Available) {
         agree("r1-f5/bubble_temperature", "temperature", "K", *temperature.value, 180.0, 1.0e-6, 0.0,
@@ -1441,8 +1441,7 @@ void check_r3() {
     const bool typed = std::any_of(refused.failures.begin(), refused.failures.end(), [&](const TrialFailure& item) {
         return item.status == ObservationStatus::InadmissibleTrial && item.observation == 3
             && item.message.find("segment_count") != std::string::npos; });
-    // The optimizer may back off the refused bound and still finish or give up; either way the refusal is
-    // retained by name and the result returns typed.
+    // The optimizer backs off the refused bound and converges there; the refusal is retained by name.
     truth("r3/inadmissible_trial", "a trial the model refuses by name is retained as inadmissible_trial and the fit converges at the bound",
           typed && refused.trial_failures > 0 && refused.status == "converged" && refused.usable
               && refused.covariance.status == "active_bound", summary(refused), "r3");
@@ -2287,16 +2286,6 @@ double total_b_amount(const EquilibriumResult& solved_state) {
     return result;
 }
 
-void addition_timing(const std::string& id, double seconds, std::size_t c_ttheta_e3_count,
-                     const std::string& inputs) {
-    recording_support::observe((id + "/jacobian_seconds").c_str(), "differentiate_group_wall_time", "s", seconds,
-        std::nullopt, inputs, "Observation", "steady_clock", "wall time for one native observation Jacobian",
-        "addition-enthalpy");
-    recording_support::observe((id + "/new_c_ttheta_e3_count").c_str(), "C_Ttheta_E3_contractions", "count",
-        static_cast<double>(c_ttheta_e3_count), std::nullopt, inputs, "Count", "reference_path_polarization",
-        "new C_Ttheta contractions only; excludes pressure and other E3 work", "addition-enthalpy");
-}
-
 struct AdditionVariant final {
     std::string name;
     Observation observation;
@@ -2563,15 +2552,9 @@ void check_addition_enthalpy() {
             && center.final_solved->jacobian_rank == center.final_solved->unknown_count);
         variant.prediction = center;
         const auto start = coordinates.start(parameters, {variant.observation}, record);
-        const auto t0 = std::chrono::steady_clock::now();
         const auto exact = differentiate_group(model, {&variant.observation}, center, coordinates).front();
-        const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
         CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 7);
         variant.gradient = exact.value;
-        const std::size_t eos_parameters = model.active_parameters().size();
-        addition_timing("addition-f3/" + variant.name, seconds,
-            4 * eos_parameters * 3 * variant.observation.problem.reactions.size() * 2,
-            fields({field("variant", variant.name), field("n_add_mol", amount), field("active_parameters", eos_parameters)}));
 
         for (std::size_t column = 0; column < 6; ++column) {
             const auto value = [&](double shift) {
@@ -2746,14 +2729,8 @@ void check_addition_enthalpy() {
         const auto& row = recovery.observations[row_index];
         const auto prediction = predict(start_model, row);
         CHECK(prediction.status == ObservationStatus::Available);
-        const auto begin = std::chrono::steady_clock::now();
         const auto gradient = differentiate_group(start_model, {&row}, prediction, recovery.coordinates).front();
-        const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - begin).count();
         CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 3);
-        addition_timing("addition-f6/row_" + std::to_string(row_index), seconds,
-            4 * start_model.active_parameters().size() * 3 * row.problem.reactions.size() * 2,
-            fields({field("T_K", row.temperature), field("active_parameters", start_model.active_parameters().size()),
-                field("jacobian_row", row_index)}));
     }
     const auto recovered = fit(recovery);
     truth("addition-f6/converged", "the noise-free known-parameter fit converges",

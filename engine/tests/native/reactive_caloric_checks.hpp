@@ -4,8 +4,8 @@
 #include <numeric>
 #include <chrono>
 
-// Issue #225 F1/F3/F4/F5. All oracles below are native value calculations;
-// none calls the solved-state derivative recorder to obtain perturbed values.
+// Issue #225 F1/F3/F4/F5/F6. The oracles are native value calculations, except the F6
+// free-intensive pair ladders, which difference centered exact first actions.
 namespace reactive_caloric_checks {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
@@ -531,7 +531,7 @@ class Frozen {
     }
 public:
     // h,s,cp,v,u,cv,vT,vP, all at fixed x; increment actions retain the unit.
-    Frozen(const Case& source,const HelmholtzModel& model,const CompiledSystem& compiled,const Sample& center):
+    Frozen(const Case& source,const CompiledSystem& compiled,const Sample& center):
         c(source),T(center.solved.temperature[0]),P(center.solved.pressure[0]),x(center.solved.mole_fractions),
         baseline(c.parameters,c.active,complete(c)),ref(reference_calorics(compiled,T,P,true,true,true,4)) {
         CHECK(ref.status==SolvedStateActionStatus::Available);
@@ -541,7 +541,6 @@ public:
         CppAD::ADFun<double> tape(independent,dependent);baseline_g[0]=tape.Forward(0,std::vector<double>{T})[0];
         double factorial=1;
         for(std::size_t k=1;k<5;++k) {factorial*=k;baseline_g[k]=factorial*tape.Forward(k,std::vector<double>{k==1?1.0:0.0})[0];}
-        (void)model;
     }
     const std::array<double,8>& get(const std::vector<Direction>& ds) {
         std::string key;
@@ -612,7 +611,7 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
             "Discrimination","conserved-moiety-gauge","Row representative cannot replace the anchored volume",
             "abs(V_row-V_anchored)>10*target",discriminates,"reactive-caloric");
     }
-    Frozen frozen(c,model,compiled,center);
+    Frozen frozen(c,compiled,center);
     std::vector<std::vector<Direction>> requests={{},{dt},{dp}};
     const auto& theta=basis[c.ionic?4:3].value;requests.push_back({theta});
     for(auto a:{dt,dp}) for(auto b:{dt,dp,theta}) requests.push_back({a,b});

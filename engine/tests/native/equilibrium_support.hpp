@@ -18,8 +18,6 @@
 
 namespace equilibrium_support {
 
-inline int failures = 0;
-
 // Record labels of declaration enums.
 inline const char* phase_kind_name(epcsaft::equilibrium::PhaseKind kind) noexcept {
     return kind == epcsaft::equilibrium::PhaseKind::Liquid ? "liquid" : "vapor";
@@ -55,21 +53,6 @@ inline std::vector<double> reaction_affinities(
     return result;
 }
 
-inline void fail(const char* file, int line, const char* expression) {
-    std::fprintf(stderr, "%s:%d: failed: %s\n", file, line, expression);
-    ++failures;
-}
-
-inline void check(bool condition, const char* file, int line, const char* expression) {
-    if (!condition) {
-        fail(file, line, expression);
-        throw recording_support::Failure(
-            std::string(file) + ":" + std::to_string(line)
-            + ": failed: " + expression
-        );
-    }
-}
-
 inline void print_trace(const epcsaft::core::Trace& trace) {
     for (std::size_t i = 0; i < trace.spans.size(); ++i) {
         const auto& span = trace.spans[i];
@@ -80,24 +63,6 @@ inline void print_trace(const epcsaft::core::Trace& trace) {
                      event.iteration, event.name);
         for (const double value : event.values) std::fprintf(stderr, " %.17g", value);
         std::fputc('\n', stderr);
-    }
-}
-
-template <class Function>
-void run_check(const char* name, Function function) {
-    epcsaft::core::Capture capture;
-    const int before = failures;
-    try {
-        function();
-    } catch (const std::exception& error) {
-        std::fprintf(stderr, "%s: exception: %s\n", name, error.what());
-        ++failures;
-    }
-    if (failures == before) {
-        std::printf("%s passed\n", name);
-    } else {
-        std::fprintf(stderr, "%s failed\n", name);
-        print_trace(capture.trace());
     }
 }
 
@@ -378,4 +343,4 @@ Vector permute_vector(const Vector& source, const std::vector<std::size_t>& orde
 }  // namespace equilibrium_support
 
 #define CHECK(condition) \
-    equilibrium_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)
+    recording_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)

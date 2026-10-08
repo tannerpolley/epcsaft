@@ -1,7 +1,6 @@
 // Properties of the Helmholtz terms that hold for every parameter set, checked
-// against closed forms and exact symmetries rather than against stored numbers.
-// Data-backed tests arrive with the Python layer; these are the checks that fail
-// if the kernels are wrong at all.
+// against closed forms and exact symmetries rather than against stored numbers;
+// they fail if the kernels are wrong at all.
 
 #include "contributions/association.hpp"
 #include "contributions/born.hpp"
@@ -113,10 +112,6 @@ Parameters electrolyte_fixture() {
     return p;
 }
 
-std::vector<double> as_double(const std::vector<int>& values) {
-    return std::vector<double>(values.begin(), values.end());
-}
-
 std::string model_inputs(const Parameters& parameters, double temperature,
                          double molar_density, const std::vector<double>& composition) {
     return recording_support::fields({
@@ -127,11 +122,11 @@ std::string model_inputs(const Parameters& parameters, double temperature,
         recording_support::field("sigma_A", parameters.sigma_constant),
         recording_support::field("epsilon_over_k_K", parameters.dispersion_energy_over_k),
         recording_support::field("molar_mass_kg_per_mol", parameters.molar_mass_kg_per_mol),
-        recording_support::field("charge", as_double(parameters.charge_number)),
+        recording_support::field("charge", parameters.charge_number),
         recording_support::field("kij", parameters.k_ij),
-        recording_support::field("site_component", as_double(parameters.site_component)),
-        recording_support::field("site_multiplicity", as_double(parameters.site_multiplicity)),
-        recording_support::field("association_active", as_double(parameters.association_active)),
+        recording_support::field("site_component", parameters.site_component),
+        recording_support::field("site_multiplicity", parameters.site_multiplicity),
+        recording_support::field("association_active", parameters.association_active),
         recording_support::field("association_energy_over_k_K", parameters.association_energy_over_k),
         recording_support::field("association_volume", parameters.association_volume),
     });
@@ -320,8 +315,7 @@ void relabelling_components_changes_nothing() {
 }
 
 // One associating component, two sites, one bonding pair. The solve has to land
-// inside the domain, satisfy the mass-action residual to the policy tolerance,
-// and reach it in far fewer steps than the substitution solver it replaces.
+// inside the domain and satisfy the mass-action residual to the policy tolerance.
 void association_solve_satisfies_mass_action() {
     Parameters p = neutral_binary();
     p.site_component = {0, 0};
@@ -635,9 +629,9 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
             recording_support::field("born_diameter_A", parameters.born_diameter_angstrom),
             recording_support::field("solvation", parameters.solvation_factor),
             recording_support::field("epsilon_r", parameters.relative_permittivity),
-            recording_support::field("permittivity_term_component", as_double(parameters.permittivity_term_component)),
+            recording_support::field("permittivity_term_component", parameters.permittivity_term_component),
             recording_support::field("permittivity_term_coefficient", parameters.permittivity_term_coefficient),
-            recording_support::field("permittivity_term_power", as_double(parameters.permittivity_term_power)),
+            recording_support::field("permittivity_term_power", parameters.permittivity_term_power),
             recording_support::field("permittivity_reference_temperature_K", parameters.permittivity_reference_temperature_k),
             recording_support::field("ion_suppression", parameters.ion_suppression_coefficient),
             recording_support::field("dielectric_volume_m3_per_mol", parameters.dielectric_volume_m3_per_mol),
@@ -1046,8 +1040,7 @@ void packing_fraction_is_bounded() {
 }
 
 // The kernels are templated so the same source both evaluates a double and
-// records a tape. Nothing else instantiates them on an AD type until the model
-// layer exists, so the instantiation is checked here, against a centred
+// records a tape; the AD instantiation is checked here against a centred
 // difference of the double path.
 void kernels_record_a_tape() {
     using AD = CppAD::AD<double>;

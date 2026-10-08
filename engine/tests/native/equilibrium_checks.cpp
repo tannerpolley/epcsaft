@@ -287,29 +287,6 @@ std::vector<double> weighted_gradient(
     return result;
 }
 
-std::vector<double> kkt_gradient(
-    const epcsaft::equilibrium::CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& multipliers
-) {
-    const auto objective = compiled.objective_gradient(point);
-    const auto jacobian = compiled.jacobian(point);
-    const auto rows = callback_rows(compiled);
-    if (objective.size() != point.size()
-        || jacobian.size() != compiled.rows.size() * point.size()
-        || multipliers.size() != rows.size()) {
-        throw std::runtime_error("KKT gradient shape mismatch");
-    }
-    auto result = objective;
-    for (std::size_t multiplier = 0; multiplier < rows.size(); ++multiplier) {
-        for (std::size_t column = 0; column < point.size(); ++column) {
-            result[column] += multipliers[multiplier]
-                * jacobian[rows[multiplier] * point.size() + column];
-        }
-    }
-    return result;
-}
-
 double maximum_abs(const std::vector<double>& values) {
     double result = 0.0;
     for (const double value : values) result = std::max(result, std::abs(value));
@@ -1751,10 +1728,10 @@ void check_c1_multiplier_scale() {
             + static_cast<std::ptrdiff_t>(large_compiled.primal_size));
     const auto small_objective = small_compiled.objective_gradient(small_point);
     const auto large_objective = large_compiled.objective_gradient(large_point);
-    const auto small_kkt = kkt_gradient(
-        small_compiled, small_point, small_result.constraint_multipliers);
-    const auto large_kkt = kkt_gradient(
-        large_compiled, large_point, large_result.constraint_multipliers);
+    const auto small_kkt = weighted_gradient(
+        small_compiled, small_point, small_result.constraint_multipliers, 1.0);
+    const auto large_kkt = weighted_gradient(
+        large_compiled, large_point, large_result.constraint_multipliers, 1.0);
     const double small_kkt_scale = std::max(1.0, maximum_abs(small_objective));
     const double large_kkt_scale = std::max(1.0, maximum_abs(large_objective));
     const double small_kkt_limit =
@@ -1854,7 +1831,7 @@ void check_c1_multiplier_scale() {
     auto double_scaled = large_result.constraint_multipliers;
     for (double& value : double_scaled) value *= feed_scale;
     const double double_scaled_kkt = maximum_abs(
-        kkt_gradient(large_compiled, large_point, double_scaled));
+        weighted_gradient(large_compiled, large_point, double_scaled, 1.0));
     recording_support::compare_custom(
         "c1-multiplier-scale/double-scaling", "kkt_residual", "1", double_scaled_kkt,
         large_kkt_limit, kkt_inputs, "Relationship", "KKT-regression-control",
@@ -1878,8 +1855,8 @@ void check_c1_multiplier_scale() {
         tiny_result.coordinates.begin()
             + static_cast<std::ptrdiff_t>(tiny_compiled.primal_size));
     const auto tiny_objective = tiny_compiled.objective_gradient(tiny_point);
-    const auto tiny_kkt = kkt_gradient(
-        tiny_compiled, tiny_point, tiny_result.constraint_multipliers);
+    const auto tiny_kkt = weighted_gradient(
+        tiny_compiled, tiny_point, tiny_result.constraint_multipliers, 1.0);
     const double tiny_kkt_scale = maximum_abs(tiny_objective);
     CHECK(tiny_kkt_scale > 0.0);
     const double tiny_kkt_limit =
