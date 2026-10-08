@@ -370,7 +370,7 @@ Defining relation: [EqID: `salt_free_solvent_permittivity`](../equations.md#salt
 
 Figiel2025 Eq. (11) then gives
 
-Defining relation: [EqID: `ion_fraction_suppressed_bulk_permittivity`](../equations.md#ion_fraction_suppressed_bulk_permittivity).
+Defining relation: [EqID: `ion_suppressed_bulk_permittivity`](../equations.md#ion_suppressed_bulk_permittivity), with `alpha_i = C_epsilon` for every ion.
 
 `C_epsilon = 7.01` is a source-bearing model record. The relation is empirical
 for water and methanol correlations, was checked against ethanol, uses data up
@@ -410,7 +410,7 @@ permittivity record under this choice fail closed.
 
 For a single source-supported solvent, Zuber2014 Eq. (9) is
 
-Defining relation: [EqID: `ion_specific_suppressed_bulk_permittivity`](../equations.md#ion_specific_suppressed_bulk_permittivity).
+Defining relation: [EqID: `ion_suppressed_bulk_permittivity`](../equations.md#ion_suppressed_bulk_permittivity), with one `alpha_i,s` per ion.
 
 The water/Na+/Cl- comparison uses the Table 2 coefficients
 `alpha_Na+,water = 3.62` and `alpha_Cl-,water = 6.80`. These parameters are

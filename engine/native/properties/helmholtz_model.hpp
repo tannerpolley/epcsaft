@@ -112,8 +112,7 @@ struct PropertyActionDiagnostics final {
     double pressure_density_derivative = 0.0, pressure_residual = 0.0;
     double stability_determinant = 0.0;
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
-    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0;
-    std::size_t forward_sweeps = 0, dense_hessian_calls = 0;
+    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
 };
@@ -276,8 +275,6 @@ struct NeutralReferenceReactionDiagnostic final {
     // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
-    std::vector<std::array<std::optional<double>, 3>> temperature_parameter_ladder;  // last three C_Ttheta values per active coordinate
-    std::vector<std::optional<double>> observed_temperature_parameter_change;  // T max(1, |theta|) times ladder change
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
@@ -372,11 +369,6 @@ public:
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    double phase_packing_fraction(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume
-    ) const;
     double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions
@@ -407,10 +399,7 @@ private:
     ) const;
     void validate_composition(const std::vector<double>& composition) const;
     detail::PredicateSignature predicate_signature(
-        double temperature,
-        double density,
-        const std::vector<double>& composition,
-        bool residual = true, bool ideal = false
+        double temperature, const std::vector<double>& composition, bool ideal = false
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
@@ -455,11 +444,11 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-// Fixed terminal composition, raw source-pressure partial; no ladder reselection.
-ResidualEnergyAction reference_partial(const HelmholtzModel&, double temperature,
-    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+// Fixed terminal composition and source-pressure state, raw partial; no ladder reselection.
+ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter = std::nullopt, std::optional<double> anchor = std::nullopt);
+    std::optional<std::size_t> parameter, const State& state);
 
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the

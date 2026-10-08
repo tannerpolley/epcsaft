@@ -19,6 +19,12 @@
 namespace epcsaft {
 namespace {
 
+// The diagnostic scan's evaluation or time budget ran out; it ends the scan instead of
+// becoming one sample's cause.
+struct DiagnosticBudgetExhausted final : std::runtime_error {
+    DiagnosticBudgetExhausted() : std::runtime_error("density diagnostic budget exhausted") {}
+};
+
 // 2 - phi: the golden-section interior fraction, a mathematical constant.
 constexpr double GOLDEN_SECTION = 0.3819660112501051;
 
@@ -261,10 +267,9 @@ std::vector<DensityRoot> scan_roots(
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
         } catch (const std::exception& error) {
-            if (scope.diagnostics_on()) scope.probe(association_failure(error)
-                ? "density_scan_skip" : "density_scan_failure",
-                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             const bool association = association_failure(error);
+            if (scope.diagnostics_on()) scope.probe(association ? "density_scan_skip" : "density_scan_failure",
+                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             if (!association && interruptions.empty()) throw;
             interruptions += "node " + std::to_string(index) + " rho "
                 + core::optional_number(density) + ": " + error.what() + "\n";
@@ -273,11 +278,8 @@ std::vector<DensityRoot> scan_roots(
             linked = false;
             continue;
         }
-        if (scope.diagnostics_on()) scope.probe("density_scan_point",
-            {density, points.back().point.residual, points.back().point.slope, linked ? 1.0 : 0.0},
-            static_cast<std::uint32_t>(index));
-        else scope.probe("density_scan_point", {density, points.back().point.residual,
-                    points.back().point.slope}, static_cast<std::uint32_t>(index));
+        scope.probe("density_scan_point", {density, points.back().point.residual,
+            points.back().point.slope, linked ? 1.0 : 0.0}, static_cast<std::uint32_t>(index));
         linked = true;
     }
     if (!interruptions.empty())
@@ -409,7 +411,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
-            throw std::runtime_error("density diagnostic budget exhausted");
+            throw DiagnosticBudgetExhausted();
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
         auto point = at_density(*this, temperature, pressure, composition, rho, result.evaluations, order);
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
@@ -478,8 +480,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 result.declared_crossings = result.declared_brackets.size();
                 points.push_back({rho, point, linked});
                 linked = true;
+            } catch (const DiagnosticBudgetExhausted&) { throw;
             } catch (const std::runtime_error& error) {
-                if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                 DensityDiagnosticPoint sample;
                 sample.molar_density = sample.lower = sample.upper = rho;
                 sample.cause = error.what();
@@ -553,8 +555,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 hi = std::min(2.0 * lo, cap);
                 result.finite_domain->upper = hi;
                 try { evaluate(hi, evaluation_order); lo = hi; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     result.finite_domain->cause = error.what(); unavailable = true; break;
                 }
                 result.finite_domain->lower = lo;
@@ -562,8 +564,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             while (unavailable && std::nextafter(lo, hi) < hi) {
                 const double rho = lo + 0.5 * (hi - lo);
                 try { evaluate(rho, evaluation_order); lo = rho; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     hi = rho; result.finite_domain->cause = error.what();
                 }
                 result.finite_domain->lower = lo; result.finite_domain->upper = hi;
@@ -588,7 +590,7 @@ bool properties::regular_density(double density, double slope, const std::option
         && *c.floor >= 0.0 && std::isfinite(*c.floor)
         && *c.amplification > 0.0 && std::isfinite(*c.amplification)
         && (policy::DENSITY_ROOT_RESIDUAL.value + *c.floor) * *c.amplification / density
-            <= policy::DENSITY_ANCHOR_LOG_WINDOW.value / 100.0;
+            <= policy::DENSITY_ANCHOR_REGULARITY.value;
 }
 
 
@@ -603,6 +605,7 @@ DensityRoot solve_density(
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
+    // EqID: ideal_gas_density
     const double ideal_density = pressure
         / (GAS_CONSTANT_J_PER_MOL_K * temperature);
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;

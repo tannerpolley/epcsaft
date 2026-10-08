@@ -10,12 +10,10 @@
 
 namespace epcsaft {
 
-// Four published forms survive. The five the old tree carried collapsed to
-// these because three of them were one equation: ion suppression
-// eps_sf / (1 + sum_i alpha_i x_i) covers ion-specific suppression directly,
-// ion-fraction suppression with alpha_i equal for every ion, and solvent-only
-// with alpha_i = 0. The model layer fills ion_suppression_coefficient
-// accordingly, so the equation here has one branch instead of three.
+// Four published forms. Ion suppression eps_sf / (1 + sum_i alpha_i x_i) covers
+// ion-specific suppression directly, ion-fraction suppression with alpha_i equal
+// for every ion, and solvent-only with alpha_i = 0; the model layer fills
+// ion_suppression_coefficient accordingly.
 enum class PermittivityForm {
     IonSuppression = 1,      // eps_sf / (1 + sum alpha_i x_i)
     ComponentMixing = 2,     // linear mixing over components

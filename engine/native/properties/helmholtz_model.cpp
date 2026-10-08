@@ -55,22 +55,8 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     PropertyActionStatus* status = nullptr
 ) {
     const std::size_t sites_count = sites.size();
-    Eigen::MatrixXd mass_action_jacobian = Eigen::MatrixXd::Zero(
-        static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count));
-    for (std::size_t a = 0; a < sites_count; ++a) {
-        double bonded = 0.0;
-        for (std::size_t b = 0; b < sites_count; ++b) {
-            const double mass_b = composition[parameters.site_component[b]]
-                * parameters.site_multiplicity[b];
-            const double delta_ab = delta[a * sites_count + b];
-            bonded += mass_b * sites[b] * delta_ab;
-            mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
-                sites[a] * number_density * mass_b * delta_ab;
-        }
-        mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(a)) +=
-            1.0 + number_density * bonded;
-    }
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian);
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian(composition, parameters, sites,
+        number_density, delta, bonded_densities(composition, parameters, sites, delta)));
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
     auto scope = core::Scope::detailed("association_derivative");
     const auto failure = [&](const char* reason) {
@@ -92,10 +78,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
             }
             throw std::domain_error("association Jacobian is singular");
         }
-        const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
-        if (!std::isfinite(pivots.maxCoeff())
-            || pivots.minCoeff() <= policy::ASSOCIATION_JACOBIAN_CONDITION.value
-                * pivots.maxCoeff()) {
+        if (!admitted_pivot_ratio(factorization)) {
             failure("association Jacobian is ill-conditioned");
             if (status != nullptr) {
                 *status = PropertyActionStatus::AssociationIllConditioned;
@@ -410,12 +393,13 @@ bool zero_direction(const ActionDirection& direction) {
         && std::all_of(direction.parameter.begin(), direction.parameter.end(),
             [](double value) { return value == 0.0; });
 }
+// The tape's independent point (T, V, n, theta).
 std::vector<double> action_point(
-    const HelmholtzModel& model, double temperature, double rho,
-    const std::vector<double>& composition
+    const HelmholtzModel& model, double temperature, double volume,
+    const std::vector<double>& amounts
 ) {
-    std::vector<double> point = {temperature, 1.0 / rho};
-    point.insert(point.end(), composition.begin(), composition.end());
+    std::vector<double> point = {temperature, volume};
+    point.insert(point.end(), amounts.begin(), amounts.end());
     for (const double value : model.active_parameter_values()) point.push_back(value);
     return point;
 }
@@ -516,10 +500,7 @@ std::vector<IdealCorrelation> selected_ideal_correlations(
     std::vector<IdealCorrelation> result;
     result.reserve(record->component_intervals.size());
     for (const auto& intervals : record->component_intervals) {
-        const IdealInterval* selected = nullptr;
-        for (const auto& interval : intervals) {
-            if (ideal_interval_contains(interval, temperature)) selected = &interval;
-        }
+        const auto* selected = ideal_interval(intervals, temperature);
         if (selected == nullptr) return {};
         endpoint = endpoint || temperature == selected->lower || temperature == selected->upper;
         result.push_back(selected->correlation);
@@ -851,40 +832,10 @@ void HelmholtzModel::validate_point(
 }
 
 detail::PredicateSignature HelmholtzModel::predicate_signature(
-    double temperature,
-    double density,
-    const std::vector<double>& composition, bool residual, bool ideal
+    double temperature, const std::vector<double>& composition, bool ideal
 ) const {
     detail::PredicateSignature result;
     for (const auto fraction : composition) result.push_back(fraction > 0.0);
-    if (residual) {
-    double charge_square_sum = 0.0;
-    for (std::size_t component = 0; component < composition.size(); ++component) {
-        if (!dielectric_solvent_component(component, parameters_)) {
-            const double charge = parameters_.charge_number[component];
-            charge_square_sum += composition[component] * charge * charge;
-        }
-    }
-    result.push_back(charge_square_sum == 0.0 ? 1 : 0);
-    if (charge_square_sum != 0.0) {
-        const double permittivity = bulk_relative_permittivity(
-            temperature, density, composition, parameters_
-        );
-        const double kappa = std::sqrt(
-            density * AVOGADRO_PER_MOL * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
-            * charge_square_sum /
-            (VACUUM_PERMITTIVITY_F_PER_M * permittivity
-             * BOLTZMANN_J_PER_K * temperature)
-        );
-        for (std::size_t component = 0; component < composition.size(); ++component) {
-            if (parameters_.charge_number[component] == 0) continue;
-            result.push_back(
-                kappa * ANGSTROM_M * parameters_.debye_huckel_diameter_angstrom[component]
-                    < policy::SCREENING_SERIES_SWITCH.value ? 1 : 0
-            );
-        }
-    }
-    }
     if (ideal && thermochemistry_.has_value()) {
         for (const auto& intervals : thermochemistry_->component_intervals) {
             for (const auto& interval : intervals)
@@ -946,10 +897,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         scope.probe("declared_choices", declared_choices);
     });
-    std::vector<double> point = {temperature, volume};
-    point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const double value : active_parameter_values()) point.push_back(value);
-    const auto signature = predicate_signature(temperature, density, composition);
+    const auto point = action_point(*this, temperature, volume, amounts);
+    const auto signature = predicate_signature(temperature, composition);
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
     });
@@ -1149,9 +1098,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
     if ((result.status = support_status(*this, amounts, inserted)) != PropertyActionStatus::Available) return result;
-    std::vector<double> point = {temperature, volume};
-    point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const double value : active_parameter_values()) point.push_back(value);
+    const auto point = action_point(*this, temperature, volume, amounts);
     std::vector<double> norms(order);
     std::vector<std::vector<double>> normalized(directions);
     for (std::size_t direction = 0; direction < order; ++direction) {
@@ -1167,7 +1114,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     const double density = total / volume;
     std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
     result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
-        predicate_signature(temperature, density, composition), {}, 0.0, true) ? 1 : 0;
+        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     result.status = PropertyActionStatus::Available;
     const auto factorization = association_factorization(parameters_, temperature, density,
         refreshed.site_fractions, composition, result.status, result.diagnostics);
@@ -1182,6 +1129,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     }
     double coefficient = 0.0;
     if (repeated.has_value()) {
+        // EqID: repeated_direction_energy_third
         // [t^5](F(p+v*t+u*t^3)-F(p+v*t-u*t^3)) = D3F[u,v,v].
         // The sparse paths avoid subtracting the singular pure-u third derivative
         // from an otherwise regular mixed response at dilute ionic states.
@@ -1235,10 +1183,8 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (result.status != PropertyActionStatus::Available) return result;
     const auto central = evaluate(temperature, volume, composition, DerivativeOrder::Hessian);
     const std::size_t width = central.gradient.size(), components = composition.size();
-    std::vector<double> point{temperature, volume}, motion(width, 0.0);
-    point.insert(point.end(), composition.begin(), composition.end());
-    const auto values = active_parameter_values();
-    point.insert(point.end(), values.begin(), values.end());
+    const auto point = action_point(*this, temperature, volume, composition);
+    std::vector<double> motion(width, 0.0);
     motion[0] = direction.temperature;
     for (const auto& parameter : direction.parameter) {
         require(std::isfinite(parameter.value), "reference parameter direction");
@@ -1263,7 +1209,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     for (double& v : motion) v /= norm;
     std::lock_guard<std::mutex> lock(mutex_);
     result.diagnostics.recordings = ensure_tape(point, central.site_fractions,
-        predicate_signature(temperature, 1.0 / volume, composition), {}, 0.0, true) ? 1 : 0;
+        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     tape_->site_values = central.site_fractions;
     const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
         central.site_fractions, composition, result.status, result.diagnostics);
@@ -1375,7 +1321,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             direction.composition, project_parameters(*this, direction.parameter)});
     const bool pressure_chain = root != nullptr && (observables.empty() || plan.ideal[2]
         || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; }));
-    const auto point = action_point(*this, temperature, molar_density, mole_fractions);
+    const auto point = action_point(*this, temperature, 1.0 / molar_density, mole_fractions);
     const bool need_ideal = std::any_of(plan.ideal.begin(), plan.ideal.end(), [](bool value) { return value; });
     bool need_residual = pressure_chain || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; });
     bool endpoint = false;
@@ -1404,7 +1350,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
     }
-    const auto signature = predicate_signature(temperature, molar_density, mole_fractions, need_residual, ideal_available);
+    const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
     PropertyActionBatch result;
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
@@ -1552,7 +1498,6 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     result.diagnostics.thermal_evaluations = ideal_available ? correlations.size() : 0;
     result.diagnostics.directional_paths = context.paths.size();
     result.diagnostics.forward_sweeps = context.forward_sweeps;
-    result.diagnostics.dense_hessian_calls = 0;
     result.diagnostics.site_solves = context.solves;
     result.diagnostics.association_residual = context.coefficient_residual;
     if (association_status == PropertyActionStatus::Available
@@ -1743,9 +1688,7 @@ State HelmholtzModel::state(
     const auto derivatives = evaluate(temperature, volume, amounts, DerivativeOrder::Hessian);
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    const auto sites = solve_site_fractions(
-        temperature, molar_density, mole_fractions, parameters_, sigma, diameter
-    );
+    const auto& sites = derivatives.site_fractions;
     const auto [electro, born] = detail::supported_electrostatics(
         temperature, molar_density,
         mole_fractions, mole_fractions, parameters_
@@ -1784,8 +1727,9 @@ State HelmholtzModel::state(
     result.pressure = pressure;
     result.residual_chemical_potential_over_rt.resize(mole_fractions.size());
     result.component_property_status.assign(mole_fractions.size(), PropertyActionStatus::Available);
+    const bool charged = detail::charged_support(mole_fractions, parameters_);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        if (!detail::charged_support(mole_fractions, parameters_) && parameters_.charge_number[component] != 0) {
+        if (!charged && parameters_.charge_number[component] != 0) {
             result.component_property_status[component] = PropertyActionStatus::IonicInsertion;
             continue;
         }
@@ -1839,6 +1783,7 @@ State HelmholtzModel::state(
     // EqID: residual_heat_capacity_cv
     result.residual_isochoric_heat_capacity = GAS_CONSTANT_J_PER_MOL_K * cv_over_r;
     if (std::isfinite(dpressure_drho) && dpressure_drho > 0.0) {
+        // EqID: residual_heat_capacity_cp
         const double cp = result.residual_isochoric_heat_capacity
             - temperature * dpressure_dt * dpressure_dt
                 / dpressure_dv - GAS_CONSTANT_J_PER_MOL_K;
@@ -1859,9 +1804,11 @@ State HelmholtzModel::state(
             result.total_internal_energy = ideal.value->internal_energy
                 + result.residual_internal_energy;
             result.total_entropy = ideal.value->entropy + result.residual_entropy;
+            // EqID: total_heat_capacity_cv
             result.total_isochoric_heat_capacity = ideal.value->isochoric_heat_capacity
                 + result.residual_isochoric_heat_capacity;
             if (result.residual_isobaric_heat_capacity.has_value()) {
+                // EqID: total_heat_capacity_cp
                 result.total_isobaric_heat_capacity = ideal.value->isobaric_heat_capacity
                     + *result.residual_isobaric_heat_capacity;
             }
@@ -1912,22 +1859,6 @@ double HelmholtzModel::packing_fraction_coefficient(
     return packing_fraction_from_geometry(1.0, mole_fractions, parameters_, diameter);
 }
 
-double HelmholtzModel::phase_packing_fraction(
-    double temperature,
-    const std::vector<double>& amounts,
-    double volume
-) const {
-    validate_point(temperature, volume, amounts);
-    double total = 0.0;
-    for (double amount : amounts) total += amount;
-    std::vector<double> composition;
-    composition.reserve(amounts.size());
-    for (double amount : amounts) composition.push_back(amount / total);
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    return packing_fraction_from_geometry(total / volume, composition, parameters_, diameter);
-}
-
 double HelmholtzModel::molar_density_upper_bound(
     double temperature,
     const std::vector<double>& mole_fractions
@@ -1935,6 +1866,7 @@ double HelmholtzModel::molar_density_upper_bound(
     core::Scope scope("molar_density_upper_bound");
     const double coefficient = packing_fraction_coefficient(temperature, mole_fractions);
     require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
+    // EqID: density_upper_bound
     return policy::CLOSE_PACKING_FRACTION.value / coefficient;
 }
 

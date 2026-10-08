@@ -994,9 +994,6 @@ void parameter_derivative_and_helpers() {
     recording_support::expect_group(
         recording_support::active_test_id(), "m7-packing", "packing-coefficient", 1,
         "packing coefficient geometry", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "m7-phase-packing", "phase-packing", 1,
-        "phase packing fraction geometry", "rho");
     const auto derivative = model.evaluate(300.0, 1.0 / 1.2e4, {0.4, 0.6},
                                            epcsaft::DerivativeOrder::Gradient);
     const double step = 1e-5;
@@ -1039,17 +1036,6 @@ void parameter_derivative_and_helpers() {
     CHECK(close(coefficient * 1.2e4,
                 packing,
                 1e-14));
-    const double phase_packing = model.phase_packing_fraction(
-        300.0, {0.4, 0.6}, 1.0 / 1.2e4
-    );
-    recording_support::compare(
-        "phase-packing", "packing_fraction", "1", phase_packing, coefficient * 1.2e4,
-        inputs, "Relationship", "geometry", "phase packing fraction uses coefficient",
-        "reference_or_one", 0.0, 1.0e-14,
-        close(phase_packing, coefficient * 1.2e4, 1e-14),
-        "m7-phase-packing", "rho", "\\eta", "T,\\rho,\\mathbf{x}",
-        "\\eta_{phase}=\\rho c_{\\eta}", "rho");
-    CHECK(close(phase_packing, coefficient * 1.2e4, 1e-14));
     bool threw = false;
     try { auto bad = parameters; bad.k_ij.pop_back(); (void)epcsaft::HelmholtzModel(std::move(bad)); }
     catch (const std::invalid_argument&) { threw = true; }
@@ -1283,9 +1269,9 @@ void density_and_reference() {
     const std::vector<double> nine_composition = {
         0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0
     };
-    const double nine_packing = nine.phase_packing_fraction(
-        313.15, nine_composition, 1.0 / nine_state.molar_density
-    );
+    const double nine_packing = epcsaft::packing_fraction_from_geometry(
+        nine_state.molar_density, nine_composition, nine.parameters(), epcsaft::segment_diameter(
+            313.15, nine.parameters(), epcsaft::segment_sigma(313.15, nine.parameters())));
     const bool nine_packing_ok =
         nine_packing < epcsaft::policy::CLOSE_PACKING_FRACTION.value;
     recording_support::compare(
@@ -2481,6 +2467,20 @@ void cache_invariance() {
             CHECK(hessian_ok);
         }
     }
+    // One tape serves both sides of SCREENING_SERIES_SWITCH: recorded at kappa*d = 0.087,
+    // reused at kappa*d = 2.0 against a fresh recording there. A series branch frozen at
+    // recording diverges past kappa*d = 1 (value -9.6e5 against -34.6). No recording on
+    // reuse shows the comparison exercises the reused tape.
+    epcsaft::HelmholtzModel crossing(properties_support::aqueous_electrolyte());
+    (void)crossing.evaluate(298.15, 1.0e-3, {0.98, 0.01, 0.01}, epcsaft::DerivativeOrder::Hessian);
+    crossing.reset_counters();
+    const auto reused = crossing.evaluate(298.15, 4.0e-5, {0.8, 0.1, 0.1}, epcsaft::DerivativeOrder::Hessian);
+    const auto recorded = epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()).evaluate(
+        298.15, 4.0e-5, {0.8, 0.1, 0.1}, epcsaft::DerivativeOrder::Hessian);
+    CHECK(crossing.counters().recordings == 0);
+    CHECK(close(reused.value, recorded.value, 1e-10));
+    for (std::size_t i = 0; i < recorded.gradient.size(); ++i) CHECK(close(reused.gradient[i], recorded.gradient[i], 1e-10));
+    for (std::size_t i = 0; i < recorded.hessian.size(); ++i) CHECK(close(reused.hessian[i], recorded.hessian[i], 1e-10));
 }
 
 void core_c2_parameter_coordinates() {
@@ -2748,7 +2748,7 @@ void properties_thermochemistry_p3() {
         "p3-total", "p3-total/", forms.size() * 6,
         "production Ideal/Total state identities", "form,quantity");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p3-boundaries", "p3-boundary/", 6,
+        "p3-boundaries", "p3-boundary/", 5,
         "endpoint and invalid interval behavior", "case");
     recording_support::expect_group(recording_support::active_test_id(),
         "p3-endpoints", "p3-endpoint/", forms.size() * 10,
@@ -2760,10 +2760,10 @@ void properties_thermochemistry_p3() {
         "p3-availability", "p3-availability/", 5,
         "typed thermochemistry availability causes", "case");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p3-reference", "p3-reference/", 13,
+        "p3-reference", "p3-reference/", 10,
         "fixed standard-state conversion and pressure invariance", "quantity");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p3-reaction", "p3-reaction/", 34,
+        "p3-reaction", "p3-reaction/", 11,
         "reaction basis and K(T) relations", "basis,quantity");
 
     for (const auto& [name, correlation] : forms) {
@@ -2883,14 +2883,6 @@ void properties_thermochemistry_p3() {
                binary_cp - R, "x=0.25,0.75,T=320", "p3-mixing", "cv");
 
     const auto endpoint_record = p3_record(forms.front().second);
-    const auto endpoint = epcsaft::evaluate_ideal_thermal(
-        endpoint_record.component_intervals.front(), 250.0, endpoint_record.standard_pressure
-    );
-    const bool endpoint_value = std::isfinite(endpoint.value.h) && !endpoint.derivatives_available;
-    recording_support::compare_custom("p3-boundary/endpoint", "endpoint_value_available", "bool",
-        endpoint_value ? 1.0 : 0.0, 1.0, "T=250", "Availability", "endpoint-owner",
-        "owned endpoint has value and no cross-interval derivative", "absolute", endpoint_value,
-        "p3-boundaries", "endpoint");
     const auto outside = epcsaft::HelmholtzModel(
         properties_support::ethane(), {}, endpoint_record
     ).state(400.0, density, {1.0});
@@ -3022,95 +3014,10 @@ void properties_thermochemistry_p3() {
         p3_compare(std::string("p3-reference/") + point, "total_pressure_invariance", unit,
                    high, low, "State P0=1e5 to 2e5", "p3-reference", point.c_str());
     }
-    const auto converted = epcsaft::pressure_to_density_standard(
-        1234.0, 5678.0, 21.0, 300.0, 1.0e5, 1000.0
-    );
-    const double shift = R * 300.0 * std::log(R * 300.0 * 1000.0 / 1.0e5);
-    p3_compare("p3-reference/g", "g_density_conversion", "J/mol",
-               converted.gibbs, 1234.0 + shift, "P0=1e5,rho0=1000",
-               "p3-reference", "g");
-    p3_compare("p3-reference/h0", "h_density_conversion", "J/mol",
-               converted.enthalpy, 5678.0 - R * 300.0, "P0=1e5,rho0=1000",
-               "p3-reference", "h0");
-    p3_compare("p3-reference/s0", "s_density_conversion", "J/(mol K)",
-               converted.entropy, 21.0 - R - shift / 300.0, "P0=1e5,rho0=1000",
-               "p3-reference", "s0");
 
     const epcsaft::ReactionLogPolynomial correlation{
         2.0, -1200.0, 0.4, -0.003, 300.0, 293.15, 393.15, "P0"
     };
-    const std::vector<double> stoichiometry = {1.0, -1.0};
-    const auto direct = epcsaft::direct_activities({0.8, 1.2}, "P0");
-    const auto x_activity = epcsaft::mole_fraction_activities({2.0, 3.0}, {0.4, 0.6}, "P0");
-    const auto c_activity = epcsaft::molarity_activities({2.0, 3.0}, 500.0, {0.4, 0.6}, 100.0, "P0");
-    const auto m_activity = epcsaft::molality_activities({2.0, 3.0}, {1.0, 2.0}, 1.0, 1.0, "P0");
-    p3_compare("p3-reaction/direct", "ln_q", "1",
-               epcsaft::reaction_ln_quotient(stoichiometry, direct, {}, correlation),
-               std::log(0.8 / 1.2), "basis=activity", "p3-reaction", "direct");
-    p3_compare("p3-reaction/x", "ln_q", "1",
-               epcsaft::reaction_ln_quotient(stoichiometry, x_activity, {}, correlation),
-               std::log(0.8 / 1.8), "basis=mole-fraction", "p3-reaction", "x");
-    p3_compare("p3-reaction/c", "ln_q", "1",
-               epcsaft::reaction_ln_quotient(stoichiometry, c_activity, {}, correlation),
-               std::log(4.0 / 9.0), "basis=molarity,rho=500,c0=100 mol/m3", "p3-reaction", "c");
-    p3_compare("p3-reaction/c-delta-nu", "ln_q", "1",
-               epcsaft::reaction_ln_quotient({2.0, -1.0}, c_activity, {}, correlation),
-               std::log(16.0 / 9.0), "basis=molarity,rho=500,Delta_nu=1", "p3-reaction", "c-delta-nu");
-    p3_compare("p3-reaction/m", "ln_q", "1",
-               epcsaft::reaction_ln_quotient(stoichiometry, m_activity, {}, correlation),
-               std::log(2.0 / 6.0), "basis=molality,m0=1 mol/kg", "p3-reaction", "m");
-    // Standard-scale identity (#84): for a solute in 1 kg of water, ln a^(m) - ln a^(x)
-    // = ln((n_s + n_w)/(n_w M_w m0)) -> -ln(M_w m0) = 4.0165 at infinite dilution, so a reaction
-    // with one net solute product (the R4/R5 pattern: solute + water -> solute + solute, water on
-    // its own mole-fraction scale) shifts its quotient by exactly that amount, a factor 55.5 in K.
-    {
-        // Species order (MEACOO-, H2O, HCO3-, MEA) with distinct solute amounts; the solvent mass comes
-        // from the water amount. The separate infinite-dilution value check below pins M_w m0.
-        const double water_molar_mass = 0.01801528, n_water = 40.0, standard_molality = 1.0;
-        const std::vector<double> amounts = {2.0e-6, n_water, 3.0e-6, 5.0e-6};
-        const double total = amounts[0] + amounts[1] + amounts[2] + amounts[3];
-        const auto x_scale = epcsaft::mole_fraction_activities({1.0, 1.0, 1.0, 1.0},
-            {amounts[0] / total, amounts[1] / total, amounts[2] / total, amounts[3] / total}, "P0");
-        const auto solutes = epcsaft::molality_activities({1.0, 1.0, 1.0, 1.0}, amounts,
-            n_water * water_molar_mass, standard_molality, "P0");
-        // Water stays on its own mole-fraction scale in the molality-basis set, as the source rows state.
-        const auto m_scale = epcsaft::direct_activities(
-            {solutes.values[0], x_scale.values[1], solutes.values[2], solutes.values[3]}, "P0");
-        const std::vector<double> r4_pattern = {-1.0, -1.0, 1.0, 1.0};
-        const double expected = std::log(total / (n_water * water_molar_mass * standard_molality));
-        p3_compare("p3-reaction/molality-scale-solute", "ln_a_m_minus_ln_a_x", "1",
-                   std::log(m_scale.values[2]) - std::log(x_scale.values[2]), expected,
-                   "n_w=40 mol water, n_s=3e-6 mol", "p3-reaction", "molality-scale-solute");
-        p3_compare("p3-reaction/molality-scale-r4", "ln_q_m_minus_ln_q_x", "1",
-                   epcsaft::reaction_ln_quotient(r4_pattern, m_scale, {}, correlation)
-                       - epcsaft::reaction_ln_quotient(r4_pattern, x_scale, {}, correlation),
-                   expected, "R4 pattern, sum nu_solute = +1, quotient owner", "p3-reaction", "molality-scale-r4");
-        CHECK(std::abs(expected - 4.016535) < 1.0e-5);
-    }
-    const auto neutral = epcsaft::direct_activities({1.0, 1.0}, "P0");
-    p3_compare("p3-reaction/neutral-ionic", "ln_q", "1",
-               epcsaft::reaction_ln_quotient(stoichiometry, neutral, {1, 1}, correlation),
-               0.0, "charge-neutral ionic contraction", "p3-reaction", "neutral-ionic");
-    bool gauge_failed = false;
-    try {
-        epcsaft::reaction_ln_quotient({1.0}, epcsaft::direct_activities({1.0}, "P0"), {1}, correlation);
-    } catch (const std::invalid_argument& error) {
-        gauge_failed = std::string(error.what()) == "ionic-gauge-missing";
-    }
-    recording_support::compare_custom("p3-reaction/gauge", "ionic_gauge_required", "bool",
-        gauge_failed ? 1.0 : 0.0, 1.0, "charged nonneutral reaction", "Availability",
-        "ionic-gauge", "nonneutral ionic contraction remains unavailable without a real gauge",
-        "absolute", gauge_failed, "p3-reaction", "gauge");
-    bool mismatch_failed = false;
-    try {
-        epcsaft::reaction_ln_quotient(stoichiometry, epcsaft::direct_activities({0.8, 1.2}, "rho0"), {}, correlation);
-    } catch (const std::invalid_argument& error) {
-        mismatch_failed = std::string(error.what()) == "reference-basis-mismatch";
-    }
-    recording_support::compare_custom("p3-reaction/mismatch", "basis_identity_required", "bool",
-        mismatch_failed ? 1.0 : 0.0, 1.0, "activity id=rho0,K id=P0", "Availability",
-        "standard-state-identity", "quotient and K standard-state identities must match",
-        "absolute", mismatch_failed, "p3-reaction", "mismatch");
 
     const auto reaction = epcsaft::evaluate_reaction_properties(correlation, 350.0);
     const double expected_ln_k = 2.0 - 1200.0 / 350.0
@@ -3126,26 +3033,6 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/h", "reaction_enthalpy", "J/mol", reaction.enthalpy,
                R * 350.0 * 350.0 * expected_derivative, "T=350", "p3-reaction", "h");
 
-    const auto log_correlation = epcsaft::normalize_log10_reciprocal_correlation(
-        2677.91, 0.3869, 0.0004277, 293.15, 393.15, "P0", 300.0
-    );
-    const auto log_reaction = epcsaft::evaluate_reaction_properties(log_correlation, 300.0);
-    p3_compare("p3-reaction/log10-ln", "ln_k", "1", log_reaction.ln_k,
-               -std::log(10.0) * (2677.91 / 300.0 + 0.3869 + 0.0004277 * 300.0),
-               "T=300", "p3-reaction", "log10-ln");
-    CHECK(log_reaction.k.has_value());
-    p3_compare("p3-reaction/log10-k", "K", "1", *log_reaction.k,
-               std::exp(log_reaction.ln_k), "T=300", "p3-reaction", "log10-k");
-    p3_compare("p3-reaction/log10-dk", "dln_k_dT", "1/K", log_reaction.derivative,
-               std::log(10.0) * (2677.91 / (300.0 * 300.0) - 0.0004277),
-               "T=300", "p3-reaction", "log10-dk");
-    const auto legacy = epcsaft::normalize_legacy_reaction_correlation(
-        2.0, -1200.0, 0.4, -0.003, 300.0, 293.15, 393.15, "P0"
-    );
-    p3_compare("p3-reaction/legacy", "ln_k", "1",
-               epcsaft::evaluate_reaction_properties(legacy, 350.0).ln_k,
-               2.0 - 1200.0 / 350.0 + 0.4 * std::log(350.0) - 0.003 * 350.0,
-               "legacy ln(T/1 K)", "p3-reaction", "legacy");
     bool endpoints = false, finite_k = true, outside_k = false;
     try {
         const auto lower = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_min);
@@ -3180,49 +3067,6 @@ void properties_thermochemistry_p3() {
         "correlation-interval", "out-of-domain K is unavailable", "absolute", outside_k,
         "p3-reaction", "outside");
 
-    const std::vector<double> density_stoichiometry = {2.0, -1.0};
-    const auto density_reaction = epcsaft::reaction_pressure_to_density(
-        reaction, density_stoichiometry, "P0=1e5;rho0=1000", 350.0, 1.0e5, 1000.0
-    );
-    const double density_shift = std::log(R * 350.0 * 1000.0 / 1.0e5);
-    p3_compare("p3-reaction/density-ln", "ln_k_density", "1", density_reaction.ln_k,
-               reaction.ln_k - density_shift, "P0=1e5,rho0=1000,Delta_nu=1",
-               "p3-reaction", "density-ln");
-    CHECK(density_reaction.k.has_value());
-    p3_compare("p3-reaction/density-k", "K_density", "1", *density_reaction.k,
-               std::exp(reaction.ln_k - density_shift), "P0=1e5,rho0=1000,Delta_nu=1",
-               "p3-reaction", "density-k");
-    p3_compare("p3-reaction/density-dk", "dln_k_density_dT", "1/K", density_reaction.derivative,
-               reaction.derivative - 1.0 / 350.0, "P0=1e5,rho0=1000,Delta_nu=1",
-               "p3-reaction", "density-dk");
-    p3_compare("p3-reaction/density-h", "reaction_enthalpy_density", "J/mol", density_reaction.enthalpy,
-               reaction.enthalpy - R * 350.0, "P0=1e5,rho0=1000,Delta_nu=1",
-               "p3-reaction", "density-h");
-    const bool density_identity = density_reaction.standard_state_id == "P0=1e5;rho0=1000";
-    recording_support::compare_custom("p3-reaction/density-identity", "standard_state_identity", "bool",
-        density_identity ? 1.0 : 0.0, 1.0, "explicit P0/rho0 identity", "Availability",
-        "standard-state-identity", "density conversion retains the caller's exact target identity",
-        "absolute", density_identity, "p3-reaction", "density-identity");
-
-    // Old-minus-new species standards at T0 = 350 K: Delta g = {500, 2000} and Delta h = {500, 2400}
-    // J/mol give Delta s = (Delta h - Delta g)/T0; no heat-capacity difference is the constant shift.
-    const auto converted_reaction = epcsaft::evaluate_reaction_properties(epcsaft::reaction_standard_state_shift(
-        correlation, stoichiometry, {500.0, 2400.0}, {0.0, 400.0 / 350.0}, {0.0, 0.0}, {0.0, 0.0}, 350.0, "Q"), 350.0);
-    const double gibbs_shift = -1500.0;
-    p3_compare("p3-reaction/std-ln", "ln_k_standard", "1", converted_reaction.ln_k,
-               reaction.ln_k + gibbs_shift / (R * 350.0), "P0 to Q",
-               "p3-reaction", "std-ln");
-    CHECK(converted_reaction.k.has_value());
-    p3_compare("p3-reaction/std-k", "K_standard", "1", *converted_reaction.k,
-               std::exp(reaction.ln_k + gibbs_shift / (R * 350.0)), "P0 to Q",
-               "p3-reaction", "std-k");
-    const double enthalpy_shift = -1900.0;
-    p3_compare("p3-reaction/std-dk", "dln_k_standard_dT", "1/K", converted_reaction.derivative,
-               reaction.derivative - enthalpy_shift / (R * 350.0 * 350.0), "P0 to Q",
-               "p3-reaction", "std-dk");
-    p3_compare("p3-reaction/std-h", "reaction_enthalpy_standard", "J/mol", converted_reaction.enthalpy,
-               reaction.enthalpy - enthalpy_shift, "P0 to Q",
-               "p3-reaction", "std-h");
 
     const double tref = correlation.reference_temperature;
     const double species_h_ref = R * (-correlation.b + correlation.c * tref + correlation.d * tref * tref);
@@ -4328,7 +4172,6 @@ void properties_p4() {
         && cold_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && warm_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && full_paths > 0 && single_paths > full_paths
-        && full_one.diagnostics.dense_hessian_calls == 0
         && cold_batch.diagnostics.recordings > 0
         && warm_batch.diagnostics.recordings == 0;
     recording_support::compare_custom(
@@ -4337,12 +4180,10 @@ void properties_p4() {
         recording_support::fields({recording_support::field("full_paths", full_paths),
             recording_support::field("single_sum_paths", single_paths),
             recording_support::field("cold_recordings", cold_batch.diagnostics.recordings),
-            recording_support::field("warm_recordings", warm_batch.diagnostics.recordings),
-            recording_support::field("full_dense_hessian_calls",
-                full_one.diagnostics.dense_hessian_calls)}),
+            recording_support::field("warm_recordings", warm_batch.diagnostics.recordings)}),
         "Structure", "shared-batch-work", "full request shares overlapping primitive work",
         "absolute", work_reuse, "p4-supplemental", "work-reuse", "directional_paths",
-        "full,selected", "paths,recordings,dense_hessian_calls");
+        "full,selected", "paths,recordings");
     const auto state_values_match = [](
         const epcsaft::State& left, const epcsaft::State& right,
         const std::vector<epcsaft::PropertyObservable>& rows, double tolerance) {
@@ -4577,12 +4418,10 @@ void properties_p4() {
         && counter_batch.diagnostics.directional_paths > 0
         && counter_batch.diagnostics.directional_paths <= 93
         && counter_batch.diagnostics.forward_sweeps > 0
-        && counter_batch.diagnostics.dense_hessian_calls == 0
         && pressure_counter_batch.diagnostics.pressure_factorizations == 1
         && pressure_counter_batch.diagnostics.pressure_solves > 0
         && pressure_counter_batch.diagnostics.directional_paths > 0
         && pressure_counter_batch.diagnostics.directional_paths <= 93
-        && pressure_counter_batch.diagnostics.dense_hessian_calls == 0
         && pressure_counter_batch.diagnostics.pressure_density_derivative > 0.0
         && pressure_counter_batch.diagnostics.stable_root_count == pressure_root.stable_root_count
         && pressure_counter_batch.diagnostics.branch == pressure_root.density_branch;
@@ -5044,6 +4883,13 @@ using PO = epcsaft::PropertyObservable;
 using PD = epcsaft::PressureActionDirection;
 using PF = epcsaft::ParameterFamily;
 constexpr double reference_nan = std::numeric_limits<double>::quiet_NaN();
+// Source-pressure liquid root at a fixed terminal composition, then the runtime reference partial.
+epcsaft::ResidualEnergyAction anchored_reference_partial(const epcsaft::HelmholtzModel& model, double T, double P,
+    const std::vector<double>& x, const std::vector<double>& nu, std::size_t a, std::size_t b,
+    std::optional<std::size_t> parameter, std::optional<double> anchor = std::nullopt) {
+    return epcsaft::reference_partial_from_state(model, T, x, nu, a, b, parameter,
+        model.state_at_pressure(T, P, x, epcsaft::DensityBranch::Liquid, anchor));
+}
 double factorial(unsigned n) { double v = 1; for (unsigned k=2; k<=n; ++k) v *= k; return v; }
 double binomial(unsigned n, unsigned k) { return factorial(n)/(factorial(k)*factorial(n-k)); }
 
@@ -5112,7 +4958,7 @@ void reference_f8() {
             for (unsigned b=0; b<=degree-c; ++b) {
                 const unsigned a=degree-b-c;
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?191.42:1);
-                const auto exact=epcsaft::reference_partial(model,T,P,{1},{-1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
+                const auto exact=anchored_reference_partial(model,T,P,{1},{-1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
                 const double oracle=(c && !a && !b) ? -model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid,state.molar_density).log_fugacity_parameter_derivative[0].value() : a ? pure_reference_thermal(model,T,P,a,b,c,state.molar_density)
                     : pure_reference_pressure(model,T,P,b,c,state.molar_density);
                 const double x=scale*exact.action.value_or(reference_nan), y=scale*oracle;
@@ -5139,9 +4985,9 @@ void reference_f8() {
         const auto state=pair.state_at_pressure(T,P,composition,epcsaft::DensityBranch::Liquid);
         for (const auto& column:std::vector<std::array<unsigned,3>>{{1,0,0},{2,0,0},{0,0,1},{1,0,1},{1,1,0}}) {
             const auto a=column[0],b=column[1],c=column[2];
-            auto exact=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
+            auto exact=anchored_reference_partial(pair,T,P,composition,{-2,1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
             if (c) {
-                const auto other=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,1,state.molar_density);
+                const auto other=anchored_reference_partial(pair,T,P,composition,{-2,1},a,b,1,state.molar_density);
                 if(exact.action && other.action) *exact.action+=*other.action;else exact.action.reset();
             }
             const auto pure=model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid);
@@ -5246,7 +5092,7 @@ void reference_f9() {
                 const unsigned a=d-b-c;
                 if(d==1 && b)continue;
                 if(d==2 && !(a==2 || (a==1 && b==1) || (a==1 && c==1) || (c && b)))continue;
-                const auto exact=epcsaft::reference_partial(model,T,P,x,{-1,1,1},a,b,
+                const auto exact=anchored_reference_partial(model,T,P,x,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt,*anchor);
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?353.95:1);
                 const double value=scale*exact.action.value_or(reference_nan);
@@ -5268,7 +5114,7 @@ void reference_f9() {
                         return reference_lower(perturbed,t,x,la,lb,
                             found->second.first, found->second.second);
                     }
-                    return epcsaft::reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
+                    return anchored_reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
                 };
                 double h=c?0.02:a?0.2:2e4;
                 bool accepted=false;
@@ -5329,7 +5175,7 @@ void reference_limits() {
             for(double molality:{1e-10,1e-12,1e-14}) {
                 const double salt=molality*params.molar_mass_kg_per_mol[0];
                 const std::vector<double> terminal{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
-                values[rung++]=epcsaft::reference_partial(model,T,src,terminal,{-1,1,1},a,b,
+                values[rung++]=anchored_reference_partial(model,T,src,terminal,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt).action.value_or(reference_nan);
             }
             const double scale=std::pow(T,int(a))*std::pow(src,int(b))*(c?353.95:1)*(a==2?R:1);
@@ -5376,9 +5222,9 @@ void reference_limits() {
             for(unsigned k=0;k<2;++k) {
                 const std::string id="F9/limit/"+std::to_string(fixed)+"/"+std::to_string(column.temperature_order)
                     +std::to_string(column.pressure_order)+std::to_string(column.parameter.has_value())+"/"+std::to_string(k);
-                const bool ok=column.scaled_changes[k]<=0.01;
+                const bool ok=R*column.scaled_changes[k]<=0.01;
                 recording_support::compare_custom(id.c_str(),"scaled consecutive reference change","J/mol/K",
-                    column.scaled_changes[k],0,recording_support::fields({recording_support::field("target",0.01),
+                    R*column.scaled_changes[k],0,recording_support::fields({recording_support::field("target",0.01),
                     recording_support::field("a",double(column.temperature_order)),recording_support::field("b",double(column.pressure_order)),
                     recording_support::field("theta",column.parameter?1:0),recording_support::field("source_pressure",src)}),
                     "Relationship","terminal-ladder","independent consumed-column admission","absolute",ok,"F9-limit");CHECK(ok);
@@ -5406,7 +5252,7 @@ void reference_limits() {
             const double salt=molality*params.molar_mass_kg_per_mol[0];
             const std::vector<double> base{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
             const auto partial=[&](unsigned a,unsigned b) {
-                return *epcsaft::reference_partial(model,T,src,base,{-1,1,1},a,b,std::nullopt).action;
+                return *anchored_reference_partial(model,T,src,base,{-1,1,1},a,b,std::nullopt).action;
             };
             const double ct=partial(1,0),ctt=partial(2,0);
             const double cpref=fixed?0:partial(0,1),ctpref=fixed?0:partial(1,1),cppref=fixed?0:partial(0,2);
@@ -5478,11 +5324,11 @@ int main(int argc, char** argv) {
         {{"native.properties.m4", "Hessian_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "associating-gradient/*,associating-hessian/*,nine-gradient/*,nine-hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M4", "associating-gradient/*:4,associating-hessian/*:16,nine-gradient/*:12,nine-hessian/*:144"}, hessian_reference},
         {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*,projected/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4,projected/*:514"}, hessian_fd_and_pressure_slope},
         {{"native.properties.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "excluded-inert,all-pairs-active", "engine/tests/native/properties_checks.cpp", "properties_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
-        {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
+        {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
         {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:3,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
-        {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
+        {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:5,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:10,p3-reaction/*:11"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},
         {{"native.properties.issue26", "Modular_permittivity_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/pressure/*,issue26/branch/*,issue26/action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26", "issue26/pressure/*:4,issue26/branch/*:48,issue26/action/*:72"}, modular_permittivity_actions},

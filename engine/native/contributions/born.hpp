@@ -13,66 +13,47 @@ namespace epcsaft {
 
 template <typename Scalar, class ParameterSet>
 Scalar born_contribution(
-    const Scalar &temperature, const std::vector<Scalar> &mole_fractions,
-    const ParameterSet &parameters,
-    const Scalar &bulk_relative_permittivity) {
-  if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
-    return Scalar(0.0);
-  }
+    const Scalar& temperature, const std::vector<Scalar>& mole_fractions,
+    const ParameterSet& parameters, const Scalar& bulk_relative_permittivity
+) {
+    if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) return Scalar(0.0);
 
-  Scalar fraction_sum = Scalar(0.0);
-  Scalar weighted_solvation = Scalar(0.0);
-  for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-    const Scalar solvation_factor =
-        Scalar(parameters.solvation_factor[component]);
-    fraction_sum += mole_fractions[component];
-    weighted_solvation += mole_fractions[component] * solvation_factor;
-  }
-  if constexpr (std::is_same_v<Scalar, double>) {
-    if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation)) {
-      throw std::invalid_argument("invalid solvation-factor mixture");
+    Scalar fraction_sum = Scalar(0.0);
+    Scalar weighted_solvation = Scalar(0.0);
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        const Scalar solvation_factor = Scalar(parameters.solvation_factor[component]);
+        fraction_sum += mole_fractions[component];
+        weighted_solvation += mole_fractions[component] * solvation_factor;
     }
-  }
-  const Scalar mixture_solvation = weighted_solvation / fraction_sum;
-  const Scalar ionic_region_relative_permittivity =
-      Scalar(parameters.ionic_region_relative_permittivity);
-  Scalar radial_work = Scalar(0.0);
-  for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-    const int charge = parameters.charge_number[component];
-    if (charge == 0) {
-      continue;
-    }
-    const Scalar born_diameter =
-        parameters.born_diameter_angstrom[component] *
-        ANGSTROM_M;
-    // EqID: born_outer_shell_diameter
-    const Scalar outer_shell_diameter =
-        born_diameter *
-        (Scalar(1.0) + parameters.born_c_shell *
-                           (mixture_solvation - Scalar(1.0)) /
-                           std::abs(charge));
     if constexpr (std::is_same_v<Scalar, double>) {
-      if (!(outer_shell_diameter > 0.0) ||
-          !std::isfinite(outer_shell_diameter)) {
-        throw std::invalid_argument("Born outer-shell diameter is nonpositive");
-      }
+        if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation))
+            throw std::invalid_argument("invalid solvation-factor mixture");
     }
-    // EqID: born_radial_charging_work
-    radial_work += mole_fractions[component] * charge * charge *
-                   ((Scalar(1.0) - Scalar(1.0) /
-                                           bulk_relative_permittivity) /
-                        outer_shell_diameter +
-                    parameters.born_c_dielectric *
-                        (Scalar(1.0) - Scalar(1.0) /
-                                           ionic_region_relative_permittivity) *
-                        (Scalar(1.0) / born_diameter -
-                         Scalar(1.0) / outer_shell_diameter));
-  }
-  // EqID: born_residual_helmholtz
-  return -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C *
-         radial_work /
-         (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M *
-          BOLTZMANN_J_PER_K * temperature);
+    const Scalar mixture_solvation = weighted_solvation / fraction_sum;
+    const Scalar ionic_region_relative_permittivity =
+        Scalar(parameters.ionic_region_relative_permittivity);
+    Scalar radial_work = Scalar(0.0);
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        const int charge = parameters.charge_number[component];
+        if (charge == 0) continue;
+        const Scalar born_diameter = parameters.born_diameter_angstrom[component] * ANGSTROM_M;
+        // EqID: born_outer_shell_diameter
+        const Scalar outer_shell_diameter = born_diameter
+            * (Scalar(1.0) + parameters.born_c_shell * (mixture_solvation - Scalar(1.0)) / std::abs(charge));
+        if constexpr (std::is_same_v<Scalar, double>) {
+            if (!(outer_shell_diameter > 0.0) || !std::isfinite(outer_shell_diameter))
+                throw std::invalid_argument("Born outer-shell diameter is nonpositive");
+        }
+        // EqID: born_radial_charging_work
+        radial_work += mole_fractions[component] * charge * charge
+            * ((Scalar(1.0) - Scalar(1.0) / bulk_relative_permittivity) / outer_shell_diameter
+               + parameters.born_c_dielectric
+                   * (Scalar(1.0) - Scalar(1.0) / ionic_region_relative_permittivity)
+                   * (Scalar(1.0) / born_diameter - Scalar(1.0) / outer_shell_diameter));
+    }
+    // EqID: born_residual_helmholtz
+    return -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C * radial_work
+        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * temperature);
 }
 
 }  // namespace epcsaft

@@ -206,9 +206,8 @@ double moderate_isomerisation_a() {
     return std::log(2.0) - (1200.0 / 350.0 + 0.4 * std::log(350.0) + 0.002 * 350.0);
 }
 epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign, double a) {
-    return epcsaft::normalize_legacy_reaction_correlation(
-        sign * a, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
-        epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
+    return {sign * a + sign * 0.4 * std::log(300.0), sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
+        epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
 }
 
 void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compiled,
@@ -644,6 +643,13 @@ void check_s1() {
               epcsaft::equilibrium::solve_equilibrium(salt_model, salt), "salt");
 }
 
+const epcsaft::NeutralReferenceReactionDiagnostic::Derivative& temperature_parameter_column(
+    const epcsaft::NeutralReferenceReactionDiagnostic& diagnostic, std::size_t coordinate) {
+    for (const auto& column : diagnostic.lower_derivatives)
+        if (column.temperature_order == 1 && column.pressure_order == 0 && column.parameter == coordinate) return column;
+    throw std::logic_error("missing C_Ttheta column");
+}
+
 void check_s2() {
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto binary = equilibrium_support::flash(3);
@@ -1077,15 +1083,15 @@ void check_s2() {
                 recording_support::field("C_Ttheta_s1", mixed_s1),
                 recording_support::field("C_Ttheta", mixed),
                 recording_support::field("C_Ttheta_ladder_s0", std::vector<double>{
-                    diagnostic.temperature_parameter_ladder[0][0].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[0][1].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[0][2].value_or(std::nan(""))}),
+                    temperature_parameter_column(diagnostic, 0).ladder[0].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 0).ladder[1].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 0).ladder[2].value_or(std::nan(""))}),
                 recording_support::field("C_Ttheta_ladder_s1", std::vector<double>{
-                    diagnostic.temperature_parameter_ladder[1][0].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[1][1].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[1][2].value_or(std::nan(""))}),
-                recording_support::field("observed_C_Ttheta_admitted_change_s0", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[0])),
-                recording_support::field("observed_C_Ttheta_admitted_change_s1", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[1])),
+                    temperature_parameter_column(diagnostic, 1).ladder[0].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 1).ladder[1].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 1).ladder[2].value_or(std::nan(""))}),
+                recording_support::field("observed_C_Ttheta_admitted_change_s0", temperature_parameter_column(diagnostic, 0).scaled_changes[1]),
+                recording_support::field("observed_C_Ttheta_admitted_change_s1", temperature_parameter_column(diagnostic, 1).scaled_changes[1]),
                 recording_support::field("R_T2_C_Ttheta_J_per_mol_K", scaled_mixed),
                 recording_support::field("pure_pressure_action_J_per_mol_K", pure_slope),
                 recording_support::field("observed_C_T_admitted_change",
@@ -1182,11 +1188,11 @@ void check_s2() {
                     recording_support::field("P_Pa", pressure),
                     recording_support::field("P_ref_Pa", sources[source].reference_pressure_pa.value_or(pressure)),
                     recording_support::field("C_Ttheta_ladder", std::vector<double>{
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][0].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][1].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][2].value_or(std::numeric_limits<double>::quiet_NaN())}),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[0].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[1].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[2].value_or(std::numeric_limits<double>::quiet_NaN())}),
                     recording_support::field("observed_C_Ttheta_admitted_change",
-                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_parameter_change[coordinate])),
+                        temperature_parameter_column(exact_diagnostic, coordinate).scaled_changes[1]),
                     recording_support::field("observed_C_T_admitted_change",
                         epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change)),
                     recording_support::field("observed_terminal_change",
@@ -2896,17 +2902,14 @@ void check_e2_thermal() {
         pressure_law.a - std::log(R * tref * 1.0 / 1.0e5), pressure_law.b, pressure_law.c - 1.0, 0.0,
         tref, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
     const auto p3_pressure = epcsaft::evaluate_reaction_properties(pressure_law, 350.0);
-    const auto p3_density = epcsaft::reaction_pressure_to_density(
-        p3_pressure, {-1.0, 2.0}, epcsaft::equilibrium::EOS_STANDARD_STATE_ID, 350.0, 1.0e5, 1.0);
-    const auto p3_preconverted = epcsaft::evaluate_reaction_properties(density_law, 350.0);
+    const auto p3_density = epcsaft::evaluate_reaction_properties(density_law, 350.0);
     const double cp_density = R * (2.0 * 350.0 * p3_density.derivative + 350.0 * 350.0 * p3_density.second_derivative);
     const auto p3_inputs = recording_support::fields({recording_support::field("T", 350.0),
         recording_support::field("a_rho", density_law.a), recording_support::field("b_rho", density_law.b),
-        recording_support::field("c_rho", density_law.c), recording_support::field("ln_K_preconverted", p3_preconverted.ln_k)});
+        recording_support::field("c_rho", density_law.c)});
     recording_support::compare("e2-2/a-to-2b/ln_K_rho", "ln_K", "1", p3_density.ln_k, 3.5505788308151547, p3_inputs,
-        "Relationship", "standard-state-conversion", "P3 pressure-to-density conversion reproduces the preconverted correlation",
-        "strict_absolute", 1.0e-12, 0.0, std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12
-            && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12,
+        "Relationship", "standard-state-conversion", "preconverted density-basis correlation",
+        "strict_absolute", 1.0e-12, 0.0, std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12,
         "e2-2-thermal", "ln_K_rho", "\\ln K_\\rho", "T", "\\ln K_\\rho=3.5505788308151547", "case");
     recording_support::compare("e2-2/a-to-2b/dh_rho", "reaction_enthalpy", "J/mol", p3_density.enthalpy, -2410.061916353634, p3_inputs,
         "Relationship", "standard-state-conversion", "density-basis reaction enthalpy", "strict_absolute", 1.0e-9, 0.0,
@@ -2914,7 +2917,7 @@ void check_e2_thermal() {
     recording_support::compare("e2-2/a-to-2b/dcp_rho", "reaction_heat_capacity", "J/(mol K)", cp_density, 1.6855373818467605, p3_inputs,
         "Relationship", "standard-state-conversion", "density-basis reaction heat capacity from P3 derivatives", "strict_absolute", 1.0e-12, 0.0,
         std::abs(cp_density - 1.6855373818467605) <= 1.0e-12, "e2-2-thermal", "dcp_rho", "\\Delta c_{p,\\rho}", "T", "\\Delta c_{p,\\rho}", "case");
-    CHECK(std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12 && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12);
+    CHECK(std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12);
     CHECK(std::abs(p3_density.enthalpy + 2410.061916353634) <= 1.0e-9 && std::abs(cp_density - 1.6855373818467605) <= 1.0e-12);
     epcsaft::HelmholtzModel thermal(identical_ethane_pair(), {}, species_record(30.0, 20.0));
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
