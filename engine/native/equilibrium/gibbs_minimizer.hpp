@@ -26,9 +26,16 @@ struct EvaluationWork final {
     std::size_t constraint_hessians = 0;
 };
 
-// `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
+struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
+    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
+    void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
+    void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; }
+};
+// `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
+// A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 struct DriverLimits;
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
+                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
@@ -65,7 +72,7 @@ BranchCheck check_density_branches(
 struct DriverLimits final {
     std::size_t iterations;
     std::chrono::steady_clock::time_point deadline;
-    mutable std::size_t consumed = 0;
+    mutable std::size_t consumed = 0;  // summed over the solve and its seed sub-solves
     bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
 };
@@ -281,6 +288,7 @@ private:
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
     const DriverLimits* limits_ = nullptr;
+    std::size_t consumed_before_ = limits_ ? limits_->consumed : 0;  // the earlier stages' iterations
 };
 
 }  // namespace epcsaft::equilibrium

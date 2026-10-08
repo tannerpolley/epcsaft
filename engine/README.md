@@ -123,9 +123,11 @@ tried = equilibrium.solve_equilibrium_starts(model, problem, [equilibrium.Equili
 result = None if tried.selected is None else tried.results[tried.selected]  # tried.causes says why not
 ```
 
-A default `EquilibriumStart` begins from the feed composition, without the K-factor estimate, pressure
-seed or speciated seed that `solve_equilibrium` uses where they apply, so it can take a different path and work count to the
-same state (#350); it does not replay `solve_equilibrium`.
+A default `EquilibriumStart` runs the cold start of `solve_equilibrium`. If the limits are not exhausted, it
+reaches the same state with the same work (#350), except where the plain solve's speciated seeded attempt fails:
+`solve_equilibrium` then retries from its own start and the bounded start does not. A partial start generates only what it omits. Seed solves,
+such as a reacting bubble's liquid pre-solve, spend the same limits, and both functions include their work in
+the reported counts.
 
 Invalid declarations and inputs raise `ParameterError` (a `ValueError`) before iterating. A
 solve that runs reports non-convergence, structural infeasibility and rejected density

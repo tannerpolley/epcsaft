@@ -456,7 +456,12 @@ all-guessed rule above (#152: an unspeciated MEA liquid otherwise sends the
 fugacity step to the wrong liquid's bubble pressure and the solve into feasibility
 restoration). A caller start skips this seed. If the sub-solve, the seeding, the
 seeded solve or its density-branch admission fails or throws, the caller's own
-start runs unchanged; only the final attempt's diagnostics are returned. A reacting
+start runs unchanged; only the final attempt's diagnostics are returned. The
+reported iterations, evaluations and Hessian calls add the work of the sub-solves
+and of a failed seeded attempt, including the caloric seed's sub-solve, to the final solve's (#350).
+Work that ends in an exception is not counted: a seeded attempt or a speciation sub-solve
+that throws. Nor are the seed solves of the starts inside continuation, the stability
+search and the no-solution fallback. A reacting
 declaration of one free-amount phase, including that finite-phase sub-solve, starts
 from the ideal-solution speciation of the feed balances $Bn=b$ unless a previous
 successful result supplies its composition. Each chemical row's residual potential, $-\ln v$
@@ -487,15 +492,23 @@ a previous result, or a complete compiled-coordinate vector. Complete vectors
 skip generated initialization. Physical composition vectors use the completed
 declared supports: validate their original length and finite fractions in [0,1], then apply the
 same species restriction as compilation before checking surviving coordinates.
-Physical guesses fill omitted coordinates with
-existing generic/boundary seeds without reactive speciation, then replace every
-supplied coordinate, including reacting packing and the free-pressure seed.
+Physical guesses that supply every composition, packing, free amount and free
+intensive are used as given. Otherwise the start runs the plain solve's cold start above
+and then replaces every supplied coordinate. A supplied composition is
+not speciated over and skips the finite-phase sub-solve. The problem's own guesses
+act exactly as in the plain solve. Work limits bound the work but never select the start, so
+an empty start under limits that are not exhausted returns the plain solve's state and work (#350).
 Invalid initialization is an individual attempt cause. The first available state
 meeting the native row, topology and density-branch checks is selected; subsequent
 starts remain unattempted. No best-residual or Gibbs comparison selects another root.
 Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
 ordered search. Remaining iterations and time enter the shared Ipopt options and
-callbacks; polish and final admission check the same deadline. A bounded inner
+callbacks, of the seed sub-solves too; polish and final admission check the same deadline.
+The driver does not run once the sub-solves exhaust the iterations, and the plain
+solve's retry after a failed seeded attempt is not repeated. The default attempt
+limit, `EQUILIBRIUM_MAX_ITERATIONS` (200), covers all of an attempt's stages together,
+whereas the plain solve gives each driver run its own 200; a default start therefore
+differs from the plain solve once its stages add up to more than 200 iterations. A bounded inner
 kernel may finish after its deadline: elapsed time and overrun remain visible,
 and a post-deadline state is unavailable. Elapsed exhaustion is a controller cause,
 not a relabelled numerical stop: the common classifier retains its

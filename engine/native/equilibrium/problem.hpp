@@ -491,8 +491,9 @@ EquilibriumResult solve_equilibrium(
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
+struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
-                                 core::Scope* outer = nullptr);
+                                 core::Scope* outer = nullptr, const DriverLimits* limits = nullptr);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

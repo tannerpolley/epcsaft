@@ -424,5 +424,6 @@ compiled coordinates for one unchanged thermodynamic problem (ALG-EQUILIBRIUM).
 optimizer iterations and elapsed seconds; `EquilibriumStartsResult` records ordered
 attempts, residual-bearing results, initialization causes, consumed work and the
 first admitted index. `DriverLimits` passes the remaining work into the existing
-Ipopt driver. These names describe inputs, quantities and operations, not new
+Ipopt driver and the start's seed sub-solves. An empty or partial start uses the
+cold start of `solve_equilibrium`; limits bound the work and never choose the start (#350). These names describe inputs, quantities and operations, not new
 thermodynamic models.
