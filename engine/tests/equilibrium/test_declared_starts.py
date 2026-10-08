@@ -1,12 +1,15 @@
-"""Ordered declared starts: analytic exchange amounts and a shared work quota (#238)."""
+"""Ordered declared starts: analytic exchange amounts, a shared work quota (#238) and the shared cold start (#350)."""
 from copy import deepcopy
 from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, Pure
+from epcsaft import Mixture, Parameters, Pure
 from epcsaft import equilibrium as eq
+from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
+from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS
 from tests.native_inputs import ETHANE, parameters
+from tests.packets import parameters_json
 
 
 def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -> None:
@@ -139,3 +142,39 @@ def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None
         start.compositions = [[1., invalid_fraction, 0.], [1., 0., 0.]]
         refused = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits())
         assert refused.selected is None and refused.results[0] is None and refused.iterations == 0
+
+
+def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -> None:
+    """#350: packet-3 MEA at loading 0.2556 and 318.15 K. A default start runs the plain solve's cold start (the
+    two-phase K-factor estimate, the single-liquid speciation, the bubble's liquid pre-solve at its pressure seed and
+    fugacity pressure step) under its work limits, so it returns the same state and summed work. The bubble reports
+    that pre-solve's work, and a budget below it stops before the bubble solve."""
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450., EOS_STANDARD_STATE_ID))
+                 for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), strict=True)]
+    feed = eq.Amounts({"carbon-dioxide": .25557798094241313 * 9.7292821, "monoethanolamine": 9.7292821,
+                       "water": 76.9751925})
+
+    def problem(pressure: Any, *vapor: eq.Phase) -> eq.Problem:
+        return eq.Problem(T=318.15, P=pressure, phases=[eq.Phase("L", kind="liquid"), *vapor], feed=feed,
+                          reactions=reactions, row_tolerance=1e-10)
+
+    bubble = problem(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Pinned(0.)))
+    work = ("iterations", "evaluations", "hessian_calls")
+    for declared in (bubble, problem(5918.5286, eq.Phase("V", kind="vapor", support=_MEA[:3])), problem(8877.7929)):
+        plain = eq.solve_equilibrium(model, declared)
+        started = eq.solve_equilibrium_starts(model, declared, [eq.EquilibriumStart()], eq.EquilibriumWorkLimits())
+        result = started.results[0]
+        assert plain.success and started.selected == 0 and result is not None, started.causes
+        assert [getattr(result, k) for k in work] == [getattr(plain, k) for k in work]
+        assert started.iterations == plain.iterations
+        for key in ("pressure", "amounts", "mole_fractions", "molar_densities"):
+            for x, y in zip(getattr(plain, key), getattr(result, key), strict=True):
+                assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
+    presolve = eq.solve_equilibrium(model, problem(7398.16))
+    plain = eq.solve_equilibrium(model, bubble)
+    assert all(getattr(plain, k) > getattr(presolve, k) for k in work)
+    stopped = eq.solve_equilibrium_starts(model, bubble, [eq.EquilibriumStart()],
+                                          eq.EquilibriumWorkLimits(iterations=presolve.iterations - 1))
+    assert stopped.selected is None and stopped.results[0] is None and stopped.iterations == presolve.iterations - 1
+    assert "iteration budget" in stopped.causes[0], stopped.causes
