@@ -209,7 +209,7 @@ hash_trees() {
 compute_source_sha256() {
     local wheel_inputs test_inputs
     wheel_inputs="$(
-        hash_trees tools/ensure-engine-wheel.sh engine/LICENSE engine/README.md \
+        hash_trees tools/ensure-engine-wheel.sh engine/LICENSE \
             engine/meson.build engine/pyproject.toml engine/native engine/src \
             engine/build/subprojects/packagefiles engine/build/subprojects/*.wrap
     )" || return 1
