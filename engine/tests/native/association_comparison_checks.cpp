@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <limits>
 #include <optional>
@@ -27,6 +28,30 @@
 namespace {
 
 using AD = CppAD::AD<double>;
+
+// The association-comparison analysis reads these expected keys and group counts
+// (EPCSAFT_EXPECT_JSON) to confirm that every comparison it needs was recorded.
+void expect_keys() {
+    std::printf("EPCSAFT_EXPECT_JSON {\"schema_version\":1,\"test_id\":\"native.association.comparison\","
+                "\"expected_comparison_keys\":[\"site-fraction/*\",\"candidate-residual/*\",\"reference-residual/*\","
+                "\"association-energy/*\",\"residual-energy/*\",\"association-gradient/*\",\"residual-gradient/*\","
+                "\"association-hessian/*\",\"residual-hessian/*\",\"reference-quality/*\",\"centered-gradient/*\","
+                "\"centered-hessian/*\",\"centered-mixed/*\",\"analytic-control/*\",\"k-residual-identity/*\","
+                "\"production-weighted-hessian/*\",\"extensive-scaling/*\",\"failure-continuation\"]}\n");
+}
+
+void expect_group(const char* test_id, const char* comparison_group_id, const char* comparison_id_prefix,
+                  std::size_t expected_count, const std::string& definition, const char* coordinates) {
+    using recording_support::json_string;
+    std::printf("EPCSAFT_EXPECT_JSON {\"schema_version\":1,\"test_id\":%s,\"comparison_group_id\":%s,"
+                "\"comparison_id_prefix\":%s,\"expected_count\":%zu,\"coordinates\":%s,\"definition\":%s}\n",
+                json_string(test_id).c_str(), json_string(comparison_group_id).c_str(),
+                json_string(comparison_id_prefix).c_str(), expected_count,
+                recording_support::json_fields_object(coordinates).c_str(),
+                recording_support::json_fields_object(definition).c_str());
+    std::fflush(stdout);
+}
+
 using Parameters = epcsaft::Parameters;
 constexpr std::array<std::size_t, 4> DEPTHS = {8, 16, 24, 32};
 constexpr std::size_t QUALIFYING_DEPTH = 16;
@@ -769,7 +794,7 @@ void reference_diagnostics(const TestCase& test_case, const Reference& reference
 
 bool compare_row(const char* comparison_id, const char* quantity, const char* unit, double model, double reference,
     const std::string& inputs, const char* basis, const char* method, const char* claim, const char* criterion,
-    double atol, double rtol, bool, const char* comparison_group_id = nullptr, const char* point_id = nullptr,
+    double atol, double rtol, const char* comparison_group_id = nullptr, const char* point_id = nullptr,
     const char* quantity_latex = nullptr, const char* inputs_latex = nullptr, const char* relationship_latex = nullptr,
     const char* coordinates = nullptr) {
     const bool verdict = recording_support::scalar_verdict(model, reference, criterion, atol, rtol);
@@ -796,24 +821,24 @@ bool compare_values(const TestCase& test_case, const Candidate& candidate, const
         const std::string id = depth_id(depth, "site-fraction", point);
         passed = compare_row(id.c_str(), "site_fraction", "1",
             candidate.sites[site], reference.sites[site], inputs, "Comparison", "fixed_depth_candidate", "site fraction agreement",
-            "reference_scale", 1.0e-12, SITE_RTOL, true, "site-fraction", ("d" + std::to_string(depth) + "/" + point).c_str(), "X", "T,V,n", "X_candidate=X_reference", "site") && passed;
+            "reference_scale", 1.0e-12, SITE_RTOL, "site-fraction", ("d" + std::to_string(depth) + "/" + point).c_str(), "X", "T,V,n", "X_candidate=X_reference", "site") && passed;
         const std::string residual_id = depth_id(depth, "candidate-residual", point);
         passed = compare_row(residual_id.c_str(), "mass_action_residual", "1",
             candidate.mass_action[site], 0.0, inputs, "Comparison", "defining_residual", "candidate original residual",
-            "strict_absolute", VALUE_TOL, 0.0, true, "candidate-residual", ("d" + std::to_string(depth) + "/" + point).c_str(), "F", "T,V,n", "F_candidate=0", "site") && passed;
+            "strict_absolute", VALUE_TOL, 0.0, "candidate-residual", ("d" + std::to_string(depth) + "/" + point).c_str(), "F", "T,V,n", "F_candidate=0", "site") && passed;
         const std::string reference_id = depth_id(depth, "reference-residual", point);
         passed = compare_row(reference_id.c_str(), "reference_mass_action_residual", "1",
             reference.mass_action[site], 0.0, inputs, "Reference", "defining_residual", "reference original residual",
-            "strict_absolute", REFERENCE_TOL, 0.0, true, "reference-residual", ("d" + std::to_string(depth) + "/" + point).c_str(), "F", "T,V,n", "F_reference=0", "site") && passed;
+            "strict_absolute", REFERENCE_TOL, 0.0, "reference-residual", ("d" + std::to_string(depth) + "/" + point).c_str(), "F", "T,V,n", "F_reference=0", "site") && passed;
     }
     const std::string association_id = depth_id(depth, "association-energy", test_case.id);
     passed = compare_row(association_id.c_str(), "Phi_association", "1",
         candidate.association, reference.association, inputs, "Comparison", "fixed_depth_candidate", "extensive association energy",
-        "strict_reference_or_one", 0.0, ENERGY_RTOL, true, "association-energy", ("d" + std::to_string(depth) + "/" + test_case.id).c_str(), "Phi_assoc", "T,V,n", "candidate=reference", "case") && passed;
+        "strict_reference_or_one", 0.0, ENERGY_RTOL, "association-energy", ("d" + std::to_string(depth) + "/" + test_case.id).c_str(), "Phi_assoc", "T,V,n", "candidate=reference", "case") && passed;
     const std::string residual_id = depth_id(depth, "residual-energy", test_case.id);
     passed = compare_row(residual_id.c_str(), "Phi_residual", "1",
         candidate.residual, reference.residual, inputs, "Comparison", "fixed_depth_candidate", "extensive residual energy",
-        "strict_reference_or_one", 0.0, ENERGY_RTOL, true, "residual-energy", ("d" + std::to_string(depth) + "/" + test_case.id).c_str(), "Phi_res", "T,V,n", "candidate=reference", "case") && passed;
+        "strict_reference_or_one", 0.0, ENERGY_RTOL, "residual-energy", ("d" + std::to_string(depth) + "/" + test_case.id).c_str(), "Phi_res", "T,V,n", "candidate=reference", "case") && passed;
     return passed;
 }
 
@@ -835,7 +860,7 @@ bool compare_derivative_set(const TestCase& test_case, const Candidate& candidat
         const std::string id = depth_id(depth, gradient_group.c_str(), point);
         passed = compare_row(id.c_str(), "scaled_gradient", "1",
             model_gradient[coordinate] * scale, reference_gradient[coordinate] * scale, details, "Comparison", "CppAD_vs_implicit_reference",
-            claim, "reference_scale", DERIVATIVE_ATOL, DERIVATIVE_RTOL, true, gradient_group.c_str(), ("d" + std::to_string(depth) + "/" + point).c_str(), "dPhi/dq_scaled", "T,V,n,active", "candidate=reference", "coordinate") && passed;
+            claim, "reference_scale", DERIVATIVE_ATOL, DERIVATIVE_RTOL, gradient_group.c_str(), ("d" + std::to_string(depth) + "/" + point).c_str(), "dPhi/dq_scaled", "T,V,n,active", "candidate=reference", "coordinate") && passed;
     }
     for (std::size_t row = 0; row < width; ++row) for (std::size_t column = 0; column < width; ++column) {
         const std::size_t entry = row * width + column;
@@ -847,7 +872,7 @@ bool compare_derivative_set(const TestCase& test_case, const Candidate& candidat
             const std::string id = depth_id(depth, hessian_group.c_str(), point);
             passed = compare_row(id.c_str(), "scaled_hessian", "1",
             model_hessian[entry] * scale, reference_hessian[entry] * scale, details, "Comparison", "CppAD_vs_implicit_reference",
-            claim, "reference_scale", DERIVATIVE_ATOL, DERIVATIVE_RTOL, true, hessian_group.c_str(), ("d" + std::to_string(depth) + "/" + point).c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "candidate=reference", "row,column") && passed;
+            claim, "reference_scale", DERIVATIVE_ATOL, DERIVATIVE_RTOL, hessian_group.c_str(), ("d" + std::to_string(depth) + "/" + point).c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "candidate=reference", "row,column") && passed;
     }
     return passed;
 }
@@ -1044,11 +1069,11 @@ bool centered_checks(const TestCase& test_case, const std::vector<std::size_t>& 
                     if (difference.available && source_available) {
                         bool result = compare_row(prefix.c_str(), "centered_gradient", "1", difference.first * scale,
                             analytic_first * scale, row_inputs, "Independent_check", "finite_difference", "finite-difference energy gradient",
-                            "reference_scale", CENTERED_ATOL, CENTERED_RTOL, true, "centered-gradient", point.c_str(), "dPhi/dq_scaled", "T,V,n,active", "stencil=graph", "coordinate");
+                            "reference_scale", CENTERED_ATOL, CENTERED_RTOL, "centered-gradient", point.c_str(), "dPhi/dq_scaled", "T,V,n,active", "stencil=graph", "coordinate");
                         const std::string hessian_id = std::string("centered-hessian/") + source + "/" + point;
                         result = compare_row(hessian_id.c_str(), "centered_hessian", "1", difference.second * scale * scale,
                             analytic_second * scale * scale, row_inputs, "Independent_check", "finite_difference", "finite-difference energy Hessian",
-                            "reference_scale", CENTERED_ATOL, CENTERED_RTOL, true, "centered-hessian", point.c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "stencil=graph", "coordinate") && result;
+                            "reference_scale", CENTERED_ATOL, CENTERED_RTOL, "centered-hessian", point.c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "stencil=graph", "coordinate") && result;
                         return result;
                     }
                     observe_centered_unavailable(prefix, "centered_gradient", row_inputs, "centered-gradient", point.c_str(), "finite_difference", "coordinate");
@@ -1088,7 +1113,7 @@ bool centered_checks(const TestCase& test_case, const std::vector<std::size_t>& 
                         difference.first * scale_for(test_case, row) * scale_for(test_case, column),
                         analytic * scale_for(test_case, row) * scale_for(test_case, column), row_inputs,
                         "Independent_check", "finite_difference", "finite-difference mixed energy Hessian", "reference_scale",
-                        CENTERED_ATOL, CENTERED_RTOL, true, "centered-mixed", point.c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "stencil=graph", "row,column");
+                        CENTERED_ATOL, CENTERED_RTOL, "centered-mixed", point.c_str(), "d2Phi/dq_scaled2", "T,V,n,active", "stencil=graph", "row,column");
                 observe_centered_unavailable(id, "centered_mixed_hessian", row_inputs, "centered-mixed", point.c_str(), "finite_difference", "row,column");
                 return false;
             };
@@ -1132,7 +1157,7 @@ bool analytic_controls(const TestCase& test_case, const Candidate& candidate, bo
         const std::string id = depth_id(depth, "analytic-control", std::string(test_case.id) + "/" + std::to_string(site));
         passed = compare_row(id.c_str(),
             "site_fraction", "1", candidate.sites[site], expected[site], recording_support::fields({recording_support::field("case_id", test_case.id), recording_support::field("coupling", k[1])}),
-            "Analytic_control", "closed_form", "candidate matches pure-site control", "strict_reference_scale", 1.0e-12, 1.0e-12, true,
+            "Analytic_control", "closed_form", "candidate matches pure-site control", "strict_reference_scale", 1.0e-12, 1.0e-12,
             "analytic-control", test_case.id, "X", "T,V,n", "candidate=closed_form", "site") && passed;
     }
     return passed;
@@ -1157,7 +1182,7 @@ bool k_identity(const TestCase& test_case, const Candidate& candidate, std::size
         passed = compare_row(id.c_str(),
             "mass_action_residual", "1", candidate.mass_action[row], manual,
             recording_support::fields({recording_support::field("case_id", test_case.id), recording_support::field("K_row", std::vector<double>(k.begin() + row * candidate.sites.size(), k.begin() + (row + 1) * candidate.sites.size()))}),
-            "Relationship", "shared_residual", "association residual uses rho_hat x_b nu_b Delta", "strict_reference_scale", 1.0e-14, 1.0e-14, true,
+            "Relationship", "shared_residual", "association residual uses rho_hat x_b nu_b Delta", "strict_reference_scale", 1.0e-14, 1.0e-14,
             "k-residual-identity", test_case.id, "F", "T,V,n", "F_shared=F_manual", "site") && passed;
     }
     return passed;
@@ -1241,7 +1266,7 @@ bool extensive_scaling(const TestCase& test_case) {
     const double doubled = candidate_energy(scaled).residual;
     return compare_row("extensive-scaling/heterogeneous-cross", "Phi_residual", "1", doubled, 2.0 * center,
         "case_id:heterogeneous-cross;amount_scale:2;volume_scale:2", "Relationship", "candidate_extensivity", "Phi_res scales with total amount at fixed density",
-        "strict_reference_scale", 1.0e-10, 1.0e-12, true, "extensive-scaling", "heterogeneous-cross", "Phi_res", "T,V,n", "Phi(2n,2V)=2Phi(n,V)", "case");
+        "strict_reference_scale", 1.0e-10, 1.0e-12, "extensive-scaling", "heterogeneous-cross", "Phi_res", "T,V,n", "Phi(2n,2V)=2Phi(n,V)", "case");
 }
 
 bool failure_continuation(const TestCase& valid_case) {
@@ -1270,6 +1295,7 @@ bool failure_continuation(const TestCase& valid_case) {
 }
 
 void association_comparison() {
+    expect_keys();
     CppAD::ErrorHandler error_handler(cppad_error_handler);
     const auto cases = test_cases();
     const std::string selector = campaign_selector();
@@ -1298,7 +1324,7 @@ void association_comparison() {
         std::size_t count, const char* coordinates) {
         for (const std::size_t depth : depths) {
             const std::string prefix = depth_prefix(depth, group);
-            recording_support::expect_group(recording_support::active_test_id(), group,
+            expect_group(recording_support::active_test_id(), group,
                 prefix.c_str(), count, definition, coordinates);
         }
     };
@@ -1313,21 +1339,21 @@ void association_comparison() {
     expect_depth_group("residual-hessian", "scaled residual Hessian", hessian_entries, "case,row,column");
     expect_depth_group("k-residual-identity", "shared K and residual identity", sites, "case,site");
     expect_depth_group("analytic-control", "pure 2B and 3B controls", analytic_sites, "case,site");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-quality", "reference-quality/", selected.size(), "reference condition diagnostics", "case");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-first-sensitivity", "reference-first-sensitivity/", selected.size(), "reference first sensitivity diagnostics", "coordinate");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-second-sensitivity", "reference-second-sensitivity/", selected.size(), "reference second sensitivity diagnostics", "row,column");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-sensitivity-proxy", "reference-sensitivity-proxy/", selected.size(), "reference sensitivity error proxy", "case");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-newton-defect", "reference-newton-defect/", selected.size(), "reference Newton defect", "case");
+    expect_group(recording_support::active_test_id(), "reference-quality", "reference-quality/", selected.size(), "reference condition diagnostics", "case");
+    expect_group(recording_support::active_test_id(), "reference-first-sensitivity", "reference-first-sensitivity/", selected.size(), "reference first sensitivity diagnostics", "coordinate");
+    expect_group(recording_support::active_test_id(), "reference-second-sensitivity", "reference-second-sensitivity/", selected.size(), "reference second sensitivity diagnostics", "row,column");
+    expect_group(recording_support::active_test_id(), "reference-sensitivity-proxy", "reference-sensitivity-proxy/", selected.size(), "reference sensitivity error proxy", "case");
+    expect_group(recording_support::active_test_id(), "reference-newton-defect", "reference-newton-defect/", selected.size(), "reference Newton defect", "case");
     const bool full_campaign = selector == "all";
     if (full_campaign) {
         constexpr std::size_t centered_coordinates = 31;
         constexpr std::size_t centered_mixed = 10;
-        recording_support::expect_group(recording_support::active_test_id(), "centered-gradient", "centered-gradient/", 8 * centered_coordinates, "candidate and reference finite-difference gradients at two steps", "source,energy,case,step,coordinate");
-        recording_support::expect_group(recording_support::active_test_id(), "centered-hessian", "centered-hessian/", 8 * centered_coordinates, "candidate and reference finite-difference Hessians at two steps", "source,energy,case,step,coordinate");
-        recording_support::expect_group(recording_support::active_test_id(), "centered-mixed", "centered-mixed/", 8 * centered_mixed, "candidate and reference finite-difference mixed Hessians at two steps", "source,energy,case,step,row,column");
-        recording_support::expect_group(recording_support::active_test_id(), "production-weighted-hessian", "production-weighted-hessian/", 1, "known exact-zero production limitation", "case");
-        recording_support::expect_group(recording_support::active_test_id(), "extensive-scaling", "extensive-scaling/", 1, "extensive Helmholtz scaling", "case");
-        recording_support::expect_group(recording_support::active_test_id(), "failure-continuation", "failure-continuation", 1, "failed case followed by valid case", "case");
+        expect_group(recording_support::active_test_id(), "centered-gradient", "centered-gradient/", 8 * centered_coordinates, "candidate and reference finite-difference gradients at two steps", "source,energy,case,step,coordinate");
+        expect_group(recording_support::active_test_id(), "centered-hessian", "centered-hessian/", 8 * centered_coordinates, "candidate and reference finite-difference Hessians at two steps", "source,energy,case,step,coordinate");
+        expect_group(recording_support::active_test_id(), "centered-mixed", "centered-mixed/", 8 * centered_mixed, "candidate and reference finite-difference mixed Hessians at two steps", "source,energy,case,step,row,column");
+        expect_group(recording_support::active_test_id(), "production-weighted-hessian", "production-weighted-hessian/", 1, "known exact-zero production limitation", "case");
+        expect_group(recording_support::active_test_id(), "extensive-scaling", "extensive-scaling/", 1, "extensive Helmholtz scaling", "case");
+        expect_group(recording_support::active_test_id(), "failure-continuation", "failure-continuation", 1, "failed case followed by valid case", "case");
     }
     bool passed = true;
     for (const TestCase* test_case : selected) {
@@ -1400,6 +1426,6 @@ void association_comparison() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.association.comparison", "Fixed_depth_native_association_comparison", "Numerical", "Contributions/Properties", "Explicit", "Numerical", "Association", "P2/M4", "site-fraction/*,candidate-residual/*,reference-residual/*,association-energy/*,residual-energy/*,association-gradient/*,residual-gradient/*,association-hessian/*,residual-hessian/*,reference-quality/*,centered-gradient/*,centered-hessian/*,centered-mixed/*,analytic-control/*,k-residual-identity/*,production-weighted-hessian/*,extensive-scaling/*,failure-continuation", "engine/tests/native/association_comparison_checks.cpp", "association_comparison_checks", "association-comparison", ""}, association_comparison}
+        {{"native.association.comparison", "association-comparison"}, association_comparison}
     });
 }

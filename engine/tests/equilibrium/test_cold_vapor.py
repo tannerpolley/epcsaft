@@ -6,8 +6,7 @@ from typing import Any
 from epcsaft import Mixture
 from epcsaft.equilibrium import Free, Reaction, ReactionLogPolynomial, solve_equilibrium
 
-from ..native_inputs import parameters, same
-from ..regression.test_fit import bubble
+from tests.native_inputs import bubble, parameters, same
 
 
 def test_cold_free_temperature_vapor_recovers_j1(evidence: Any) -> None:

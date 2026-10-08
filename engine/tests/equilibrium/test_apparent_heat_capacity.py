@@ -4,15 +4,15 @@ from epcsaft import Mixture, ActiveParameter, ParameterFamily, regression
 from epcsaft.equilibrium import SolvedStateObservable, SolvedStateObservableKind as Kind
 from epcsaft.equilibrium import SolvedStateActionRequest, SolvedStateActionDirection
 from epcsaft.equilibrium import compile_problem, solve_equilibrium, solved_state_actions, SolvedStateActionStatus
-from .test_reference_calorics import _model, _problem, A_RECORD, _record
+from tests.native_inputs import A_RECORD, dimer_problem, records, twin_ethane
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 5.0e6])
 def test_apparent_heat_capacity_transport(reference_pressure: float | None) -> None:
-    parameters = _model(A_RECORD, []).parameters
+    parameters = twin_ethane(A_RECORD, []).parameters
     model = Mixture(parameters, active_parameters=[ActiveParameter(ParameterFamily.DispersionEnergyOverK, [0])],
-                    thermochemistry=_record(A_RECORD, []))
-    problem = _problem(260.0, reference_pressure)
+                    thermochemistry=records(A_RECORD, []))
+    problem = dimer_problem(260.0, reference_pressure)
     observation = regression.observation(parameters, "equilibrium_isobaric_heat_capacity", problem,
                                         observed=1.0, form="difference", scale=1.0, mass_basis=False)
     prediction = regression.predict(model, observation)
@@ -27,8 +27,8 @@ def test_apparent_heat_capacity_transport(reference_pressure: float | None) -> N
 
 
 def test_apparent_heat_capacity_preserves_value_on_support_insertion() -> None:
-    model = _model(A_RECORD, A_RECORD)
-    problem = _problem(260.0, None, feed={"s0": 2.0, "s1": 0.0})
+    model = twin_ethane(A_RECORD, A_RECORD)
+    problem = dimer_problem(260.0, None, feed={"s0": 2.0, "s1": 0.0})
     problem.reactions = ()
     state = solve_equilibrium(model, problem)
     compiled = compile_problem(model, problem)

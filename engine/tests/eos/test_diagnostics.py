@@ -1,32 +1,10 @@
-import hashlib
-import json
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Convergence, Mixture, Parameters, Stop, _core, trace
+from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
-
-REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-
-
-def _parameter_metadata(path: Path, packet_id: str, version: int, components: tuple[str, ...]) -> dict[str, object]:
-    supplied_mapping = json.loads(path.read_text())
-    return {
-        "packet_id": packet_id,
-        "packet_version": version,
-        "parameter_file": {
-            "path": str(path.relative_to(REPOSITORY_ROOT)),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "size_bytes": path.stat().st_size,
-        },
-        "effective_parameters": {
-            "supplied_mapping": supplied_mapping,
-            "selected_components": list(components),
-        },
-    }
-
 
 def _stopping_criterion(*, threshold: float, verdict: bool, name: str) -> dict[str, object]:
     return {
@@ -65,12 +43,7 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
         "pressure_target_Pa": pressure_target,
         "composition": list(composition),
         "phase": phase,
-        "_parameters": _parameter_metadata(
-            parameter_path,
-            "gross-2001-methane-ethane",
-            2,
-            components,
-        ),
+        "_parameters": packet_metadata(parameter_path, components),
     }
     exact = {
         "type": "scalar",
@@ -95,67 +68,35 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
         quantity_latex="r",
         inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
     )
+    assert convergence.stop == Stop.converged and root.convergence.stop == convergence.stop
+    stop_criterion = convergence.criterion
+    assert stop_criterion is not None
     fixed_density = mixture.state(temperature, rho=state.molar_density, x=composition)
     pressure_residual = abs(fixed_density.pressure - pressure_target) / (
         state.molar_density * GAS_CONSTANT_J_PER_MOL_K * temperature
     )
-    if convergence.stop == Stop.converged:
-        stop_criterion = convergence.criterion
-        assert stop_criterion is not None
-        assert pressure_residual <= stop_criterion.value
-        if stop_criterion is not None:
-            evidence.compare(
-                "trace_identity/residual_criterion",
-                quantity="density root residual against stopping criterion",
-                model=float(convergence.residual),
-                reference=float(stop_criterion.value),
-                unit="1",
-                inputs={**inputs, "criterion_name": stop_criterion.name},
-                criterion=_stopping_criterion(
-                    threshold=float(stop_criterion.value),
-                    verdict=convergence.residual <= stop_criterion.value,
-                    name=stop_criterion.name,
-                ),
-                basis="Relationship",
-                method="density root stopping criterion",
-                claim="A converged density root satisfies its recorded stopping criterion.",
-                relationship_latex=r"r \leq r_{criterion}",
-                quantity_latex="r",
-                inputs_latex=r"T,P,\mathbf{x},\mathrm{phase},r_{criterion}",
-            )
-        else:
-            evidence.observe(
-                "trace_identity/residual_criterion",
-                quantity="density root residual",
-                model=float(convergence.residual),
-                unit="1",
-                inputs={**inputs, "stop": str(convergence.stop), "criterion": "missing"},
-                basis="Relationship",
-                method="density root convergence diagnostic",
-                claim="A converged result retains its residual when the solver criterion is unavailable.",
-                relationship_latex=r"r_{observed}",
-                quantity_latex="r",
-                inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
-            )
-    else:
-        evidence.observe(
-            "trace_identity/residual_criterion",
-            quantity="density root residual",
-            model=float(convergence.residual),
-            unit="1",
-            inputs={**inputs, "stop": str(convergence.stop), "criterion": "not available"},
-            basis="Relationship",
-            method="density root convergence diagnostic",
-            claim="The non-converged residual is retained without inventing a stopping criterion.",
-            relationship_latex=r"r_{observed}",
-            quantity_latex="r",
-            inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
-        )
+    assert pressure_residual <= stop_criterion.value
+    evidence.compare(
+        "trace_identity/residual_criterion",
+        quantity="density root residual against stopping criterion",
+        model=float(convergence.residual),
+        reference=float(stop_criterion.value),
+        unit="1",
+        inputs={**inputs, "criterion_name": stop_criterion.name},
+        criterion=_stopping_criterion(
+            threshold=float(stop_criterion.value),
+            verdict=convergence.residual <= stop_criterion.value,
+            name=stop_criterion.name,
+        ),
+        basis="Relationship",
+        method="density root stopping criterion",
+        claim="A converged density root satisfies its recorded stopping criterion.",
+        relationship_latex=r"r \leq r_{criterion}",
+        quantity_latex="r",
+        inputs_latex=r"T,P,\mathbf{x},\mathrm{phase},r_{criterion}",
+    )
     assert root.convergence.residual == convergence.residual
-    assert root.convergence.stop == convergence.stop
-    if convergence.stop == Stop.converged:
-        assert stop_criterion is not None
-        assert convergence.residual <= stop_criterion.value
+    assert convergence.residual <= stop_criterion.value
 
 
 def test_reference_formula_and_solvent_must_be_electroneutral() -> None:

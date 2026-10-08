@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/trace.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/problem.hpp"
 #include "properties_support.hpp"
 #include "recording_support.hpp"
@@ -16,8 +17,6 @@
 #include <vector>
 
 namespace equilibrium_support {
-
-inline int failures = 0;
 
 // Record labels of declaration enums.
 inline const char* phase_kind_name(epcsaft::equilibrium::PhaseKind kind) noexcept {
@@ -54,21 +53,6 @@ inline std::vector<double> reaction_affinities(
     return result;
 }
 
-inline void fail(const char* file, int line, const char* expression) {
-    std::fprintf(stderr, "%s:%d: failed: %s\n", file, line, expression);
-    ++failures;
-}
-
-inline void check(bool condition, const char* file, int line, const char* expression) {
-    if (!condition) {
-        fail(file, line, expression);
-        throw recording_support::Failure(
-            std::string(file) + ":" + std::to_string(line)
-            + ": failed: " + expression
-        );
-    }
-}
-
 inline void print_trace(const epcsaft::core::Trace& trace) {
     for (std::size_t i = 0; i < trace.spans.size(); ++i) {
         const auto& span = trace.spans[i];
@@ -79,24 +63,6 @@ inline void print_trace(const epcsaft::core::Trace& trace) {
                      event.iteration, event.name);
         for (const double value : event.values) std::fprintf(stderr, " %.17g", value);
         std::fputc('\n', stderr);
-    }
-}
-
-template <class Function>
-void run_check(const char* name, Function function) {
-    epcsaft::core::Capture capture;
-    const int before = failures;
-    try {
-        function();
-    } catch (const std::exception& error) {
-        std::fprintf(stderr, "%s: exception: %s\n", name, error.what());
-        ++failures;
-    }
-    if (failures == before) {
-        std::printf("%s passed\n", name);
-    } else {
-        std::fprintf(stderr, "%s failed\n", name);
-        print_trace(capture.trace());
     }
 }
 
@@ -129,6 +95,46 @@ inline epcsaft::equilibrium::EquilibriumProblem boundary() {
               epcsaft::equilibrium::AmountSpec::pinned(0.0)),
     };
     result.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    return result;
+}
+
+// The neutral-binary bubble problem at T: L free, V pinned 0, equimolar feed, P free from 1e5 Pa.
+inline epcsaft::equilibrium::EquilibriumProblem bubble_at(double temperature) {
+    auto problem = boundary();
+    problem.feed.values = {0.5, 0.5};
+    problem.temperature = epcsaft::equilibrium::FreeValue::fixed(temperature);
+    return problem;
+}
+
+// The E4-B interior tie line: neutral binary at 180 K, feed at the mean of the bubble
+// compositions, both amounts free at half the bubble pressure; the recorded coordinate seed
+// is used only if the cold solve of the same problem is not accepted.
+struct Interior final {
+    epcsaft::equilibrium::EquilibriumProblem problem;
+    epcsaft::equilibrium::EquilibriumResult start;
+    double bubble_pressure = 0.0;
+    std::vector<double> feed;
+};
+
+inline Interior interior(const epcsaft::HelmholtzModel& model) {
+    Interior result;
+    const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, bubble_at(180.0));
+    recording_support::check(bubble.success, __FILE__, __LINE__, "bubble.success");
+    result.bubble_pressure = bubble.pressure.front();
+    result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
+                   0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
+    result.problem = bubble_at(180.0);
+    result.problem.feed.values = result.feed;
+    result.problem.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
+    result.problem.pressure = epcsaft::equilibrium::FreeValue::fixed(0.5 * result.bubble_pressure);
+    result.start = epcsaft::equilibrium::solve_equilibrium(model, result.problem);
+    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
+        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
+            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
+            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
+        result.start = epcsaft::equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
+    }
+    recording_support::check(result.start.success, __FILE__, __LINE__, "result.start.success");
     return result;
 }
 
@@ -337,4 +343,4 @@ Vector permute_vector(const Vector& source, const std::vector<std::size_t>& orde
 }  // namespace equilibrium_support
 
 #define CHECK(condition) \
-    equilibrium_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)
+    recording_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)

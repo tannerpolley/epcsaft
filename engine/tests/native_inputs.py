@@ -2,8 +2,10 @@
 
 `ROWS` holds the C++ values recorded by oracle/record_native_rows.py for these same inputs.
 """
+import hashlib
+import itertools
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +22,10 @@ from epcsaft import (
     Parameters,
     ThermochemistryRecord,
     _core,
+)
+from epcsaft.equilibrium import (
+    Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial, ReactionReference,
+    ReferenceSourceBasis,
 )
 
 ROWS = {
@@ -38,6 +44,20 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
     evidence.compare(name, model=model, reference=reference, **inputs,
                      criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
     assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+
+
+def packet_metadata(path: Path, components: Sequence[str]) -> dict[str, Any]:
+    """Evidence identity of data/packets/<id>/<version>/parameters/parameters.json: id, version and hash."""
+    return {
+        "packet_id": path.parts[-4],
+        "packet_version": int(path.parts[-3]),
+        "parameter_file": {
+            "path": str(path.relative_to(path.parents[5])),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "size_bytes": path.stat().st_size,
+        },
+        "selected_components": list(components),
+    }
 
 
 def parameters(
@@ -133,3 +153,64 @@ def surface_model(**inputs: Any) -> Mixture:
     """The C++ example's model: constant cp with anchors at 300 K and 1 bar on [250, 450] K."""
     forms = (IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), IdealPolynomial([35.0, 0.0], 300.0, 2000.0, 70.0))
     return Mixture(associating_binary(), thermochemistry=record(*forms, upper=450.0), **inputs)
+
+
+def bubble(T: float) -> Problem:
+    """equilibrium_support::boundary(): L free, V pinned 0, P free from 1e5 Pa, equimolar amounts."""
+    return Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
+                   T=T, P=Free(1.0e5), feed=Amounts({"s0": 0.5, "s1": 0.5}))
+
+
+def mixed_difference(
+    evaluate: Callable[[float, float, tuple[float, ...]], float],
+    temperature: float,
+    coordinate: float,
+    composition: tuple[float, ...],
+    directions: Sequence[tuple[float, float, tuple[float, ...]]],
+    step: float,
+) -> float:
+    total = 0.0
+    for signs in itertools.product((-1.0, 1.0), repeat=len(directions)):
+        varied_temperature = temperature + step * sum(
+            sign * direction[0] for sign, direction in zip(signs, directions)
+        )
+        varied_coordinate = coordinate + step * sum(
+            sign * direction[1] for sign, direction in zip(signs, directions)
+        )
+        varied_composition = tuple(
+            value + step * sum(
+                sign * direction[2][index]
+                for sign, direction in zip(signs, directions)
+            )
+            for index, value in enumerate(composition)
+        )
+        total += math.prod(signs) * evaluate(
+            varied_temperature, varied_coordinate, varied_composition
+        )
+    return total / (2.0 * step) ** len(directions)
+
+
+# Reference-calorics fixture: identical ethane 2A <=> B; only A carries an ideal-gas record,
+# cp = 52 + 0.12 (T - 300) J/(mol K) anchored at h = s = 0 at 300 K.
+DIMER_LAW = ReactionLogPolynomial(math.log(0.3), 200.0, 3.0, -0.004, 300.0, 250.0, 350.0, "analytic-source")
+CP_A = (52.0, 0.12)
+A_RECORD = [IdealInterval(200.0, 400.0, True, True, IdealCorrelation(IdealPolynomial(CP_A, 300.0, 0.0, 0.0), 1.0e5))]
+
+
+def records(*species: list[IdealInterval]) -> ThermochemistryRecord:
+    return ThermochemistryRecord(1.0e5, list(species))
+
+
+def twin_ethane(*species: list[IdealInterval]) -> Mixture:
+    return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]), thermochemistry=records(*species))
+
+
+def dimer_problem(temperature: float, reference_pressure: float | None,
+                  feed: dict[str, float] | None = None, pressure: float = 3.0e6) -> Problem:
+    return Problem(
+        T=temperature, P=pressure, feed=Amounts(feed or {"s0": 2.0, "s1": 0.2}), phases=[Phase("L", kind="liquid")],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=DIMER_LAW, reference=ReactionReference(
+            ReferenceSourceBasis.RawMoleFractionInfiniteDilution, reference_pressure))],
+    )

@@ -4,7 +4,7 @@ from typing import Any
 
 from epcsaft import Mixture, _core, regression
 from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction, solve_equilibrium
-from ..native_inputs import ETHANE, budget, parameters
+from tests.native_inputs import ETHANE, budget, parameters
 
 
 def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) -> None:

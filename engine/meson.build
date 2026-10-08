@@ -180,7 +180,7 @@ properties_checks = executable(
   'properties_checks',
   'tests/native/properties_checks.cpp',
   cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
@@ -200,23 +200,6 @@ diagnostics_checks = executable(
 )
 test('diagnostics', diagnostics_checks)
 
-properties_floor = executable(
-  'properties_floor',
-  'tests/native/properties_floor.cpp',
-  cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  install: false,
-  build_by_default: false,
-)
-test(
-  'properties_floor', properties_floor,
-  suite: 'floor',
-  env: {'OMP_NUM_THREADS': '1'},
-  timeout: 600,
-)
-
 equilibrium_checks = executable(
   'equilibrium_checks',
   'tests/native/equilibrium_checks.cpp',
@@ -232,8 +215,8 @@ equilibrium_checks = executable(
 equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').split('{{"native.equilibrium.')
 foreach index : range(1, equilibrium_cases.length())
   fields = equilibrium_cases[index].split('"')
-  assert(fields[8] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
-  test('equilibrium/' + fields[8] + '/' + fields[0], equilibrium_checks,
+  assert(fields[4] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
+  test('equilibrium/' + fields[4] + '/' + fields[0], equilibrium_checks,
     args: ['native.equilibrium.' + fields[0]], timeout: 600)
 endforeach
 
@@ -281,7 +264,7 @@ specification_checks = executable(
   'specification_checks',
   'tests/native/specification_checks.cpp',
   cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,

@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 
-from epcsaft import _core
 
 from epcsaft import (
     GAS_CONSTANT_J_PER_MOL_K, IdealCorrelation, IdealInterval, IdealPolynomial, IdealShomate, Mixture, Parameters,
@@ -415,19 +414,24 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
 
 
 def test_zero_feed_ions_allow_provisional_flash_start() -> None:
-    """#265: packet-3 neutral feed at loading 1e-3 must reach the equilibrium driver.
-
-    This pins setup of the diagnosed case; it does not assert flash acceptance.
-    """
+    """#265: packet-3 neutral feed at loading 1e-3 reaches an accepted flash that conserves C, H, N, O and charge."""
     model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450.,
                  EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
-    problem = Problem(T=318.15, P=5918.5286, row_tolerance=1e-10, reactions=reactions,
-                      feed=Amounts({"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}),
+    feed = {"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}
+    problem = Problem(T=318.15, P=5918.5286, row_tolerance=1e-10, reactions=reactions, feed=Amounts(feed),
                       phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", support=_MEA[:3])])
-    with _core.Capture() as capture:
-        result = solve_equilibrium(model, problem)
-    assert result.success or any(event.name == "ipopt_iteration" for event in capture.events), result.message
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    count = len(_MEA)
+    returned = [math.fsum(result.amounts[p] * result.mole_fractions[p * count + i] for p in range(result.phase_count))
+                for i in range(count)]
+    fed = [feed.get(species, 0.0) for species in _MEA]
+    # Species formulas in _MEA order: C, H, N, O and charge number.
+    for row in ((1, 2, 0, 2, 3, 1, 1, 0, 0), (0, 7, 2, 8, 6, 1, 0, 3, 1), (0, 1, 0, 1, 1, 0, 0, 0, 0),
+                (2, 1, 1, 1, 3, 3, 3, 1, 1), (0, 0, 0, 1, -1, -1, -2, 1, -1)):
+        balance = math.fsum(a * (n - f) for a, n, f in zip(row, returned, fed))
+        assert abs(balance) <= 1e-12 * sum(feed.values()), (row, balance)
 
 
 def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:

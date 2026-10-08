@@ -4,7 +4,7 @@ import math
 from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure, _core
 from epcsaft.equilibrium import Amounts, Phase, Problem, solve_equilibrium
 
-from ..native_inputs import ETHANE, parameters
+from tests.native_inputs import ETHANE, parameters
 
 
 def test_density_crossings_and_finite_domain() -> None:
