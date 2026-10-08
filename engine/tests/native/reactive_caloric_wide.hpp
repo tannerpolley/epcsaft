@@ -2,7 +2,6 @@
 // Included inside reactive_caloric_checks. A manufactured neutral value oracle,
 // not a second general equilibrium driver. Only the EOS kernels are shared;
 // neither production reference jets nor solved-state actions supply its values.
-using Wide = CppAD::Quad;
 class WideNeutral {
     const Case& c;
     CppAD::ADFun<Wide> thermodynamic;

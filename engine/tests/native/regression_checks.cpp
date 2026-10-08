@@ -2427,8 +2427,8 @@ void check_ionic_addition_enthalpy() {
         std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
             field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
-    using reactive_caloric_checks::Wide;
-    const std::vector<reactive_caloric_checks::Quantity> enthalpy{{"H", "J", 0.0, {}}};
+    using binary128_support::Wide;
+    const std::vector<binary128_support::Quantity> enthalpy{{"H", "J", 0.0, {}}};
     for (std::size_t column = 0; column < 2; ++column) {
         // Delta h_add composed in binary128: WideIonic re-solves each endpoint's density and
         // dissociation and the added water's state from the EOS kernels; the double solves only
@@ -2438,18 +2438,17 @@ void check_ionic_addition_enthalpy() {
             u[column] += shift;
             auto changed = std::vector<Observation>{row};
             coordinates.apply(changed, u);
-            reactive_caloric_checks::Case c{"ionic-addition", coordinates.apply(parameters, u), {}, record, {}, true};
-            const HelmholtzModel rebuilt(c.parameters, coordinates.active_parameters(), record);
+            const auto shifted = coordinates.apply(parameters, u);
+            const HelmholtzModel rebuilt(shifted, coordinates.active_parameters(), record);
             Wide h[2], feed = 0;
             for (std::size_t k = 0; k < 2; ++k) {
-                c.problem = k ? changed[0].final_problem : changed[0].problem;
-                reactive_caloric_checks::Sample sample;
-                sample.solved = equilibrium::solve_equilibrium(rebuilt, c.problem);
-                CHECK(sample.solved.success);
-                sample.phase.rho = sample.solved.molar_densities[0];
-                reactive_caloric_checks::WideIonic oracle(c, sample);
-                h[k] = oracle.values(enthalpy, {}, 1.0, 0, sample)[0];
-                if (k) feed = oracle.solvent_enthalpy(sample.phase.rho);
+                const auto& problem = k ? changed[0].final_problem : changed[0].problem;
+                const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
+                CHECK(solved.success);
+                const double rho = solved.molar_densities[0];
+                binary128_support::WideIonic oracle(shifted, record, problem, solved.mole_fractions[1]);
+                h[k] = oracle.values(enthalpy, {}, 1.0, 0, solved, rho)[0];
+                if (k) feed = oracle.solvent_enthalpy(rho);
             }
             return (h[1] - h[0]) / Wide(amount) - feed;
         };
