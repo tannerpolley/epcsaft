@@ -44,7 +44,7 @@ def _branch(phase: str | None) -> _core.DensityBranch:
         return _core.DensityBranch.Vapor
     if phase == "liquid":
         return _core.DensityBranch.Liquid
-    raise ParameterError(f"unknown phase {phase}")
+    raise ParameterError(f"unknown phase {phase}; expected liquid, vapor or None")
 
 
 class Mixture:

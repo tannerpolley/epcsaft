@@ -803,15 +803,18 @@ HelmholtzModel::HelmholtzModel(
 void HelmholtzModel::validate_composition(
     const std::vector<double>& composition
 ) const {
-    require(composition.size() == parameters_.component_count(), "composition size");
+    if (composition.size() != parameters_.component_count())
+        throw std::invalid_argument("invalid composition size " + std::to_string(composition.size())
+                                    + "; expected " + std::to_string(parameters_.component_count()));
     require(finite_vector(composition), "composition");
     require(std::all_of(composition.begin(), composition.end(), [](double value) {
         return value >= 0.0;
     }), "composition");
     double total = 0.0;
     for (double value : composition) total += value;
-    require(std::abs(total - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value,
-            "composition sum");
+    if (!(std::abs(total - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value))
+        throw std::invalid_argument("invalid composition sum " + core::optional_number(total) + "; expected 1 within "
+                                    + core::optional_number(policy::COMPOSITION_SUM_TOLERANCE.value));
 }
 
 void HelmholtzModel::validate_point(

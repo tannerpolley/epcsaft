@@ -7,9 +7,11 @@ cd "$repo_root"
 # Select from every change since the base: by default the merge base with origin/main.
 base_ref="${1:-$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null || true)}"
 if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+    [[ -z "${1:-}" ]] || { echo "check-affected: base '$1' does not resolve to a commit" >&2; exit 2; }
     base_ref="HEAD"
 fi
-echo "check-affected base: $base_ref ($(git rev-parse --short "$base_ref"))"
+base="$base_ref ($(git rev-parse --short "$base_ref"))"
+echo "check-affected base: $base"
 mapfile -t changed < <(
     {
         git diff --name-only "$base_ref" HEAD
@@ -19,7 +21,7 @@ mapfile -t changed < <(
     } | sort -u
 )
 if ((${#changed[@]} == 0)); then
-    echo "no changed paths"
+    echo "affected checks passed: no changed paths since base $base"
     exit 0
 fi
 
@@ -75,7 +77,7 @@ while IFS= read -r path; do
 done <<<"$paths"
 if [[ "$docs_only" == true ]]; then
     for script in tools/check-affected.sh tools/check-all.sh; do bash -n "$script"; done
-    echo "documentation readiness passed; no wheel build or numerical tests ran"
+    echo "affected checks passed: documentation readiness only, no wheel build or numerical tests, base $base"
     exit 0
 fi
 
@@ -116,6 +118,7 @@ if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$path
     if ((${#slow_tests[@]})); then
         MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
+    echo "affected checks passed (base $base)"
     exit 0
 fi
 
@@ -163,3 +166,5 @@ grep -q '^analyses/' <<<"$paths" && bash -n tools/run-slice.sh
 if grep -q '^data/' <<<"$paths"; then
     .venv/bin/python data/tools/validate_packets.py
 fi
+
+echo "affected checks passed (base $base)"

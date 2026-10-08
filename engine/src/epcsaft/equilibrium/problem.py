@@ -444,7 +444,7 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
         return _core.PhaseKind.Vapor
     if kind == "liquid":
         return _core.PhaseKind.Liquid
-    raise _core.ParameterError(f"unknown phase kind {kind}")
+    raise _core.ParameterError(f"unknown phase kind {kind}; expected liquid or vapor")
 
 
 def solve_equilibrium(

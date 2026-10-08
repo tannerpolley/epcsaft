@@ -339,7 +339,14 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("critical_points", &ContinuationResult::critical_points)
         .def_readonly("critical_seeds", &ContinuationResult::critical_seeds);
     py::class_<EquilibriumStart>(module, "EquilibriumStart")
-        .def(py::init<>())
+        .def(py::init([](std::vector<double> coordinates, std::vector<double> amounts, std::vector<std::vector<double>> compositions,
+                         std::vector<std::optional<double>> packing_fractions, std::optional<double> temperature,
+                         std::optional<double> pressure, std::optional<EquilibriumResult> previous) {
+            return EquilibriumStart{std::move(coordinates), std::move(amounts), std::move(compositions),
+                                    std::move(packing_fractions), temperature, pressure, std::move(previous)};
+        }), py::kw_only(), py::arg("coordinates") = std::vector<double>{}, py::arg("amounts") = std::vector<double>{},
+            py::arg("compositions") = std::vector<std::vector<double>>{}, py::arg("packing_fractions") = std::vector<std::optional<double>>{},
+            py::arg("temperature") = py::none(), py::arg("pressure") = py::none(), py::arg("previous") = py::none())
         .def_readwrite("coordinates", &EquilibriumStart::coordinates)
         .def_readwrite("amounts", &EquilibriumStart::amounts)
         .def_readwrite("compositions", &EquilibriumStart::compositions)
@@ -348,7 +355,11 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("pressure", &EquilibriumStart::pressure)
         .def_readwrite("previous", &EquilibriumStart::previous);
     py::class_<EquilibriumWorkLimits>(module, "EquilibriumWorkLimits")
-        .def(py::init<>())
+        .def(py::init([](std::optional<std::size_t> attempts, std::optional<std::size_t> iterations,
+                         std::optional<std::size_t> attempt_iterations, std::optional<double> seconds, std::optional<double> attempt_seconds) {
+            return EquilibriumWorkLimits{attempts, iterations, attempt_iterations, seconds, attempt_seconds};
+        }), py::kw_only(), py::arg("attempts") = py::none(), py::arg("iterations") = py::none(),
+            py::arg("attempt_iterations") = py::none(), py::arg("seconds") = py::none(), py::arg("attempt_seconds") = py::none())
         .def_readwrite("attempts", &EquilibriumWorkLimits::attempts)
         .def_readwrite("iterations", &EquilibriumWorkLimits::iterations)
         .def_readwrite("attempt_iterations", &EquilibriumWorkLimits::attempt_iterations)

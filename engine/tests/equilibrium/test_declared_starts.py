@@ -28,11 +28,7 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
                        * model.state(200., P=5e6, x=full, phase="liquid").molar_density)
 
     def seed(x: Any, eta: Any) -> eq.EquilibriumStart:
-        out = eq.EquilibriumStart()
-        out.compositions = x
-        out.packing_fractions = eta
-        out.amounts = [1.3, 1.3]
-        return out
+        return eq.EquilibriumStart(compositions=x, packing_fractions=eta, amounts=[1.3, 1.3])
 
     invalid = seed(exact, [-1., packing[1]])
     positive = seed(exact, packing)
@@ -57,14 +53,11 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         assert abs(ratio-target) <= 1e-8
         evidence.compare(f"declared-starts/ratio/{a}", model=ratio, reference=target, unit="1",
                          criterion={"rule": "symmetric_close", "atol": 1e-8})
-    for form in ("coordinates", "previous"):
-        replay = eq.EquilibriumStart()
-        setattr(replay, form, result.coordinates if form == "coordinates" else result)
+    for replay in (eq.EquilibriumStart(coordinates=result.coordinates), eq.EquilibriumStart(previous=result)):
         restored = eq.solve_equilibrium_starts(model, problem, [replay], eq.EquilibriumWorkLimits())
         assert restored.selected == 0 and restored.results[0] is not None
         assert max(map(abs, restored.results[0].residuals)) <= 1e-10
-    previous = eq.EquilibriumStart()
-    previous.previous = result
+    previous = eq.EquilibriumStart(previous=result)
     for field, changed_value in (("P", 4e6), ("T", 201.), ("feed", eq.Amounts({"s0": 2., "s1": 1., "s2": .3, "s4": .3}))):
         different = deepcopy(problem)
         setattr(different, field, changed_value)
@@ -101,12 +94,9 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     only = eq.solve_equilibrium_starts(model, problem, [invalid], eq.EquilibriumWorkLimits())
     assert only.selected is None and only.iterations == 0
     for name in ("iterations", "seconds"):
-        limits = eq.EquilibriumWorkLimits()
-        setattr(limits, name, 0)
-        stopped = eq.solve_equilibrium_starts(model, problem, [positive], limits)
+        stopped = eq.solve_equilibrium_starts(model, problem, [positive], eq.EquilibriumWorkLimits(**{name: 0}))
         assert stopped.selected is None and stopped.budget_exhausted and stopped.results[0] is None
-    limits = eq.EquilibriumWorkLimits()
-    limits.iterations = 1
+    limits = eq.EquilibriumWorkLimits(iterations=1)
     far = seed(([.8, .08, .12], [.8, .12, .08]), [.001, .001])
     stopped = eq.solve_equilibrium_starts(model, problem, [invalid, far, positive], limits)
     assert stopped.selected is None and stopped.budget_exhausted and stopped.iterations <= 1
@@ -128,10 +118,8 @@ def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None
         row_tolerance=1e-10)
     reference = eq.solve_equilibrium(model, problem)
     assert reference.success, reference.message
-    start = eq.EquilibriumStart()
-    start.compositions = [[1., 0., 0.], [1., 0., 0.]]
-    start.packing_fractions = list(reference.packing_fractions)
-    start.amounts = [1., 1.]
+    start = eq.EquilibriumStart(compositions=[[1., 0., 0.], [1., 0., 0.]],
+                                packing_fractions=list(reference.packing_fractions), amounts=[1., 1.])
     solved = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits())
     assert solved.selected == 0, solved.causes
     result = solved.results[0]

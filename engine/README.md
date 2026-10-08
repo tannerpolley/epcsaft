@@ -114,6 +114,25 @@ row = solved_state_actions(compiled, central, request).results[0]
 fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
 ```
 
+`solve_equilibrium` has no time limit; `solve_equilibrium_starts` tries declared
+starts in order under shared work limits and stops at the first that succeeds with its requested tolerance met:
+
+```python
+limits = equilibrium.EquilibriumWorkLimits(seconds=60.0, attempt_seconds=20.0)
+tried = equilibrium.solve_equilibrium_starts(model, problem, [equilibrium.EquilibriumStart()], limits)
+result = None if tried.selected is None else tried.results[tried.selected]  # tried.causes says why not
+```
+
+A default `EquilibriumStart` begins from the feed composition, without the K-factor estimate, pressure
+seed or speciated seed that `solve_equilibrium` uses where they apply, so it can take a different path and work count to the
+same state (#350); it does not replay `solve_equilibrium`.
+
+Invalid declarations and inputs raise `ParameterError` (a `ValueError`) before iterating. A
+solve that runs reports non-convergence, structural infeasibility and rejected density
+branches as `success=False` with `message` and `convergence.stop`, but a failure to
+evaluate the returned point still raises `EosError` or `ParameterError`; handle both.
+`solve_equilibrium_starts` records an attempt's exception in `causes` instead of raising.
+
 For a fixed-T/P, declared two-free-liquid equilibrium, `equilibrium.asl_record`
 constructs the immutable record consumed by the installed
 `epcsaft_equilibrium_phase_component_amount` external function:
