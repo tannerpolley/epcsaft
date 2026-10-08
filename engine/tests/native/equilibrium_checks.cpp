@@ -3577,7 +3577,7 @@ void check_e5_neutral() {
         reproduced = again.results[i].status == reference_batch.results[i].status
             && again.results[i].value == reference_batch.results[i].value
             && again.results[i].action == reference_batch.results[i].action;
-    record_bool("e5-9/warm-reuse", "e5-9", "a repeated request on the recorded tape reproduces the batch exactly",
+    record_bool("e5-9/warm-reuse", "e5-9", "a repeated request reproduces every status, value and action of the batch exactly",
         reproduced, recording_support::fields({recording_support::field("results", again.results.size())}));
 }
 
