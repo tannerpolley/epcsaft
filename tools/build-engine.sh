@@ -58,9 +58,10 @@ if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" || ! -f "$highs_library" ]
 fi
 flock -u "$highs_lock_fd"
 
-# ponytail: one fixed build tree with no toolchain fingerprint; after a compiler or system
-# library upgrade, delete build/engine-meson/shared and rerun setup.
+# The HiGHS key hashes the compiler binaries, flags and Meson version. A tree built under another
+# key is wiped, so a compiler or HiGHS change cannot link objects Ninja would not rebuild.
 build_dir="$PWD/build/engine-meson/shared"
+[[ "$(cat "$build_dir/toolchain-key" 2>/dev/null)" == "$highs_key" ]] || rm -rf -- "$build_dir"
 records=build/environment-wheel
 mkdir -p "$records" build/engine-meson
 printf '%s\n' "$build_dir" >"$records/meson-build-dir"
@@ -110,3 +111,4 @@ PY
     exit 2
     ;;
 esac
+printf '%s\n' "$highs_key" >"$build_dir/toolchain-key"
