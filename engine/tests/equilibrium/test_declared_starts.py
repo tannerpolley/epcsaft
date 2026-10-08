@@ -183,8 +183,9 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
 
 
 def test_supplied_packings_need_no_boundary_density_root() -> None:
-    """#350: Born case 1 of analyses/2026-born-unavailable-states, the stable liquid at c_dielectric 0.33 moved by a
-    water-reaction extent of 0.2. The start supplies both compositions, both packing fractions and the pressure but
+    """#350: Born case 1 of analyses/2026-born-unavailable-states, the stable liquid at c_dielectric 0.33 (archive
+    member fine/case1-continuation-0.330000-state.csv of results/retired-charts.tar.gz) moved by a water-reaction
+    extent of 0.2. The start supplies both compositions, both packing fractions and the pressure but
     no amounts. The liquid has no density root at the boundary pressure seed; the supplied packing replaces it, so
     the start reaches the driver instead of being refused at initialization."""
     script = Path(__file__).resolve().parents[3] / "analyses/2026-born-unavailable-states/scripts/reproduce.py"
