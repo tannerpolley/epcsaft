@@ -1687,8 +1687,7 @@ State HelmholtzModel::state(
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
-    std::vector<double> amounts = mole_fractions;
-    const auto derivatives = evaluate(temperature, volume, amounts, DerivativeOrder::Hessian);
+    const auto derivatives = evaluate(temperature, volume, mole_fractions, DerivativeOrder::Hessian);
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto& sites = derivatives.site_fractions;
