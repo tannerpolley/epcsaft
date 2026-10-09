@@ -996,7 +996,8 @@ void reference_limits() {
                         recording_support::field("lower_molality",k?1e-12:1e-10),recording_support::field("upper_molality",k?1e-14:1e-12)}),
                     "Relationship","terminal-ladder","unchanged lower-column admission scales","absolute",ok,"F9-lower-limit");
             }
-            CHECK(std::abs(*admitted-(fixed && b?0:values.back()))<=1e-12*std::max(1.0,std::abs(values.back())));
+            const double limit=(10*values[2]-values[1])/9;  // sqrt(m) Richardson limit of the terminal pair (#353)
+            CHECK(std::abs(*admitted-(fixed && b?0:limit))<=1e-12*std::max(1.0,std::abs(limit)));
         }
         auto doubled=declaration;doubled.solute_molality_ratios={0,2,2};
         const auto jet2=epcsaft::reaction_references(model,T,P,doubled,{{-1,1,1}},{reference},true,std::nullopt,2,true,4)[0];

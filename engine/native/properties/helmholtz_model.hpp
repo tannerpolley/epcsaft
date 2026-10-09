@@ -256,23 +256,24 @@ struct NeutralReferenceReactionDiagnostic final {
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
     std::optional<double> observed_terminal_change;
-    // Pressure derivatives of the finite terminal contraction.  These are native
-    // reference-path diagnostics; explicit fixed-pressure sources carry exact zero
-    // system-pressure derivatives.
+    // Pressure derivatives of the reference contraction, admitted like dC/dT at scales P and P^2;
+    // explicit fixed-pressure sources carry exact zero system-pressure derivatives.
     std::optional<double> terminal_contraction_pressure_derivative;
     std::optional<double> terminal_contraction_pressure_second_derivative;
+    // Values and columns are sqrt(m) Richardson limits of the 1e-10..1e-14 mol/kg ladder, admitted
+    // on scale times the change between the two limits (EqID: reference_limit_terminal_pair).
     // dC/dT at the reference pressure, set only when requested and when T times its
-    // last ladder change is within the value's terminal criterion.
+    // limit change is within the value's terminal criterion.
     std::optional<double> terminal_contraction_temperature_derivative;
     std::optional<double> observed_temperature_derivative_change;
     // d2C/dT2 at the reference pressure, set only for temperature order two and when T^2
-    // times its last ladder change is within the same criterion.
+    // times its limit change is within the same criterion.
     std::optional<double> terminal_contraction_temperature_second_derivative;
     std::optional<double> observed_temperature_second_derivative_change;
     // d2C/dTdP, only with temperature and pressure jets; admitted like the first slope at scales T, P.
     std::optional<double> terminal_contraction_temperature_pressure_derivative;
     // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
-    // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
+    // where max(|theta_a|, 1) times its limit change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
     double reference_pressure_pa = 0.0;

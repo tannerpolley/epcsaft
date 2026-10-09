@@ -407,7 +407,7 @@ void check_s2() {
                 ("neutral-reference/temperature-limit/" + label).c_str(),
                 "T_dC_dT_terminal_change", "1", change, 5.0e-5, inputs,
                 "Relationship", "observed-slope-convergence",
-                "the slope's terminal ladder change stays within the value criterion in RT units",
+                "the change between the slope's two sqrt(m) limits stays within the value criterion in RT units",
                 "isfinite(model) && model <= reference", change <= 5.0e-5,
                 "s2-neutral-reference", "temperature-limit", "T|dD|", "T,P,nu", "T|dD|<=5e-5", "limit");
             // The same manufactured formula-reaction solve as the Python test; its first-order
@@ -439,13 +439,8 @@ void check_s2() {
                     std::nullopt, inputs, "Relationship", "solved-state-first-action",
                     "native first-order referenced T/P action for the installed-wheel comparison");
             }
-            recording_support::observe(
-                ("neutral-reference/temperature-multiplier/" + label).c_str(), "M", "1",
-                change / *center[row].observed_terminal_change, std::nullopt, inputs,
-                "Relationship", "debye-huckel-sqrt-m-form",
-                "measured slope-to-value terminal-change multiplier for this model and state");
             // Order two on the ionic ladder (Born, density and association third-derivative chains;
-            // the Debye-Hueckel term vanishes at 1e-14 mol/kg and is not tested here) against the
+            // the sqrt(m) limit removes the Debye-Hueckel tail, so it is not tested here) against the
             // centered difference of the order-one slope; floor: step^2 |d4C/dT4|/6 and slope
             // roundoff/step, below 1e-7 relative. Admission is sized to cp: R T^2 max|dD2|.
             CHECK(center[row].terminal_contraction_temperature_second_derivative.has_value()
@@ -979,7 +974,8 @@ void check_s2() {
             };
             const std::string b_id = std::string("reference-calorics/enthalpy-reaction/I/")
                 + (source == 0 ? "system" : "fixed") + "/reaction-b/resolve";
-            const auto b_row = action_ladder(b_id.c_str(), ionic_model, problem, b_direction, 1.0, b_value);
+            // Re-solved nH (-2.9e5 J) scatters ~1e-15 relative, 1e-7 of this action at step 1; step 2 resolves h^2 (#353).
+            const auto b_row = action_ladder(b_id.c_str(), ionic_model, problem, b_direction, 2.0, b_value);
             discrimination(b_id, b_row);
         }
     }

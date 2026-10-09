@@ -33,7 +33,7 @@ struct NamedDirection {
 class WideIonic {
     static constexpr double R = GAS_CONSTANT_J_PER_MOL_K;
     struct Inputs {const Parameters& parameters;const ThermochemistryRecord& records;const EquilibriumProblem& problem;} c;
-    CppAD::ADFun<Wide> fluid,reference;
+    CppAD::ADFun<Wide> fluid,reference,reference_coarse;
     Wide max_pressure_residual=0,max_pressure_floor=0;
     struct State {
         Wide v,a,at,av,att,vt,vp,C,ct,ctt,cp,ctp,cpp,cy;
@@ -119,6 +119,7 @@ public:
         CHECK(c.parameters.association_energy_over_k[1]==c.parameters.association_energy_over_k[2]);
         CHECK(c.parameters.association_volume[1]==c.parameters.association_volume[2]);
         fluid=record(salt_fraction);reference=record(c.parameters.molar_mass_kg_per_mol[0]*1e-14);
+        reference_coarse=record(c.parameters.molar_mass_kg_per_mol[0]*1e-12);
     }
     std::vector<Wide> values(const std::vector<Quantity>& q,const std::vector<NamedDirection>& ds,double factor,std::size_t mask,
                              const EquilibriumResult& solved,double rho) {
@@ -137,7 +138,10 @@ public:
         const Wide mass=c.parameters.molar_mass_kg_per_mol[0],m=Wide(1e-14);
         const Wide ys=mass*m/(1+2*mass*m);const auto& source=*c.problem.reactions[0].reference;const bool fixed=source.reference_pressure_pa.has_value();
         const Wide sourceP=fixed?Wide(*source.reference_pressure_pa):P;
-        const auto src=state(reference,T,sourceP,epsilon,ys,rho);
+        // The production reference is the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg points (#353).
+        auto src=state(reference,T,sourceP,epsilon,ys,rho);
+        const Wide yc=mass*Wide(1e-12)/(1+2*mass*Wide(1e-12));const auto coarse=state(reference_coarse,T,sourceP,epsilon,yc,rho);
+        for(auto field:{&State::C,&State::ct,&State::ctt,&State::cp,&State::ctp,&State::cpp}) src.*field=(10*(src.*field)-coarse.*field)/9;
         const Wide lnK=coeff[0]+coeff[1]/T+coeff[2]*CppAD::log(T/Wide(law.reference_temperature))+coeff[3]*T;
         const Wide lnKT=-coeff[1]/(T*T)+coeff[2]/T+coeff[3],lnKTT=2*coeff[1]/(T*T*T)-coeff[2]/(T*T);
         // The raw mole-fraction basis has no common-molality scale 2 ln M_w.
