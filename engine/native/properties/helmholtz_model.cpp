@@ -55,6 +55,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     PropertyActionStatus* status = nullptr
 ) {
     const std::size_t sites_count = sites.size();
+    if (sites_count == 0) return {};  // no association sites: no mass-action system to factor
     Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian(composition, parameters, sites,
         number_density, delta, bonded_densities(composition, parameters, sites, delta)));
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
@@ -69,23 +70,21 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
                     : pivots.maxCoeff() / pivots.minCoeff()}, 0, reason);
         });
     };
-    if (sites_count != 0) {
-        if (factorization.rank() < static_cast<Eigen::Index>(sites_count)) {
-            failure("association Jacobian is singular");
-            if (status != nullptr) {
-                *status = PropertyActionStatus::AssociationSingular;
-                return factorization;
-            }
-            throw std::domain_error("association Jacobian is singular");
+    if (factorization.rank() < static_cast<Eigen::Index>(sites_count)) {
+        failure("association Jacobian is singular");
+        if (status != nullptr) {
+            *status = PropertyActionStatus::AssociationSingular;
+            return factorization;
         }
-        if (!admitted_pivot_ratio(factorization)) {
-            failure("association Jacobian is ill-conditioned");
-            if (status != nullptr) {
-                *status = PropertyActionStatus::AssociationIllConditioned;
-                return factorization;
-            }
-            throw std::runtime_error("association Jacobian is ill-conditioned");
+        throw std::domain_error("association Jacobian is singular");
+    }
+    if (!admitted_pivot_ratio(factorization)) {
+        failure("association Jacobian is ill-conditioned");
+        if (status != nullptr) {
+            *status = PropertyActionStatus::AssociationIllConditioned;
+            return factorization;
         }
+        throw std::runtime_error("association Jacobian is ill-conditioned");
     }
     return factorization;
 }
@@ -1687,8 +1686,7 @@ State HelmholtzModel::state(
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
-    std::vector<double> amounts = mole_fractions;
-    const auto derivatives = evaluate(temperature, volume, amounts, DerivativeOrder::Hessian);
+    const auto derivatives = evaluate(temperature, volume, mole_fractions, DerivativeOrder::Hessian);
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto& sites = derivatives.site_fractions;

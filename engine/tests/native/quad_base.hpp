@@ -54,7 +54,7 @@ EPCSAFT_QUAD_MATH(acosh) EPCSAFT_QUAD_MATH(atanh) EPCSAFT_QUAD_MATH(erf) EPCSAFT
 inline Quad pow(const Quad& x,const Quad& y){return powq(x.raw(),y.raw());}
 template<> class numeric_limits<Quad>{public:
     static Quad min(){return ldexpq(1,-16382);} static Quad max(){return ldexpq(2-ldexpq(1,-112),16383);}
-    static Quad epsilon(){return ldexpq(1,-112);} static Quad quiet_NaN(){return nanq("");} static Quad infinity(){return HUGE_VALQ;}
+    static Quad epsilon(){return ldexpq(1,-112);} static Quad quiet_NaN(){return nanq("");} static Quad infinity(){return __float128(__builtin_inf());}
     static const int digits10=33,max_digits10=36;
 };
 template<> struct to_string_struct<Quad>{std::string operator()(const Quad& v){char b[128];quadmath_snprintf(b,sizeof b,"%.36Qg",v.raw());return b;}};

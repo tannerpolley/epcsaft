@@ -717,6 +717,7 @@ std::vector<PredictionGradient> differentiate_group(
                 add(observable(Kind::PhaseComponentAmount, observation.denominator_phase, i));
             break;
         case ObservationKind::PhaseFraction:
+            // NOLINTNEXTLINE(clang-analyzer-core.NullDereference): only a LogEquilibriumConstant row lacks a solved state, and same_state never groups it.
             for (std::size_t q = 0; q < solved->phase_count; ++q) add(observable(Kind::PhaseAmount, q));
             break;
         case ObservationKind::PhaseDensity:

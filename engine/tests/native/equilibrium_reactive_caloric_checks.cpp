@@ -606,7 +606,7 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
     Frozen frozen(c,compiled,center);
     std::vector<std::vector<Direction>> requests={{},{dt},{dp}};
     const auto& theta=basis[c.ionic?4:3].value;requests.push_back({theta});
-    for(auto a:{dt,dp}) for(auto b:{dt,dp,theta}) requests.push_back({a,b});
+    for(const auto& a:{dt,dp}) for(const auto& b:{dt,dp,theta}) requests.push_back({a,b});
     std::size_t row=0;
     for(const auto& ds:requests) {
         const auto v=frozen.get(ds);auto tds=ds,pds=ds;tds.push_back(dt);pds.push_back(dp);
@@ -1002,7 +1002,7 @@ inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,co
     CHECK(flo*fhi<0);
     for(std::size_t k=0;k<80&&hi-lo>1e-9;++k) {
         const double mid=(lo+hi)/2,f=fugacity(mid);
-        if(f*flo>0) {lo=mid;flo=f;} else {hi=mid;fhi=f;}
+        if(f*flo>0) {lo=mid;flo=f;} else hi=mid;
     }
     const double T=(lo+hi)/2;const auto s=states(T);
     compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],center.solved.temperature[0],T,

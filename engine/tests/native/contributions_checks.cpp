@@ -1138,6 +1138,7 @@ void ideal_thermal_forms_match_integrals() {
             }, lower, upper);
         const double fine_s = simpson(
             [&](double temperature) {
+                // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage): clang-tidy 18 misreads a lambda's reference capture of a structured binding as uninitialized.
                 const auto value = epcsaft::evaluate_ideal_correlation(
                     correlation, temperature, pressure);
                 return value.cp / temperature;
