@@ -36,9 +36,11 @@ CC=clang-18 CXX=clang++-18 meson setup \
 meson compile -C "$build_root" -j "$jobs" \
     "_core$extension_suffix"
 
+# Clang ships no quadmath.h; the binary128 test units take GCC's after Clang's own headers.
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
+    -extra-arg="-idirafter$(gcc -print-file-name=include)" \
     -j "$jobs" \
     -quiet \
     'engine/(native|tests/native)/.*\.cpp$'

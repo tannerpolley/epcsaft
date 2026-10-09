@@ -565,6 +565,7 @@ void energy_action_ladders() {
                 item.temperature, 1.0 / item.molar_density, item.composition, request);
             const std::vector<std::vector<double>> lower(request.begin(), request.end() - 1);
             const auto difference = [&](double h) {
+                // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage): clang-tidy 18 misreads a lambda's reference capture of a structured binding as uninitialized.
                 return (shifted_energy(item, lower, request.back(), h)
                     - shifted_energy(item, lower, request.back(), -h)) / (2.0 * h);
             };

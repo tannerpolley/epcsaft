@@ -324,13 +324,13 @@ std::vector<double> action_term_scale(const Fixture& fixture, const CompiledSyst
     return result;
 }
 
-// Qualify one fixture through the requested orders; every observable/order/step is retained.
-bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, std::size_t first_order = 1) {
+// Qualify one fixture through orders 1 to 3; every observable/order/step is retained.
+bool qualify(const Fixture& fixture, const char* group) {
     const auto model = fixture.model();
     const auto compiled = epcsaft::equilibrium::compile_problem(model, fixture.problem);
     const auto central = epcsaft::equilibrium::solve_equilibrium(model, fixture.problem);
     CHECK(central.success);
-    for (std::size_t order = first_order; order <= orders; ++order) {
+    for (std::size_t order = 1; order <= 3; ++order) {
         SolvedStateActionRequest request;
         request.observables = fixture.observables;
         request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order));
