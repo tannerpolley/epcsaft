@@ -38,7 +38,7 @@ and `nm`. `ccache` is optional.
 Run commands from the repository root:
 
 ```bash
-tools/heavy bash .codex/environments/setup.sh
+bash .codex/environments/setup.sh
 bash tools/status.sh
 ```
 
@@ -70,13 +70,13 @@ record its SHA-256.
 Run the affected-area gate during normal development:
 
 ```bash
-tools/heavy bash tools/check-affected.sh [base]
+bash tools/check-affected.sh [base]
 ```
 
 Run the fast full gate with:
 
 ```bash
-tools/heavy bash tools/check-all.sh
+bash tools/check-all.sh
 ```
 
 `check-affected.sh` selects checks from the paths changed since `base` (default: the
@@ -90,7 +90,7 @@ pytest alone misses type errors in a test edit.
 `check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
 and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
 changes; request them with
-`tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
+`bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
 
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
@@ -99,9 +99,9 @@ CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
 cover the Python interface too, before review.
 
 ```bash
-tools/heavy tools/native-run equilibrium_checks --list
-tools/heavy tools/native-run equilibrium_checks caloric-admission
-tools/heavy tools/native-run equilibrium/Automatic_fast/e5-neutral
+tools/native-run equilibrium_checks --list
+tools/native-run equilibrium_checks caloric-admission
+tools/native-run equilibrium/Automatic_fast/e5-neutral
 ```
 
 Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.cpp`, or with
@@ -115,15 +115,15 @@ takes the Meson test name that `run-native-tests.sh` prints. `equilibrium_checks
 Meson build directory, leaving this checkout's source and build directory free:
 
 ```bash
-tools/heavy tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only if the planted case fails
-tools/heavy tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
+tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only if the planted case fails
+tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
 ```
 
 Native C++ changes use the explicit owner commands:
 
 ```bash
-tools/heavy bash engine/tools/check-native.sh
-tools/heavy bash engine/tools/check-native-sanitizers.sh
+bash engine/tools/check-native.sh
+bash engine/tools/check-native-sanitizers.sh
 ```
 
 The first command builds the native extension with Clang and runs the full
@@ -132,14 +132,12 @@ its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
-Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
-numerical thread when memory allows. It stops the whole command after `HEAVY_TIMEOUT`
-(default 30m); set `HEAVY_TIMEOUT=2h` for a long chain such as a series of falsify runs.
+Builds and Engine calculations run directly, with no thread, slot or memory limits.
 A warm `check-all.sh` takes about 20–40 s
-(24.0 s measured in #319). `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+(24.0 s measured in #319). `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; build the
-checkout's side with `tools/heavy bash tools/build-engine.sh --wheel build/wheels/<name>`.
-After merges, `tools/heavy tools/refresh-main-wheel` builds main's
+checkout's side with `bash tools/build-engine.sh --wheel build/wheels/<name>`.
+After merges, `tools/refresh-main-wheel` builds main's
 wheel in the main checkout, compares its key-solve work with the previous
 `build/wheels/main-current/`, replaces that directory and its README, and keeps
 `build/wheels/main-<commit>/`, the applications' stable pin.
@@ -148,7 +146,7 @@ There is no scientific CI/CD.
 Run a canonical end-to-end workflow with:
 
 ```bash
-tools/heavy bash tools/run-slice.sh khudaida
+bash tools/run-slice.sh khudaida
 ```
 
 See `AGENTS.md`, `ARCHITECTURE.yaml`, and

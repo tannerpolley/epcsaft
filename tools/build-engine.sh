@@ -16,12 +16,12 @@ export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 # locked-ninja locks build/engine-meson/ninja.lock, so the directory must exist before any Ninja run.
 mkdir -p build/engine-meson
 
-# Four jobs: a cold build peaks at 4.2 GiB (#319). The cap is the CPUs this process may use;
-# plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
-build_jobs="${EPCSAFT_BUILD_JOBS:-4}"
+# Every CPU, but no more compile jobs than free memory holds: a cold build needs about 1 GiB
+# per job and the pybind11 files about 1.4 GiB (#319, #373). EPCSAFT_BUILD_JOBS overrides.
+cpus="$(env -u OMP_NUM_THREADS nproc)"
+memory_jobs=$(( $(awk '/^MemAvailable:/ {print $2}' /proc/meminfo) / (1536 * 1024) ))
+build_jobs="${EPCSAFT_BUILD_JOBS:-$(( memory_jobs < 1 ? 1 : memory_jobs < cpus ? memory_jobs : cpus ))}"
 [[ "$build_jobs" =~ ^[1-9][0-9]*$ ]] || { echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2; exit 2; }
-available_cpus="$(env -u OMP_NUM_THREADS nproc)"
-((build_jobs <= available_cpus)) || build_jobs="$available_cpus"
 
 # HiGHS compiles once per toolchain into a shared static build (#319). engine/meson.build
 # falls back to the subproject without it; these options repeat the subproject's.

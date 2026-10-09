@@ -52,7 +52,7 @@ of its identities fails, and it links `epcsaft_native`; there is no installed
 SDK or ABI.
 
 ```bash
-tools/heavy tools/native-run surface_example   # prints every value with its unit
+tools/native-run surface_example   # prints every value with its unit
 ```
 
 For a debugger, configure an unstripped debug tree once and run the same target:
