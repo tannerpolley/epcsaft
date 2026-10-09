@@ -925,7 +925,7 @@ inline void isothermal_row_columns() {
         [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
     CHECK(consumed_entry!=calorics.gibbs.end());
     const auto& consumed=*consumed_entry;
-    // Refused by the sqrt(m) ladder gate, not a missing limit; the method change is #353.
+    // Still refused with the sqrt(m) limit (#353): at a 1e10 /K slope its two limits differ by 2.6e21 scaled.
     CHECK(consumed.column.status==SolvedStateActionStatus::ReferenceUnavailable);
     const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
         recording_support::field("dielectric_T_slope_per_K",1e10),

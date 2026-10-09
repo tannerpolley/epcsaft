@@ -189,14 +189,14 @@ properties_checks P4	pressure/action/11/3	native	0.00838493486276625
 properties_checks P4	pressure/action/12/3	native	6.847206349321565e-06
 properties_checks P4	pressure/action/13/3	native	-4.9013823971487354e-05
 properties_checks P4	pressure/action/14/3	native	-4.6025295897654056e-05
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.5986862484748594e-08
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.5890085369917936e-08
-equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.844456221
-equilibrium_checks S2	reference-calorics/ionic/system/cp	J/(mol K)	64.01790343056577
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.5974067522770415e-08
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.6864975545127014e-08
-equilibrium_checks S2	reference-calorics/ionic/fixed/h	J/mol	-285505.84129783
-equilibrium_checks S2	reference-calorics/ionic/fixed/cp	J/(mol K)	64.01790247998109
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.5986938768537895e-08
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.589016149082645e-08
+equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.84445255186
+equilibrium_checks S2	reference-calorics/ionic/system/cp	J/(mol K)	64.01790342979112
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.597414381274316e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.6865053175699145e-08
+equilibrium_checks S2	reference-calorics/ionic/fixed/h	J/mol	-285505.84129416046
+equilibrium_checks S2	reference-calorics/ionic/fixed/cp	J/(mol K)	64.01790247920678
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A1	mol	-0.010617846998492983
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A1	1	0.014953495020583867
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A1	mol	-0.0026958895994163927

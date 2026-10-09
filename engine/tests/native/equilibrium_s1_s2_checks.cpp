@@ -979,7 +979,8 @@ void check_s2() {
             };
             const std::string b_id = std::string("reference-calorics/enthalpy-reaction/I/")
                 + (source == 0 ? "system" : "fixed") + "/reaction-b/resolve";
-            const auto b_row = action_ladder(b_id.c_str(), ionic_model, problem, b_direction, 1.0, b_value);
+            // Re-solved nH (-2.9e5 J) scatters ~1e-15 relative, 1e-7 of this action at step 1; step 2 resolves h^2 (#353).
+            const auto b_row = action_ladder(b_id.c_str(), ionic_model, problem, b_direction, 2.0, b_value);
             discrimination(b_id, b_row);
         }
     }

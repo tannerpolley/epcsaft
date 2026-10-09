@@ -200,11 +200,8 @@ struct NeutralReferenceTrace final {
     std::array<std::vector<double>, REFERENCE_MOLALITIES.size()> composition;
     std::array<State, REFERENCE_MOLALITIES.size()> state;
     std::vector<std::optional<State>> pure_state;
-    std::optional<HelmholtzDerivatives> terminal_derivatives;
     std::size_t temperature_order = 0;
     bool parameter_jets = false;
-    double pressure_v = 0.0;
-    double pressure_vv = 0.0;
 };
 
 struct NeutralReferenceTraceResult final {
@@ -218,7 +215,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     double temperature,
     double pressure,
     const NeutralReferenceDeclaration& declaration,
-    bool pressure_jets,
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
     bool parameter_jets
@@ -327,42 +323,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 }
             }
         }
-        if (pressure_jets && trace.pure_state.empty()) {
-            const double volume = 1.0 / trace.state.back().molar_density;
-            const auto derivatives = model.evaluate(
-                temperature, volume, trace.composition.back(), DerivativeOrder::Hessian);
-            const std::size_t width = derivatives.gradient.size();
-            if (width != 2 + components + model.active_parameters().size()
-                || derivatives.hessian.size() != width * width) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet has invalid Hessian shape";
-                return result;
-            }
-            std::vector<double> volume_direction(width, 0.0);
-            volume_direction[1] = 1.0;
-            const auto pressure_third = model.residual_energy_action(
-                temperature, volume, trace.composition.back(),
-                {volume_direction, volume_direction, volume_direction});
-            if (!pressure_third.action.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet unavailable from residual E3";
-                return result;
-            }
-            const double phi_vv = derivatives.hessian[width + 1];
-            const double pressure_v = GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (-1.0 / (volume * volume) - phi_vv);
-            const double pressure_vv = GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (2.0 / (volume * volume * volume) - *pressure_third.action);
-            if (!std::isfinite(pressure_v) || pressure_v >= 0.0
-                || !std::isfinite(pressure_vv)) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure response is nonfinite";
-                return result;
-            }
-            trace.terminal_derivatives = derivatives;
-            trace.pressure_v = pressure_v;
-            trace.pressure_vv = pressure_vv;
-        }
         result.trace = std::move(trace);
         result.status = NeutralReferenceStatus::Available;
         return result;
@@ -409,9 +369,12 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
     return result;
 }
 
-// EqID: reference_limit_terminal_pair: a column is admitted on its scaled change into the
-// returned 1e-14 mol/kg rung; on a sqrt(m) tail its error is one ninth of that change. Returns
-// the scaled change when the ladder is complete and finite.
+// EqID: reference_limit_terminal_pair: the 1e-10, 1e-12, 1e-14 mol/kg rungs carry the
+// Debye-Hueckel tail f0 + c sqrt(m) + O(m); each rung pair, a factor 100 in m, extrapolates
+// sqrt(m) away as (10 f(m/100) - f(m)) / 9. The column returns the terminal pair's limit and
+// is admitted on the scaled change between the two extrapolations, O(m) ~ 1e-11 relative to the
+// tail. scaled_changes keep the raw rung changes. Returns the admitted change when the ladder is
+// complete and finite.
 std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivative& column, double scale, double tolerance) {
     column.criterion = tolerance;
     const auto& ladder = column.ladder;
@@ -420,8 +383,9 @@ std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivativ
         column.message = "nonfinite reference ladder"; return std::nullopt;
     }
     for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
-    const double change = column.scaled_changes[1];
-    if (change <= tolerance) column.value = ladder[2];
+    const auto limit = [&](std::size_t k) { return (10.0 * *ladder[k+1] - *ladder[k]) / 9.0; };
+    const double change = scale * std::abs(limit(1) - limit(0));
+    if (change <= tolerance) column.value = limit(1);
     else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
     return change;
 }
@@ -529,66 +493,13 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             result.terminal_contraction_temperature_pressure_derivative = 0.0;
         } else if (!pressure_jets) {
             // The reference value and terminal-change gate are available from the
-            // ladder alone.  Defer E2/E3 pressure contractions until a pressure
+            // ladder alone.  Defer the pressure columns until a pressure
             // direction is actually requested by the equilibrium caller.
-        } else if (!trace.pure_state.empty()) {
-            const auto first = reference_partial_from_trace(model, temperature, trace, 4, stoichiometry, 0, 1, std::nullopt);
-            const auto second = reference_partial_from_trace(model, temperature, trace, 4, stoichiometry, 0, 2, std::nullopt);
-            if (!first.action || !second.action) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "mixed reference pressure derivative unavailable";
-                return result;
-            }
-            result.terminal_contraction_pressure_derivative = first.action;
-            result.terminal_contraction_pressure_second_derivative = second.action;
         } else {
-            if (!trace.terminal_derivatives.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet is missing";
-                return result;
-            }
-            const auto& derivatives = *trace.terminal_derivatives;
-            const std::size_t width = derivatives.gradient.size();
-            std::vector<double> volume_direction(width, 0.0);
-            std::vector<double> stoichiometry_direction(width, 0.0);
-            volume_direction[1] = 1.0;
-            for (std::size_t component = 0; component < stoichiometry.size(); ++component)
-                stoichiometry_direction[2 + component] = stoichiometry[component];
-            const double volume = 1.0 / trace.state.back().molar_density;
-            const auto contraction_third = model.residual_energy_action(
-                temperature, volume, trace.composition.back(),
-                {stoichiometry_direction, volume_direction, volume_direction});
-            if (!contraction_third.action.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet unavailable from residual E3";
-                return result;
-            }
-            double delta_nu = 0.0;
-            double chemical_volume = 0.0;
-            for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-                delta_nu += stoichiometry[component];
-                chemical_volume += stoichiometry[component]
-                    * derivatives.hessian[(2 + component) * width + 1];
-            }
-            const double contraction_v = -delta_nu / volume + chemical_volume;
-            const double contraction_vv = delta_nu / (volume * volume)
-                + *contraction_third.action;
-            const double volume_pressure = 1.0 / trace.pressure_v;
-            const double volume_pressure_pressure = -trace.pressure_vv
-                / (trace.pressure_v * trace.pressure_v * trace.pressure_v);
-            const double contraction_pressure = contraction_v * volume_pressure;
-            const double contraction_pressure_pressure = contraction_vv
-                    * volume_pressure * volume_pressure
-                + contraction_v * volume_pressure_pressure;
-            if (!std::isfinite(contraction_pressure)
-                || !std::isfinite(contraction_pressure_pressure)) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet is nonfinite";
-                return result;
-            }
-            result.terminal_contraction_pressure_derivative = contraction_pressure;
-            result.terminal_contraction_pressure_second_derivative =
-                contraction_pressure_pressure;
+            // The pressure slopes come from the same sqrt(m) limit as the value and its T slopes.
+            result.terminal_contraction_pressure_derivative = admit(0, 1, std::nullopt, trace.pressure, tolerance);
+            result.terminal_contraction_pressure_second_derivative = admit(0, 2, std::nullopt,
+                trace.pressure * trace.pressure, policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K);
         }
         result.status = NeutralReferenceStatus::Available;
         return result;
@@ -706,7 +617,6 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         throw std::invalid_argument("neutral reference batch size");
     struct CachedTrace final {
         double pressure = 0.0;
-        bool pressure_jets = false;
         NeutralReferenceTraceResult result;
     };
     std::vector<CachedTrace> cache;
@@ -733,16 +643,15 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
         const bool need_jets = pressure_jets && !reference.reference_pressure_pa.has_value();
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
-            return item.pressure == pressure && (!need_jets || item.pressure_jets);
+            return item.pressure == pressure;
         });
         if (scope.on()) scope.probe("reference_row", {double(row), pressure,
             double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(need_jets), double(found != cache.end())});
         if (found == cache.end()) {
             CachedTrace item;
             item.pressure = pressure;
-            item.pressure_jets = need_jets;
             item.result = build_neutral_reference_trace(model, temperature, pressure,
-                declaration, need_jets, solvent_anchor, temperature_order, parameter_jets);
+                declaration, solvent_anchor, temperature_order, parameter_jets);
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
@@ -761,7 +670,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
-        // Additional consumed columns, each admitted on its change into the returned 1e-14 mol/kg value.
+        // Additional consumed columns, each the admitted sqrt(m) limit of its ladder.
         const auto& trace = *found->result.trace;
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)

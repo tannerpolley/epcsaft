@@ -441,30 +441,43 @@ def test_referenced_continuation_follows_the_cold_solves(reference_pressure: flo
 
 
 @pytest.mark.parametrize("pure_solvent", [False, True])
-def test_refused_temperature_slope_keeps_value_and_feed_direction(pure_solvent: bool) -> None:
-    """A steep declared permittivity, d ln eps/d ln T ~ -76, multiplies the slope's terminal
-    change past 5e-5 while the value criterion holds: only the T direction is refused."""
+def test_steep_permittivity_temperature_action_matches_resolved_difference(evidence: Any, pure_solvent: bool) -> None:
+    """A steep declared permittivity, d ln(eps T)/d ln T ~ -75, makes the T slope's sqrt(m) ladder
+    tail 73 times the constant-eps one, past 5e-5 at the 1e-14 mol/kg rung. The sqrt(m) Richardson
+    limit (#353) admits it, and the T action of x_Na equals centred re-solves."""
+    from epcsaft.equilibrium import SpeciesReference
     model = Mixture(aqueous_electrolyte(
         ("permittivity_term_coefficient", (0, 0, 1), -20.0, "1 / kelvin"),
         ("permittivity_reference_temperature", (0,), 298.15, "kelvin")))
-    problem = _ionic_problem(298.15, 1.0e5, None)
-    if pure_solvent:
-        from epcsaft.equilibrium import SpeciesReference
-        assert problem.neutral_reference is not None
-        problem.neutral_reference.species_reference = {"s0": SpeciesReference.PureGas}
-    result = solve_equilibrium(model, problem)
+    temperature = 298.15
+
+    def problem(d_t: float) -> Problem:
+        item = _ionic_problem(temperature + d_t, 1.0e5, None)
+        if pure_solvent:
+            assert item.neutral_reference is not None
+            item.neutral_reference.species_reference = {"s0": SpeciesReference.PureGas}
+        return item
+
+    def sodium(d_t: float) -> float:
+        result = solve_equilibrium(model, problem(d_t))
+        assert result.success, result.message
+        return float(result.mole_fractions[1])
+
+    result = solve_equilibrium(model, problem(0.0))
     assert result.success, result.message
-    observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
-    compiled = compile_problem(model, problem)
-    feed_direction = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])
-    thermal, feed = solved_state_first_actions(compiled, result, observable, [
-        SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []), feed_direction])
-    alone = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [feed_direction]))
-    # Refused by the sqrt(m) ladder gate, not a missing limit; the method change is #353.
-    assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
-    assert feed.results[0].status == Status.Available and feed.results[0].action is not None
-    assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
-    assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]
+    thermal = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], [])
+    item = solved_state_actions(compile_problem(model, problem(0.0)), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [thermal])).results[0]
+    assert item.status == Status.Available and item.action is not None, item.diagnostic_message
+    # eps moves 1.3% per 0.05 K: the centred difference keeps 7e-5 at 0.025 K, its Richardson pair 2e-8.
+    step = 0.025
+    coarse, fine = ((sodium(h) - sodium(-h)) / (2 * h) for h in (2 * step, step))
+    assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
+    same(evidence, f"reference-temperature/ionic/steep-permittivity/{'pure-gas' if pure_solvent else 'default'}/resolve",
+         item.action, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+         inputs={"T_K": temperature, "P_Pa": 1.0e5, "dlneps_dT_per_K": -20.0 / 78.09, "steps": [2 * step, step]},
+         basis="Identity", method="richardson-centered-resolve-difference",
+         claim="steep-permittivity T action from the sqrt(m) Richardson reference equals the re-solved slope")
 
 
 def _kij_problem(mode: str, shift: float = 0.0) -> Problem:

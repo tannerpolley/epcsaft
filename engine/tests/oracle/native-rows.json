@@ -1,8 +1,7 @@
 {
   "rows": 350,
-  "recorded_at_revision": "0a6a10f85baaabcc0375317640e5121c4c52e38d",
-  "build_fingerprint": "ce88e7c7c9950326b01bffd6838d47a1152ea36d41e86d959f5ef6030cdbee36",
-  "wheel_sha256": "badca0cafec3d489036684992614bee41d5231e8841681453a73ae836a662372",
+  "recorded_at_revision": "465cfd19b262fddd069896ddb0dcdea46bb4a845",
+  "engine_clean": false,
   "commands": [
     {
       "command": "properties_checks P3",
