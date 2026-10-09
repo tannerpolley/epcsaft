@@ -1670,7 +1670,10 @@ states, positive pressure slope, branch continuity and the change between the
 sqrt(m) Richardson limits (10 C(m/100) - C(m))/9 from 1e-10/1e-12 and 1e-12/1e-14
 mol/kg within 5e-5 (EqID: `reference_limit_terminal_pair`). Return the second
 limit and the observed change. The pressure slopes C_P and C_PP use the same
-limit, so every reference value and derivative carries no c sqrt(m) tail (#353).
+limit, so every neutral reaction reference value and derivative carries no c sqrt(m)
+tail (#353). The reported-activity ion reference (EqID: `reference_molality_sequence`)
+is unchanged: it returns its 1e-12 mol/kg rung with a sqrt(m) bias near A 1e-6, left
+as a follow-up.
 An optional `species_reference` map assigns `InfiniteDilution`, `PureLiquid`
 or `PureGas` independently. Omitted species retain solvent liquid and all
 solute infinite-dilution references. Empty and full explicit default maps use
