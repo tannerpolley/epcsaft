@@ -114,7 +114,7 @@ if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$path
     check_declarations
     check_tools
     if ((${#slow_tests[@]})); then
-        MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
     echo "affected checks passed (base $base)"
     exit 0
@@ -143,7 +143,7 @@ if grep -q '^engine/' <<<"$paths"; then
         # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
         bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
-            MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+            bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)

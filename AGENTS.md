@@ -55,8 +55,7 @@ equations, decisions and evidence it points to; change only the demonstrated
 gap. For domain terms and decisions, read the list in `docs/agents/domain.md`.
 The leaf issue, not `engine/docs/`, says what the installed Engine
 implements. Activate Serena at the exact checkout root. `README.md` "Checks"
-owns the per-checkout `.venv` with its editable Engine install and the
-`tools/heavy` rule for builds and Engine calculations.
+owns the per-checkout `.venv` with its editable Engine install.
 
 ## Native calculation rule
 

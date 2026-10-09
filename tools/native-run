@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rebuild one native program in this checkout's Meson build directory and run it,
 # whole or for one case (#317). Python is not involved; check-all.sh still gates review.
-# Run as: tools/heavy tools/native-run equilibrium_checks caloric-admission
+# Run as: tools/native-run equilibrium_checks caloric-admission
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.

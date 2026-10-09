@@ -27,9 +27,9 @@ run_check() {
     fi
 }
 
-# One native process overlaps one checking process; numerical libraries stay single-threaded.
+# Native tests run alongside the Python checks.
 (
-    run_check native-tests env MESON_TESTTHREADS=1 engine/tools/run-native-tests.sh
+    run_check native-tests engine/tools/run-native-tests.sh
     exit "$failed"
 ) &
 native_pid=$!

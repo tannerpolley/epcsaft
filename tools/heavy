@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-# Run one build or Engine calculation with one numerical thread, admitted by
-# agent-heavy when memory allows. Each checkout has its own .venv, so no shared
-# environment lock is needed.
-set -euo pipefail
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
-command -v agent-heavy >/dev/null || { echo "tools/heavy: agent-heavy not on PATH; running without memory admission" >&2; exec "$@"; }
-exec agent-heavy --timeout "${HEAVY_TIMEOUT:-30m}" --max "${HEAVY_MAX:-8G}" "$@"
