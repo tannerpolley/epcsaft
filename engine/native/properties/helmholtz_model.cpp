@@ -55,6 +55,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     PropertyActionStatus* status = nullptr
 ) {
     const std::size_t sites_count = sites.size();
+    if (sites_count == 0) return {};  // no association sites: no mass-action system to factor
     Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian(composition, parameters, sites,
         number_density, delta, bonded_densities(composition, parameters, sites, delta)));
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
@@ -69,23 +70,21 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
                     : pivots.maxCoeff() / pivots.minCoeff()}, 0, reason);
         });
     };
-    if (sites_count != 0) {
-        if (factorization.rank() < static_cast<Eigen::Index>(sites_count)) {
-            failure("association Jacobian is singular");
-            if (status != nullptr) {
-                *status = PropertyActionStatus::AssociationSingular;
-                return factorization;
-            }
-            throw std::domain_error("association Jacobian is singular");
+    if (factorization.rank() < static_cast<Eigen::Index>(sites_count)) {
+        failure("association Jacobian is singular");
+        if (status != nullptr) {
+            *status = PropertyActionStatus::AssociationSingular;
+            return factorization;
         }
-        if (!admitted_pivot_ratio(factorization)) {
-            failure("association Jacobian is ill-conditioned");
-            if (status != nullptr) {
-                *status = PropertyActionStatus::AssociationIllConditioned;
-                return factorization;
-            }
-            throw std::runtime_error("association Jacobian is ill-conditioned");
+        throw std::domain_error("association Jacobian is singular");
+    }
+    if (!admitted_pivot_ratio(factorization)) {
+        failure("association Jacobian is ill-conditioned");
+        if (status != nullptr) {
+            *status = PropertyActionStatus::AssociationIllConditioned;
+            return factorization;
         }
+        throw std::runtime_error("association Jacobian is ill-conditioned");
     }
     return factorization;
 }

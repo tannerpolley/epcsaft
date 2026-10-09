@@ -669,7 +669,15 @@ composition and molar volume only. The charge-row scaling `-n_p phi_p` is
 qualified by independent extensive-objective stationarity and public ionic
 chemical potentials at Khudaida Figure 2 point 1 with 1 and 10 mol feeds
 (`test_trace_reliability.py`); application-specific ionic qualification remains
-open. The Ipopt driver
+open. The per-phase charge row is met to the absolute row tolerance
+(`EQUILIBRIUM_ROW_RESIDUAL`, 1e-10, unless the caller sets `row_tolerance`). In a phase whose
+ion content lies far below that tolerance, the row does not fix how the trace ions divide
+between cations and anions. Only their electroneutral combinations, which the phase-equilibrium
+rows fix, are determined: for example the mean-ionic pair. Individual ion amounts and
+single-ion quantities of such a phase (single-ion activity, phase pH) are then undetermined
+and are not results. In the Ascani 2022 acetic acid + water + toluene reproduction, the toluene
+liquid returned Ac⁻ at a mole fraction of about 1e-21 and H⁺ at about 1e-36, while the mean-ionic
+balance held to 2.2e-10 (#374, #375). The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
