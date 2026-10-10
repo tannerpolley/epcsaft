@@ -563,10 +563,9 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         }) || !std::all_of(c.feed_composition.begin(), c.feed_composition.end(), [](double z) { return z > 0.0; }))
         throw std::invalid_argument("cooling onset requires full supports and generated phase starts");
     auto failed = solve_compiled(c);
-    if (failed.success || (failed.message.rfind("local phase instability:", 0) != 0 && failed.message.rfind("infeasible:", 0) != 0))
+    if (!failed.success && failed.message.rfind("local phase instability:", 0) != 0 && failed.message.rfind("infeasible:", 0) != 0)
         return {std::move(failed), {}};
-    std::vector<StabilityReport> reports;
-    StageWork work;
+    std::vector<StabilityReport> reports; StageWork work;
     // The existing starts owner retains work when a reference or corrector throws after entering the driver.
     const auto solve = [&](const EquilibriumProblem& problem) {
         auto attempt = solve_equilibrium_starts(*c.model, problem, {EquilibriumStart{}}, {});
@@ -586,9 +585,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         if (!central.success) throw std::runtime_error("vapor reference unavailable: " + central.message);
         reports.push_back(stability_test(compile_problem(*c.model, reference), central, options));
         auto& report = reports.back();
-        work.iterations += report.work["iterations"];
-        work.evaluations += report.work["evaluations"];
-        work.hessian_calls += report.work["hessian_calls"];
+        work.iterations += report.work["iterations"]; work.evaluations += report.work["evaluations"]; work.hessian_calls += report.work["hessian_calls"];
         if (!report.completed || report.trials.empty()) throw std::runtime_error("incomplete liquid trial family: " + report.message);
         double best = std::numeric_limits<double>::infinity();
         for (const auto& trial : report.trials) {
@@ -600,24 +597,28 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         }
         return best;
     };
+    const auto competing = [&](double temperature) {
+        sample(temperature);
+        return std::any_of(reports.back().trials.begin(), reports.back().trials.end(), [](const auto& t) { return t.resolved_descent; });
+    };
     EquilibriumResult recovered;
     try {
+        // An ordinary dew stands only when no competing liquid descends at its temperature.
+        if (failed.success && !competing(failed.temperature[0])) {
+            work.report(failed);
+            return {std::move(failed), std::move(reports)};
+        }
         double upper = c.seed_temperature();
-        bool bounded = false;
-        for (int step = 0; step < 16; ++step) {
-            if (sample(upper) > 0.0) { bounded = true; break; }
+        for (int step = 1; sample(upper) <= 0.0; ++step) {
+            if (step == 16) throw std::runtime_error("no vapor-side upper bound in 16 heating samples");
             upper *= 1.01;
         }
-        if (!bounded) throw std::runtime_error("no vapor-side upper bound in 16 heating samples");
         const double increment = 0.005 * upper;
-        double lower = upper;
-        bounded = false;
-        for (int step = 0; step < 64; ++step) {
-            lower = upper - increment;
-            if (sample(lower) <= 0.0) { bounded = true; break; }
-            upper = lower;
+        double lower = upper - increment;
+        for (int step = 1; sample(lower) > 0.0; ++step) {
+            if (step == 64) throw std::runtime_error("no cooling onset in 64 downward samples");
+            upper = lower; lower = upper - increment;
         }
-        if (!bounded) throw std::runtime_error("no cooling onset in 64 downward samples");
         auto boundary = c.problem;
         boundary.temperature = FreeValue::variable(0.5 * (upper + lower));
         boundary.phases[liquid].composition_guess = composition;
@@ -626,14 +627,13 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         if (!recovered.success) throw std::runtime_error("boundary corrector unavailable: " + recovered.message);
         if (recovered.temperature[0] < lower - 1e-10 * upper || recovered.temperature[0] > upper + 1e-10 * upper)
             throw std::runtime_error("boundary corrector left cooling-onset bracket");
-        sample(recovered.temperature[0]);
-        if (std::any_of(reports.back().trials.begin(), reports.back().trials.end(), [](const auto& t) { return t.resolved_descent; }))
-            throw std::runtime_error("competing liquid descent at corrected dew");
+        if (competing(recovered.temperature[0])) throw std::runtime_error("competing liquid descent at corrected dew");
         work.add(failed);
         work.report(recovered);
         return {std::move(recovered), std::move(reports)};
     } catch (const std::exception& error) {
         work.add(recovered);
+        if (failed.success) { failed.success = false; failed.message = "ordinary dew unconfirmed"; clear_state(failed); }
         failed.message += "; cooling onset refused: " + std::string(error.what());
         work.report(failed);
         return {std::move(failed), std::move(reports)};

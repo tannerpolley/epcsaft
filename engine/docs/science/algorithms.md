@@ -1090,24 +1090,29 @@ zero from above. Equal chemical potentials alone also admit lower metastable roo
 the trial distance at one temperature does not order their zero temperatures (row 558
 from 375 K otherwise returns 369.425 K).
 
-The ordinary declared solve runs once; success, or a failure other than local
-instability or infeasibility, returns unchanged with an empty report list. Otherwise, at
-each sampled $T$ the one-phase vapor reference is solved and the complete liquid trial
-family of `stability_test(...)` is run (at most $m+1$ trials). From the seed temperature,
+The ordinary declared solve runs once; a failure other than local instability or
+infeasibility returns unchanged with an empty report list. At each sampled $T$ the
+one-phase vapor reference is solved and the complete liquid trial family of
+`stability_test(...)` is run (at most $m+1$ trials). An ordinary success is sampled at its
+own temperature and returned, with that report, when no trial resolves a descent; a
+resolved descent marks a metastable root (row 722 from 475 K otherwise returns
+368.061 K) and starts the search below. From the seed temperature,
 heat by a factor 1.01 to the first positive minimum distance (at most 16 samples), then
 cool in fixed steps of $0.005\,T_u$ to the first nonpositive one (at most 64). The
 existing dew solve, started at the bracket midpoint with the lower sample's lowest-distance
 liquid and $y=z$, locates the zero; its temperature must lie in the bracket within
 $10^{-10}T_u$. The trial family is rerun there, and any resolved descent refuses. That is
-at most 81 samples and 243 liquid trials for a binary. Each refusal appends its cause to
-the original failure and returns no state: no upper bound in 16 heating samples, no onset
+at most 82 samples and 246 liquid trials for a binary. Each refusal appends its cause to
+the original failure, or to "ordinary dew unconfirmed" after a success, and returns no state: no upper bound in 16 heating samples, no onset
 in 64 downward samples, an unavailable vapor reference or liquid trial, an incomplete
 trial family, an unsuccessful corrector, a corrector outside the bracket, or competing
 descent at the corrected dew. All reference, trial and corrector work is counted.
 Finite coverage: a narrow negative-distance interval between samples or a missed
 composition minimum is not excluded, and a refusal means unresolved selection, not an
 absent dew. Evidence (#391): rows 558, 722 and 723 from the default start and from 350,
-360, 375, 380 and 400 K reach the supplied-start dews within 1e-10.
+360, 375, 380 and 400 K, and row 722 from 475 K, reach the supplied-start dews within
+1e-10; the other 100 admitted Gross 2002 dews keep their ordinary states, each with one
+endpoint sample of three liquid trials.
 
 ### Critical-equation candidates and phase envelopes
 

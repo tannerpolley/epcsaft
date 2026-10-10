@@ -130,11 +130,12 @@ The owner adopted this operation on 2026-10-10 in
 readiness review. `cooling_onset(compiled)` is a third explicit search beside
 `Discover()` and `stability_test(...)`, with free temperature at fixed pressure and
 vapor composition. Its principle: the dew is the first liquid to appear on cooling the
-vapor. It attempts the ordinary declared solve once and searches only after a
+vapor. It attempts the ordinary declared solve once, checks an ordinary success with the
+liquid trial family at its temperature, and searches after a resolved descent there or a
 local-instability or infeasibility failure; [ALG-EQUILIBRIUM](../../../engine/docs/science/algorithms.md#cooling-onset-dew)
 owns its procedure, bounds and refusals. D6/D7 stand: declared solves, continuation,
-fitting and ASL perform no implicit search, and an empty report list means no search
-ran. Its coverage is finite: the sampled temperatures and enumerated liquid trials
+fitting and ASL perform no implicit search, and an empty report list means no trial
+family ran. Its coverage is finite: the sampled temperatures and enumerated liquid trials
 cannot exclude a narrow negative-distance interval between samples or a missed
 composition minimum, and a refusal means unresolved selection, not an absent dew.
 It is numerical recovery, not a global-stability certificate.

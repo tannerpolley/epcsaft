@@ -595,7 +595,9 @@ void check_gross_2002_bubble() {
 
 // #391: Gross 2002 Fig. 10 water(0.87)/1-pentanol dew at 101,300 Pa, k_ij 0.016, temperature
 // started at 375 K. The ordinary solve fails; the cooling onset reaches the first liquid on
-// cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root.
+// cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root. Water 0.8875
+// started at 475 K: the ordinary solve succeeds on the metastable 368.061 K root, whose endpoint
+// liquid trials descend, so the onset search returns the 369.966 K declared-start dew.
 void check_gross_2002_cooling_onset() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
     ParameterDocument d;
@@ -618,16 +620,23 @@ void check_gross_2002_cooling_onset() {
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {0, 3, 0, 1, 2, 3}, 0.0, "dimensionless"});
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {1, 2, 0, 1, 2, 3}, 0.0, "dimensionless"});
     const HelmholtzModel model(build_parameters(d));
-    EquilibriumProblem problem;
-    problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.0)),
-                      equilibrium_support::phase("V", PhaseKind::Vapor)};
-    problem.temperature = FreeValue::variable(375.0); problem.pressure = FreeValue::fixed(1.013 * 1e5);
-    problem.feed.kind = FeedKind::Amounts; problem.feed.values = {0.87, 1.0 - 0.87}; problem.row_tolerance = 1e-8;
-    const auto [result, reports] = cooling_onset(compile_problem(model, problem));
-    CHECK(result.success); CHECK(!reports.empty()); CHECK(result.convergence.residual <= 1e-8);
+    const auto onset = [&](double water, double start) {
+        EquilibriumProblem problem;
+        problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.0)),
+                          equilibrium_support::phase("V", PhaseKind::Vapor)};
+        problem.temperature = FreeValue::variable(start); problem.pressure = FreeValue::fixed(1.013 * 1e5);
+        problem.feed.kind = FeedKind::Amounts; problem.feed.values = {water, 1.0 - water}; problem.row_tolerance = 1e-8;
+        auto onset = cooling_onset(compile_problem(model, problem));
+        CHECK(onset.first.success); CHECK(!onset.second.empty()); CHECK(onset.first.convergence.residual <= 1e-8);
+        return onset;
+    };
+    const auto [result, reports] = onset(0.87, 375.0);
     tpd_compare("gross-2002-cooling-onset/T", result.temperature.at(0), 369.6782514610692, 1e-10 * 369.6782514610692, {}, "K");
     tpd_compare("gross-2002-cooling-onset/x-water", result.mole_fractions.at(0), 0.46929206305581567, 1e-10, {}, "1");
     tpd_compare("gross-2002-cooling-onset/rho-L", result.molar_densities.at(0), 13988.729693124995, 1e-10 * 13988.729693124995, {}, "mol/m3");
+    const auto [metastable, checks] = onset(0.8875, 475.0);
+    CHECK(std::count_if(checks.front().trials.begin(), checks.front().trials.end(), [](const auto& t) { return t.resolved_descent; }) == 1);
+    tpd_compare("gross-2002-cooling-onset/T-475", metastable.temperature.at(0), 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
 }
 
 }  // namespace equilibrium_checks
