@@ -253,3 +253,23 @@ def test_supplied_packings_need_no_boundary_density_root() -> None:
     tried = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits(iterations=1))
     assert not tried.causes[0].startswith("initialization"), tried.causes
     assert tried.results[0] is not None and tried.iterations == 1
+
+
+@pytest.mark.parametrize(("species", "association", "T", "reference"), [
+    ((32.042, 1.5255, 3.2300, 188.90), (2899.5, .035176), 505., (7098526.457937359, 14223.498914825788, 3264.4582146128782)),
+    ((88.15, 3.6260, 3.4508, 247.28), (2252.1, .010319), 585., (3753197.3286717464, 4685.426417139512, 1511.9545691073597))])
+def test_pure_saturation_default_start_takes_the_loop_pressure(species: Any, association: Any, T: float, reference: Any) -> None:
+    """#391: Gross and Sadowski (2002) Table 1 methanol and 1-pentanol (2B) saturation, from the default start with
+    the 0.1 MPa guess. That pressure has only a vapor root; main 3b307095 refused it as "no coexisting density
+    roots". The pressure at the density scan's negative-slope node seeds both roots, and the solve reaches the
+    retained declared-start state of analyses/reproduction/2002-gross (state-comparisons.csv lines 21 and 41)."""
+    model = Pure(parameters((species,), [("association_energy_over_k", (0, 1), association[0]),
+                                         ("association_volume", (0, 1), association[1])], ((0, 0), (1, 1))))
+    result = eq.solve_equilibrium(model, eq.Problem(
+        T=T, P=eq.Free(1e5), feed=eq.Amounts({"s0": 1.}), row_tolerance=1e-8,
+        phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))]))
+    assert result.success and result.requested_tolerance_met, result.message
+    for x, y in zip([*result.pressure, *result.molar_densities], reference, strict=True):
+        assert abs(x - y) <= 1e-10 * y
+    assert result.molar_densities[0] > 2 * result.molar_densities[1]
+    assert all(model.state(T, rho=rho, x=[1.]).pressure_density_derivative > 0 for rho in result.molar_densities)

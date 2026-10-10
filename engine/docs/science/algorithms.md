@@ -519,7 +519,21 @@ restoring force: their objective gradient scales with $x_i$, the Lagrangian Hess
 is indefinite there, and Ipopt cycled through restoration to the iteration budget
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
-coexistence check. Final residual and stability checks are unchanged.
+coexistence check. A pure fluid's unguessed fixed-temperature, free-pressure
+liquid/vapor start whose seed pressure $P_0$ gives one stable density root (#391)
+instead takes $P_w=P(T,\rho_w)$ at the cold scan's negative-slope node $\rho_w$
+(ALG-DENSITY), when $P_w$ is finite and positive, for its pressure coordinate and
+both density seeds. Under the scan's single-loop shape $P_w$ lies between the
+spinodal pressures, so both stable roots exist there; distinct-root, positive-slope
+and branch admission are unchanged. A two-root $P_0$ is kept, and supplied
+coordinates still replace generated ones. Without such a $P_w$ the start keeps
+$P_0$ and refuses with `no positive mechanical-loop witness pressure`. A missing
+witness does not prove the fluid supercritical or coexistence absent: a loop
+narrower than the scan grid near the critical point has no sampled negative slope.
+No pressure is invented and nothing retries. Evidence: Gross and Sadowski (2002)
+methanol, 1-pentanol and 1-nonanol saturation, nine rows (eight states) recovered in
+four iterations, within 7.3e-13 of their declared-start states; no other
+declaration changed. Final residual and stability checks are unchanged.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors
