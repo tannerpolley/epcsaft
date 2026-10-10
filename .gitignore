@@ -19,5 +19,8 @@
 /.quarto/
 **/*.quarto_ipynb
 
+# Engine paper build products (the PDF is rebuilt from docs/scientific/latex/main.tex)
+/docs/scientific/latex/builds/
+
 # Notebook renders are derived from retained results; render into build/ (#341).
 analyses/**/*.html
