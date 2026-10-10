@@ -1320,9 +1320,11 @@ void check_e2_reuse() {
         }
         auto b = a;
         for (double& value : b) value += 1.0e-3;
+        const auto unit = callback_unit(compiled, a);  // fixed by the start a for every point below
         std::vector<Ipopt::Index> rows_index(static_cast<std::size_t>(hessian_entries)), cols_index(static_cast<std::size_t>(hessian_entries));
         CHECK(nlp.eval_h(n, a.data(), true, 1.0, m, lambda_one.data(), true, hessian_entries, rows_index.data(), cols_index.data(), nullptr));
-        const auto callback = [&](const std::vector<double>& point, double objective_factor, const std::vector<double>& lambda) {
+        const auto callback = [&](std::vector<double> point, double objective_factor, const std::vector<double>& lambda) {
+            for (Ipopt::Index i = 0; i < n; ++i) point[i] /= unit[i];
             Ipopt::Number f = 0.0;
             std::vector<Ipopt::Number> g(static_cast<std::size_t>(m)), grad(static_cast<std::size_t>(n));
             std::vector<Ipopt::Number> jac(static_cast<std::size_t>(jacobian_entries)), hess(static_cast<std::size_t>(hessian_entries));
@@ -1331,6 +1333,11 @@ void check_e2_reuse() {
             CHECK(nlp.eval_grad_f(n, point.data(), false, grad.data()));
             CHECK(nlp.eval_jac_g(n, point.data(), false, m, jacobian_entries, nullptr, nullptr, jac.data()));
             CHECK(nlp.eval_h(n, point.data(), false, objective_factor, m, lambda.data(), true, hessian_entries, nullptr, nullptr, hess.data()));
+            for (Ipopt::Index i = 0, entry = 0; i < n; ++i) {  // restore S grad, J S and S H S to physical coordinates
+                grad[i] /= unit[i];
+                for (Ipopt::Index row = 0; row < m; ++row) jac[row * n + i] /= unit[i];
+                for (Ipopt::Index column = 0; column <= i; ++column) hess[entry++] /= unit[i] * unit[column];
+            }
             std::vector<double> flat = {f};
             flat.insert(flat.end(), g.begin(), g.end());
             flat.insert(flat.end(), grad.begin(), grad.end());
