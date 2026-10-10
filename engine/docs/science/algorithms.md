@@ -520,18 +520,24 @@ is indefinite there, and Ipopt cycled through restoration to the iteration budge
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
-Every free amount that no start owner estimates starts at the feed amount $N$, not $N/k$
-for $k$ free phases (#407). The start then holds $kN$ and need not satisfy $Bn=b$;
-Ipopt restores feasibility from it like any other infeasible start. With the start-amount
-unit below, $S_p=N$ makes each initial amount bound multiplier 1 in feed-relative
-units, as for one phase; $N/k$ made it $k$. From the equal split, both declared
+With more than one free phase, every free amount that no start owner estimates (no
+Rachford–Rice or true-species split, speciated total, or caller or previous amount)
+starts at the feed amount $N$ instead of $N/k$ for $k$ free phases (#407). This is an
+infeasible default starting amount, not a material allocation: the starts hold $kN$ and
+do not satisfy $Bn=b$, and Ipopt restores the balance. #243's scale definition below is
+unchanged, so these phases take $S_p=N$. Ipopt starts each bound multiplier at $z_y=1$,
+and the feed-relative amount bound multiplier is $z_q=(N/S_p)z_y$: $k$ from the old
+default, 1 from the new. That argument holds only for default-started free amounts of a
+Gibbs minimization; in pinned, caloric or critical feasibility problems, whose
+coordinates keep unit one, the change is only a different infeasible start. The
+$\kappa_N$ first-step retention below becomes $0.1N$ per phase instead of $0.1N/k$; it is
+recomputed at every iterate, so it is no permanent floor. From $N/k$, both declared
 esterification liquid pairs of the Ascani reproduction (318.15 K, $z=0.66$; 353.6 K,
 $z=0.78$) lost their minor liquid at 1, 100 and 10,000 mol (aq vanished, or the phases
-coincided); from $N$ they return the lower-G distinct liquids. Cost on the key solves:
-ionic LLE cold goes from 10/13/11 to 10/15/11 iterations/evaluations/Hessian calls and
-median wall time rises 4.8–4.9% in two seven-pair runs; the other five records keep
-their work. Estimated amounts (Rachford–Rice, true-species split, speciated total,
-caller or previous amounts) are unchanged.
+coincided); from $N$ they return the lower-G distinct liquids. Of the key solves only
+ionic LLE cold changes work, from 10/13/11 to 10/15/11 iterations/evaluations/Hessian
+calls. This is an empirically qualified initialization convention, not a convergence
+guarantee.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors
