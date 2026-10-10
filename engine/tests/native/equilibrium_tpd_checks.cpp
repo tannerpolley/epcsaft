@@ -472,6 +472,23 @@ epcsaft::Parameters ascani_2023(int system) {
     return epcsaft::build_parameters(d);
 }
 
+// Feed [z, 1-z, 0, 0] mol at 1e5 Pa with the Table 4 constant K on the raw mole-fraction basis.
+epcsaft::equilibrium::EquilibriumProblem ascani_2023_problem(int system, double z) {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    const double T = system == 1 ? 318.15 : 353.6;
+    auto problem = equilibrium_support::flash(4);
+    problem.temperature = FreeValue::fixed(T); problem.pressure = FreeValue::fixed(1e5);
+    problem.feed.values = {z, 1.0 - z, 0.0, 0.0}; problem.row_tolerance = 1e-10;
+    ReactionSpec reaction; reaction.name = "esterification"; reaction.stoichiometry = {-1, -1, 1, 1};
+    reaction.correlation = ReactionLogPolynomial{std::log(system == 1 ? 43.99 : 22.92), 0, 0, 0, T, T, T, "ascani-2023"};
+    reaction.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+    problem.reactions = {reaction};
+    NeutralReferenceDeclaration reference; reference.solvent_index = 3; reference.solute_molality_ratios = {1, 1, 1, 0};
+    reference.standard_molality_mol_per_kg = 1; reference.species_reference.assign(4, SpeciesReference::PureLiquid);
+    problem.source_reference = reference;
+    return problem;
+}
+
 void check_reacting_liquid_split() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
     struct Case { int system; double z, g_two, minor; };
@@ -480,17 +497,7 @@ void check_reacting_liquid_split() {
              Case{2, 0.78, 0.012659963549595034, 0.05694860636520922}}) {
         const std::string id = "reacting-liquid-split/" + std::to_string(item.system) + "/" + std::to_string(item.z).substr(0, 4);
         const HelmholtzModel model(ascani_2023(item.system));
-        const double T = item.system == 1 ? 318.15 : 353.6;
-        auto problem = equilibrium_support::flash(4);
-        problem.temperature = FreeValue::fixed(T); problem.pressure = FreeValue::fixed(1e5);
-        problem.feed.values = {item.z, 1.0 - item.z, 0.0, 0.0}; problem.row_tolerance = 1e-10;
-        ReactionSpec reaction; reaction.name = "esterification"; reaction.stoichiometry = {-1, -1, 1, 1};
-        reaction.correlation = ReactionLogPolynomial{std::log(item.system == 1 ? 43.99 : 22.92), 0, 0, 0, T, T, T, "ascani-2023"};
-        reaction.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
-        problem.reactions = {reaction};
-        NeutralReferenceDeclaration reference; reference.solvent_index = 3; reference.solute_molality_ratios = {1, 1, 1, 0};
-        reference.standard_molality_mol_per_kg = 1; reference.species_reference.assign(4, SpeciesReference::PureLiquid);
-        problem.source_reference = reference;
+        auto problem = ascani_2023_problem(item.system, item.z);
         problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
         const auto result = discover_phases(model, problem);
         CHECK(result.success); CHECK(result.phase_count == 2); CHECK(result.convergence.residual <= 1e-10);
@@ -507,6 +514,40 @@ void check_reacting_liquid_split() {
             tpd_compare(id + "/balance/" + std::to_string(k), balance, B[k][0] * item.z + B[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
         }
         CHECK(distance > 0.3);
+    }
+}
+
+// #407: the declared aq/org starts of the Ascani reproduction, at 1, 100 and 10,000 mol from the cold
+// default start and from the accepted one-mol state, return the same lower-G distinct liquids as
+// the discovery references above (pre-#243 declared solves agree), with aq water-rich.
+void check_declared_reacting_liquid_split() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    struct Case { int system; double z, g_two, minor; std::vector<double> aq, org; };
+    for (const Case& item : {Case{1, 0.66, -1.7399460167689516, 0.007122036772532215, {.3, .003, .003, .69}, {.4, .05, .27, .28}},
+             Case{2, 0.78, 0.012659963549595034, 0.05694860636520922, {.48, .0013, .0055, .51}, {.58, .012, .22, .19}}}) {
+        const HelmholtzModel model(ascani_2023(item.system));
+        std::vector<double> accepted;  // primal coordinates of the one-mol cold solve
+        for (const double N : {1.0, 100.0, 10000.0}) {
+            auto problem = ascani_2023_problem(item.system, item.z);
+            for (double& n : problem.feed.values) n *= N;
+            auto aq = equilibrium_support::phase("aq", PhaseKind::Liquid), org = equilibrium_support::phase("org", PhaseKind::Liquid);
+            aq.composition_guess = item.aq; org.composition_guess = item.org;
+            problem.phases = {aq, org};
+            const auto compiled = compile_problem(model, problem);
+            for (const bool cold : {true, false}) {
+                const std::string id = "declared-reacting-liquid-split/" + std::to_string(item.system) + "/"
+                    + std::to_string(static_cast<int>(N)) + (cold ? "/cold" : "/accepted");
+                auto start = accepted;
+                if (!cold) for (const std::size_t i : {std::size_t{4}, std::size_t{10}}) start[i] *= N;  // aq, org amounts
+                const auto result = cold ? solve_equilibrium(model, problem)
+                                         : solve_equilibrium_from_coordinates(model, problem, add_multipliers(compiled, start));
+                CHECK(result.success); CHECK(result.convergence.residual <= 1e-10);
+                if (accepted.empty()) accepted.assign(result.coordinates.begin(), result.coordinates.begin() + compiled.primal_size);
+                tpd_compare(id + "/g", result.objective / N, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
+                tpd_compare(id + "/aq-amount", result.amounts[0] / N, item.minor, 1e-12, {}, "mol");
+                CHECK(result.mole_fractions[3] - result.mole_fractions[7] > 0.3);  // aq water-rich, distinct liquids
+            }
+        }
     }
 }
 

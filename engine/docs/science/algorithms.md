@@ -431,7 +431,7 @@ binary precision of a double. Seed $x_i=z_i/(1-\beta+\beta K_i)$,
 $y_i=K_i x_i$, $N_V=\beta N_{feed}$ and $N_L=(1-\beta)N_{feed}$, assigning
 by declared phase kind. Nonfinite/nonpositive coordinates or fractions at the
 existing phase-disappearance floor retain the original normalized $z/K,zK$
-and equal-amount seed. No new phase search or equilibrium driver is introduced.
+and default amounts below. No new phase search or equilibrium driver is introduced.
 A reacting fixed-TP declaration of one liquid and one vapor, identified by kind in
 either order, with both amounts free and no composition guess, starts instead from a
 true-species split (#350). Its predicates use the compiled effective supports, which
@@ -520,6 +520,18 @@ is indefinite there, and Ipopt cycled through restoration to the iteration budge
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
+Every free amount that no start owner estimates starts at the feed amount $N$, not $N/k$
+for $k$ free phases (#407). The start then holds $kN$ and need not satisfy $Bn=b$;
+Ipopt restores feasibility from it like any other infeasible start. With the start-amount
+unit below, $S_p=N$ makes each initial amount bound multiplier 1 in feed-relative
+units, as for one phase; $N/k$ made it $k$. From the equal split, both declared
+esterification liquid pairs of the Ascani reproduction (318.15 K, $z=0.66$; 353.6 K,
+$z=0.78$) lost their minor liquid at 1, 100 and 10,000 mol (aq vanished, or the phases
+coincided); from $N$ they return the lower-G distinct liquids. Cost on the key solves:
+ionic LLE cold goes from 10/13/11 to 10/15/11 iterations/evaluations/Hessian calls and
+median wall time rises 4.8–4.9% in two seven-pair runs; the other five records keep
+their work. Estimated amounts (Rachford–Rice, true-species split, speciated total,
+caller or previous amounts) are unchanged.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors

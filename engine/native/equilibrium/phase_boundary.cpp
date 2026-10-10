@@ -487,7 +487,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     }
     const double feed_total = compiled.feed_total;
     std::optional<double> speciated_density;
-    double free_amount = feed_total / static_cast<double>(std::max<std::size_t>(1, free_phases));
+    double free_amount = feed_total;  // ALG-EQUILIBRIUM default free amount (#407)
     scope.probe("free_phases", static_cast<double>(free_phases));
     scope.probe("feed_total", feed_total);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
