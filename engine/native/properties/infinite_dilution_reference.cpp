@@ -590,6 +590,20 @@ double reaction_reference_log_scale(
     return scale;
 }
 
+std::optional<std::vector<NeutralReferenceReactionDiagnostic>> HelmholtzModel::stored_references(const std::vector<double>& inputs) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto& [stored, result] : references_) if (stored == inputs) return result;
+    return std::nullopt;
+}
+
+// Sixteen entries hold every endpoint of a fit state group at one (T, P); a bubble solve's moving
+// pressure only cycles the FIFO.
+void HelmholtzModel::store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (references_.size() == 16) references_.pop_front();
+    references_.emplace_back(std::move(inputs), result);
+}
+
 std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const HelmholtzModel& model,
     double temperature,
@@ -615,6 +629,21 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     }
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
+    // Every input of this pure function of the model, segment sizes first so the flat key is unambiguous.
+    std::vector<double> inputs{temperature, system_pressure, double(pressure_jets), double(solvent_anchor.has_value()),
+        solvent_anchor.value_or(0.0), double(temperature_order), double(parameter_jets), double(reference_order),
+        double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
+        declaration.standard_molality_mol_per_kg, double(declaration.solute_molality_ratios.size()),
+        double(declaration.species_reference.size()), double(stoichiometries.size())};
+    inputs.insert(inputs.end(), declaration.solute_molality_ratios.begin(), declaration.solute_molality_ratios.end());
+    for (const auto species : declaration.species_reference) inputs.push_back(double(species));
+    for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
+        inputs.push_back(double(stoichiometries[row].size()));
+        inputs.insert(inputs.end(), stoichiometries[row].begin(), stoichiometries[row].end());
+        inputs.insert(inputs.end(), {double(references[row].reference_pressure_pa.has_value()),
+            references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
+    }
+    if (auto stored = model.stored_references(inputs)) return std::move(*stored);
     struct CachedTrace final {
         double pressure = 0.0;
         NeutralReferenceTraceResult result;
@@ -698,6 +727,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                 }
 
     }
+    model.store_references(std::move(inputs), result);
     return result;
 }
 

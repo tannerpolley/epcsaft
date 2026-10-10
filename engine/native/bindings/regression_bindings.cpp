@@ -175,15 +175,17 @@ void register_regression(py::module_& module) {
     // The two budgets are scientific inputs (ALG-FIT); zero tolerances select the policy defaults.
     py::class_<FitControls>(module, "FitControls")
         .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, double function_tolerance,
-                         double gradient_tolerance, double parameter_tolerance) {
-            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds};
+                         double gradient_tolerance, double parameter_tolerance, int workers) {
+            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds, workers};
         }), py::kw_only(), py::arg("maximum_iterations"), py::arg("maximum_elapsed_time_seconds"),
-            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0)
+            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0,
+            py::arg("workers") = 0)
         .def_readwrite("function_tolerance", &FitControls::function_tolerance)
         .def_readwrite("gradient_tolerance", &FitControls::gradient_tolerance)
         .def_readwrite("parameter_tolerance", &FitControls::parameter_tolerance)
         .def_readwrite("maximum_iterations", &FitControls::maximum_iterations)
-        .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds);
+        .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds)
+        .def_readwrite("workers", &FitControls::workers);
     py::class_<TrialFailure>(module, "TrialFailure")
         .def_readonly("trial", &TrialFailure::trial)
         .def_readonly("observation", &TrialFailure::observation)

@@ -5,14 +5,20 @@
 
 #include <ceres/ceres.h>
 #include <Eigen/Dense>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <chrono>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <thread>
+#include <type_traits>
 #include <utility>
 
 namespace epcsaft::regression {
@@ -60,14 +66,84 @@ struct Trial final {
     ReferenceCache references;
 };
 
+// The serial sweep's first failure: `row` orders failures across worker processes; `observation` is
+// the reported index (the observation count for a refused trial).
+struct Failure final {
+    std::size_t row = 0, observation = 0;
+    ObservationStatus status = ObservationStatus::Nonfinite;
+    bool jacobian = false;
+    std::string message;
+};
+
+// Whole values over a worker socket: plain values, or a size and then the elements of a vector or string.
+template <class T> void transfer(int fd, T& value, bool out) {
+    char* bytes = reinterpret_cast<char*>(&value);
+    std::size_t left = sizeof(T);
+    if constexpr (!std::is_trivially_copyable_v<T>) {
+        std::size_t size = value.size();
+        transfer(fd, size, out);
+        value.resize(size);
+        bytes = reinterpret_cast<char*>(value.data());
+        left = size * sizeof(*value.data());
+    }
+    while (left > 0) {
+        const auto moved = out ? send(fd, bytes, left, MSG_NOSIGNAL) : recv(fd, bytes, left, 0);
+        if (moved < 0 && errno == EINTR) continue;
+        if (moved <= 0) throw std::runtime_error("fit worker process unavailable");
+        bytes += moved;
+        left -= static_cast<std::size_t>(moved);
+    }
+}
+template <class... T> void put(int fd, T... values) { (transfer(fd, values, true), ...); }
+template <class... T> void get(int fd, T&... values) { (transfer(fd, values, false), ...); }
+
+// Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so
+// concurrent states run in forked processes rather than threads; the fit owns and reaps them.
+struct Workers final {
+    std::vector<int> sockets;
+    std::vector<pid_t> processes;
+    ~Workers() {
+        for (const int fd : sockets) close(fd);
+        for (const pid_t process : processes) waitpid(process, nullptr, 0);
+    }
+};
+
 }  // namespace
 
 // One successful point owns its immutable model and compiled central states through later promotion.
+// Worker processes each evaluate a fixed share of the rows and keep that share's starts and centers;
+// every process publishes only when the whole evaluation succeeds.
 struct ObservationEvaluator::Impl final {
     Impl(const FitRequest& request, FitResult& result, const std::vector<std::size_t>& groups,
               const std::vector<double>& sqrt_weights)
         : request_(request), result_(result), groups_(groups), sqrt_weights_(sqrt_weights),
-          starts_(groups.size()) {}
+          starts_(groups.size()), owner_(groups.size(), 0) {}
+
+    // Fixed partition: worker k evaluates every count-th state group in row order. Electrolyte rows share
+    // one reference cache and stay here, as does every row under a trace capture.
+    void start_workers(int requested) {
+        const std::size_t count = core::active_trace ? 1
+            : requested > 0 ? static_cast<std::size_t>(requested) : std::max(1u, std::thread::hardware_concurrency());
+        std::size_t rank = 0;
+        for (std::size_t i = 0; i < groups_.size(); ++i)
+            owner_[i] = groups_[i] != i ? owner_[groups_[i]]
+                : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
+        for (std::size_t k = 1; k < std::min(count, rank); ++k) {
+            int pair[2];
+            if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
+            const pid_t process = fork();
+            if (process == 0) {
+                close(pair[0]);
+                for (const int fd : workers_.sockets) close(fd);
+                process_ = k;
+                serve(pair[1]);
+            }
+            close(pair[1]);
+            if (process < 0) { close(pair[0]); throw std::runtime_error("fit worker process unavailable"); }
+            workers_.sockets.push_back(pair[0]);
+            workers_.processes.push_back(process);
+        }
+    }
 
     bool evaluate(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out) {
         core::Scope scope("fit_evaluation");
@@ -83,66 +159,83 @@ struct ObservationEvaluator::Impl final {
         out = ObservationEvaluation{};
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
+        for (const int fd : workers_.sockets) put(fd, optimizer, jacobian);
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         Trial fresh;
         Trial& trial = same_point ? *cached_ : fresh;
-        try {
-            auto observations = request_.observations;
-            request_.coordinates.apply(observations, optimizer);
-            if (!same_point) {
-                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, optimizer, request_.holds, request_.thermochemistry);
-                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry);
-                trial.centers.assign(groups_.size(), Prediction{});
+        auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
+        for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
+            bool failed = false;
+            Failure theirs;
+            ObservationEvaluation part;
+            get(workers_.sockets[k - 1], failed, theirs.row, theirs.observation, theirs.status, theirs.jacobian,
+                theirs.message, part.predictions, part.residuals, part.statuses, part.gradient);
+            if (failed && (!failure || theirs.row < failure->row)) failure = std::move(theirs);
+            for (std::size_t i = 0; out.statuses.size() == n && part.statuses.size() == n && i < n; ++i) if (owner_[i] == k) {
+                out.predictions[i] = part.predictions[i];
+                out.residuals[i] = part.residuals[i];
+                out.statuses[i] = part.statuses[i];
+                if (jacobian) std::copy_n(part.gradient.begin() + i * width, width, out.gradient.begin() + i * width);
             }
-            trial.observations = std::move(observations);
-            const Trial* seed = nullptr;
-            if (!same_point && cached_ && trial.chart.physical.size() == cached_->chart.physical.size()) {
-                bool near = true;
-                for (std::size_t k = 0; k < trial.chart.physical.size(); ++k) {
-                    const double a = trial.chart.physical[k], b = cached_->chart.physical[k];
-                    near &= std::isfinite(a) && std::isfinite(b)
-                        && std::abs(a - b) / std::max({1.0, std::abs(a), std::abs(b)}) <= policy::FIT_DENSITY_PARAMETER_FRACTION.value;
-                }
-                if (near) seed = &*cached_;
-            }
-            scope.probe("density_seed_chart", seed ? 1.0 : 0.0);
-            if (!evaluate_rows(optimizer, jacobian, out, trial, n, width, seed)) return false;
-            out.weighted.resize(n);
-            for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
-            // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
-            double sum = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                const double weighted = out.weighted[i];
-                sum += weighted * weighted;
-                if (!std::isfinite(weighted) || !std::isfinite(sum))
-                    return fail(i, optimizer, ObservationStatus::Nonfinite,
-                        std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite", jacobian);
-            }
-            out.cost = 0.5 * sum;
-            const std::size_t columns = request_.coordinates.coordinates.size();
-            if (jacobian) out.optimizer_gradient.resize(n * columns);
-            for (std::size_t i = 0; jacobian && i < n; ++i) {
-                if (sqrt_weights_[i] == 0.0) continue;
-                chain(request_, trial.chart.map, i, sqrt_weights_[i], out.predictions[i],
-                      out.gradient.data() + i * width, out.optimizer_gradient.data() + i * columns);
-                if (!Eigen::Map<const Eigen::VectorXd>(out.optimizer_gradient.data() + i * columns,
-                    static_cast<Eigen::Index>(columns)).allFinite())
-                    return fail(i, optimizer, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", true);
-            }
-        } catch (const std::exception& error) {
-            return fail(n, optimizer, ObservationStatus::InadmissibleTrial, error.what(), jacobian);
         }
-        // Neither a failed row nor an overflowing weighted/coordinate chain publishes starts or a cache.
-        for (std::size_t g = 0; g < groups_.size(); ++g)
-            if (trial.centers[g].solved) starts_[g] = trial.centers[g].solved;
-        out.chart = trial.chart;
-        trial.optimizer = optimizer;
-        trial.evaluation = out;
-        trial.jacobian = jacobian;
-        if (!same_point) {
-            cached_.emplace(std::move(fresh));
+        // The serial sweep stops at its first failure: later rows stay unevaluated.
+        for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
+            out.predictions[i] = out.residuals[i] = 0.0;
+            out.statuses[i] = ObservationStatus::NotEvaluated;
+            if (jacobian) std::fill_n(out.gradient.begin() + i * width, width, 0.0);
         }
+        const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged) {
+            for (const int fd : workers_.sockets) put(fd, false);
+            return fail(index, optimizer, status, std::move(message), flagged);
+        };
+        if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian);
+        out.weighted.resize(n);
+        for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
+        // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
+        double sum = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            const double weighted = out.weighted[i];
+            sum += weighted * weighted;
+            if (!std::isfinite(weighted) || !std::isfinite(sum))
+                return reject(i, ObservationStatus::Nonfinite,
+                    std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite", jacobian);
+        }
+        out.cost = 0.5 * sum;
+        const std::size_t columns = request_.coordinates.coordinates.size();
+        if (jacobian) out.optimizer_gradient.resize(n * columns);
+        for (std::size_t i = 0; jacobian && i < n; ++i) {
+            if (sqrt_weights_[i] == 0.0) continue;
+            chain(request_, trial.chart.map, i, sqrt_weights_[i], out.predictions[i],
+                  out.gradient.data() + i * width, out.optimizer_gradient.data() + i * columns);
+            if (!Eigen::Map<const Eigen::VectorXd>(out.optimizer_gradient.data() + i * columns,
+                static_cast<Eigen::Index>(columns)).allFinite())
+                return reject(i, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", true);
+        }
+        for (const int fd : workers_.sockets) put(fd, true);
+        publish(optimizer, jacobian, out, trial, fresh, same_point);
         return true;
+    }
+
+    // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
+    [[noreturn]] void serve(int fd) {
+        try {
+            for (std::vector<double> optimizer;;) {
+                bool jacobian = false, commit = false;
+                get(fd, optimizer, jacobian);
+                core::Scope scope("fit_evaluation");
+                const bool same_point = cached_ && cached_->optimizer == optimizer;
+                Trial fresh;
+                Trial& trial = same_point ? *cached_ : fresh;
+                ObservationEvaluation out;
+                const auto found = compute(optimizer, jacobian, out, trial, same_point, scope);
+                const auto failure = found.value_or(Failure{});
+                put(fd, found.has_value(), failure.row, failure.observation, failure.status, failure.jacobian,
+                    failure.message, out.predictions, out.residuals, out.statuses, out.gradient);
+                get(fd, commit);
+                if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
+            }
+        } catch (...) {}
+        _exit(0);
     }
 
     bool gradient_at(const std::vector<double>& point, std::vector<double>& out) {
@@ -164,55 +257,95 @@ struct ObservationEvaluator::Impl final {
         return false;
     }
 
-    bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
-                       Trial& trial, std::size_t n, std::size_t width, const Trial* seed) {
-        const auto& model = *trial.model;
-        out.predictions.assign(n, 0.0);
-        out.residuals.assign(n, 0.0);
-        out.statuses.assign(n, ObservationStatus::NotEvaluated);
-        if (jacobian) out.gradient.assign(n * width, 0.0);
-        std::vector<std::vector<PredictionGradient>> gradients(n);
-        std::vector<std::size_t> position(n, 0);
-        for (std::size_t i = 0; i < n; ++i) {
-            if (sqrt_weights_[i] == 0.0) continue;
-            const auto& observation = trial.observations[i];
-            const std::size_t g = groups_[i];
-            auto& prediction = trial.centers[g];
-            if (!prediction.value) {
-                core::Scope scope("fit_group_prediction");
-                scope.probe("observation", static_cast<double>(i));
-                scope.probe("anchor", static_cast<double>(g));
-                scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
-                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
-                    seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
-                    seed && trial.chart.physical == seed->chart.physical);
-                if (prediction.status != ObservationStatus::Available && starts_[g])
-                    prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
-            } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
-            out.statuses[i] = prediction.status;
-            if (prediction.status != ObservationStatus::Available)
-                return fail(i, optimizer, prediction.status, prediction.message, jacobian);
-            out.predictions[i] = *prediction.value;
-            out.residuals[i] = *prediction.residual;
-            if (!jacobian) continue;
-            if (gradients[g].empty()) {
-                core::Scope scope("fit_group_differentiation");
-                scope.probe("anchor", static_cast<double>(g));
-                std::vector<const Observation*> rows;
-                for (std::size_t row = 0; row < n; ++row)
-                    if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
-                gradients[g] = pressure_closed(observation.kind)
-                    ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                    : differentiate_group(model, rows, prediction, request_.coordinates);
+    // This process's rows of one trial; `i`, the sweep position, orders a refused trial among row failures.
+    std::optional<Failure> compute(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
+                                   Trial& trial, bool same_point, core::Scope& scope) {
+        const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
+        std::size_t i = 0;
+        try {
+            auto observations = request_.observations;
+            request_.coordinates.apply(observations, optimizer);
+            if (!same_point) {
+                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, optimizer, request_.holds, request_.thermochemistry);
+                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry);
+                trial.centers.assign(groups_.size(), Prediction{});
             }
-            const auto& gradient = gradients[g][position[g]++];
-            if (gradient.status != ObservationStatus::Available)
-                return fail(i, optimizer, gradient.status, gradient.message, true);
-            std::copy(gradient.value.begin(), gradient.value.end(),
-                      out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
+            trial.observations = std::move(observations);
+            const Trial* seed = nullptr;
+            if (!same_point && cached_ && trial.chart.physical.size() == cached_->chart.physical.size()) {
+                bool near = true;
+                for (std::size_t k = 0; k < trial.chart.physical.size(); ++k) {
+                    const double a = trial.chart.physical[k], b = cached_->chart.physical[k];
+                    near &= std::isfinite(a) && std::isfinite(b)
+                        && std::abs(a - b) / std::max({1.0, std::abs(a), std::abs(b)}) <= policy::FIT_DENSITY_PARAMETER_FRACTION.value;
+                }
+                if (near) seed = &*cached_;
+            }
+            scope.probe("density_seed_chart", seed ? 1.0 : 0.0);
+            const auto& model = *trial.model;
+            out.predictions.assign(n, 0.0);
+            out.residuals.assign(n, 0.0);
+            out.statuses.assign(n, ObservationStatus::NotEvaluated);
+            if (jacobian) out.gradient.assign(n * width, 0.0);
+            std::vector<std::vector<PredictionGradient>> gradients(n);
+            std::vector<std::size_t> position(n, 0);
+            for (i = 0; i < n; ++i) {
+                if (sqrt_weights_[i] == 0.0 || owner_[i] != process_) continue;
+                const auto& observation = trial.observations[i];
+                const std::size_t g = groups_[i];
+                auto& prediction = trial.centers[g];
+                if (!prediction.value) {
+                    core::Scope scope("fit_group_prediction");
+                    scope.probe("observation", static_cast<double>(i));
+                    scope.probe("anchor", static_cast<double>(g));
+                    scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
+                    // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
+                    prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
+                        seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
+                        seed && trial.chart.physical == seed->chart.physical);
+                    if (prediction.status != ObservationStatus::Available && starts_[g])
+                        prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
+                } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                out.statuses[i] = prediction.status;
+                if (prediction.status != ObservationStatus::Available)
+                    return Failure{i, i, prediction.status, jacobian, prediction.message};
+                out.predictions[i] = *prediction.value;
+                out.residuals[i] = *prediction.residual;
+                if (!jacobian) continue;
+                if (gradients[g].empty()) {
+                    core::Scope scope("fit_group_differentiation");
+                    scope.probe("anchor", static_cast<double>(g));
+                    std::vector<const Observation*> rows;
+                    for (std::size_t row = 0; row < n; ++row)
+                        if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
+                    gradients[g] = pressure_closed(observation.kind)
+                        ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
+                        : differentiate_group(model, rows, prediction, request_.coordinates);
+                }
+                const auto& gradient = gradients[g][position[g]++];
+                if (gradient.status != ObservationStatus::Available)
+                    return Failure{i, i, gradient.status, true, gradient.message};
+                std::copy(gradient.value.begin(), gradient.value.end(),
+                          out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
+            }
+            return std::nullopt;
+        } catch (const std::exception& error) {
+            return Failure{i, n, ObservationStatus::InadmissibleTrial, jacobian, error.what()};
         }
-        return true;
+    }
+
+    // Neither a failed row nor an overflowing weighted/coordinate chain publishes starts or a cache.
+    void publish(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial,
+                 Trial& fresh, bool same_point) {
+        for (std::size_t g = 0; g < groups_.size(); ++g)
+            if (trial.centers[g].solved) starts_[g] = trial.centers[g].solved;
+        out.chart = trial.chart;
+        trial.optimizer = optimizer;
+        trial.evaluation = out;
+        trial.jacobian = jacobian;
+        if (!same_point) {
+            cached_.emplace(std::move(fresh));
+        }
     }
 
     const FitRequest& request_;
@@ -222,6 +355,9 @@ struct ObservationEvaluator::Impl final {
     std::vector<std::optional<equilibrium::EquilibriumResult>> starts_;
     std::optional<Trial> cached_;
     std::size_t trials_ = 0;
+    std::vector<std::size_t> owner_;  // the process that evaluates each row; 0 is the fit's own
+    std::size_t process_ = 0;
+    Workers workers_;
 };
 
 ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows) {
@@ -589,6 +725,7 @@ FitResult fit(const FitRequest& request) {
     }
     const std::size_t width = set.coordinates.size();
     ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights);
+    evaluator.start_workers(request.controls.workers);
     std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
     ObservationEvaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {

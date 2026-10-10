@@ -20,6 +20,7 @@ struct FitControls final {
     double parameter_tolerance = 0.0;
     int maximum_iterations = 0;
     double maximum_elapsed_time_seconds = 0.0;
+    int workers = 0;  // processes evaluating state groups concurrently; 0: one per hardware thread
 };
 
 enum class CheckMetric { AbsoluteDifference, AbsoluteLog10Ratio };

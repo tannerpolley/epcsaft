@@ -1615,6 +1615,10 @@ available sibling columns. They do not reconstruct an admission rule from a
 missing value. Requested higher columns report both consecutive scaled ladder changes and their own
 unavailability cause. Equilibrium consumes only the admitted columns for the
 record-anchored completion above; it does not differentiate the reference again.
+A model keeps its last 16 `reaction_references` results by exact inputs (temperature,
+system pressure, declaration, reactions, solvent anchor, orders and jets); a repeated call,
+such as each endpoint of the finite-addition rows at one (T, P), returns the stored
+diagnostics unchanged (#380).
 
 
 Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
@@ -1817,7 +1821,15 @@ the declared equilibrium observations and direct source-basis ln K observations.
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
-withheld under rank deficiency or an active bound. Named scalar ln K and stored
+withheld under rank deficiency or an active bound. Its state groups are evaluated in
+`FitControls.workers` forked processes (0, the default, starts one per hardware thread;
+an active trace capture keeps one). Worker k owns every k-th non-electrolyte state group
+in row order for the whole fit, with that share's warm starts and same-point centers;
+electrolyte rows, which share one reference cache, stay in the fit's own process. The fit
+merges rows in observation order and reports the one-process sweep's first failure, and
+every process publishes starts and its cache only when the whole evaluation succeeds, so
+the worker count does not change the evaluation. Processes, not threads: Ipopt 3.11.9
+drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380). Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
