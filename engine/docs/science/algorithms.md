@@ -1277,8 +1277,16 @@ it remains a local estimate. Final-sum rounding alone does not bound the EOS.
 Negative plane and slope beyond the complete estimate require a finite split
 (EqID: `conserved_finite_phase_split`). Try half the donor capacity, then at most
 eight halvings. Preserve every component, hence every moiety and phase charge;
-reconstruct arithmetic composition/charge, recompute density/packing and shared
-energy, and verify matching conserved totals before comparing Gibbs energies.
+reconstruct arithmetic composition/charge, reclose the withdrawn donor at the
+request pressure on its declared density branch through the shared density
+owner, recompute packing and shared energy, and verify matching conserved
+totals before comparing Gibbs energies. The trial keeps its own molar volume,
+and the donor's reclosed volume seeds any added declaration. A fixed donor
+volume is admissible for the minimized A+PV, but its mechanical penalty
+(g_vv>0 on a stable root) blocked useful finite descent within this bounded
+search (#390). With exact closure on a smoothly continuing root the first-order
+slope is unchanged; no smooth path is claimed across a root-selection change. A
+failed donor density search is a failed finite check.
 Retain each failed check and count energy/density evaluations. Admit numerical
 descent only when the finite Gibbs decrease exceeds its propagated estimate.
 Optimizer convergence and positive trial inertia are diagnostics, not descent
@@ -1290,6 +1298,9 @@ uncertainty**. Calling it a **proved instability witness** requires justified
 bounds on feasibility and every error term, which native association floors do
 not provide. A completed finite search reports only **no witness in the recorded
 trial set**, naming unresolved trials. No global stability conclusion follows.
+A finite negative plane with donor slope below minus its estimate but
+unresolved finite descent makes discovery unsuccessful, keeping the candidate
+for diagnosis; it is never reported as successful discovery.
 Deduplicate physical trials using `PHASE_COINCIDENCE_DISTANCE` as a topology
 resolution, not an energy-error threshold. Never discard actual resolved finite
 descent solely because the trial is close to a present phase.

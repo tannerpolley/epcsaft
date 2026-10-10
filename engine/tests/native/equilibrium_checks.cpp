@@ -30,6 +30,7 @@ void check_phase_removal_inventory();
 void check_tangent_plane_curvature();
 void check_tangent_plane_admission();
 void check_normalized_reaction_affinity();
+void check_reacting_liquid_split();
 }  // namespace equilibrium_checks
 namespace caloric_specification_checks {
 void admission();
@@ -72,6 +73,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},
+        {{"native.equilibrium.reacting-liquid-split", "TPD", "Automatic_fast"}, check_reacting_liquid_split},
         {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_f5},
         {{"native.equilibrium.s1", "S1", "Automatic_fast"}, check_s1},
         {{"native.equilibrium.reference-caloric-identities", "reference-caloric-identities", "Automatic_fast"}, reactive_caloric_checks::cheap, "S2"},

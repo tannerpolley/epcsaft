@@ -2173,17 +2173,17 @@ $$
 - Section: Equilibrium / Tangent-plane testing
 - Status: Exact derivation
 - Source: Component-conserving donor split of system_gibbs_helmholtz_coordinates; #223 adopted finite-descent check
-- Description: Finite split at fixed donor/trial molar volumes preserves every component and thus moieties and charge. Other phases are unchanged. ΔG/RT and E_Δ are extensive on the request's mol feed basis.
-- Change note: Try β_max/2 and at most eight halvings, reevaluating physical points. Numerical descent requires actual conservation and a Gibbs decrease exceeding its propagated estimate; proof additionally requires justified feasibility and error bounds.
+- Description: Finite split preserving every component and thus moieties and charge. The withdrawn donor is reclosed at the request pressure on its declared density branch; the trial keeps its own molar volume. Other phases are unchanged. ΔG/RT and E_Δ are extensive on the request's mol feed basis.
+- Change note: Try β_max/2 and at most eight halvings, reevaluating physical points. Numerical descent requires actual conservation and a Gibbs decrease exceeding its propagated estimate; proof additionally requires justified feasibility and error bounds. Issue #390: a fixed donor volume is admissible for the minimized A+PV, but its mechanical penalty (g_vv>0 on a stable root) blocked useful finite descent within the bounded search; the reclosed donor volume also seeds the added declaration. With exact pressure closure and a smoothly continuing root, g_v=0 makes N_p g_v dv_p/dβ vanish, so the first-order donor slope is unchanged; no smooth path is claimed across a root-selection change.
 
 $$
 \begin{aligned}
 \mathbf n'_p&=\mathbf n_p-\beta\mathbf w,\quad
 \mathbf n_t=\beta\mathbf w,\quad N'_p=N_p-\beta,\quad
 \mathbf x'_p=\frac{\mathbf n'_p}{N_p-\beta},\quad 0<\beta<\beta_{\max,p},\\
-V'_p&=(N_p-\beta)v_p,\quad V_t=\beta v_t,\quad
+P_{\mathrm{EOS}}(T,\mathbf x'_p,v'_p)&=P,\quad V'_p=(N_p-\beta)v'_p,\quad V_t=\beta v_t,\quad
 \mathbf n'_p+\mathbf n_t=\mathbf n_p,\\
-\frac{\Delta G}{RT}&=(N_p-\beta)g(\mathbf x'_p,v_p)+\beta g(\mathbf w,v_t)-N_p g(\mathbf x_p,v_p),
+\frac{\Delta G}{RT}&=(N_p-\beta)g(\mathbf x'_p,v'_p)+\beta g(\mathbf w,v_t)-N_p g(\mathbf x_p,v_p),
 \quad g=\widetilde g+\mathbf s^{\mathsf T}\mathbf x,\\
 \frac{\Delta G}{RT}&<-E_\Delta\quad\text{for numerically resolved finite descent with estimated uncertainty}.
 \end{aligned}
