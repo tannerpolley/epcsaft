@@ -1821,15 +1821,19 @@ the declared equilibrium observations and direct source-basis ln K observations.
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
-withheld under rank deficiency or an active bound. Its state groups are evaluated in
-`FitControls.workers` forked processes (0, the default, starts one per hardware thread;
-an active trace capture keeps one). Worker k owns every k-th non-electrolyte state group
-in row order for the whole fit, with that share's warm starts and same-point centers;
-electrolyte rows, which share one reference cache, stay in the fit's own process. The fit
-merges rows in observation order and reports the one-process sweep's first failure, and
-every process publishes starts and its cache only when the whole evaluation succeeds, so
-the worker count does not change the evaluation. Processes, not threads: Ipopt 3.11.9
-drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380). Named scalar ln K and stored
+withheld under rank deficiency or an active bound. A least-squares fit evaluates its state
+groups in `FitControls.workers` processes, its own included (0, the default, means one per
+hardware thread), at most one per non-electrolyte state group; minimax and the point readers
+use one. Workers are exec-started copies of the Python host's interpreter on the extension
+image the host loaded; each reads the request once and the fit kills and reaps them when it
+returns, fails or is interrupted. An active trace capture or a native host keeps one process.
+Worker k owns every k-th non-electrolyte state group in row order for the whole fit, with that
+share's warm starts and same-point centers; electrolyte rows, which share one reference cache,
+stay in the fit's own process. The fit merges rows in observation order and reports the
+one-process sweep's first failure, and every process publishes starts and its cache only when
+the whole evaluation succeeds, so the worker count does not change the evaluation. Processes,
+not threads: Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are
+process-global. A Python KeyboardInterrupt stops the fit between rows (#380). Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
@@ -1864,13 +1868,11 @@ with the owning solve, density, thermochemistry or action diagnostic.
 Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants
 fixed by supplied thermochemistry are rejected by reaction name before fitting.
 
-Keep admission's model and compiled state groups for the initial evaluation.
-Reuse them only when the bounded affine map reproduces every active EOS value
-and the rewritten reaction declarations exactly; otherwise rebuild at the
-resolved optimizer point. The physical-declaration comparison includes the
-scalar K or all stored correlation coefficients, so a reaction-coordinate
-change invalidates admission preparation even when EOS values are unchanged. The same
-compiled problem may serve a cold retry at that point. Failed trials still
+Admission refuses discovery options, since every fit problem declares its phases, and
+validates every row against a model at the start parameters, keeping nothing:
+the initial evaluation builds its trial model and compiles every state group at the resolved
+optimizer point. A same-point Jacobian reuses that trial's model and compiled centers, and the
+same compiled problem may serve a cold retry at that point. Failed trials still
 publish neither solved starts nor a successful evaluation cache.
 The two endpoint problems of an `AdditionEnthalpy` row are retained separately;
 its singleton kind is always rebuilt at a new parameter point.

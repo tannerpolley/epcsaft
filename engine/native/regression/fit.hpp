@@ -20,7 +20,7 @@ struct FitControls final {
     double parameter_tolerance = 0.0;
     int maximum_iterations = 0;
     double maximum_elapsed_time_seconds = 0.0;
-    int workers = 0;  // processes evaluating state groups concurrently; 0: one per hardware thread
+    int workers = 0;  // processes evaluating state groups, this one included; 0: one per hardware thread
 };
 
 enum class CheckMetric { AbsoluteDifference, AbsoluteLog10Ratio };
@@ -162,6 +162,15 @@ private:
 std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr);
 std::vector<Observation> observations_at(const FitRequest& request, const std::vector<double>& optimizer,
     const std::vector<double>& errors);  // signed native differences or decades, for manufactured recovery
+// The Python host's worker command (empty: a fit evaluates every row itself) and cancellation poll; a true
+// poll stops a least-squares fit by throwing FitInterrupted (#380).
+struct FitHost final {
+    std::vector<std::string> worker;
+    bool (*interrupted)() = nullptr;
+};
+inline FitHost fit_host;
+struct FitInterrupted final {};
+[[noreturn]] void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
 FitResult fit(const FitRequest& request);
 std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent

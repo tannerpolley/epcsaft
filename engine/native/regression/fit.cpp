@@ -5,6 +5,12 @@
 
 #include <ceres/ceres.h>
 #include <Eigen/Dense>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
+#include <spawn.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -13,13 +19,16 @@
 #include <cerrno>
 #include <cmath>
 #include <chrono>
+#include <cstring>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace epcsaft::regression {
 namespace {
@@ -75,36 +84,131 @@ struct Failure final {
     std::string message;
 };
 
-// Whole values over a worker socket: plain values, or a size and then the elements of a vector or string.
-template <class T> void transfer(int fd, T& value, bool out) {
-    char* bytes = reinterpret_cast<char*>(&value);
-    std::size_t left = sizeof(T);
-    if constexpr (!std::is_trivially_copyable_v<T>) {
-        std::size_t size = value.size();
-        transfer(fd, size, out);
-        value.resize(size);
-        bytes = reinterpret_cast<char*>(value.data());
-        left = size * sizeof(*value.data());
+bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
+
+// This binary, opened as it loads: workers run the loaded image even after a rebuild replaces its file.
+const int loaded_image = [] {
+    Dl_info image{};
+    return dladdr(reinterpret_cast<void*>(&interrupted), &image) ? open(image.dli_fname, O_RDONLY | O_CLOEXEC) : -1;
+}();
+
+// Every member of a request aggregate in declaration order, named by position: the structured binding stops
+// compiling when a member is added or removed, so a worker's request cannot silently omit one.
+#define FIELDS(T, ...) auto fields(T& item) { auto& [__VA_ARGS__] = item; return std::tie(__VA_ARGS__); }
+FIELDS(FixedParameters, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
+FIELDS(IdealPolynomial, a, b, c, d)
+FIELDS(IdealCorrelation, a, b)
+FIELDS(IdealInterval, a, b, c, d, e)
+FIELDS(ThermochemistryRecord, a, b)
+FIELDS(CoordinateTarget, a, b, c)
+FIELDS(ReactionCoordinate, a, b)
+FIELDS(Coordinate, a, b, c, d, e, f)
+FIELDS(equilibrium::PhaseSpec, a, b, c, d, e, f, g)
+FIELDS(equilibrium::FeedSpec, a, b, c, d)
+FIELDS(ReactionLogPolynomial, a, b, c, d, e, f, g, h)
+FIELDS(equilibrium::ReactionSpec, a, b, c, d, e, f)
+FIELDS(NeutralReferenceDeclaration, a, b, c, d)
+FIELDS(equilibrium::CriticalDeclaration, a, b)
+FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
+FIELDS(HydrationHold, a, b, c, d, e, f)
+FIELDS(Failure, a, b, c, d, e)
+// Observation validation refuses discovery options (a fit declares its phases), so none are sent.
+auto fields(equilibrium::EquilibriumProblem& item) {
+    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n] = item;
+    return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, n);
+}
+// A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
+auto fields(Parameters& v) {
+    static_assert(sizeof(Parameters) == sizeof(FixedParameters) + 2 * sizeof(double) + 12 * sizeof(std::vector<double>));
+    return std::tuple_cat(fields(static_cast<FixedParameters&>(v)), std::tie(v.ionic_region_relative_permittivity,
+        v.born_c_dielectric, v.packing_diameter_angstrom, v.debye_huckel_diameter_angstrom, v.born_diameter_angstrom,
+        v.ion_suppression_coefficient, v.segment_count, v.sigma_constant, v.dispersion_energy_over_k, v.k_ij,
+        v.k_ij_reciprocal_temperature_slope, v.l_ij, v.association_energy_over_k, v.association_volume));
+}
+
+// Whole values in one message, written or read in memory: trivially copyable bytes; a size, then the elements of
+// a vector or string; a flag or alternative index, then the value; or every member of an aggregate above.
+struct Wire final {
+    std::string& message;
+    bool out;
+    std::size_t at = 0;
+    template <class... T> void operator()(T&... values) { (one(values), ...); }
+    template <class T> void one(T& value) {
+        if constexpr (std::is_trivially_copyable_v<T>) bytes(&value, sizeof(T));
+        else std::apply(*this, fields(value));
     }
+    template <class T> void one(std::optional<T>& value) {
+        bool present = value.has_value();
+        one(present);
+        if (present) one(out ? *value : value.emplace());
+    }
+    template <class... T> void one(std::variant<T...>& value) {
+        std::size_t index = value.index(), k = 0;
+        one(index);
+        ((k++ == index ? one(out ? std::get<T>(value) : value.template emplace<T>()) : void()), ...);
+    }
+    template <class T> void one(std::vector<T>& values) { sequence(values); }
+    void one(std::string& value) { sequence(value); }
+    // Every element takes at least one byte, so a received count beyond the unread bytes is refused before
+    // allocation, and the byte count below cannot overflow.
+    template <class C> void sequence(C& values) {
+        std::size_t size = values.size();
+        one(size);
+        if (!out && size > message.size() - at) throw std::runtime_error("fit worker message size");
+        values.resize(size);
+        if constexpr (std::is_trivially_copyable_v<typename C::value_type>) bytes(values.data(), size * sizeof(*values.data()));
+        else for (auto& value : values) one(value);
+    }
+    void bytes(void* data, std::size_t size) {
+        if (out) return void(message.append(static_cast<const char*>(data), size));
+        if (size > message.size() - at) throw std::runtime_error("fit worker message size");
+        std::memcpy(data, message.data() + at, size);
+        at += size;
+    }
+};
+
+// Bytes over a worker socket; a wait polls the fit's cancellation every 0.1 s.
+void transfer(int fd, char* at, std::size_t left, bool out) {
     while (left > 0) {
-        const auto moved = out ? send(fd, bytes, left, MSG_NOSIGNAL) : recv(fd, bytes, left, 0);
+        pollfd ready{fd, static_cast<short>(out ? POLLOUT : POLLIN), 0};
+        if (poll(&ready, 1, 100) <= 0) {
+            if (interrupted()) throw FitInterrupted{};
+            continue;
+        }
+        const auto moved = out ? send(fd, at, left, MSG_NOSIGNAL) : recv(fd, at, left, 0);
         if (moved < 0 && errno == EINTR) continue;
         if (moved <= 0) throw std::runtime_error("fit worker process unavailable");
-        bytes += moved;
+        at += moved;
         left -= static_cast<std::size_t>(moved);
     }
 }
-template <class... T> void put(int fd, T... values) { (transfer(fd, values, true), ...); }
-template <class... T> void get(int fd, T&... values) { (transfer(fd, values, false), ...); }
+// One message: its byte count, then the values.
+template <class... T> void put(int fd, T... values) {
+    std::string message(sizeof(std::size_t), '\0');
+    Wire{message, true}(values...);
+    const std::size_t size = message.size() - sizeof(std::size_t);
+    std::memcpy(message.data(), &size, sizeof size);
+    transfer(fd, message.data(), message.size(), true);
+}
+template <class... T> void get(int fd, T&... values) {
+    std::size_t size = 0;
+    transfer(fd, reinterpret_cast<char*>(&size), sizeof size, false);
+    std::string message(size, '\0');
+    transfer(fd, message.data(), size, false);
+    Wire{message, false}(values...);
+}
 
-// Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so
-// concurrent states run in forked processes rather than threads; the fit owns and reaps them.
+// Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so concurrent
+// states run in worker processes. They start by exec, since fork alone is unsafe in a threaded host, and inherit
+// only their own socket. The fit kills and reaps them on every exit, an exception or cancellation included.
 struct Workers final {
     std::vector<int> sockets;
     std::vector<pid_t> processes;
     ~Workers() {
+        for (const pid_t process : processes) kill(process, SIGKILL);
         for (const int fd : sockets) close(fd);
-        for (const pid_t process : processes) waitpid(process, nullptr, 0);
+        for (const pid_t process : processes)
+            while (waitpid(process, nullptr, 0) < 0 && errno == EINTR) {}
     }
 };
 
@@ -120,28 +224,44 @@ struct ObservationEvaluator::Impl final {
           starts_(groups.size()), owner_(groups.size(), 0) {}
 
     // Fixed partition: worker k evaluates every count-th state group in row order. Electrolyte rows share
-    // one reference cache and stay here, as does every row under a trace capture.
+    // one reference cache and stay here, as does every row under a trace capture or in a native host.
     void start_workers(int requested) {
-        const std::size_t count = core::active_trace ? 1
+        interruptible_ = true;
+        const std::size_t count = core::active_trace || fit_host.worker.empty() || loaded_image < 3 ? 1
             : requested > 0 ? static_cast<std::size_t>(requested) : std::max(1u, std::thread::hardware_concurrency());
         std::size_t rank = 0;
         for (std::size_t i = 0; i < groups_.size(); ++i)
             owner_[i] = groups_[i] != i ? owner_[groups_[i]]
                 : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
+        std::vector<char*> command;
+        for (auto& word : fit_host.worker) command.push_back(word.data());
+        command.push_back(nullptr);
         for (std::size_t k = 1; k < std::min(count, rank); ++k) {
             int pair[2];
-            if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
-            const pid_t process = fork();
-            if (process == 0) {
-                close(pair[0]);
-                for (const int fd : workers_.sockets) close(fd);
-                process_ = k;
-                serve(pair[1]);
-            }
-            close(pair[1]);
-            if (process < 0) { close(pair[0]); throw std::runtime_error("fit worker process unavailable"); }
+            if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
             workers_.sockets.push_back(pair[0]);
+            // The worker keeps its socket end as fd 0, this image as fd 3 and the standard streams. Its own
+            // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
+            posix_spawn_file_actions_t actions;
+            posix_spawn_file_actions_init(&actions);
+            posix_spawn_file_actions_adddup2(&actions, pair[1], 0);
+            posix_spawn_file_actions_adddup2(&actions, loaded_image, 3);
+            posix_spawn_file_actions_addclosefrom_np(&actions, 4);
+            posix_spawnattr_t attributes;
+            posix_spawnattr_init(&attributes);
+            posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
+            pid_t process = 0;
+            const int error = posix_spawn(&process, command[0], &actions, &attributes, command.data(), environ);
+            posix_spawnattr_destroy(&attributes);
+            posix_spawn_file_actions_destroy(&actions);
+            close(pair[1]);
+            if (error != 0) throw std::runtime_error("fit worker process unavailable");
             workers_.processes.push_back(process);
+        }
+        for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
+            put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
+                request_.observations, request_.holds, sqrt_weights_);
+            put(workers_.sockets[k - 1], owner_, k);
         }
     }
 
@@ -165,18 +285,20 @@ struct ObservationEvaluator::Impl final {
         Trial& trial = same_point ? *cached_ : fresh;
         auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
-            bool failed = false;
-            Failure theirs;
+            std::optional<Failure> theirs;
             ObservationEvaluation part;
-            get(workers_.sockets[k - 1], failed, theirs.row, theirs.observation, theirs.status, theirs.jacobian,
-                theirs.message, part.predictions, part.residuals, part.statuses, part.gradient);
-            if (failed && (!failure || theirs.row < failure->row)) failure = std::move(theirs);
-            for (std::size_t i = 0; out.statuses.size() == n && part.statuses.size() == n && i < n; ++i) if (owner_[i] == k) {
+            get(workers_.sockets[k - 1], theirs, part.predictions, part.residuals, part.statuses, part.gradient);
+            // A trial refused before its rows sends none; any other reply carries every row.
+            const bool rows = part.statuses.size() == n && part.predictions.size() == n && part.residuals.size() == n
+                && part.gradient.size() == (jacobian ? n * width : 0);
+            if (!rows && !(theirs && part.statuses.empty())) throw std::runtime_error("fit worker reply size");
+            for (std::size_t i = 0; rows && out.statuses.size() == n && i < n; ++i) if (owner_[i] == k) {
                 out.predictions[i] = part.predictions[i];
                 out.residuals[i] = part.residuals[i];
                 out.statuses[i] = part.statuses[i];
                 if (jacobian) std::copy_n(part.gradient.begin() + i * width, width, out.gradient.begin() + i * width);
             }
+            if (theirs && (!failure || theirs->row < failure->row)) failure = std::move(theirs);
         }
         // The serial sweep stops at its first failure: later rows stay unevaluated.
         for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
@@ -218,24 +340,19 @@ struct ObservationEvaluator::Impl final {
 
     // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
     [[noreturn]] void serve(int fd) {
-        try {
-            for (std::vector<double> optimizer;;) {
-                bool jacobian = false, commit = false;
-                get(fd, optimizer, jacobian);
-                core::Scope scope("fit_evaluation");
-                const bool same_point = cached_ && cached_->optimizer == optimizer;
-                Trial fresh;
-                Trial& trial = same_point ? *cached_ : fresh;
-                ObservationEvaluation out;
-                const auto found = compute(optimizer, jacobian, out, trial, same_point, scope);
-                const auto failure = found.value_or(Failure{});
-                put(fd, found.has_value(), failure.row, failure.observation, failure.status, failure.jacobian,
-                    failure.message, out.predictions, out.residuals, out.statuses, out.gradient);
-                get(fd, commit);
-                if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
-            }
-        } catch (...) {}
-        _exit(0);
+        for (std::vector<double> optimizer;;) {
+            bool jacobian = false, commit = false;
+            get(fd, optimizer, jacobian);
+            core::Scope scope("fit_evaluation");
+            const bool same_point = cached_ && cached_->optimizer == optimizer;
+            Trial fresh;
+            Trial& trial = same_point ? *cached_ : fresh;
+            ObservationEvaluation out;
+            const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
+            put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient);
+            get(fd, commit);
+            if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
+        }
     }
 
     bool gradient_at(const std::vector<double>& point, std::vector<double>& out) {
@@ -291,6 +408,7 @@ struct ObservationEvaluator::Impl final {
             std::vector<std::size_t> position(n, 0);
             for (i = 0; i < n; ++i) {
                 if (sqrt_weights_[i] == 0.0 || owner_[i] != process_) continue;
+                if (interruptible_ && interrupted()) throw FitInterrupted{};
                 const auto& observation = trial.observations[i];
                 const std::size_t g = groups_[i];
                 auto& prediction = trial.centers[g];
@@ -357,8 +475,23 @@ struct ObservationEvaluator::Impl final {
     std::size_t trials_ = 0;
     std::vector<std::size_t> owner_;  // the process that evaluates each row; 0 is the fit's own
     std::size_t process_ = 0;
+    bool interruptible_ = false;  // a least-squares fit's own process polls cancellation between rows
     Workers workers_;
 };
+
+// A worker never outlives the thread that started it; it reads its fit's request once, then serves it.
+void serve_fit(int fd) {
+    prctl(PR_SET_PDEATHSIG, SIGKILL);
+    FitRequest request;
+    std::vector<double> sqrt_weights;
+    get(fd, request.parameters, request.thermochemistry, request.coordinates.coordinates, request.observations,
+        request.holds, sqrt_weights);
+    const auto groups = state_groups(request.observations);
+    FitResult result;
+    ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights);
+    get(fd, evaluator.owner_, evaluator.process_);
+    evaluator.serve(fd);
+}
 
 ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows) {
     std::vector<double> selection(request.observations.size(), 0.0);
@@ -695,7 +828,10 @@ void validate_fit_request(const FitRequest& request) {
     const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
     require(n > 0, "needs observations");
     core::Scope validation("fit_validation");
-    for (const auto& observation : request.observations) validate(observation, model);
+    for (const auto& observation : request.observations) {
+        if (interrupted()) throw FitInterrupted{};
+        validate(observation, model);
+    }
     require(request.weights.empty() || request.weights.size() == n, "weights width");
     for (std::size_t i = 0; i < request.weights.size(); ++i) {
         require(std::isfinite(request.weights[i]) && request.weights[i] >= 0.0, "weight");
