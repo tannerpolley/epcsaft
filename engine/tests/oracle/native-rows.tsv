@@ -189,53 +189,53 @@ properties_checks P4	pressure/action/11/3	native	0.00838493486276625
 properties_checks P4	pressure/action/12/3	native	6.847206349321565e-06
 properties_checks P4	pressure/action/13/3	native	-4.9013823971487354e-05
 properties_checks P4	pressure/action/14/3	native	-4.6025295897654056e-05
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.5986938768537895e-08
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.589016149082645e-08
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.5986938768538325e-08
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.589016149082071e-08
 equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.84445255186
 equilibrium_checks S2	reference-calorics/ionic/system/cp	J/(mol K)	64.01790342979112
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.597414381274316e-08
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.6865053175699145e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.597414381275442e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.6865053175706066e-08
 equilibrium_checks S2	reference-calorics/ionic/fixed/h	J/mol	-285505.84129416046
 equilibrium_checks S2	reference-calorics/ionic/fixed/cp	J/(mol K)	64.01790247920678
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A1	mol	-0.010617846998492983
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A1	1	0.014953495020583867
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A1	mol	-0.0026958895994163927
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A1	1	0.02838135244977964
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A1	mol	-0.0006934446330469932
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A1	1	0.002433378354010494
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A1	mol	0.0006178469984929806
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A1	1	0.014953495020583891
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A1	mol	0.008695889599416393
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A1	1	0.02838135244977963
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A1	mol	0.004693444633046993
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A1	1	0.0024333783540105335
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A2	mol	-4.324135942279635e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A2	1	0.00017563328823817293
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A2	mol	8.183449904857552e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A2	1	0.0004067594339438709
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A2	mol	-8.75296325573411e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A2	1	4.754609297428661e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A2	mol	4.324135942279643e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A2	1	0.00017563328823817182
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A2	mol	-8.183449904857552e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A2	1	0.00040675943394386963
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A2	mol	8.75296325573411e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A2	1	4.754609297427876e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A3	mol	3.4328482332462486e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A3	1	-2.0567356560643786e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A3	mol	3.094665405796428e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A3	1	-2.4563977557874348e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A3	mol	7.794516992047794e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A3	1	6.107201108252212e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A3	mol	-3.432848233246245e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A3	1	-2.0567356560643727e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A3	mol	-3.0946654057964267e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A3	1	-2.4563977557874293e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A3	mol	-7.794516992047795e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107201108252215e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A1	mol	-0.010617846998492986
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A1	1	0.014953495020583843
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A1	mol	-0.0026958895994163967
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A1	1	0.028381352449779695
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A1	mol	-0.0006934446330469995
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A1	1	0.0024333783540103587
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A1	mol	0.0006178469984929838
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A1	1	0.014953495020583808
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A1	mol	0.008695889599416395
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A1	1	0.028381352449779688
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A1	mol	0.004693444633047
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A1	1	0.002433378354010349
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A2	mol	-4.324135942279685e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A2	1	0.0001756332882381724
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A2	mol	8.183449904857626e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A2	1	0.0004067594339438726
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A2	mol	-8.752963255734207e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A2	1	4.754609297429427e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A2	mol	4.324135942279691e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A2	1	0.00017563328823817117
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A2	mol	-8.183449904857626e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A2	1	0.0004067594339438711
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A2	mol	8.75296325573421e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A2	1	4.754609297427337e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A3	mol	3.432848233246277e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A3	1	-2.056735656064376e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A3	mol	3.094665405796409e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A3	1	-2.4563977557874475e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A3	mol	7.794516992047872e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A3	1	6.107201108252312e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A3	mol	-3.432848233246276e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A3	1	-2.056735656064371e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A3	mol	-3.0946654057964077e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A3	1	-2.456397755787445e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A3	mol	-7.794516992047876e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107201108252954e-08
 equilibrium_checks E5-3	e5-3/isomerisation/A1	1/K^k	-0.0014784580498870947
-equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.4348805281819e-06
-equilibrium_checks E5-3	e5-3/isomerisation/A3	1/K^k	-2.7304974653832644e-09
+equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.434880528181904e-06
+equilibrium_checks E5-3	e5-3/isomerisation/A3	1/K^k	-2.730497465383311e-09
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A1	J/mol	-685.205410448503
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A1	J/(mol K)	-0.021019333940699318
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A1	J/mol	-682.205410448503
@@ -269,12 +269,12 @@ equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A3	J/mo
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.022314287805419827
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A3	J/(mol K)	0
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.0003327286640915521
-equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	-1.1546319456101628e-14
-equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.3322676295501878e-14
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-5.362120896769667e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	9.115635170661588e-16
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944357e-06
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.13894631739408e-06
+equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	3.1086244689504383e-15
+equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-9.769962616701378e-15
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-1.5490602066857689e-16
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	6.732459269167147e-16
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173946966e-06
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173950862e-06
 regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000009
 regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999997048
 regression_checks R2-J2	r4/recovery/final_cost	1	3.627957601131124e-27
@@ -325,27 +325,27 @@ surface_example	state/root/2	mixed	58178.655742728624
 surface_example	state/root/3	mixed	8.5344058209368967e-15
 surface_example	state/root/4	mixed	2
 surface_example	bubble/pressure	Pa	30936.816033816522
-surface_example	flash/amounts/0	mol	0.45701296529333724
-surface_example	flash/amounts/1	mol	0.54298703470666276
-surface_example	flash/mole_fractions/0	1	0.49278463704329395
-surface_example	flash/mole_fractions/1	1	0.50721536295670611
-surface_example	flash/mole_fractions/2	1	0.04565676561179062
-surface_example	flash/mole_fractions/3	1	0.95434323438820934
-surface_example	flash/multipliers/0	1	-1.2878437705797239
-surface_example	flash/multipliers/1	1	1.7608110095231231
-surface_example	flash/constraint_multipliers/0	1	1.2878437705797239
-surface_example	flash/constraint_multipliers/1	1	-1.7608110095231231
+surface_example	flash/amounts/0	mol	0.45701296529333363
+surface_example	flash/amounts/1	mol	0.54298703470666632
+surface_example	flash/mole_fractions/0	1	0.49278463704329706
+surface_example	flash/mole_fractions/1	1	0.507215362956703
+surface_example	flash/mole_fractions/2	1	0.045656765611790967
+surface_example	flash/mole_fractions/3	1	0.95434323438820901
+surface_example	flash/multipliers/0	1	-1.2878437705797166
+surface_example	flash/multipliers/1	1	1.7608110095231229
+surface_example	flash/constraint_multipliers/0	1	1.2878437705797166
+surface_example	flash/constraint_multipliers/1	1	-1.7608110095231229
 surface_example	flash/constraint_multipliers/2	1	0
 surface_example	flash/constraint_multipliers/3	1	0
-surface_example	solved/thermal/0	mol	-0.018884589385214253
-surface_example	solved/radial/0	mol	0.23180399706718058
-surface_example	solved/thermal/1	1	-0.0077792789010149785
+surface_example	solved/thermal/0	mol	-0.018884589385214069
+surface_example	solved/radial/0	mol	0.2318039970671773
+surface_example	solved/thermal/1	1	-0.0077792789010150184
 surface_example	solved/radial/1	1	0
-surface_example	solved/thermal/2	1	-0.016319143831975341
+surface_example	solved/thermal/2	1	-0.016319143831975389
 surface_example	solved/radial/2	1	0
-surface_example	solved/thermal/3	J/mol	-126.93949786518196
+surface_example	solved/thermal/3	J/mol	-126.93949786518525
 surface_example	solved/radial/3	J/mol	0
-surface_example	solved/thermal/4	mol/m^3	-481.7599378054822
+surface_example	solved/thermal/4	mol/m^3	-481.75993780548083
 surface_example	solved/radial/4	mol/m^3	0
-surface_example	solved/condition	1	42.10438798252892
+surface_example	solved/condition	1	42.104387982529069
 surface_example	floor/residual	1	8.8817841970012523e-16

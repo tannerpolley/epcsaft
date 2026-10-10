@@ -381,14 +381,18 @@ GibbsMinimizer::GibbsMinimizer(
     const auto offsets = compiled_.phase_offsets();
     for (std::size_t p = 0; p < offsets.size(); ++p)
         if (compiled_.problem.phases[p].is_free()) amount_columns_.push_back(offsets[p] + compiled_.problem.phases[p].support.size());
+    // ALG-EQUILIBRIUM: Ipopt measures each free amount in its start amount, floored at the disappearance cutoff.
+    const bool cell = compiled_.feasibility_cell();
+    chart_.assign(cell ? compiled_.primal_size + compiled_.rank + compiled_.charge_row_count : compiled_.primal_size, 1.0);
+    if (!cell) for (const auto i : amount_columns_)
+        chart_[i] = std::max(start_[i], policy::PHASE_DISAPPEARANCE_AMOUNT.value * compiled_.feed_total);
 }
 
 bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style
 ) {
-    n = static_cast<Ipopt::Index>(!compiled_.feasibility_cell()
-        ? compiled_.primal_size : compiled_.primal_size + compiled_.rank + compiled_.charge_row_count);
+    n = static_cast<Ipopt::Index>(chart_.size());
     m = static_cast<Ipopt::Index>(constraint_rows().size());
     nnz_jac_g = n * m;
     nnz_h_lag = n * (n + 1) / 2;
@@ -449,7 +453,7 @@ bool GibbsMinimizer::get_starting_point(
     const std::vector<double> point = !compiled_.feasibility_cell()
         ? std::vector<double>(start_.begin(), start_.begin() + compiled_.primal_size)
         : start_;
-    for (Ipopt::Index i = 0; i < n; ++i) x[i] = i < static_cast<Ipopt::Index>(point.size()) ? point[i] : 0.0;
+    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (i < static_cast<Ipopt::Index>(point.size()) ? point[i] : 0.0) / chart_[i];
     if (init_z) {
         std::fill(z_L, z_L + n, 0.0);
         std::fill(z_U, z_U + n, 0.0);
@@ -498,6 +502,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         if (refused) throw std::domain_error("amount step");
     }
     std::vector<double> candidate(x, x + n);
+    for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
     if (!prepared_.has_value() || prepared_->point != candidate) {
         rows_.reset();
         jacobian_.reset();
@@ -547,7 +552,7 @@ bool GibbsMinimizer::eval_grad_f(
             gradient_ = compiled_.objective_gradient_at(point);
             ++work_.gradients;
         }
-        std::copy(gradient_->begin(), gradient_->end(), grad_f);
+        for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
         return true;
     } catch (const std::exception&) {
         return false;
@@ -593,7 +598,7 @@ bool GibbsMinimizer::eval_jac_g(
         Ipopt::Index entry = 0;
         for (const std::size_t row : rows) {
             for (Ipopt::Index column = 0; column < n; ++column) {
-                values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)];
+                values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
             }
         }
         return entry == nele_jac;
@@ -639,8 +644,8 @@ bool GibbsMinimizer::eval_h(
             for (Ipopt::Index column = 0; column <= row; ++column) {
                 const std::size_t index = static_cast<std::size_t>(row) * n
                     + static_cast<std::size_t>(column);
-                values[entry++] = obj_factor * (*objective_hessian_)[index]
-                    + (*constraint_hessian_)[index];
+                values[entry++] = (obj_factor * (*objective_hessian_)[index]
+                    + (*constraint_hessian_)[index]) * chart_[row] * chart_[column];
             }
         }
         return entry == nele_hess;
@@ -667,7 +672,7 @@ bool GibbsMinimizer::intermediate_callback(
             if (adapter_ == nullptr) step_rule_error_ = "amount step rule: Ipopt's TNLP adapter is not reachable";
         }
         if (!step_rule_error_ && active.NLP_scaling()->have_x_scaling())
-            step_rule_error_ = "amount step rule: Ipopt scales the variables, so amounts and bounds are not in mol";
+            step_rule_error_ = "amount step rule: Ipopt scales the variables, so its iterate and bounds are not the callback coordinates";
         if (step_rule_error_) return false;
         Ipopt::SmartPtr<const Ipopt::Vector> lower = active.x_L();
         if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(Ipopt::GetRawPtr(lower))) lower = compound->GetComp(0);
@@ -696,6 +701,7 @@ void GibbsMinimizer::finalize_solution(
 ) {
     status_ = status;
     solution_.assign(x, x + n);
+    for (Ipopt::Index i = 0; i < n; ++i) solution_[i] *= chart_[i];
     constraint_multipliers_.assign(lambda, lambda + m);
 }
 

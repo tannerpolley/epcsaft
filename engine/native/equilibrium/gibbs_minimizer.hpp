@@ -297,6 +297,7 @@ private:
     Ipopt::TNLPAdapter* adapter_ = nullptr;
     std::vector<double> base_, lower_;  // TNLP order; lower_ is the active problem's relaxed lower bounds
     std::vector<std::size_t> amount_columns_;  // the free phase amounts
+    std::vector<double> chart_;  // per-column unit of the TNLP coordinates: physical = chart_ * TNLP
     unsigned int base_tag_ = 0, lower_tag_ = 0;  // Ipopt's vector tags of the cached base and bounds
     std::optional<std::string> step_rule_error_;
     const std::vector<double>& search_base();

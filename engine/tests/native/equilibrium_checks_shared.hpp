@@ -136,6 +136,23 @@ inline std::vector<double> weighted_gradient(
     return result;
 }
 
+// ALG-EQUILIBRIUM: the minimizer's callbacks measure each free amount in its start amount, floored at
+// PHASE_DISAPPEARANCE_AMOUNT N_feed and fixed for the solve: physical = unit * callback coordinate (#243).
+inline std::vector<double> callback_unit(
+    const epcsaft::equilibrium::CompiledSystem& compiled, const std::vector<double>& start
+) {
+    std::vector<double> unit(start.size(), 1.0);
+    if (compiled.feasibility_cell()) return unit;
+    const auto offsets = compiled.phase_offsets();
+    for (std::size_t p = 0; p < offsets.size(); ++p) {
+        const auto& phase = compiled.problem.phases[p];
+        if (!phase.is_free()) continue;
+        const std::size_t i = offsets[p] + phase.support.size();
+        unit[i] = std::max(start[i], epcsaft::policy::PHASE_DISAPPEARANCE_AMOUNT.value * compiled.feed_total);
+    }
+    return unit;
+}
+
 inline double maximum_abs(const std::vector<double>& values) {
     double result = 0.0;
     for (const double value : values) result = std::max(result, std::abs(value));
@@ -151,6 +168,9 @@ inline void check_weighted_hessian_gradient_ladder(
 ) {
     const auto rows = callback_rows(compiled);
     epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
+    const auto unit = callback_unit(compiled, point);
+    auto scaled = point;  // the same physical point in the callback coordinates
+    for (std::size_t i = 0; i < scaled.size(); ++i) scaled[i] /= unit[i];
     Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
     Ipopt::TNLP::IndexStyleEnum index_style;
     CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
@@ -165,14 +185,14 @@ inline void check_weighted_hessian_gradient_ladder(
 
     std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(hessian_entries));
     std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(hessian_entries));
-    CHECK(nlp.eval_h(variables, point.data(), true, 1.0, constraints,
+    CHECK(nlp.eval_h(variables, scaled.data(), true, 1.0, constraints,
                      multipliers.data(), true, hessian_entries,
                      hessian_rows.data(), hessian_columns.data(), nullptr));
     for (const double objective_factor : objective_factors) {
         std::vector<Ipopt::Number> hessian(
             static_cast<std::size_t>(hessian_entries), 0.0
         );
-        CHECK(nlp.eval_h(variables, point.data(), false, objective_factor,
+        CHECK(nlp.eval_h(variables, scaled.data(), false, objective_factor,
                          constraints, multipliers.data(), false,
                          hessian_entries, hessian_rows.data(),
                          hessian_columns.data(), hessian.data()));
@@ -192,6 +212,7 @@ inline void check_weighted_hessian_gradient_ladder(
                 for (std::size_t row = column; row < point.size(); ++row) {
                     const double centered = (grad_plus[row] - grad_minus[row]) / (2.0 * step);
                     const std::size_t index = row * (row + 1) / 2 + column;
+                    const double restored = hessian[index] / (unit[row] * unit[column]);  // S H S back to H
                     const auto comparison_id = std::string("hessian/") + label
                         + "/objective-" + recording_support::number(objective_factor)
                         + "/step-" + recording_support::number(step_factor)
@@ -227,10 +248,10 @@ inline void check_weighted_hessian_gradient_ladder(
                     const double absolute = pressure_entry ? 1.0e-12 / coordinate_scale : 0.0;
                     const double allowance = pressure_entry ? absolute + tolerance * std::abs(centered)
                         : tolerance * std::max(1.0, std::abs(centered));
-                    const bool verdict = std::abs(hessian[index] - centered) <= allowance;
+                    const bool verdict = std::abs(restored - centered) <= allowance;
                     recording_support::compare(
                         comparison_id.c_str(), "weighted_lagrangian_hessian", "coordinate",
-                        hessian[index], centered, inputs, "Relationship",
+                        restored, centered, inputs, "Relationship",
                         "weighted_hessian_gradient_finite_difference",
                         "nabla2_L=d(weighted_gradient)/d(coordinate)", pressure_entry ? "reference_scale" : "reference_or_one",
                         absolute, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
