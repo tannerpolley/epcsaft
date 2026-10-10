@@ -358,7 +358,8 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
                 throw std::invalid_argument("finite split arithmetic conservation failed");
             ++report.work["finite_split_evaluations"];
-            const auto changed = phase_energy(*c.model, at.temperature, at.pressure, at.volume[p], x,
+            const double donor_volume = 1.0 / stability_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
+            const auto changed = phase_energy(*c.model, at.temperature, at.pressure, donor_volume, x,
                 report.standard_over_rt, report.work);
             const double delta = remaining * changed.at("g_over_rt") + beta * q.at("g_over_rt")
                 - at.amount[p] * donor.at("g_over_rt");
@@ -378,7 +379,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                     for (auto i : c.problem.phases[phase].support) trial.split_coordinates.push_back(std::log(composition[i]));
                     trial.split_coordinates.push_back(phase == p ? remaining : at.amount[phase]);
                     trial.split_coordinates.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature,
-                        composition) / at.volume[phase]));
+                        composition) / (phase == p ? donor_volume : at.volume[phase])));
                 }
                 for (auto i : trial.phase.support) trial.split_coordinates.push_back(std::log(w[i]));
                 trial.split_coordinates.push_back(beta);
@@ -718,7 +719,12 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             });
             if (!duplicate) descending.push_back(i);
         }
-        if (descending.empty()) return finish(true, current.message);
+        if (descending.empty()) {
+            const bool unresolved = std::any_of(current.trials.begin(), current.trials.end(), [](const auto& t) {
+                return t.quantities.count("donor_slope_over_rt") && descent_resolved(t.quantities.at("tpd_over_rt"),
+                    t.quantities.at("donor_slope_over_rt"), t.quantities.at("descent_error_estimate_over_rt")); });
+            return finish(!unresolved, unresolved ? "negative tangent plane with unresolved finite descent" : current.message);
+        }
         if (best.phase_count >= rank) return finish(false, "resolved descent at balance-rank phase limit; replacement deferred");
         std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
             return current.trials[i].quantities.at("donor_slope_over_rt") < current.trials[j].quantities.at("donor_slope_over_rt"); });

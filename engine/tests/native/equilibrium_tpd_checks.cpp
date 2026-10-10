@@ -1,5 +1,6 @@
 // #223: phase removal, tangent-plane and normalized reaction-affinity identities.
 #include "equilibrium_checks_shared.hpp"
+#include "surface/parameter_builder.hpp"
 
 namespace equilibrium_checks {
 
@@ -423,6 +424,90 @@ void check_normalized_reaction_affinity() {
     // Algebraic k=-0.1, pi=lambda*(2,1), mu+s=pi+k*e gives nu.(mu+s)=k*sum(nu).
     const std::array<double, 2> algebraic{2.0, 1.0};
     tpd_compare("reaction/negative-normalized-affinity", -(2.0 * algebraic[0] - 0.1) + 2.0 * (2.0 * algebraic[1] - 0.1), -0.1, 1e-15);
+}
+
+// #390: Ascani 2023 esterification, acid/alcohol/ester/water, printed parameters of #387
+// (system 1 1-pentanol at 318.15 K, system 2 1-hexanol at 353.6 K). Discovery returns the
+// declared lower-G distinct two-liquid state; references are the retained declared solves.
+epcsaft::Parameters ascani_2023(int system) {
+    const bool s1 = system == 1;
+    epcsaft::ParameterDocument d;
+    d.component_ids = {"acetic-acid", "alcohol", "ester", "water"};
+    d.site_component = {0, 0, 1, 1, 2, 2, 3, 3}; d.site_multiplicity.assign(8, 1);
+    d.base_choice = "pc-saft"; d.association_choice = "general-site";
+    d.electrolyte_choice = d.permittivity_choice = d.polar_choice = "none";
+    const std::array<double, 4> M{60.05196, s1 ? 88.14818 : 102.17476, s1 ? 130.18486 : 144.21144, 18.01528},
+        m{1.3402, s1 ? 3.626 : 3.5146, s1 ? 4.7077 : 4.8847, 1.2047}, eps{311.59, s1 ? 247.28 : 262.32, s1 ? 234.57 : 241.42, 353.95},
+        sigma{3.8582, s1 ? 3.4508 : 3.6735, s1 ? 3.4729 : 3.5834, 2.7927}, self_e{3044.4, s1 ? 2252.1 : 2538.9, 0.0, 2425.7},
+        self_k{0.07555, s1 ? 0.01033 : 0.00575, 0.04509, 0.04509};
+    for (std::size_t i = 0; i < 4; ++i) {
+        d.entries.push_back({"molar mass", "molar_mass", {i}, M[i], "gram / mole"});
+        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
+        d.entries.push_back({"segments", "segment_count", {i}, m[i], "dimensionless"});
+        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps[i], "kelvin"});
+        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma[i], "angstrom"});
+        d.entries.push_back({"association energy", "association_energy_over_k", {2 * i, 2 * i + 1}, self_e[i], "kelvin"});
+        d.entries.push_back({"association volume", "association_volume", {2 * i, 2 * i + 1}, self_k[i], "dimensionless"});
+    }
+    d.entries.push_back({"water diameter", "sigma_term_amplitude", {0, 3}, 10.11, "angstrom"});
+    d.entries.push_back({"water diameter", "sigma_term_exponent", {0, 3}, -0.01775, "1 / kelvin"});
+    d.entries.push_back({"water diameter", "sigma_term_amplitude", {1, 3}, -1.417, "angstrom"});
+    d.entries.push_back({"water diameter", "sigma_term_exponent", {1, 3}, -0.01146, "1 / kelvin"});
+    const std::array<std::size_t, 6> a{0, 0, 0, 1, 1, 2}, b{1, 2, 3, 2, 3, 3};
+    const std::array<double, 6> kij = s1 ? std::array<double, 6>{-0.1, -0.1, -0.1247, -0.0095, 0.004804, -0.0228}
+        : std::array<double, 6>{-0.033, -0.10218000000000002, -0.1247, -0.0042, 0.032506800000000016, 0.07317500000000007};
+    const std::array<double, 6> cross_e = s1 ? std::array<double, 6>{2648.25, 1522.2, 2735.05, 1126.05, 2338.8999999999996, 1212.85}
+        : std::array<double, 6>{2791.65, 1522.2, 2735.05, 1269.45, 2482.3, 1212.85};
+    const std::array<double, 6> cross_k = s1 ? std::array<double, 6>{0.02784940934583932, 0.05820443410811945,
+        0.05686339209809261, 0.02158171005511797, 0.021341087457223958, 0.04455631309050417}
+        : std::array<double, 6>{0.020830030355047026, 0.05828606348969585, 0.056849265487925495,
+        0.016099303503434192, 0.015798666029097522, 0.044385444116459734};
+    for (std::size_t k = 0; k < 6; ++k) {
+        d.entries.push_back({"k_ij", "k_ij", {a[k], b[k]}, kij[k], "dimensionless"});
+        for (const auto& sites : {std::vector<std::size_t>{2 * a[k], 2 * b[k] + 1}, std::vector<std::size_t>{2 * a[k] + 1, 2 * b[k]}}) {
+            d.entries.push_back({"association energy", "association_energy_over_k", sites, cross_e[k], "kelvin"});
+            d.entries.push_back({"association volume", "association_volume", sites, cross_k[k], "dimensionless"});
+        }
+    }
+    return epcsaft::build_parameters(d);
+}
+
+void check_reacting_liquid_split() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    struct Case { int system; double z, g_two, minor; };
+    for (const Case& item : {Case{1, 0.66, -1.7399460167689516, 0.007122036772532215},
+             Case{2, 0.75, -0.065662761908543296, 0.16528120690812875}, Case{2, 0.76, -0.04111209796253866, 0.13472846849100448},
+             Case{2, 0.78, 0.012659963549595034, 0.05694860636520922}}) {
+        const std::string id = "reacting-liquid-split/" + std::to_string(item.system) + "/" + std::to_string(item.z).substr(0, 4);
+        const HelmholtzModel model(ascani_2023(item.system));
+        const double T = item.system == 1 ? 318.15 : 353.6;
+        auto problem = equilibrium_support::flash(4);
+        problem.temperature = FreeValue::fixed(T); problem.pressure = FreeValue::fixed(1e5);
+        problem.feed.values = {item.z, 1.0 - item.z, 0.0, 0.0}; problem.row_tolerance = 1e-10;
+        ReactionSpec reaction; reaction.name = "esterification"; reaction.stoichiometry = {-1, -1, 1, 1};
+        reaction.correlation = ReactionLogPolynomial{std::log(item.system == 1 ? 43.99 : 22.92), 0, 0, 0, T, T, T, "ascani-2023"};
+        reaction.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+        problem.reactions = {reaction};
+        NeutralReferenceDeclaration reference; reference.solvent_index = 3; reference.solute_molality_ratios = {1, 1, 1, 0};
+        reference.standard_molality_mol_per_kg = 1; reference.species_reference.assign(4, SpeciesReference::PureLiquid);
+        problem.source_reference = reference;
+        problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
+        const auto result = discover_phases(model, problem);
+        CHECK(result.success); CHECK(result.phase_count == 2); CHECK(result.convergence.residual <= 1e-10);
+        tpd_compare(id + "/g", result.objective, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
+        tpd_compare(id + "/minor-amount", std::min(result.amounts[0], result.amounts[1]), item.minor, 1e-10, {}, "mol");
+        // Reaction-invariant balances B n with B nu = 0: acid+water, alcohol+water, ester-water.
+        const std::array<std::array<double, 4>, 3> B{{{1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, -1}}};
+        double distance = 0.0;
+        for (std::size_t i = 0; i < 4; ++i) distance = std::max(distance, std::abs(result.mole_fractions[i] - result.mole_fractions[4 + i]));
+        for (std::size_t k = 0; k < 3; ++k) {
+            double balance = 0.0;
+            for (std::size_t i = 0; i < 4; ++i)
+                balance += B[k][i] * (result.amounts[0] * result.mole_fractions[i] + result.amounts[1] * result.mole_fractions[4 + i]);
+            tpd_compare(id + "/balance/" + std::to_string(k), balance, B[k][0] * item.z + B[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
+        }
+        CHECK(distance > 0.3);
+    }
 }
 
 }  // namespace equilibrium_checks
