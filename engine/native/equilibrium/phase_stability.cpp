@@ -547,6 +547,7 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 }
 
 std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& c) {
+    core::Scope scope("cooling_onset");
     const auto& request = c.problem;
     if (c.has_reaction || c.has_ions || request.discovery || request.critical || request.envelope
         || request.enthalpy_j || request.entropy_j_per_k || !request.temperature.free || request.pressure.free

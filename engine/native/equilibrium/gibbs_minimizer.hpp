@@ -28,8 +28,6 @@ struct EvaluationWork final {
     std::size_t constraint_hessians = 0;
 };
 
-std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
-
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
