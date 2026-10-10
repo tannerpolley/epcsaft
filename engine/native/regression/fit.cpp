@@ -480,8 +480,13 @@ struct ObservationEvaluator::Impl final {
 };
 
 // A worker never outlives the thread that started it; it reads its fit's request once, then serves it.
+// The socket names the fit's process (its creator), so a fit that died before the death signal was armed
+// shows as a different parent, including a subreaper's adoption, and the worker leaves without reading.
 void serve_fit(int fd) {
-    prctl(PR_SET_PDEATHSIG, SIGKILL);
+    ucred fit{};
+    socklen_t size = sizeof fit;
+    if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &fit, &size) != 0 || prctl(PR_SET_PDEATHSIG, SIGKILL) != 0
+        || getppid() != fit.pid) _exit(1);
     FitRequest request;
     std::vector<double> sqrt_weights;
     get(fd, request.parameters, request.thermochemistry, request.coordinates.coordinates, request.observations,

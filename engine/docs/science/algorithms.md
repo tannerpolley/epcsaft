@@ -1857,7 +1857,8 @@ withheld under rank deficiency or an active bound. A least-squares fit evaluates
 groups in `FitControls.workers` processes, its own included (0, the default, means one per
 hardware thread), at most one per non-electrolyte state group; minimax and the point readers
 use one. Workers are exec-started copies of the Python host's interpreter on the extension
-image the host loaded; each reads the request once and the fit kills and reaps them when it
+image the host loaded; each dies with its fit (a worker whose fit died before it armed that
+signal exits unread), reads the request once, and the fit kills and reaps them when it
 returns, fails or is interrupted. An active trace capture or a native host keeps one process.
 Worker k owns every k-th non-electrolyte state group in row order for the whole fit, with that
 share's warm starts and same-point centers; electrolyte rows, which share one reference cache,
@@ -1865,7 +1866,8 @@ stay in the fit's own process. The fit merges rows in observation order and repo
 one-process sweep's first failure, and every process publishes starts and its cache only when
 the whole evaluation succeeds, so the worker count does not change the evaluation. Processes,
 not threads: Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are
-process-global. A Python KeyboardInterrupt stops the fit between rows (#380). Named scalar ln K and stored
+process-global. A Python KeyboardInterrupt stops the fit between rows only
+when it runs on Python's main thread, which alone receives signals; elsewhere it runs to its end (#380). Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
