@@ -898,6 +898,58 @@ void properties_p2() {
             recording_support::field("pressure_density_derivative", fold.pressure_density_derivative)}),
         "Availability", "independent-slope-bisection", "a mechanical fold is not a resolved stable branch",
         "absolute", unresolved, "p2-fold-resolution", "vapor", "unresolved", "T,P,x", "P_rho=0", "case");
+
+    // #391: Gross & Sadowski (2001) propylene at its coexistence pressure. The last cold-scan cell,
+    // 9394-27094 mol/m3, has negative slopes at both ends (spinodals 14133 and 24347 mol/m3) but its
+    // pressure rises through the target; the liquid root inside it was once discarded. References
+    // are independent bisections of P(rho)-P* inside each positive-slope interval.
+    auto propylene_parameters = properties_support::parameters(1);
+    propylene_parameters.segment_count[0] = 1.9597;
+    propylene_parameters.sigma_constant[0] = 3.5356;
+    propylene_parameters.dispersion_energy_over_k[0] = 207.19;
+    propylene_parameters.molar_mass_kg_per_mol[0] = 0.042081;
+    epcsaft::HelmholtzModel propylene(propylene_parameters);
+    constexpr double cold_temperature = 87.48019017432647, cold_pressure = 7.837213701088098e-4;
+    const auto bisect = [&](double lower, double upper) {
+        for (std::size_t i = 0; i < 200 && std::nextafter(lower, upper) < upper; ++i) {
+            const double middle = 0.5 * (lower + upper);
+            (propylene.state(cold_temperature, middle, composition).pressure < cold_pressure ? lower : upper) = middle;
+        }
+        return lower;
+    };
+    const std::array<double, 2> cold_references = {bisect(1e-7, 1e-5), bisect(15000.0, 24000.0)};
+    const auto cold_inputs = recording_support::fields({recording_support::field("T", cold_temperature),
+        recording_support::field("P_star", cold_pressure), recording_support::field("reference_vapor", cold_references[0]),
+        recording_support::field("reference_liquid", cold_references[1])});
+    for (std::size_t side = 0; side < 2; ++side) {
+        const double reference = cold_references[side];
+        bool ok = propylene.state(cold_temperature, reference, composition).pressure_density_derivative > 0.0;
+        double density = 0.0;
+        for (const auto anchor : {std::optional<double>{}, std::optional<double>{reference}}) {
+            const auto root = epcsaft::solve_density(propylene, cold_temperature, cold_pressure, composition,
+                                                     side ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, anchor);
+            ok = ok && std::abs(root.molar_density - reference) <= std::max(1e-7 * reference,
+                    epcsaft::policy::DENSITY_ROOT_RESIDUAL.value * root.convergence.amplification.value_or(0.0))
+                && root.branch == (side ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor)
+                && root.pressure_density_derivative > 0.0
+                && (anchor || root.stable_root_count == std::optional<std::size_t>{2});
+            if (!anchor) density = root.molar_density;
+        }
+        recording_support::compare((std::string("hidden-crossing/") + (side ? "liquid" : "vapor")).c_str(),
+            "molar_density", "mol/m3", density, reference, cold_inputs, "Relationship", "independent-bisection",
+            "cold and anchored branch requests return the extreme stable root", "absolute", 1e-7 * reference, 0.0, ok,
+            "p2-hidden-crossing", side ? "liquid" : "vapor", "rho", "T,P,x,branch", "rho_branch=rho_ref", "case");
+    }
+    bool cold_ambiguous = false;
+    try {
+        (void)epcsaft::solve_density(propylene, cold_temperature, cold_pressure, composition,
+                                     epcsaft::DensityBranch::Unspecified, std::nullopt);
+    } catch (const std::runtime_error& error) {
+        cold_ambiguous = std::string(error.what()).find("ambiguous") != std::string::npos;
+    }
+    recording_support::compare_custom("hidden-crossing/ambiguous", "selected", "bool", cold_ambiguous ? 1.0 : 0.0,
+        1.0, cold_inputs, "Availability", "bounded-scan", "unspecified request on two stable roots fails closed",
+        "absolute", cold_ambiguous, "p2-hidden-crossing", "ambiguous", "selected", "T,P,x", "no selected density", "case");
 }
 
 }  // namespace properties_checks

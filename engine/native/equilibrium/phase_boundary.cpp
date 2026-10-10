@@ -57,11 +57,11 @@ void validate_density_seed(const DensityRoot& root) {
 }
 
 // A start's compositions in declared phase order and, after a split, its free amounts; vapor_density anchors the
-// true-species split's vapor root.
+// true-species split's vapor root; a positive pressure replaces a pure fluid's free-pressure seed (NaN: the loop rule found none).
 struct PhaseStart final {
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts{};
-    double vapor_density = 0.0;
+    double vapor_density = 0.0, pressure = 0.0;
 };
 
 // The Rachford-Rice split of `total` mol of composition z: beta is the interior root of
@@ -147,6 +147,16 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
     const auto ln_phi_vapor = vapor_root.stable_root_count == 1
         ? std::vector<std::optional<double>>(components, 0.0) : *vapor.log_fugacity_coefficient;
     const auto& ln_phi_liquid = *liquid.log_fugacity_coefficient;
+    // Pure fixed-T, free-P saturation with a sole stable root at P0: P at the scan's negative-slope density lies
+    // between the single mechanical loop's spinodal pressures, so it seeds the pressure and both densities.
+    double witness = 0.0;
+    if (components == 1 && compiled.problem.pressure.free && !compiled.problem.temperature.free
+        && vapor_root.stable_root_count == 1) {
+        witness = vapor_root.negative_slope_density ? compiled.model->state(
+            temperature, *vapor_root.negative_slope_density, compiled.feed_composition).pressure : NAN;
+        if (std::isfinite(witness) && witness > 0.0) { scope.probe("loop_pressure_seed", witness); return {result, {}, 0.0, witness}; }
+        witness = NAN;
+    }
     std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
     for (std::size_t i = 0; i < components; ++i) {
@@ -180,7 +190,7 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
                 return false;
             }()) ? compiled.feed_composition : compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
     }
-    return {result};
+    return {result, {}, 0.0, witness};
 }
 
 // A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
@@ -507,7 +517,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = fugacity_pressure_seed(compiled, point, phase_offsets, scope);
+    const double p = start->pressure > 0.0 ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -554,7 +564,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (compiled.model->parameters().component_count() == 1
             && compiled.problem.phases.size() > 1
             && (!root.stable_root_count.has_value() || *root.stable_root_count < 2)) {
-            throw std::runtime_error("boundary seed has no coexisting density roots");
+            throw std::runtime_error(!std::isnan(start->pressure) ? "boundary seed has no coexisting density roots"
+                : "boundary seed has no coexisting density roots and no positive mechanical-loop witness pressure");
         }
         if (limits) limits->check();
         validate_density_seed(root);
