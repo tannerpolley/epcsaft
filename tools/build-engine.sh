@@ -16,10 +16,23 @@ export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 # locked-ninja locks build/engine-meson/ninja.lock, so the directory must exist before any Ninja run.
 mkdir -p build/engine-meson
 
-# Every CPU, but no more compile jobs than free memory holds: a cold build needs about 1 GiB
-# per job and the pybind11 files about 1.4 GiB (#319, #373). EPCSAFT_BUILD_JOBS overrides.
+# Every CPU, but no more compile jobs than memory holds: a cold build needs about 1 GiB per job
+# and the pybind11 files about 1.4 GiB (#319, #373). Memory is free RAM or, if tighter, the
+# headroom under the nearest cgroup limit (agent sessions run under one). EPCSAFT_BUILD_JOBS overrides.
 cpus="$(env -u OMP_NUM_THREADS nproc)"
-memory_jobs=$(( $(awk '/^MemAvailable:/ {print $2}' /proc/meminfo) / (1536 * 1024) ))
+memory_kib=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
+group=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
+while [[ $group == /sys/fs/cgroup/* ]]; do
+    for limit_file in memory.high memory.max; do
+        limit=$(cat "$group/$limit_file" 2>/dev/null) || continue
+        [[ $limit == max ]] && continue
+        headroom=$(( (limit - $(cat "$group/memory.current")) / 1024 ))
+        ((headroom < memory_kib)) && memory_kib=$headroom
+        break
+    done
+    group=$(dirname "$group")
+done
+memory_jobs=$(( memory_kib / (1536 * 1024) ))
 build_jobs="${EPCSAFT_BUILD_JOBS:-$(( memory_jobs < 1 ? 1 : memory_jobs < cpus ? memory_jobs : cpus ))}"
 [[ "$build_jobs" =~ ^[1-9][0-9]*$ ]] || { echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2; exit 2; }
 
