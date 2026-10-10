@@ -245,8 +245,8 @@ $$
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: [AscaniHeld2021], Eq.~(13)
-- Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
+- Source: [AscaniHeld2021], Eq.~(13); all-ion limit [Bulow2019], Eq.~(7), and [Bulow2021], §2.3 and Table 5
+- Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity; with no neutral solvent, the solvent sum is empty and the rule is linear in ion mole fractions.
 - Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
 
 $$

@@ -560,4 +560,37 @@ void check_declared_reacting_liquid_split() {
     }
 }
 
+// #391/#410: Gross 2002 Fig. 6 butane(0.42)/1-butanol bubble at 473.15 K, k_ij 0.015, from the
+// generated start. The inverse-K finite liquid failed here; the feed liquid on the resolved
+// liquid side reaches the declared-start state.
+void check_gross_2002_bubble() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    ParameterDocument d;
+    d.component_ids = {"butane", "1-butanol"};
+    d.site_component = {1, 1}; d.site_multiplicity = {1, 1};
+    d.base_choice = "pc-saft"; d.association_choice = "general-site";
+    d.electrolyte_choice = d.permittivity_choice = d.polar_choice = "none";
+    const std::array<double, 2> M{58.123, 74.123}, m{2.3316, 2.7515}, eps{222.88, 259.59}, sigma{3.7086, 3.6139};
+    for (std::size_t i = 0; i < 2; ++i) {
+        d.entries.push_back({"molar mass", "molar_mass", {i}, M[i], "gram / mole"});
+        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
+        d.entries.push_back({"segments", "segment_count", {i}, m[i], "dimensionless"});
+        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps[i], "kelvin"});
+        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma[i], "angstrom"});
+    }
+    d.entries.push_back({"association energy", "association_energy_over_k", {0, 1}, 2544.6, "kelvin"});
+    d.entries.push_back({"association volume", "association_volume", {0, 1}, 0.006692, "dimensionless"});
+    d.entries.push_back({"k_ij", "k_ij", {0, 1}, 0.015, "dimensionless"});
+    const HelmholtzModel model(build_parameters(d));
+    auto problem = equilibrium_support::boundary();
+    problem.temperature = FreeValue::fixed(473.15); problem.pressure = FreeValue::variable(3.9e6);
+    problem.feed.values = {0.42, 0.58}; problem.row_tolerance = 1e-8;
+    const auto result = solve_equilibrium(model, problem);
+    CHECK(result.success); CHECK(result.convergence.residual <= 1e-8);
+    tpd_compare("gross-2002-bubble/P", result.pressure.at(0), 3842628.8934729425, 1e-10 * 3842628.8934729425, {}, "Pa");
+    tpd_compare("gross-2002-bubble/rho-L", result.molar_densities.at(0), 7161.966436021788, 1e-10 * 7161.966436021788, {}, "mol/m3");
+    tpd_compare("gross-2002-bubble/rho-V", result.molar_densities.at(1), 1639.905384348973, 1e-10 * 1639.905384348973, {}, "mol/m3");
+    tpd_compare("gross-2002-bubble/y-butane", result.mole_fractions.at(2), 0.7115607362253475, 1e-10, {}, "1");
+}
+
 }  // namespace equilibrium_checks

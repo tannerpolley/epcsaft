@@ -772,7 +772,10 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
-    if (parameters_.permittivity_form.declared()) {
+    // ComponentMixing stays defined on ions alone (Bulow 2019 Eq. 7). IonSuppression and DensityTemperature
+    // average neutral-solvent records; Rueben 2024 fit DipolarPerturbation ion records to water-salt mixtures.
+    if (parameters_.permittivity_form.declared()
+        && !parameters_.permittivity_form.is(PermittivityForm::ComponentMixing)) {
         require(std::any_of(
             parameters_.charge_number.begin(), parameters_.charge_number.end(),
             [&](int charge) { return charge == 0; }
