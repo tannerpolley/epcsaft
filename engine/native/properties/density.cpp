@@ -142,13 +142,36 @@ DensityRoot refine(
 // Once the single mechanical loop is exposed, each cell contains at most one fold.
 // Isolate its positive-slope interval before refining one strict pressure crossing.
 // Exact scan-node roots belong to scan_roots, not to either adjacent cell.
+// Pressure rising through the target between nonpositive end slopes hides a positive slope
+// (mean value theorem): bisect toward the crossing until a stable sample splits the cell into
+// two fold cells, or fail. An exact stable root at that sample is this cell's one root.
 void scan_cell(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& scope, std::size_t& evaluations,
     std::vector<DensityRoot>& roots
 ) {
-    if (low.slope <= 0.0 && high.slope <= 0.0) return;
+    if (low.slope <= 0.0 && high.slope <= 0.0) {
+        if (!(low.residual < 0.0 && high.residual > 0.0)) return;
+        for (std::size_t i = 0;; ++i) {
+            const double density = lower + policy::DENSITY_BISECTION_FRACTION.value * (upper - lower);
+            if (i == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value) || !(density > lower && density < upper))
+                throw std::runtime_error("density hidden crossing unresolved within the search budget");
+            const auto point = at_density(model, temperature, pressure, composition, density,
+                                          evaluations, DerivativeOrder::PressureSlope);
+            scope.probe("density_hidden_crossing", {density, point.residual, point.slope});
+            if (point.slope > 0.0 && point.residual == 0.0)
+                roots.push_back(refine(model, temperature, pressure, composition, density, point,
+                                       density, point, scope, evaluations));
+            if (point.slope > 0.0 && point.residual != 0.0) {
+                scan_cell(model, temperature, pressure, composition, lower, low, density, point, scope, evaluations, roots);
+                scan_cell(model, temperature, pressure, composition, density, point, upper, high, scope, evaluations, roots);
+            }
+            if (point.slope > 0.0) return;
+            if (point.residual > 0.0) { upper = density; high = point; }
+            else { lower = density; low = point; }
+        }
+    }
     if ((low.slope > 0.0) != (high.slope > 0.0)) {
         const bool stable_left = low.slope > 0.0;
         double a = lower, b = upper;

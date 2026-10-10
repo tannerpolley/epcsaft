@@ -269,7 +269,11 @@ at a positive sampled local minimum of the slope, search by golden section:
     a positive quadratic-model minimum estimate stops the search;
     exhausted work or a collapsed bracket without resolution is a failure
 own an exact stable scan-node root once, keeping its adjacent cells connected
-per cell, discard an entirely negative-slope interval; bisect any slope sign
+per cell, discard a negative-slope interval unless its pressure rises through
+    the target; bisect such a cell toward the crossing until a stable sample
+    splits it into two fold cells (an exact stable root there is its one root);
+    exhausted work or adjacent densities without one is a failure
+bisect any slope sign
     transition to adjacent representable densities or an exact slope zero,
     stopping early at a stable sample whose pressure passes the target
 if no stable sample brackets the target and it is within the existing
@@ -281,7 +285,20 @@ select by declared branch policy and return the stable-root count
 ```
 
 The supported shape is one mechanical loop per isotherm, with one interior
-minimum of `P_rho`. Once a negative-slope sample exposes that loop, its two
+minimum of `P_rho`. A second high-density loop can leave the stable liquid
+interval inside one cell whose end slopes are both negative, as for cold
+propylene (#391). When that cell's pressure rises through the target, the mean
+value theorem requires a positive slope somewhere inside it, not one stable
+interval. Midpoint bisection toward the crossing, stopping at floating-point
+adjacency, exposes a positive slope or fails the search rather than returning
+an incomplete root list. `DENSITY_MAX_ITERATIONS` bounds these hidden-crossing
+midpoints per suspect cell, not the whole density search; the fold cells it
+splits off have their own bisection budgets. An exact stable root at a midpoint
+is taken as the cell's one root, which assumes the cell holds one stable
+interval. This does not qualify arbitrary multi-loop isotherms: a
+negative-slope cell whose end pressures lie on one side of the target can still
+hide a pair of crossings. In the single-loop case, once a negative-slope sample
+exposes the loop, its two
 turning points partition the connected domain into increasing, decreasing
 and increasing pressure intervals. Each increasing interval contains at most
 one pressure root. Exact stable scan nodes and strict crossings have separate
@@ -519,7 +536,22 @@ restoring force: their objective gradient scales with $x_i$, the Lagrangian Hess
 is indefinite there, and Ipopt cycled through restoration to the iteration budget
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
-coexistence check. Final residual and stability checks are unchanged.
+coexistence check. A pure fluid's unguessed fixed-temperature, free-pressure
+liquid/vapor start whose seed pressure $P_0$ gives one stable density root (#391)
+instead takes $P_w=P(T,\rho_w)$ at the cold scan's negative-slope node $\rho_w$
+(ALG-DENSITY), when $P_w$ is finite and positive, for its pressure coordinate and
+both density seeds. Under the scan's single-loop shape $P_w$ lies between the
+spinodal pressures, so both stable roots exist there; distinct-root, positive-slope
+and branch admission are unchanged. A two-root $P_0$ is kept, and supplied
+coordinates still replace generated ones. When this rule runs and finds no such
+$P_w$, the start keeps $P_0$ and refuses with `no positive mechanical-loop witness
+pressure`; starts the rule does not cover keep the generic coexistence refusal. A missing
+witness does not prove the fluid supercritical or coexistence absent: a loop
+narrower than the scan grid near the critical point has no sampled negative slope.
+No pressure is invented and nothing retries. Evidence: Gross and Sadowski (2002)
+methanol, 1-pentanol and 1-nonanol saturation, nine rows (eight states) recovered in
+four iterations, within 7.3e-13 of their declared-start states; no other
+declaration changed. Final residual and stability checks are unchanged.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors
