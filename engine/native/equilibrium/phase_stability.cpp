@@ -565,25 +565,27 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     auto failed = solve_compiled(c);
     if (!failed.success && failed.message.rfind("local phase instability:", 0) != 0 && failed.message.rfind("infeasible:", 0) != 0)
         return {std::move(failed), {}};
-    std::vector<StabilityReport> reports; StageWork work;
+    std::vector<StabilityReport> reports; StageWork work; std::vector<double> composition;
     // The existing starts owner retains work when a reference or corrector throws after entering the driver.
     const auto solve = [&](const EquilibriumProblem& problem) {
         auto attempt = solve_equilibrium_starts(*c.model, problem, {EquilibriumStart{}}, {});
         if (!attempt.results[0]) throw std::runtime_error(attempt.causes[0]);
         return std::move(*attempt.results[0]);
     };
-    auto reference = c.problem;
-    reference.phases = {c.problem.phases[vapor]};
-    StabilityOptions options;
-    options.trials = std::vector<PhaseSpec>{c.problem.phases[liquid]};
+    auto reference = c.problem; reference.phases = {c.problem.phases[vapor]};
+    StabilityOptions options; options.trials = std::vector<PhaseSpec>{c.problem.phases[liquid]};
     options.trial_budget = c.model->parameters().component_count() + 1;
-    std::vector<double> composition;
     const auto sample = [&](double temperature) {
         reference.temperature = FreeValue::fixed(temperature);
-        // A sole stable root is vapor-side only below the scan's negative-slope sample (the converse of #410's liquid test).
-        const auto root = solve_density(*c.model, temperature, request.pressure.value, c.feed_composition, DensityBranch::Vapor, std::nullopt);
+        // Sufficient, not necessary, vapor-side evidence: more than one stable root, or a sole root below a negative-slope sample (#423).
+        const auto root = [&] {  // the whole added scan counts, work before a throw included
+            core::Capture scan; Quantities scanned;
+            const auto count = [&] { count_stability_work(scanned, scan.trace()); work.evaluations += scanned["root_evaluations"]; };
+            try { auto found = stability_root(*c.model, temperature, request.pressure.value, c.feed_composition, PhaseKind::Vapor); count(); return found; }
+            catch (...) { count(); throw; }
+        }();
         const auto central = solve(reference);
-        work.add(central); work.evaluations += root.convergence.evaluations;
+        work.add(central);
         if (!central.success || (root.stable_root_count.value_or(0) < 2
             && !(root.negative_slope_density && central.molar_densities[0] < *root.negative_slope_density)))
             throw std::runtime_error("vapor reference unavailable: " + (central.success ? "sole density root not below a negative-slope sample" : central.message));
@@ -593,11 +595,10 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         if (!report.completed || report.trials.empty()) throw std::runtime_error("incomplete liquid trial family: " + report.message);
         double best = std::numeric_limits<double>::infinity();
         for (const auto& trial : report.trials) {
-            if (!trial.optimizer.success || !trial.quantities.count("tpd_over_rt")
-                || !std::isfinite(trial.quantities.at("tpd_over_rt")))
+            const auto distance = trial.quantities.find("tpd_over_rt");
+            if (!trial.optimizer.success || distance == trial.quantities.end() || !std::isfinite(distance->second))
                 throw std::runtime_error("liquid trial unavailable: " + trial.message);
-            const auto distance = trial.quantities.at("tpd_over_rt");
-            if (distance < best) { best = distance; composition = trial.composition; }
+            if (distance->second < best) { best = distance->second; composition = trial.composition; }
         }
         return best;
     };
@@ -632,8 +633,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         if (recovered.temperature[0] < lower - 1e-10 * upper || recovered.temperature[0] > upper + 1e-10 * upper)
             throw std::runtime_error("boundary corrector left cooling-onset bracket");
         if (competing(recovered.temperature[0])) throw std::runtime_error("competing liquid descent at corrected dew");
-        work.add(failed);
-        work.report(recovered);
+        work.add(failed); work.report(recovered);
         return {std::move(recovered), std::move(reports)};
     } catch (const std::exception& error) {
         work.add(recovered);

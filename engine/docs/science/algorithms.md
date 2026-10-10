@@ -1092,15 +1092,20 @@ from 375 K otherwise returns 369.425 K).
 
 The ordinary declared solve runs once; a failure other than local instability or
 infeasibility returns unchanged with an empty report list. At each sampled $T$ the
-one-phase vapor reference is solved and admitted only on the vapor side: the density
-owner's vapor-branch request at $(T, P, z)$ returns more than one stable root, or its sole
-stable root lies below the scan's first negative pressure-slope sample $\rho_-$ (the
-converse of the liquid-side feed test). A sole root above $\rho_-$, or with no
-negative-slope sample, is not a vapor reference, and the operation refuses before that
+one-phase vapor reference is solved and admitted only with sufficient evidence that it is
+vapor-side: the density owner's vapor-branch request at $(T, P, z)$ returns more than one
+stable root, or its sole stable root lies below the scan's first negative pressure-slope
+sample $\rho_-$ (the converse of the liquid-side feed test). A sole root above $\rho_-$, or
+with no negative-slope sample, is unconfirmed, and the operation refuses before that
 sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
 10,132,000 Pa from 392.05 K otherwise confirms a 227.63 K "dew" whose two phases are
-both liquid-like). Each admitted reference then runs the complete liquid trial family of
-`stability_test(...)` (at most $m+1$ trials). An ordinary success is sampled at its
+both liquid-like). The rule is sufficient, not a
+necessary physical condition: without a fixed-composition mechanical loop the scan cannot
+establish vapor-side identity, so valid mixture dew boundaries, for example near the
+mixture critical region, can stay unconfirmed and be refused (Gross 2002 rows 173, 496
+and 522 at 6.0792, 3.039 and 10.132 MPa have dews at 563.390284, 625.552224 and
+543.914200 K). #423 tracks broader reference admission. Each admitted reference then
+runs the complete liquid trial family of `stability_test(...)` (at most $m+1$ trials). An ordinary success is sampled at its
 own temperature and returned, with that report, when no trial resolves a descent; a
 resolved descent marks a metastable root (row 722 from 475 K otherwise returns
 368.061 K) and starts the search below. From the seed temperature,
@@ -1113,7 +1118,8 @@ at most 82 samples and 246 liquid trials for a binary. Each refusal appends its 
 the original failure, or to "ordinary dew unconfirmed" after a success, and returns no state: no upper bound in 16 heating samples, no onset
 in 64 downward samples, an unavailable vapor reference or liquid trial, an incomplete
 trial family, an unsuccessful corrector, a corrector outside the bracket, or competing
-descent at the corrected dew. All reference, trial and corrector work is counted.
+descent at the corrected dew. All reference, density-scan, trial and corrector work is counted,
+including work before a refusal.
 Finite coverage: a narrow negative-distance interval between samples or a missed
 composition minimum is not excluded, and a refusal means unresolved selection, not an
 absent dew. Evidence (#391): rows 558, 722 and 723 from the default start and from 350,
