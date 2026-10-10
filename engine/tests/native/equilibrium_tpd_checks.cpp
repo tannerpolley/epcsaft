@@ -489,6 +489,9 @@ epcsaft::equilibrium::EquilibriumProblem ascani_2023_problem(int system, double 
     return problem;
 }
 
+// Reaction-invariant balances B n with B nu = 0: acid+water, alcohol+water, ester-water.
+constexpr std::array<std::array<double, 4>, 3> ascani_2023_balances{{{1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, -1}}};
+
 void check_reacting_liquid_split() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
     struct Case { int system; double z, g_two, minor; };
@@ -503,15 +506,14 @@ void check_reacting_liquid_split() {
         CHECK(result.success); CHECK(result.phase_count == 2); CHECK(result.convergence.residual <= 1e-10);
         tpd_compare(id + "/g", result.objective, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
         tpd_compare(id + "/minor-amount", std::min(result.amounts[0], result.amounts[1]), item.minor, 1e-10, {}, "mol");
-        // Reaction-invariant balances B n with B nu = 0: acid+water, alcohol+water, ester-water.
-        const std::array<std::array<double, 4>, 3> B{{{1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, -1}}};
         double distance = 0.0;
         for (std::size_t i = 0; i < 4; ++i) distance = std::max(distance, std::abs(result.mole_fractions[i] - result.mole_fractions[4 + i]));
         for (std::size_t k = 0; k < 3; ++k) {
             double balance = 0.0;
             for (std::size_t i = 0; i < 4; ++i)
-                balance += B[k][i] * (result.amounts[0] * result.mole_fractions[i] + result.amounts[1] * result.mole_fractions[4 + i]);
-            tpd_compare(id + "/balance/" + std::to_string(k), balance, B[k][0] * item.z + B[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
+                balance += ascani_2023_balances[k][i] * (result.amounts[0] * result.mole_fractions[i] + result.amounts[1] * result.mole_fractions[4 + i]);
+            tpd_compare(id + "/balance/" + std::to_string(k), balance,
+                ascani_2023_balances[k][0] * item.z + ascani_2023_balances[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
         }
         CHECK(distance > 0.3);
     }
@@ -546,6 +548,13 @@ void check_declared_reacting_liquid_split() {
                 tpd_compare(id + "/g", result.objective / N, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
                 tpd_compare(id + "/aq-amount", result.amounts[0] / N, item.minor, 1e-12, {}, "mol");
                 CHECK(result.mole_fractions[3] - result.mole_fractions[7] > 0.3);  // aq water-rich, distinct liquids
+                for (std::size_t k = 0; k < 3; ++k) {
+                    double balance = 0.0;
+                    for (std::size_t i = 0; i < 4; ++i)
+                        balance += ascani_2023_balances[k][i] * (result.amounts[0] * result.mole_fractions[i] + result.amounts[1] * result.mole_fractions[4 + i]);
+                    tpd_compare(id + "/balance/" + std::to_string(k), balance / N,
+                        ascani_2023_balances[k][0] * item.z + ascani_2023_balances[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
+                }
             }
         }
     }
