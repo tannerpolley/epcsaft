@@ -288,12 +288,17 @@ The supported shape is one mechanical loop per isotherm, with one interior
 minimum of `P_rho`. A second high-density loop can leave the stable liquid
 interval inside one cell whose end slopes are both negative, as for cold
 propylene (#391). When that cell's pressure rises through the target, the mean
-value theorem requires a positive slope inside it; midpoint bisection toward
-the crossing, sharing one `DENSITY_MAX_ITERATIONS` budget per cell and
-stopping at floating-point adjacency, exposes it or fails the search rather than
-returning an incomplete root list. This does not qualify arbitrary
-multi-loop isotherms: a negative-slope cell whose end pressures lie on one side
-of the target can still hide a pair of crossings. Once a negative-slope sample exposes that loop, its two
+value theorem requires a positive slope somewhere inside it, not one stable
+interval. Midpoint bisection toward the crossing, stopping at floating-point
+adjacency, exposes a positive slope or fails the search rather than returning
+an incomplete root list. `DENSITY_MAX_ITERATIONS` bounds these hidden-crossing
+midpoints per suspect cell, not the whole density search; the fold cells it
+splits off have their own bisection budgets. An exact stable root at a midpoint
+is taken as the cell's one root, which assumes the cell holds one stable
+interval. This does not qualify arbitrary multi-loop isotherms: a
+negative-slope cell whose end pressures lie on one side of the target can still
+hide a pair of crossings. In the single-loop case, once a negative-slope sample
+exposes the loop, its two
 turning points partition the connected domain into increasing, decreasing
 and increasing pressure intervals. Each increasing interval contains at most
 one pressure root. Exact stable scan nodes and strict crossings have separate
