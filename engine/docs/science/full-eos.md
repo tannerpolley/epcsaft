@@ -25,6 +25,7 @@ Correct mathematics is not weakened to match an implementation defect.
 | Rueben2024 | Rueben et al., *J. Chem. Eng. Data* 2024, DOI `10.1021/acs.jced.4c00347` | Partial-density perturbation-theory dielectric model, Eqs. (4)--(6), and PT2 ion parameters |
 | Perdomo2025 | Perdomo et al., *Comput. Chem. Eng.* 2025, 194, 108977, DOI `10.1016/j.compchemeng.2024.108977` | Read-only NaCl--water vapor/liquid endpoint diagnostic; not an ePC-SAFT parameter source |
 | Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Source-complete water plus all 29 Table 2 ion parameters and fully dissociated water-electrolyte formulation; package reference domain 298.15 K and 1 bar |
+| Bulow2021 | Bülow, Ascani, and Held, *Fluid Phase Equilibria* 2021, 537, 112989, DOI `10.1016/j.fluid.2021.112989` | Linear ion-mole permittivity rule (§2.3, Table 5) and Born charging work (Eq. 24) for salts in an ionic liquid, with no neutral species |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
@@ -389,6 +390,8 @@ contains neither the Figiel radial-region model record nor a dielectric
 suppression coefficient. Its water and 1-butanol source correlations are
 evaluated exactly at the bundle's sole admitted temperature, 298.15 K. CppAD
 differentiates the displayed composition rule in the common owner.
+
+With every species charged (an ionic liquid plus a salt), the solvent sum is empty and the rule is `epsilon_r,bulk = sum_i x_i epsilon_r,i` (Bulow2019 Eq. 7; Bulow2021 §2.3, Table 5); the Debye-Huckel term and the Born charging work from vacuum (Bulow2021 Eq. 24) need only this `epsilon_r,bulk > 0`. Only this form admits a parameter set without a neutral species: ion suppression and the density form average neutral-solvent records, and Rueben2024 fit the perturbation form's ion records to water-salt mixtures. Stability refuses ionic trial supports, automatic or supplied, under this form; declare the equilibrium phases instead.
 
 ### 6.2 Schreckenberg density topology
 

@@ -378,39 +378,11 @@ void modular_permittivity_actions() {
     constexpr double temperature = 298.15, pressure = 2.0e6;
     const std::array<double, 12> scan = {
         2e3, 1e4, 2e4, 5e4, 9e4, 9.5e4, 1e5, 2e5, 5e5, 1e6, 2e6, 5e6};
-    for (const auto& [name, parameters] : forms) {
+    const auto actions_match = [&](const char* name, const epcsaft::Parameters& parameters,
+            const std::vector<epcsaft::ActiveParameter>& active,
+            const std::array<std::vector<epcsaft::ParameterActionDirection>, 3>& theta, const std::vector<double>& x,
+            const std::array<std::vector<double>, 3>& composition_direction, double pressure) {
         const epcsaft::HelmholtzModel model(parameters, active);
-        double previous_liquid = 0.0;
-        for (const double scan_pressure : scan) {
-            const auto liquid = model.state_at_pressure(
-                temperature, scan_pressure, x, epcsaft::DensityBranch::Liquid);
-            const auto vapor = model.state_at_pressure(
-                temperature, scan_pressure, x, epcsaft::DensityBranch::Vapor);
-            const int roots = liquid.stable_root_count.value_or(-1);
-            // One stable root: both requests return it unlabelled. Two: liquid is the denser.
-            // The liquid root rises monotonically in P, so no request switched branch.
-            const bool ok = liquid.molar_density > previous_liquid
-                && vapor.stable_root_count == liquid.stable_root_count
-                && (roots == 1 ? vapor.molar_density == liquid.molar_density
-                        && liquid.density_branch == epcsaft::DensityBranch::Unspecified
-                    : roots == 2 && vapor.molar_density < 1.0e-2 * liquid.molar_density
-                        && liquid.density_branch == epcsaft::DensityBranch::Liquid)
-                && std::abs(liquid.pressure - scan_pressure) <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
-                    * liquid.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature;
-            previous_liquid = liquid.molar_density;
-            const std::string point = std::string(name) + "/" + recording_support::number(scan_pressure);
-            recording_support::compare_custom(("issue26/branch/" + point).c_str(),
-                "liquid_molar_density", "mol/m3", liquid.molar_density, vapor.molar_density,
-                recording_support::fields({recording_support::field("form", name),
-                    recording_support::field("P", scan_pressure),
-                    recording_support::field("stable_roots", roots),
-                    recording_support::field("epsilon_r_liquid", liquid.bulk_relative_permittivity),
-                    recording_support::field("epsilon_r_vapor", vapor.bulk_relative_permittivity),
-                    recording_support::field("liquid_pressure_residual", liquid.pressure - scan_pressure)}),
-                "Relationship", "declared-branch-scan", "liquid root persists; sole roots are unlabelled",
-                "custom", ok, "issue26-branch", point.c_str(), "\\rho_L", "T,P,\\mathbf{x}",
-                "branch", "form,P");
-        }
         const auto root = model.state_at_pressure(
             temperature, pressure, x, epcsaft::DensityBranch::Liquid);
         const double rho = root.molar_density;
@@ -482,6 +454,80 @@ void modular_permittivity_actions() {
                 }
             }
         }
+        return root.bulk_relative_permittivity;
+    };
+    for (const auto& [name, parameters] : forms) {
+        const epcsaft::HelmholtzModel model(parameters, active);
+        double previous_liquid = 0.0;
+        for (const double scan_pressure : scan) {
+            const auto liquid = model.state_at_pressure(
+                temperature, scan_pressure, x, epcsaft::DensityBranch::Liquid);
+            const auto vapor = model.state_at_pressure(
+                temperature, scan_pressure, x, epcsaft::DensityBranch::Vapor);
+            const int roots = liquid.stable_root_count.value_or(-1);
+            // One stable root: both requests return it unlabelled. Two: liquid is the denser.
+            // The liquid root rises monotonically in P, so no request switched branch.
+            const bool ok = liquid.molar_density > previous_liquid
+                && vapor.stable_root_count == liquid.stable_root_count
+                && (roots == 1 ? vapor.molar_density == liquid.molar_density
+                        && liquid.density_branch == epcsaft::DensityBranch::Unspecified
+                    : roots == 2 && vapor.molar_density < 1.0e-2 * liquid.molar_density
+                        && liquid.density_branch == epcsaft::DensityBranch::Liquid)
+                && std::abs(liquid.pressure - scan_pressure) <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
+                    * liquid.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature;
+            previous_liquid = liquid.molar_density;
+            const std::string point = std::string(name) + "/" + recording_support::number(scan_pressure);
+            recording_support::compare_custom(("issue26/branch/" + point).c_str(),
+                "liquid_molar_density", "mol/m3", liquid.molar_density, vapor.molar_density,
+                recording_support::fields({recording_support::field("form", name),
+                    recording_support::field("P", scan_pressure),
+                    recording_support::field("stable_roots", roots),
+                    recording_support::field("epsilon_r_liquid", liquid.bulk_relative_permittivity),
+                    recording_support::field("epsilon_r_vapor", vapor.bulk_relative_permittivity),
+                    recording_support::field("liquid_pressure_residual", liquid.pressure - scan_pressure)}),
+                "Relationship", "declared-branch-scan", "liquid root persists; sole roots are unlabelled",
+                "custom", ok, "issue26-branch", point.c_str(), "\\rho_L", "T,P,\\mathbf{x}",
+                "branch", "form,P");
+        }
+        actions_match(name, parameters, active, theta, x, composition_direction, pressure);
+    }
+    // Issue 409: Bulow 2021 Fig. 9 [C4mim][TfO] + NaCl, every species charged; 1 bar liquid.
+    auto il = properties_support::parameters(4);
+    il.segment_count = {2.4805, 3.7432, 1.0, 1.0};
+    il.sigma_constant = {3.6371, 3.8771, 2.8232, 2.756};
+    il.dispersion_energy_over_k = {218.1441, 509.3113, 230.0, 170.0};
+    il.molar_mass_kg_per_mol = {0.13922, 0.14907, 0.02298977, 0.035453};
+    il.charge_number = {1, -1, 1, -1};
+    il.packing_diameter_angstrom = {3.588496, 3.874333, 2.8232, 2.756};  // IL ions: PC-SAFT d(298.15 K)
+    il.debye_huckel_diameter_angstrom = il.born_diameter_angstrom = il.sigma_constant;
+    il.relative_permittivity = {13.2, 13.2, 8.0, 8.0};  // Bulow 2021 Table 5
+    il.k_ij[11] = il.k_ij[14] = 0.317;  // Na+-Cl-, Bulow 2021 Table 4
+    il.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
+    il.ionic_dispersion = epcsaft::IonicDispersion::AllIonPairs;
+    il.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    il.ionic_region_relative_permittivity = 1.0;
+    const double salt = 0.001509;  // n_salt / (n_salt + n_IL)
+    const auto kij = [](double value) {  // Na+-TfO-
+        return std::vector<epcsaft::ParameterActionDirection>{{epcsaft::ParameterFamily::Kij, {6, 9}, value}};
+    };
+    // Normalized, electroneutral, and every salt fraction stays positive over the reference steps.
+    const double epsilon = actions_match("all-ion-component-mixing", il, {{epcsaft::ParameterFamily::Kij, {6, 9}}},
+        {kij(0.01), kij(-0.005), kij(0.002)}, {(1 - salt) / 2, (1 - salt) / 2, salt / 2, salt / 2},
+        {{{-1e-3, -1e-3, 1e-3, 1e-3}, {5e-4, 5e-4, -5e-4, -5e-4}, {-2e-4, -2e-4, 2e-4, 2e-4}}}, 1.0e5);
+    const double expected = 13.2 * (1 - salt) + 8.0 * salt;
+    recording_support::compare_custom("issue409/epsilon", "bulk_relative_permittivity", "1", epsilon, expected,
+        recording_support::fields({recording_support::field("x_salt", salt)}), "Reference", "source-equation",
+        "Bulow 2019 Eq. 7 on ions alone", "relative", std::abs(epsilon - expected) <= 1e-12 * expected,
+        "issue409-epsilon", "C4mimTfO-NaCl", "\\epsilon_r", "\\mathbf{x}", "13.2(1-x_s)+8x_s", "x_salt");
+    // The forms that average over neutral solvents, or whose ion records are aqueous, still refuse.
+    il.ion_suppression_coefficient = {7.01, 7.01, 7.01, 7.01};
+    for (const auto form : {epcsaft::PermittivityForm::IonSuppression, epcsaft::PermittivityForm::DensityTemperature,
+                            epcsaft::PermittivityForm::DipolarPerturbation}) {
+        il.permittivity_form = form;
+        bool refused = false;
+        try { const epcsaft::HelmholtzModel model(il); }
+        catch (const std::invalid_argument& error) { refused = std::string(error.what()) == "invalid dielectric solvent"; }
+        CHECK(refused);
     }
 }
 
