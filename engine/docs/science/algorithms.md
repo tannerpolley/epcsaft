@@ -722,7 +722,9 @@ Here $b$ is the amount at the base of the direction being searched (Ipopt's curr
 iterate, which a watchdog rollback restores; in restoration the original-variable
 block of the restoration iterate), $l$ the active search problem's relaxed lower
 bound (restoration's own during restoration; Ipopt relaxes the zero bound to about
-$-10^{-8}$ mol) and $x$ the trial amount, all unscaled, in mol. Along one shrinking
+$-10^{-8}$, that is $-10^{-8}S_p$ mol) and $x$ the trial amount, all in Ipopt's amount
+coordinate $y_p=n_p/S_p$ defined below. The rule is unchanged by a positive per-column
+scale, so it reads the same in mol. Along one shrinking
 direction $d$ this is $\alpha\le(1-\kappa_N)(b-l)/(-d)$: a fraction-to-boundary rule
 with $\tau_N=0.9$ on the free amounts only, the tighter of Ipopt's $\tau$ and 0.9
 applying to a shrinking amount. It adds no constraint, bound or amount floor and
@@ -732,8 +734,8 @@ ordinary backtracking halves the step, soft restoration repeats the refused poin
 to three times before full restoration, and a refusal can suppress a second-order
 correction or end a watchdog attempt. Refused objective callbacks count as
 evaluations; refused constraint callbacks do not. The rule keeps the distance from
-the relaxed bound positive, not the amount: with $b=10^{-9}$ and $l=-10^{-8}$ mol,
-$x=-8.9\times10^{-9}$ mol is admitted, and the topology, balance and density checks
+the relaxed bound positive, not the amount: with $b=10^{-9}$ and $l=-10^{-8}$ (units of $S_p$),
+$x=-8.9\times10^{-9}$ is admitted, and the topology, balance and density checks
 still decide the returned state. Measured on the amount itself ($x\ge\kappa_N b$) the
 rule refuses every step toward the barrier optimum, which lies between the relaxed
 bound and zero: the neutral binary liquid at 0.8 times its dew pressure then stops
@@ -751,9 +753,39 @@ and active bound at all 16,161 admissions over 2,540 callbacks, including restor
 and watchdog rollback. The value 0.1 is provisional (#356). The rule reads Ipopt
 3.11.9 internals (the TNLP adapter's ordering, the current iterate and the active
 problem's bounds; IpBacktrackingLineSearch.cpp, IpRestoIpoptNLP.cpp). A missing
-mapping or variable scaling stops the solve with a named error, and a compile-time
+mapping or Ipopt's own variable scaling, which would put its iterate and bounds outside the
+callback coordinates, stops the solve with a named error, and a compile-time
 check refuses another Ipopt release, which must requalify the rule (3.14's
 `get_curr_iterate` returns iterates, not these relaxed bounds).
+
+Ipopt measures each free phase amount of a Gibbs minimization in units of its own start
+amount (#243): it works in $y_p=n_p/S_p$ with
+$S_p=\max(n_p^0,\epsilon_N N_{\mathrm{feed}})$, $\epsilon_N=$`PHASE_DISAPPEARANCE_AMOUNT`$=10^{-8}$,
+fixed for one solve after every start owner has run; every other coordinate keeps unit one,
+and feasibility cells keep physical coordinates. The callbacks return $S\nabla f$, $J S$ and
+$S H S$ at the physical point $n=Sy$. Objective, constraints and their multipliers, starts,
+bounds, Ipopt options, polish, classification, continuation and sensitivity are unchanged.
+In mol the solve was conditioned by the feed size. Ipopt starts every bound multiplier at the
+constant `bound_mult_init_val` 1, so in feed-relative units $q=n/N$ the initial amount bound
+multiplier is $z_q=N z_n=N$, while composition and packing multipliers do not depend on $N$.
+This mismatch is demonstrated but no experiment has isolated it as the sole cause; what matched
+across feeds was the normalized iteration-0 start, not the iteration-1 point. Water/isobutanol
+(293.15 K, $10^5$ Pa, feed $0.6N/0.4N$) coalesced at 100 mol into one liquid 0.0216 RT per mol
+of feed above the split, and the #312 feed-scaled matrix passed 39 of 42 declarations. In
+start-amount units it passes 42/42, and each declaration takes the same optimizer iterations
+at 1, 100 and 10,000 mol. The unit was chosen empirically, as the only qualified candidate that
+also adds no priority-solve iterations: feed-relative $n/N$ passes the matrix but raises the
+MEA flash from 19 to 21 iterations cold and 17 to 19 accepted; other order-one multiples of the
+start add key-solve iterations or swap the neutral phase labels; Ipopt's gradient-based
+`nlp_scaling` does not scale variables; user variable scaling would conflict with the guard
+above; `mu-based` bound-multiplier initialization is untested. The floor regularizes the
+coordinate scale only. It does not clamp $n$, add an amount bound or classify a predictor as
+vanished, and a below-cutoff predictor does not establish physical disappearance (a
+continuation corrector can predict an amount at or below zero; without the floor E4-C stops
+nonfinite at path 0.6075). The floor is homogeneous in the feed, so the iteration is invariant
+under positive feed scaling except for the $\max(1,N_{\mathrm{feed}})$ dual-tolerance clip
+below 1 mol and Ipopt's absolute `compl_inf_tol`. C3 still refuses its vanished vapor; its
+convergence category is now `stalled` instead of `converged_to_floor`.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
