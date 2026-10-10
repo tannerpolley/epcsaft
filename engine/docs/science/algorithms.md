@@ -1102,9 +1102,9 @@ sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
 both liquid-like). The rule is sufficient, not a
 necessary physical condition: without a fixed-composition mechanical loop the scan cannot
 establish vapor-side identity, so valid mixture dew boundaries, for example near the
-mixture critical region, can stay unconfirmed and be refused (Gross 2002 rows 173, 496
-and 522 at 6.0792, 3.039 and 10.132 MPa have dews at 563.390284, 625.552224 and
-543.914200 K). #423 tracks broader reference admission. Each admitted reference then
+mixture critical region, can stay unconfirmed and be refused (the Gross 2002 row 173, 496
+and 522 declarations raised to 6.0792, 3.039 and 10.132 MPa have dews at 563.390284,
+625.552224 and 543.914200 K). #423 tracks broader reference admission. Each admitted reference then
 runs the complete liquid trial family of `stability_test(...)` (at most $m+1$ trials). An ordinary success is sampled at its
 own temperature and returned, with that report, when no trial resolves a descent; a
 resolved descent marks a metastable root (row 722 from 475 K otherwise returns
