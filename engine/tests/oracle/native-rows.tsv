@@ -269,12 +269,12 @@ equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A3	J/mo
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.022314287805419827
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A3	J/(mol K)	0
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.0003327286640915521
-equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	3.1086244689504383e-15
-equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-9.769962616701378e-15
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-1.5490602066857689e-16
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	6.732459269167147e-16
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173946966e-06
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173950862e-06
+equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	-1.6209256159527285e-14
+equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-4.170578474043361e-17
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	-3.7534973332329757e-16
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944493e-06
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173916778e-06
 regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000009
 regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999997048
 regression_checks R2-J2	r4/recovery/final_cost	1	3.627957601131124e-27
@@ -325,27 +325,27 @@ surface_example	state/root/2	mixed	58178.655742728624
 surface_example	state/root/3	mixed	8.5344058209368967e-15
 surface_example	state/root/4	mixed	2
 surface_example	bubble/pressure	Pa	30936.816033816522
-surface_example	flash/amounts/0	mol	0.45701296529333363
-surface_example	flash/amounts/1	mol	0.54298703470666632
-surface_example	flash/mole_fractions/0	1	0.49278463704329706
-surface_example	flash/mole_fractions/1	1	0.507215362956703
-surface_example	flash/mole_fractions/2	1	0.045656765611790967
-surface_example	flash/mole_fractions/3	1	0.95434323438820901
-surface_example	flash/multipliers/0	1	-1.2878437705797166
+surface_example	flash/amounts/0	mol	0.45701296529333596
+surface_example	flash/amounts/1	mol	0.54298703470666398
+surface_example	flash/mole_fractions/0	1	0.49278463704329489
+surface_example	flash/mole_fractions/1	1	0.50721536295670511
+surface_example	flash/mole_fractions/2	1	0.045656765611790842
+surface_example	flash/mole_fractions/3	1	0.95434323438820923
+surface_example	flash/multipliers/0	1	-1.287843770579719
 surface_example	flash/multipliers/1	1	1.7608110095231229
-surface_example	flash/constraint_multipliers/0	1	1.2878437705797166
+surface_example	flash/constraint_multipliers/0	1	1.287843770579719
 surface_example	flash/constraint_multipliers/1	1	-1.7608110095231229
 surface_example	flash/constraint_multipliers/2	1	0
 surface_example	flash/constraint_multipliers/3	1	0
-surface_example	solved/thermal/0	mol	-0.018884589385214069
-surface_example	solved/radial/0	mol	0.2318039970671773
-surface_example	solved/thermal/1	1	-0.0077792789010150184
+surface_example	solved/thermal/0	mol	-0.018884589385214
+surface_example	solved/radial/0	mol	0.23180399706717947
+surface_example	solved/thermal/1	1	-0.0077792789010149178
 surface_example	solved/radial/1	1	0
-surface_example	solved/thermal/2	1	-0.016319143831975389
+surface_example	solved/thermal/2	1	-0.016319143831975191
 surface_example	solved/radial/2	1	0
-surface_example	solved/thermal/3	J/mol	-126.93949786518525
+surface_example	solved/thermal/3	J/mol	-126.939497865185
 surface_example	solved/radial/3	J/mol	0
-surface_example	solved/thermal/4	mol/m^3	-481.75993780548083
+surface_example	solved/thermal/4	mol/m^3	-481.75993780547759
 surface_example	solved/radial/4	mol/m^3	0
-surface_example	solved/condition	1	42.104387982529069
+surface_example	solved/condition	1	42.104387982528259
 surface_example	floor/residual	1	8.8817841970012523e-16
