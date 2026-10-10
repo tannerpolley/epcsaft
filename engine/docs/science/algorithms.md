@@ -455,10 +455,11 @@ mechanically stable feed root lies on the liquid side of the scanned loop; it do
 show that the equilibrium phase is liquid. Near-critical methane/ethane feeds with one
 unlabelled root and no witness keep $z/K$, which retains their solutions. The incipient
 estimate, the pressure step and the density closures are unchanged (#391, #410).
-Evidence (#391/#410 build, default starts): Gross 2002 703 to 712 of 724 with no
-success lost and no added iterations or evaluations; all 1,800 Cameretti 2005 aqueous electrolyte
-bubbles against 747; the 70-declaration methane/ethane bubble sweep 22 to 26 with none
-lost; retained states agree within 1e-12 relative. Open limits: Gross 2002 water/1-pentanol dew rows 558 and 722 reach locally unstable
+Evidence (#391/#410 build, default starts): Gross 2002 712 to 721 of 724 with no
+success lost and no added iterations or evaluations; all 1,800 Cameretti 2005 aqueous
+electrolyte bubbles against 747; the 70-declaration methane/ethane bubble sweep 22 to 26
+with none lost; retained states agree within 1e-12 relative.
+Open limits: Gross 2002 water/1-pentanol dew rows 558 and 722 reach locally unstable
 liquid stationary points from the generated start and keep that refusal, and row 723
 also fails from it. Supplied starts recover two dew branches for 558 and 722; for 722
 the higher tested dew, about 369.966334 K, is on the water-rich branch, so a
