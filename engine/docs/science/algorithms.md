@@ -422,6 +422,31 @@ retains the sole dense feed root and the recovered incipient vapor (#204).
 Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
 weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
 an insertion property. This does not remove species from reactive supports (#265).
+A nonreacting unguessed boundary of one liquid and one vapor, with the finite phase
+F free and the incipient phase I pinned at exactly zero amount, starts F at $x_F=z$
+instead of the normalized $z/K$ (liquid) or $zK$ (vapor) when
+$D=\{i:z_i>0\}\setminus S_I\ne\varnothing$, with $S_I$ the compiled effective support of
+I, or when F is the liquid and
+$\mathcal L=[n_s>1]\lor[\rho_-\text{ available}\land\rho_L>\rho_-]$. Here $n_s$, $\rho_L$
+and $\rho_-$ are the stable-root count, the largest stable root and the stored
+negative-slope density of the unanchored feed-density search above at $(T_0,P_0,z)$;
+$\mathcal L$ adds no EOS evaluation. At the solution the inventory rows give
+$N_F=N_{feed}$ and $x_F=z$; using $z$ before the solve is a restricted initialization
+policy, not that identity, and feed composition is not claimed to be the best start
+elsewhere. Under ALG-DENSITY's single-loop assumption $\mathcal L$ is evidence that a
+mechanically stable feed root lies on the liquid side of the scanned loop; it does not
+show that the equilibrium phase is liquid. Near-critical methane/ethane feeds with one
+unlabelled root and no witness keep $z/K$, which retains their solutions. The incipient
+estimate, the pressure step and the density closures are unchanged (#391, #410).
+Evidence (#391/#410 build, default starts): Gross 2002 703 to 712 of 724 with no
+success lost and no added iterations or evaluations; all 1,800 Cameretti 2005 aqueous electrolyte
+bubbles against 747; the 70-declaration methane/ethane bubble sweep 22 to 26 with none
+lost; retained states agree within 1e-12 relative. Open limits: Gross 2002 water/1-pentanol dew rows 558 and 722 reach locally unstable
+liquid stationary points from the generated start and keep that refusal, and row 723
+also fails from it. Supplied starts recover two dew branches for 558 and 722; for 722
+the higher tested dew, about 369.966334 K, is on the water-rich branch, so a
+pentanol-rich start is not a general answer. Automatic basin selection needs a
+separately designed tangent-plane search (ADR 0012).
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$

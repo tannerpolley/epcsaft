@@ -166,8 +166,20 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
         && std::all_of(k_values.begin(), k_values.end(), [](double k) { return std::isfinite(k) && k > 0.0; }))
         if (auto split = rachford_rice(compiled, compiled.feed_composition, k_values, compiled.feed_total, scope))
             return std::move(*split);
-    for (std::size_t phase = 0; phase < phases; ++phase)
-        result[phase] = compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
+    // Use the conserved finite liquid only when the feed root resolves its liquid side.
+    const bool liquid_feed = liquid_root.stable_root_count.value_or(0) > 1
+        || (liquid_root.negative_slope_density
+            && liquid_root.molar_density > *liquid_root.negative_slope_density);
+    for (std::size_t phase = 0; phase < phases; ++phase) {
+        const auto& own = compiled.problem.phases[phase].amount, & other = compiled.problem.phases[1 - phase].amount;
+        result[phase] = !compiled.has_reaction && own.kind == AmountKind::Free && other.kind == AmountKind::Pinned
+            && other.fraction == 0.0 && ((compiled.problem.phases[phase].kind == PhaseKind::Liquid && liquid_feed) || [&] {
+                const auto& support = compiled.problem.phases[1 - phase].support;
+                for (std::size_t i = 0; i < components; ++i)
+                    if (compiled.feed_composition[i] > 0.0 && std::find(support.begin(), support.end(), i) == support.end()) return true;
+                return false;
+            }()) ? compiled.feed_composition : compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
+    }
     return {result};
 }
 
