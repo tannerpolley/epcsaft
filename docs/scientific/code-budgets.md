@@ -86,6 +86,7 @@ accounting; Git keeps the former per-slice tables. Entries marked
 **inherited** come from [the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31);
 their approval assertions were not reverified in the #221 reconciliation.
 
+- 2026-10-10, #391 (owner): Equilibrium **8,843 → 8,917**, the measured count with the explicit cooling-onset dew operation (+95 Equilibrium, +1 Bindings, +2 Python). Round 2 (owner, small bump): **8,917 → 8,921** for the vapor-side reference admission (+4 Equilibrium). Total, floor and soft targets are unchanged.
 - 2026-10-09, #380 (owner): Regression **2,550 → 2,815**, the measured count of the exec-started parallel fit workers after the round-3 parent-death guard. It covers the round-1 approval (up to 2,664) and the round-2/3 approval (up to 2,825). Floor and soft targets are unchanged.
 - 2026-10-07, #341 owner decision: the Python layer and the total no longer count the 1,225-line `_core.pyi` type stub; the architecture check compares its names and class members with the extension instead. The owner then lowered both hard ceilings by those 1,225 lines (`_core.pyi` at base `5cc1001d`): Python **2,892 → 1,667** and total **25,000 → 23,775**. Floor and soft targets are unchanged.
 - 2026-10-06, #224 slice B (owner): Equilibrium 8,800 → 8,843, Python 2,850 → 2,892, the measured counts.

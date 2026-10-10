@@ -51,6 +51,7 @@ SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
 asl_record = _core.equilibrium_asl_record
+cooling_onset = _core.cooling_onset
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
 
@@ -58,6 +59,7 @@ __all__ = (
     "Amounts",
     "inventory_bounds",
     "InventoryBound",
+    "cooling_onset",
     "stability_test",
     "StabilityOptions",
     "asl_record",

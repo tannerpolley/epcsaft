@@ -483,6 +483,7 @@ std::vector<double> reconstruct_trial_composition(std::vector<double>, const std
 std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
     const std::vector<double>&, std::map<std::string, double>* = nullptr);
 StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
+std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
 EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
 EquilibriumResult solve_equilibrium(

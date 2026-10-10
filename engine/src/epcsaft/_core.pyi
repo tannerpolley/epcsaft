@@ -553,6 +553,8 @@ class DiscoveryRecord:
     work: dict[str, float]
 
 
+def cooling_onset(compiled: CompiledSystem) -> tuple[EquilibriumResult, list[StabilityReport]]: ...
+
 def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
                    options: StabilityOptions = ...) -> StabilityReport: ...
 
