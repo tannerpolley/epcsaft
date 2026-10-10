@@ -56,10 +56,8 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         }
     } else if (expected == "dimensionless" && entry.unit == "dimensionless") {
         return 1.0;
-    } else if ((expected == "kelvin" || expected == "length")
-               && (entry.unit == "kelvin" || entry.unit == "angstrom")) {
-        if ((expected == "kelvin" && entry.unit == "kelvin")
-            || (expected == "length" && entry.unit == "angstrom")) return 1.0;
+    } else if ((expected == "kelvin" && entry.unit == "kelvin") || (expected == "length" && entry.unit == "angstrom")) {
+        return 1.0;
     } else if (expected == "charge" && entry.unit == "elementary-charge") {
         return 1.0;
     } else if (expected == "reciprocal temperature" && entry.unit == "1 / kelvin") {
@@ -212,6 +210,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::tuple<std::string, Index>> seen;
     std::set<std::pair<std::string, std::size_t>> component_fields;
     std::set<std::string> scalar_fields;
+    double ion_fraction_suppression = 0.0;
     std::vector<Rule> rules;
     std::map<std::size_t, std::size_t> sigma_term_components;
     std::map<std::size_t, std::size_t> permittivity_term_components;
@@ -298,18 +297,13 @@ Parameters build_parameters(const ParameterDocument& document) {
             if (entry.index[0] >= sigma_term_components.size() + 1 || entry.index[1] >= components) {
                 reject("sigma term index out of range for " + where(entry));
             }
-            const auto [term, component] = std::pair{entry.index[0], entry.index[1]};
-            sigma_term_components[term] = component;
-            if (entry.field == "sigma_term_amplitude") {
-                factor = unit_factor(entry, "length");
-            } else factor = unit_factor(entry, "reciprocal temperature");
+            sigma_term_components[entry.index[0]] = entry.index[1];  // units are converted in the term pass below
         } else if (entry.field == "permittivity_term_coefficient") {
             require_index(entry, 3, "permittivity term index");
             if (entry.index[0] >= permittivity_term_components.size() + 1 || entry.index[1] >= components) {
                 reject("permittivity term index out of range for " + where(entry));
             }
             permittivity_term_components[entry.index[0]] = entry.index[1];
-            factor = unit_factor(entry, static_cast<int>(entry.index[2]));
         } else if (entry.field == "permittivity_reference_temperature") {
             const auto i = component_index(entry, components);
             component_fields.emplace(entry.field, i);
@@ -358,7 +352,8 @@ Parameters build_parameters(const ParameterDocument& document) {
             require_index(entry, 0, "scalar index");
             scalar_fields.insert(entry.field);
             factor = unit_factor(entry, "dimensionless");
-            if (entry.field == "ionic_region_relative_permittivity") result.ionic_region_relative_permittivity = entry.magnitude * factor;
+            (entry.field == "ionic_region_relative_permittivity" ? result.ionic_region_relative_permittivity : ion_fraction_suppression)
+                = entry.magnitude * factor;
         } else if (entry.field == "born_c_shell" || entry.field == "born_c_dielectric") {
             require_index(entry, 0, "scalar index");
             scalar_fields.insert(entry.field);
@@ -459,12 +454,8 @@ Parameters build_parameters(const ParameterDocument& document) {
     if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
         && scalar_fields.find("born_c_dielectric") == scalar_fields.end()) reject("missing born_c_dielectric");
     if (document.permittivity_choice == "ion-fraction-suppression") {
-        bool present = false;
-        for (const auto& entry : document.entries) if (entry.field == "ion_suppression_coefficient" && entry.index.empty()) present = true;
-        if (!present) reject("missing model/relative_permittivity/ion_fraction_suppression_coefficient");
-        double value = 0.0;
-        for (const auto& entry : document.entries) if (entry.field == "ion_suppression_coefficient" && entry.index.empty()) value = entry.magnitude;
-        for (std::size_t i = 0; i < components; ++i) result.ion_suppression_coefficient[i] = result.charge_number[i] == 0 ? 0.0 : value;
+        if (!scalar_fields.count("ion_suppression_coefficient")) reject("missing model/relative_permittivity/ion_fraction_suppression_coefficient");
+        for (std::size_t i = 0; i < components; ++i) result.ion_suppression_coefficient[i] = result.charge_number[i] == 0 ? 0.0 : ion_fraction_suppression;
     } else if (document.permittivity_choice == "solvent-only" || document.permittivity_choice == "none") {
         std::fill(result.ion_suppression_coefficient.begin(), result.ion_suppression_coefficient.end(), 0.0);
     } else if (document.permittivity_choice == "ion-specific-suppression") {

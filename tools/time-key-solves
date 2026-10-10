@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""Compare native work and paired solve time; see --help and #285."""
+import argparse
+import ast
+import csv
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import platform
+import shutil
+import statistics
+import subprocess
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+ORDINARY = ('case-6/figure-2-point-7', 'case-7/flash-5918.5286-Pa')
+COUNTS = ('iterations', 'evaluations', 'hessian_calls')
+PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
+CASES = tuple(f'{case}/{mode}' for case in ORDINARY for mode in ('cold', 'accepted')) + (
+    'khudaida/sequential-8', 'mea-nominally-unloaded/353.15-K')
+
+
+def unloaded_declaration():
+    """Reuse #261's declaration exactly, as in #272's unloaded_input.py probe.
+
+    Extract only its inputs and Problem, without running solves or caloric actions.
+    This keeps the existing test as the single owner of the declaration.
+    """
+    source = ROOT / 'engine/tests/equilibrium/test_trace_reliability.py'
+    tree = ast.parse(source.read_text())
+    items = []
+    for node in tree.body:
+        if isinstance(node, ast.Import) and all(x.name in ('json', 'math') for x in node.names):
+            items.append(node)
+        elif isinstance(node, ast.ImportFrom) and node.module in (
+                'pathlib', 'typing', 'epcsaft', 'epcsaft.equilibrium'):
+            items.append(node)
+        elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id == '_MEA':
+            items.append(node)
+    function = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
+                    and x.name == 'test_nominally_unloaded_mea_resolves_trace_ion_stationarity')
+    body = []
+    for node in function.body:
+        if isinstance(node, ast.FunctionDef) and node.name == 'actions':
+            break
+        if isinstance(node, ast.FunctionDef) and node.name == 'solve':
+            # Its first statement declares the Problem. No native solve here.
+            node.body = [node.body[0], ast.parse('return problem').body[0]]
+        body.append(node)
+    body.append(ast.parse('return model, solve(353.15)').body[0])
+    function.name = 'declaration'
+    function.args = ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])
+    function.body, function.decorator_list, function.returns = body, [], None
+    items.append(function)
+    namespace = {'__file__': str(source)}
+    exec(compile(ast.fix_missing_locations(ast.Module(body=items, type_ignores=[])), str(source), 'exec'), namespace)
+    return namespace['declaration']()
+
+
+def worker():
+    # Native libraries write to fd 1. Keep their diagnostics off the JSON pipe.
+    replies = os.fdopen(os.dup(1), 'w')
+    os.dup2(2, 1)
+    import epcsaft
+    from epcsaft import equilibrium as eq
+    sys.path.insert(0, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'))
+    import baseline as b
+    declarations = {name: (model, problem) for name, model, problem in b.declared_cases() if name in ORDINARY}
+    fixed = sys.modules['run_fixed_settler']
+    kh_model = epcsaft.Mixture(epcsaft.Parameters.from_json(b.KH_PACKET, components=fixed.COMPONENTS))
+    sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])) for i in range(1, 9)]
+    unloaded = unloaded_declaration()
+    for line in sys.stdin:
+        request = json.loads(line)
+        if request['case'] == 'starts':
+            reply = {}
+            for name, (model, problem) in declarations.items():
+                result = eq.solve_equilibrium(model, problem)
+                if not result.success or result.requested_tolerance_met is not True:
+                    raise RuntimeError(f'{name}: {result.message}')
+                reply[name] = result.coordinates
+        else:
+            name = request['case']
+            if name == CASES[-2]:
+                calls = sequence
+            elif name == CASES[-1]:
+                calls = [(name, *unloaded)]
+            else:
+                base, mode = name.rsplit('/', 1)
+                calls = [(name, *declarations[base])]
+            previous, rows, elapsed = None, [], 0.0
+            for point, model, problem in calls:
+                seed = None
+                if name.endswith('/accepted'):
+                    seed = eq.EquilibriumStart()
+                    seed.coordinates = request['starts'][base]
+                begun = time.perf_counter_ns()
+                if seed is not None:
+                    attempts = eq.solve_equilibrium_starts(model, problem, [seed], eq.EquilibriumWorkLimits())
+                    result = attempts.results[0]
+                else:
+                    result = eq.solve_equilibrium(model, problem, previous)
+                elapsed += (time.perf_counter_ns() - begun) / 1e9
+                if result is None:
+                    raise RuntimeError(f'{point}: no state returned: {attempts.causes}')
+                row = {key: getattr(result, key) for key in (*COUNTS, *PHYSICAL)}
+                row.update(point=point, success=result.success, criterion_met=result.requested_tolerance_met,
+                           raw_rows=max(map(abs, result.residuals)), classified_rows=max(map(abs, result.classified_residuals)),
+                           message=result.message)
+                rows.append(row)
+                if not result.success or result.requested_tolerance_met is not True:
+                    raise RuntimeError(f'{point}: {result.message}; residuals={result.residuals}')
+                if any(not math.isfinite(value) for key in PHYSICAL for value in row[key]):
+                    raise RuntimeError(f'{point}: nonfinite physical state')
+                previous = result
+            reply = dict(seconds=elapsed, rows=rows, nice=os.getpriority(os.PRIO_PROCESS, 0),
+                         affinity=sorted(os.sched_getaffinity(0)), engine=str(epcsaft.__file__))
+        print(json.dumps(reply, allow_nan=False), file=replies, flush=True)
+
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def write_csv(path, rows):
+    with path.open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def physical_difference(a, b):
+    maximum = 0.0
+    for left, right in zip(a['rows'], b['rows'], strict=True):
+        if left['point'] != right['point']:
+            raise RuntimeError('physical-state point order differs')
+        for key in PHYSICAL:
+            for x, y in zip(left[key], right[key], strict=True):
+                scale = max(abs(x), abs(y))
+                maximum = max(maximum, abs(x - y) / scale if scale else 0.0)
+    return maximum
+
+
+def work(result):
+    return {key: sum(row[key] for row in result['rows']) for key in COUNTS}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, epilog=(
+        'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
+        'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
+        'Relative state difference uses max(abs(A),abs(B)), with two zeros equal. '
+        'The sequential case resets to cold point 1 and reuses each result at the next point.'))
+    parser.add_argument('wheel_A', type=Path)
+    parser.add_argument('wheel_B', type=Path)
+    parser.add_argument('--pairs', type=int, default=1, help='counterbalanced pairs per case; more only for timing claims (default: 1)')
+    parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
+                        help='new or empty result directory (default: timestamped under build/time-key-solves)')
+    args = parser.parse_args()
+    if args.pairs < 1:
+        parser.error('--pairs must be positive')
+    wheels = {label: path.resolve(strict=True) for label, path in (('A', args.wheel_A), ('B', args.wheel_B))}
+    if any(path.suffix != '.whl' for path in wheels.values()):
+        parser.error('both inputs must be wheel files')
+    out = args.out.resolve()
+    if out.exists() and any(out.iterdir()):
+        parser.error('--out must be new or empty')
+    out.mkdir(parents=True, exist_ok=True)
+    begun = time.perf_counter()
+    if os.getpriority(os.PRIO_PROCESS, 0) > 10:
+        parser.error('inherited niceness exceeds 10; cannot lower it without new authority')
+    cpu = min(os.sched_getaffinity(0))
+    env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
+           'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
+    processes, venvs = {}, []
+    work_rows, state_rows, pair_rows, start_rows = [], [], [], []
+    summary = dict(wheels={label: dict(path=str(path), sha256=digest(path)) for label, path in wheels.items()},
+                   source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+                   cpu=cpu, nice=10, threads=1, host=platform.node(), pairs=args.pairs, warmups=1,
+                   time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
+                   change_percent='100*(B_seconds/A_seconds-1)',
+                   state_difference='abs(A-B)/max(abs(A),abs(B)); two zeros equal; declared phase order',
+                   evaluation_meaning='native Engine evaluations, including exact polish; not every EOS evaluation',
+                   limits='shared-host timing; declared local states only; no physical validation or global stability')
+
+    def call(label, case, starts=None):
+        process = processes[label]
+        process.stdin.write(json.dumps(dict(case=case, starts=starts)) + '\n')
+        process.stdin.flush()
+        line = process.stdout.readline()
+        if not line:
+            raise RuntimeError(f'wheel {label} worker exited while running {case}')
+        return json.loads(line)
+
+    def retain(label, case, sample, result):
+        if result['nice'] != 10 or result['affinity'] != [cpu]:
+            raise RuntimeError(f'wheel {label}: timing controls differ: {result}')
+        for row in result['rows']:
+            work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
+                                  **{key: row[key] for key in COUNTS}, raw_rows=row['raw_rows'],
+                                  classified_rows=row['classified_rows'], success=row['success'],
+                                  criterion_met=row['criterion_met']))
+            for key in PHYSICAL:
+                state_rows.extend(dict(wheel=label, case=case, sample=sample, point=row['point'],
+                                       quantity=key, index=i, value=value) for i, value in enumerate(row[key]))
+
+    try:
+        for label, wheel in wheels.items():
+            venv = ROOT / 'build/time-key-solves' / label
+            if venv.exists():
+                raise RuntimeError(f'throwaway environment already exists: {venv}')
+            venvs.append(venv)
+            subprocess.run(['uv', 'venv', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
+            python = venv / 'bin/python'
+            subprocess.run(['uv', 'pip', 'install', '--python', str(python), str(wheel),
+                            'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
+            subprocess.run([str(python), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)], check=True, env=env)
+            processes[label] = subprocess.Popen(['taskset', '-c', str(cpu), 'nice', '-n', str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))),
+                                                  str(python), str(Path(__file__).resolve()), '--worker'],
+                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=env)
+        starts = call('A', 'starts')
+        start_rows = [dict(case=case, coordinate=i, value=value) for case, values in starts.items() for i, value in enumerate(values)]
+        baseline = {}
+        comparisons = {}
+        print('WORK COUNTS FIRST: iterations / evaluations / Hessian calls (A versus B)', flush=True)
+        for case in CASES:
+            baseline[case] = {label: call(label, case, starts) for label in ('A', 'B')}
+            a, b = baseline[case]['A'], baseline[case]['B']
+            for label in ('A', 'B'):
+                retain(label, case, 'warmup', baseline[case][label])
+            equal = all(tuple(left[k] for k in COUNTS) == tuple(right[k] for k in COUNTS)
+                        for left, right in zip(a['rows'], b['rows'], strict=True))
+            comparisons[case] = dict(work_A=work(a), work_B=work(b), work_identical=equal,
+                                     max_relative_state_difference=physical_difference(a, b))
+            print(f'{case}: {tuple(work(a).values())} vs {tuple(work(b).values())} '
+                  f'{"IDENTICAL" if equal else "WORK DIFFERENCE"}', flush=True)
+            if case == CASES[-2]:
+                for left, right in zip(a['rows'], b['rows'], strict=True):
+                    print(f"  {left['point']}: {tuple(left[k] for k in COUNTS)} vs {tuple(right[k] for k in COUNTS)}", flush=True)
+        print('PAIRED WALL TIME: each pair contains AB and BA; fixed CPU and niceness', flush=True)
+        for pair in range(1, args.pairs + 1):
+            for case in CASES:
+                # Alternate which block comes first, even when --pairs is odd.
+                orders = ('AB', 'BA') if pair % 2 else ('BA', 'AB')
+                for order in orders:
+                    load = os.getloadavg()
+                    results = {}
+                    for label in order:
+                        results[label] = call(label, case, starts)
+                        retain(label, case, f'{pair}-{order}', results[label])
+                        ref = baseline[case][label]
+                        if [tuple(r[k] for k in COUNTS) for r in results[label]['rows']] != [tuple(r[k] for k in COUNTS) for r in ref['rows']]:
+                            comparisons[case]['work_identical'] = False
+                            print(f'WORK DIFFERENCE: {case} wheel {label} sample {pair}-{order}', flush=True)
+                    a, b = results['A'], results['B']
+                    difference = physical_difference(a, b)
+                    comparisons[case]['max_relative_state_difference'] = max(comparisons[case]['max_relative_state_difference'], difference)
+                    pair_rows.append(dict(case=case, pair=pair, order=order, A_seconds=a['seconds'], B_seconds=b['seconds'],
+                                          change_percent=100 * (b['seconds'] / a['seconds'] - 1),
+                                          load_1=load[0], load_5=load[1], load_15=load[2], max_relative_state_difference=difference))
+                print(f'pair {pair}/{args.pairs} {case}: AB/BA complete; load={load}', flush=True)
+        same_wheel = summary['wheels']['A']['sha256'] == summary['wheels']['B']['sha256']
+        for case, comparison in comparisons.items():
+            rows = [row for row in pair_rows if row['case'] == case]
+            # Each balanced observation is the mean of its AB and BA relative changes.
+            changes = [statistics.mean(row['change_percent'] for row in rows if row['pair'] == pair)
+                       for pair in range(1, args.pairs + 1)]
+            median = statistics.median(changes)
+            comparison.update(median_change_percent=median, range_percent=[min(changes), max(changes)],
+                              mad_percent=statistics.median(abs(value - median) for value in changes),
+                              median_A_seconds=statistics.median(row['A_seconds'] for row in rows),
+                              median_B_seconds=statistics.median(row['B_seconds'] for row in rows))
+            comparison['zero_within_spread'] = abs(median) <= max(abs(value - median) for value in changes)
+            print(f'{case}: median {median:+.3f}%, range [{min(changes):+.3f}, {max(changes):+.3f}]%, '
+                  f"MAD {comparison['mad_percent']:.3f}%; state Δ={comparison['max_relative_state_difference']:.3g}", flush=True)
+        summary.update(cases=comparisons, identical_wheels=same_wheel,
+                       self_check_passed=(all(c['work_identical'] and c['max_relative_state_difference'] == 0
+                                              and c['zero_within_spread'] for c in comparisons.values()) if same_wheel else None))
+    except Exception as error:
+        summary['error'] = f'{type(error).__name__}: {error}'
+        raise
+    finally:
+        for process in processes.values():
+            process.stdin.close()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                process.wait(timeout=10)
+            process.stdout.close()
+        for venv in venvs:
+            shutil.rmtree(venv)
+        for filename, rows in (('work.csv', work_rows), ('states.csv', state_rows), ('pairs.csv', pair_rows), ('starts.csv', start_rows)):
+            if rows:
+                write_csv(out / filename, rows)
+        summary['runtime_seconds'] = time.perf_counter() - begun
+        summary['input_sha256'] = {str(path.relative_to(ROOT)): digest(path) for path in (
+            Path(__file__).resolve(), ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
+            ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',
+            ROOT / 'analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv',
+            ROOT / 'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',
+            ROOT / 'data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json',
+            ROOT / 'engine/tests/equilibrium/test_trace_reliability.py',
+            *(ROOT / 'engine/data/reference' / path for path in (
+                'mea-nominally-unloaded/request.json', 'mea-nominally-unloaded/parameters.json', 'mea-zero-inventory/ideal-calorics.json')))}
+        (out / 'summary.json').write_text(json.dumps(summary, indent=2, allow_nan=False) + '\n')
+    print(f'Retained {out}; runtime {summary["runtime_seconds"]:.3f} s', flush=True)
+    return 1 if summary['self_check_passed'] is False else 0
+
+
+if __name__ == '__main__':
+    if sys.argv[1:] == ['--worker']:
+        worker()
+    else:
+        sys.exit(main())

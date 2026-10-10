@@ -1,6 +1,7 @@
 #include "regression/observations.hpp"
 
 #include "core/numerical_policy.hpp"
+#include "core/trace.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -48,17 +49,6 @@ double component_amount(const equilibrium::EquilibriumResult& state, std::size_t
     double value = 0.0;
     for (const auto i : species) value += state.amounts[phase] * state.mole_fractions[phase * (state.mole_fractions.size() / state.phase_count) + i];
     return value;
-}
-
-std::vector<SolvedStateObservable> enthalpy_observables(const equilibrium::EquilibriumProblem& problem) {
-    std::vector<SolvedStateObservable> result;
-    for (std::size_t p = 0; p < problem.phases.size(); ++p) {
-        const auto& amount = problem.phases[p].amount;
-        if (amount.kind == equilibrium::AmountKind::Pinned && amount.fraction == 0.0) continue;
-        result.push_back(observable(Kind::PhaseAmount, p));
-        result.push_back({Kind::PhaseProperty, p, 0, PropertyObservable::TotalEnthalpy});
-    }
-    return result;
 }
 
 void finish(Prediction& prediction, const Observation& observation, double value) {
@@ -188,7 +178,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
         require(!observation.problem.temperature.free && !observation.problem.temperature.absent && std::isfinite(observation.problem.temperature.value)
             && observation.problem.temperature.value > 0.0 && observation.form == ResidualForm::Difference, "ln K needs fixed positive T and Difference");
-        return validate(CoordinateSet{{{ParameterFamily::SegmentCount, {}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
+        return validate(CoordinateSet{{{{}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
     }
     if (pressure_closed(observation.kind) || observation.kind == ObservationKind::AdditionEnthalpy) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
@@ -213,6 +203,12 @@ void validate(const Observation& observation, const HelmholtzModel& model,
                 ("material balance component " + std::to_string(i)).c_str());
         return;
     }
+    if (observation.kind == ObservationKind::EquilibriumIsobaricHeatCapacity) {
+        require(!compiled.problem.temperature.free && !compiled.problem.pressure.free
+                && !compiled.problem.temperature.absent && !compiled.problem.pressure.absent,
+                "apparent Cp requires driven T/P");
+        return;
+    }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
     if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure
         && observation.kind != ObservationKind::PhaseAmountRatio) return;
@@ -234,31 +230,87 @@ void validate(const Observation& observation, const HelmholtzModel& model,
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start,
-    std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references
+    std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references,
+    const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters
 ) {
+    core::Scope density_scope("fit_density_anchor");
+    const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
+        if (!old || !previous_model || x != old_x || branch == DensityBranch::Unspecified
+            || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
+        if (!same_parameters) {
+            const auto witness = old->negative_slope_density;
+            const double w = policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+            const double lower = observation.pressure / (GAS_CONSTANT_J_PER_MOL_K * observation.temperature)
+                * policy::DENSITY_LOWER_FRACTION.value;
+            const double upper = model.molar_density_upper_bound(observation.temperature, x) * policy::DENSITY_UPPER_FRACTION.value;
+            if (!witness || !std::isfinite(*witness) || !(*witness > lower && *witness < upper)
+                || !(branch == DensityBranch::Liquid ? old->molar_density * std::exp(-w) > *witness
+                                                     : old->molar_density * std::exp(w) < *witness)) return std::nullopt;
+            try {
+                const double slope = model.state(observation.temperature, *witness, x).pressure_density_derivative;
+                density_scope.probe("witness", {*witness, slope});
+                if (!std::isfinite(slope) || !(slope < 0.0)) return std::nullopt;
+            } catch (const std::runtime_error& error) {
+                density_scope.probe("witness_ineligible", {*witness}, 0, error.what());
+                return std::nullopt;
+            }
+        }
+        density_scope.probe("eligible", old->molar_density);
+        return old->molar_density;
+    };
+    const auto accepted = [&](State& state, const State* old, std::optional<double> anchor) {
+        if (!anchor || state.stable_root_count) return;  // An external anchor was retried cold.
+        state.negative_slope_density = old->negative_slope_density;
+        density_scope.probe("accepted", state.molar_density);
+    };
+    const auto close = [&](const auto& x, const State* old) {
+        const auto anchor = prior(old, x, x, observation.branch);
+        auto state = properties::close_density(model, observation.temperature, observation.pressure, x, observation.branch, anchor);
+        accepted(state, old, anchor);
+        return state;
+    };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
         try {
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
-                result.state = model.state_at_pressure(observation.temperature, observation.pressure, observation.composition, observation.branch);
-                if (!observation.reference_composition.empty()) result.reference_state = model.state_at_pressure(
-                    observation.temperature, observation.pressure, observation.reference_composition, observation.branch);
+                result.state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
+                if (!observation.reference_composition.empty()) result.reference_state = close(observation.reference_composition,
+                    previous && previous->reference_state ? &*previous->reference_state : nullptr);
             } else {
                 ReferenceCache local;
                 auto& cache = references ? *references : local;
-                const auto reference = [&](const auto& x) {
+                const auto reference = [&](const auto& x, const InfiniteDilutionReference* old) {
                     auto key = observation;
                     key.composition = x; key.molality = 0.0; key.reference_composition.clear();
                     for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
-                    auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x, key.ion_indices, key.stoichiometry);
+                    const auto first_x = formula_composition(x, model.parameters(), key.ion_indices, key.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value);
+                    const auto old_x = previous_model ? formula_composition(x, previous_model->parameters(), key.ion_indices, key.stoichiometry,
+                        policy::REFERENCE_MOLALITY_ONE.value) : first_x;
+                    const auto first = prior(old ? &old->first_rung_state : nullptr, first_x, old_x, DensityBranch::Liquid);
+                    const auto pure = prior(old && old->pure_solvent_state && *std::max_element(x.begin(), x.end()) == 1.0
+                        ? &*old->pure_solvent_state : nullptr, x, x, DensityBranch::Liquid);
+                    auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x,
+                        key.ion_indices, key.stoichiometry, first, pure);
+                    accepted(value.first_rung_state, old ? &old->first_rung_state : nullptr, first);
+                    if (value.pure_solvent_state) accepted(*value.pure_solvent_state,
+                        old && old->pure_solvent_state ? &*old->pure_solvent_state : nullptr, pure);
                     cache.emplace_back(key, value);
                     return value;
                 };
-                result.reference = reference(observation.composition);
-                if (observation.kind == ObservationKind::TransferGibbsEnergy) result.second_reference = reference(observation.reference_composition);
+                result.reference = reference(observation.composition, previous && previous->reference ? &*previous->reference : nullptr);
+                if (observation.kind == ObservationKind::TransferGibbsEnergy) result.second_reference = reference(observation.reference_composition,
+                    previous && previous->second_reference ? &*previous->second_reference : nullptr);
                 if (observation.kind == ObservationKind::MeanIonicActivityCoefficient || observation.kind == ObservationKind::OsmoticCoefficient) {
-                    if (observation.molality > 0.0) result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
-                        observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference);
+                    if (observation.molality > 0.0) {
+                        const auto x = formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, observation.molality);
+                        const auto old_x = previous_model ? formula_composition(observation.composition, previous_model->parameters(),
+                            observation.ion_indices, observation.stoichiometry, observation.molality) : x;
+                        const State* old = previous && previous->activity ? &previous->activity->state : nullptr;
+                        const auto anchor = prior(old, x, old_x, DensityBranch::Liquid);
+                        result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
+                            observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference, anchor);
+                        accepted(result.activity->state, old, anchor);
+                    }
                 }
             }
             project_prediction(model, observation, result);
@@ -306,8 +358,7 @@ Prediction predict(
             : observation.mass_basis ? "kg/m^3" : "mol/m^3";
         State state;
         try {
-            state = model.state_at_pressure(observation.temperature, observation.pressure,
-                                            observation.composition, observation.branch);
+            state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const core::ConvergenceFailure& failure) {
             result.status = ObservationStatus::DensityUnavailable;
             result.convergence = failure.record;
@@ -351,6 +402,7 @@ Prediction predict(
             return result;
         }
         finish(result, observation, value);
+        result.state = std::move(state);
         return result;
     }
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
@@ -428,22 +480,23 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     const double* fractions = solved.mole_fractions.data() + phase * components;
     double value = 0.0;
     switch (observation.kind) {
+    case ObservationKind::EquilibriumIsobaricHeatCapacity:
     case ObservationKind::SystemEnthalpy: {
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
-        const auto entries = equilibrium::solved_state_actions(*result.compiled, solved,
-            {enthalpy_observables(result.compiled->problem), {zero}}).results;
-        for (std::size_t i = 0; i < entries.size(); i += 2) {
-            for (const auto* e : {&entries[i], &entries[i + 1]}) if (!e->value) {
-                result.status = e->status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
-                    || e->status == equilibrium::SolvedStateActionStatus::OutsideInterval
-                    || e->status == equilibrium::SolvedStateActionStatus::ReferenceUnavailable
-                    ? ObservationStatus::ThermochemistryUnavailable : ObservationStatus::ActionUnavailable;
-                result.message = std::string(equilibrium::solved_state_status_name(e->status)) + ": " + e->diagnostic_message.value_or("");
-                return;
-            }
-            value += *entries[i].value * *entries[i + 1].value;
+        const auto kind = observation.kind == ObservationKind::SystemEnthalpy
+            ? Kind::SystemEnthalpy : Kind::EquilibriumIsobaricHeatCapacity;
+        const auto entry = equilibrium::solved_state_actions(*result.compiled, solved,
+            {{observable(kind, 0)}, {zero}}).results.front();
+        if (!entry.value) {
+            result.status = entry.status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
+                || entry.status == equilibrium::SolvedStateActionStatus::OutsideInterval
+                || entry.status == equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+                ? ObservationStatus::ThermochemistryUnavailable : ObservationStatus::ActionUnavailable;
+            result.message = std::string(equilibrium::solved_state_status_name(entry.status)) + ": " + entry.diagnostic_message.value_or("");
+            return;
         }
-        result.unit = "J";
+        value = *entry.value;
+        result.unit = entry.unit;
         break;
     }
     case ObservationKind::EquilibriumPressure:
@@ -530,7 +583,7 @@ PredictionGradient differentiate(
     const auto components = parameters.component_count();
     const std::size_t width = active.size();
     gradient.value.assign(width, 0.0);
-    const auto unavailable = [&](const char* what) {
+    const auto unavailable = [&](const std::string& what) {
         gradient.value.clear();
         gradient.status = ObservationStatus::ActionUnavailable;
         gradient.message = what;
@@ -549,10 +602,27 @@ PredictionGradient differentiate(
         for (std::size_t k = first; k < width && k < first + count; ++k)
             directions.push_back({0.0, 0.0, std::vector<double>(components, 0.0),
                                   {{active[k].family, active[k].indices, 1.0}}});
-        const auto batch = model.pressure_actions(observation.temperature, observation.pressure,
-            observation.composition, observation.branch, observables, directions);
-        if (batch.density_status != PropertyActionStatus::Available)
-            return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
+        core::Scope scope("fit_density_column");
+        const auto& center = prediction.state;
+        const auto anchor = center && observation.branch != DensityBranch::Unspecified
+            && properties::regular_density(center->molar_density, center->pressure_density_derivative, center->density_convergence)
+            ? std::optional<double>(center->molar_density) : std::nullopt;
+        auto batch = model.pressure_actions(observation.temperature, observation.pressure,
+            observation.composition, observation.branch, observables, directions, anchor);
+        const auto cause = [&] {
+            std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
+            return batch.density_message.empty() ? name : name + ": " + batch.density_message;
+        };
+        if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
+            || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
+            if (batch.density_convergence) scope.finish(*batch.density_convergence);
+            scope.probe("anchor_failure", {*anchor}, 0, batch.density_status == PropertyActionStatus::Available
+                ? "target density regularity unavailable or exceeds w/100" : !batch.density_message.empty() ? batch.density_message.c_str()
+                : equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
+            batch = model.pressure_actions(observation.temperature, observation.pressure,
+                observation.composition, observation.branch, observables, directions);
+        }
+        if (batch.density_status != PropertyActionStatus::Available) return unavailable(cause());
         if (caloric && batch.results[0].status != PropertyActionStatus::Available)
             return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)
@@ -605,19 +675,11 @@ std::vector<PredictionGradient> differentiate_group(
         directions[k].active_parameters.assign(active_width, 0.0);
         if (k < active_width) directions[k].active_parameters[k] = 1.0;
         else {
-            directions[k].reaction_log_constants.assign(problem.reactions.size(), 0.0);
-            directions[k].reaction_log_constant_temperature_slopes.assign(problem.reactions.size(), 0.0);
+            directions[k].reaction_coefficients.assign(problem.reactions.size(), {});
             const auto& target = reactions[k - active_width];
-            for (std::size_t j = 0; j < problem.reactions.size(); ++j) {
-                const auto& reaction = problem.reactions[j];
-                if (reaction.name != target.name) continue;
-                const double T = prediction.solved ? prediction.solved->temperature.front() : problem.temperature.value;
-                const double basis[] = {1.0, 1.0 / T,
-                    reaction.correlation ? std::log(T / reaction.correlation->reference_temperature) : 0.0, T};
-                directions[k].reaction_log_constants[j] = basis[static_cast<std::size_t>(target.coefficient)];
-                const double slope[] = {0.0, -1.0 / (T * T), 1.0 / T, 1.0};
-                directions[k].reaction_log_constant_temperature_slopes[j] = slope[static_cast<std::size_t>(target.coefficient)];
-            }
+            for (std::size_t j = 0; j < problem.reactions.size(); ++j)
+                if (problem.reactions[j].name == target.name)
+                    directions[k].reaction_coefficients[j][static_cast<std::size_t>(target.coefficient)] = 1.0;
         }
     }
     const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
@@ -635,8 +697,11 @@ std::vector<PredictionGradient> differentiate_group(
             if (found == observables.end()) observables.push_back(item);
         };
         switch (observation.kind) {
+        case ObservationKind::EquilibriumIsobaricHeatCapacity:
+            add(observable(Kind::EquilibriumIsobaricHeatCapacity, 0));
+            break;
         case ObservationKind::SystemEnthalpy:
-            for (const auto& entry : enthalpy_observables(problem)) add(entry);
+            add(observable(Kind::SystemEnthalpy, 0));
             break;
         case ObservationKind::EquilibriumPressure: add(observable(Kind::Pressure, 0)); break;
         case ObservationKind::EquilibriumTemperature: add(observable(Kind::Temperature, 0)); break;
@@ -652,6 +717,7 @@ std::vector<PredictionGradient> differentiate_group(
                 add(observable(Kind::PhaseComponentAmount, observation.denominator_phase, i));
             break;
         case ObservationKind::PhaseFraction:
+            // NOLINTNEXTLINE(clang-analyzer-core.NullDereference): only a LogEquilibriumConstant row lacks a solved state, and same_state never groups it.
             for (std::size_t q = 0; q < solved->phase_count; ++q) add(observable(Kind::PhaseAmount, q));
             break;
         case ObservationKind::PhaseDensity:
@@ -682,7 +748,12 @@ std::vector<PredictionGradient> differentiate_group(
         for (std::size_t k = 0; k < width; ++k) {
             if (observation.kind == ObservationKind::LogEquilibriumConstant) {
                 for (std::size_t j = 0; k >= active_width && j < problem.reactions.size(); ++j)
-                    if (problem.reactions[j].name == observation.reaction) gradient.value[k] = directions[k].reaction_log_constants[j];
+                    if (problem.reactions[j].name == observation.reaction) {
+                        const auto& d = directions[k].reaction_coefficients[j];
+                        const auto& law = problem.reactions[j].correlation;
+                        gradient.value[k] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                            law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                    }
                 continue;
             }
             std::vector<double> action;
@@ -699,11 +770,6 @@ std::vector<PredictionGradient> differentiate_group(
             if (gradient.status != ObservationStatus::Available) break;
             double value = 0.0;
             switch (observation.kind) {
-            case ObservationKind::SystemEnthalpy:
-                for (std::size_t i = 0; i < action.size(); i += 2)
-                    value += action[i] * *batches[k].results[slots[row][i + 1]].value
-                        + *batches[k].results[slots[row][i]].value * action[i + 1];
-                break;
             case ObservationKind::PhaseAmountRatio: {
                 const double A = component_amount(*solved, phase, observation.species);
                 const double B = component_amount(*solved, observation.denominator_phase, observation.denominator_species);

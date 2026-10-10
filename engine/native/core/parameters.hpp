@@ -6,19 +6,14 @@
 
 // The parameter arrays the equations read. Plain data, no validation: the model
 // layer builds and checks one of these once, and the physics layer trusts it.
-//
-// Not in the target layout's six-file list. It is here because every physics
-// header needs the arrays and physics may not include the model layer, so the
-// data has to live at the bottom.
+// Shared parameter data lives in Core because physics may not include the model layer.
 
 namespace epcsaft {
 
-// Four published forms survive. The five the old tree carried collapsed to
-// these because three of them were one equation: ion suppression
-// eps_sf / (1 + sum_i alpha_i x_i) covers ion-specific suppression directly,
-// ion-fraction suppression with alpha_i equal for every ion, and solvent-only
-// with alpha_i = 0. The model layer fills ion_suppression_coefficient
-// accordingly, so the equation here has one branch instead of three.
+// Four published forms. Ion suppression eps_sf / (1 + sum_i alpha_i x_i) covers
+// ion-specific suppression directly, ion-fraction suppression with alpha_i equal
+// for every ion, and solvent-only with alpha_i = 0; the model layer fills
+// ion_suppression_coefficient accordingly.
 enum class PermittivityForm {
     IonSuppression = 1,      // eps_sf / (1 + sum alpha_i x_i)
     ComponentMixing = 2,     // linear mixing over components
@@ -57,9 +52,7 @@ struct FixedParameters {
     // Electrolyte
     std::vector<int> charge_number;
     std::vector<double> solvation_factor;
-    double ionic_region_relative_permittivity = 0.0;
     double born_c_shell = 0.0;
-    double born_c_dielectric = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;
     core::Declared<IonicDispersion> ionic_dispersion;
 
@@ -86,6 +79,8 @@ struct FixedParameters {
 // Scalar is supplied by the consuming layer, so Core has no AD dependency.
 template <class Scalar>
 struct ParameterRecord final : FixedParameters {
+    Scalar ionic_region_relative_permittivity = 0.0;
+    Scalar born_c_dielectric = 0.0;
     std::vector<Scalar> packing_diameter_angstrom;
     std::vector<Scalar> debye_huckel_diameter_angstrom;
     std::vector<Scalar> born_diameter_angstrom;

@@ -12,13 +12,14 @@
 namespace epcsaft::regression {
 
 // Ceres trust-region controls; a zero tolerance selects its named policy default. The
-// iteration and time budgets are explicit caller controls, not tolerances.
+// iteration and time budgets are caller inputs with no default (ALG-FIT): a fit refuses its
+// request until the caller sets both.
 struct FitControls final {
     double function_tolerance = 0.0;
     double gradient_tolerance = 0.0;
     double parameter_tolerance = 0.0;
-    int maximum_iterations = 100;
-    double maximum_elapsed_time_seconds = 600.0;
+    int maximum_iterations = 0;
+    double maximum_elapsed_time_seconds = 0.0;
 };
 
 enum class CheckMetric { AbsoluteDifference, AbsoluteLog10Ratio };
@@ -38,7 +39,7 @@ struct CheckResult final {
     std::optional<double> maximum_threshold, mean_threshold, baseline_maximum, baseline_mean;
     bool report_only = false;
 };
-// D7: physical epigraph/slacks; positive row scales and exact first actions.
+// Guarded minimax: physical epigraph/slacks; positive row scales and exact first actions.
 struct MinimaxRequest final {
     std::vector<std::size_t> targets;
     std::vector<double> group_scales;
@@ -96,7 +97,7 @@ struct TrialFailure final {
 // (J^T J)^-1 of the weighted optimizer Jacobian, mapped to physical rows by the evaluated D.
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
-    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable
+    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable | minimax_unavailable
     std::string assumption;
     std::size_t rank = 0;
     std::vector<double> singular_values, right_vectors, left_vectors;
@@ -109,10 +110,12 @@ struct FitCovariance final {
 };
 
 struct FitResult final {
-    std::string status = "invalid_setup";  // converged | limit_reached | initial_evaluation_failed | failed
+    // Ceres: converged | limit_reached | initial_evaluation_failed | failed | invalid_setup;
+    // minimax: converged | limit_or_failure | point_evaluated | invalid_setup.
+    std::string status = "invalid_setup";
     std::string termination = "not_run";
     std::string message;
-    bool usable = false;
+    bool usable = false;  // a finite candidate point with values was published; status says how it terminated
     std::vector<double> optimizer;
     std::vector<double> physical;  // one value per physical row of the coordinate set
     Parameters parameters;
@@ -141,6 +144,8 @@ struct FitResult final {
 
 struct ObservationEvaluation final {
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
+    // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight.
+    std::vector<double> residual_optimizer_gradient;
     std::vector<ObservationStatus> statuses;
     double cost = 0.0;
     EvaluatedCoordinates chart;

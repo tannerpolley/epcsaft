@@ -9,5 +9,5 @@ if ! command -v uv >/dev/null 2>&1; then
     exit 1
 fi
 
-uv sync --python 3.13 --all-packages --no-install-workspace --locked
-bash tools/ensure-engine-wheel.sh
+uv sync --python 3.13 --all-packages --no-install-workspace --locked --inexact
+bash tools/build-engine.sh

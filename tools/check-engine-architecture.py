@@ -2,15 +2,9 @@
 """Structural rules for engine/native and the public Python surface.
 
 C++ is organised by dependency layer because include direction is the only
-structural fact a checker can enforce. Five rules, all cheap, all stdlib:
-
-  1. one static archive and one extension in meson.build
-  2. no Python or pybind11 symbol inside the archive
-  3. every "..." include resolves to the same or a lower layer
-  4. regression/ may not reach phase stability
-  5. no constexpr name defined twice, no category-1 constant outside core/
-
-Rule 2 needs a built archive and reports "skipped" without one.
+structural fact a checker can enforce. Each rule is a cheap stdlib reading named
+in main()'s check table. The Python-free archive rule needs a built archive and
+reports "skipped" without one; the stub rule, which imports the extension, runs only with --build-dir.
 """
 
 from __future__ import annotations
@@ -48,7 +42,7 @@ CONSTANTS_HOME = "core/physical_constants.hpp"
 
 # Phase stability is reachable from equilibrium, never from a parameter fit: a
 # fit runs against declared phases so its residuals stay differentiable.
-STABILITY_SYMBOLS = ("phase_stability.hpp", "find_phases", "Discover")
+STABILITY_SYMBOLS = ("stability_test", "discover_phases", "StabilityOptions")
 
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
 # Unanchored on purpose: a constexpr sharing a name across two translation
@@ -110,23 +104,6 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
     if leaked:
         return [f"{found[0].name} exports Python symbols: {leaked[:5]}"], True
     return [], True
-
-
-def verify_identified_wheel(wheel: Path) -> list[str]:
-    wheel = wheel.resolve()
-    if wheel.suffix != ".whl" or not wheel.is_file():
-        return [f"Engine wheel does not exist: {wheel}"]
-    verifier = ROOT / "tools" / "verify-installed-wheel.py"
-    completed = subprocess.run(
-        [sys.executable, str(verifier), "--wheel", str(wheel)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if completed.returncode:
-        detail = (completed.stderr or completed.stdout).strip()
-        return [f"installed-wheel verification failed ({completed.returncode}): {detail}"]
-    return []
 
 
 def rule_include_direction() -> list[str]:
@@ -298,6 +275,79 @@ def rule_core_and_trace_boundaries() -> list[str]:
     return bad
 
 
+# Preserve offsets so findings refer to the original source, including comments.
+CPP_NON_CODE = re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', re.S)
+TRACE_CALL = re.compile(r'(?:\.|->)\s*(?:probe|emit)\s*\(')
+PAYLOAD_TYPE = r'std::(?:vector|array|deque|list|map|unordered_map|set|unordered_set|string|basic_string)(?:\s*<[^;{}()]*>)?'
+PAYLOAD_TEMPORARY = re.compile(r"\b" + PAYLOAD_TYPE + r"\s*[({]|\bstd::to_string\s*\(")
+PAYLOAD_DECLARATION = re.compile(
+    rf'\b(?:{PAYLOAD_TYPE}|auto(?=\s+\w+\s*=\s*(?:{PAYLOAD_TYPE}|std::to_string)))\s+([^;]+);'
+)
+
+
+def rule_known_eager_trace_payload_forms() -> list[str]:
+    # Regression guard for observed eager-temporary and named-local patterns, not a complete allocation-safety proof.
+    bad = []
+    returned_payloads = set()
+    for path in sources():
+        for match in re.finditer(rf'\b{PAYLOAD_TYPE}\s+(\w+(?:::\w+)*)\s*\(', without_comments(path.read_text())):
+            returned_payloads.add(match.group(1).split('::')[-1])
+    returned_names = '|'.join(sorted(returned_payloads)) or r'(?!)'
+    returned_call = rf'\b(?:{returned_names})\s*\('
+    temporary = re.compile(PAYLOAD_TEMPORARY.pattern + '|' + returned_call)
+    declaration_pattern = re.compile(PAYLOAD_DECLARATION.pattern.replace('|std::to_string)', '|std::to_string|' + returned_names + ')'))
+    for path in sources():
+        text = CPP_NON_CODE.sub(lambda m: re.sub(r'[^\n]', ' ', m.group()), path.read_text())
+        # Pair statement blocks and calls; initializer braces are harmless here.
+        pairs, stack = {}, []
+        for i, char in enumerate(text):
+            if char in '({':
+                stack.append(i)
+            elif char in ')}' and stack and text[stack[-1]] == ('(' if char == ')' else '{'):
+                pairs[stack.pop()] = i
+        observations = []
+        for match in re.finditer(r'\bobserve\s*\([^;{}]*\[[^\]]*\][^{]*\{', text):
+            start = match.end() - 1
+            if start in pairs:
+                observations.append((start, pairs[start]))
+        calls = [(m.start(), pairs[m.end() - 1]) for m in TRACE_CALL.finditer(text)
+                 if m.end() - 1 in pairs]
+        for start, end in calls:
+            payloads = []
+            observed = any(left < start < right for left, right in observations)
+            if not observed and temporary.search(text[start:end]):
+                payloads.append('container/string temporary')
+            blocks = [(left, right) for left, right in pairs.items()
+                      if text[left] == '{' and left < start < right]
+            for left, right in blocks:
+                block = text[left + 1:right]
+                # Remove emissions before checking whether a local is only a payload.
+                remaining = block
+                for call_start, call_end in reversed(calls):
+                    if left < call_start < call_end < right:
+                        a, b = call_start - left - 1, call_end - left
+                        remaining = remaining[:a] + ' ' * (b - a) + remaining[b:]
+                for declaration in declaration_pattern.finditer(block[:start - left - 1]):
+                    position = left + 1 + declaration.start()
+                    if any(a < position < b for a, b in observations):
+                        continue
+                    if any(a < position < b and a > left for a, b in blocks):
+                        continue
+                    names = re.findall(r'(?:^|,)\s*(\w+)\s*(?=[({=]|$)', declaration.group(1))
+                    for name in names:
+                        if not re.search(rf'\b{name}\b', text[start:end]):
+                            continue
+                        uses = remaining[:declaration.start()] + ' ' * len(declaration.group()) + remaining[declaration.end():]
+                        # Filling the payload is allowed; any other read earns numerical ownership.
+                        uses = re.sub(rf'\b{name}\s*(?:\[[^\]]*\]\s*=|\.(?:push_back|emplace_back|reserve|resize)\s*\()', '', uses)
+                        if not re.search(rf'\b{name}\b', uses):
+                            payloads.append(name)
+            if payloads:
+                line = text.count('\n', 0, start) + 1
+                bad.append(f'{path.relative_to(ROOT)}:{line}: eager trace payload: {", ".join(sorted(set(payloads)))}')
+    return bad
+
+
 def rule_declared_selectors() -> list[str]:
     # Every declared document: Parameters today, Thermochemistry once it exists.
     documents = (("parameters.hpp", "Parameters", True), ("thermochemistry.hpp", "Thermochemistry", False))
@@ -403,13 +453,34 @@ def rule_exact_hessian_callback() -> list[str]:
     return bad
 
 
+def rule_stub_matches_extension() -> list[str]:
+    """_core.pyi declares exactly the installed extension's public names and class members."""
+    from epcsaft import _core
+
+    def declared(body: list[ast.stmt]) -> set[str]:
+        names = {node.name for node in body if isinstance(node, (ast.ClassDef, ast.FunctionDef))}
+        names |= {node.target.id for node in body if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)}
+        return {name for name in names if not name.startswith("_")}
+
+    def mismatch(where: str, stub: set[str], native: set[str]) -> list[str]:
+        return [f"{where}: stub only {sorted(stub - native)}, extension only {sorted(native - stub)}"] if stub != native else []
+
+    tree = ast.parse((ROOT / "engine" / "src" / "epcsaft" / "_core.pyi").read_text())
+    findings = mismatch("_core", declared(tree.body), {name for name in dir(_core) if not name.startswith("_")})
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and hasattr(_core, node.name):
+            native = getattr(_core, node.name)
+            # pybind11 enums add the name/value accessors to every class.
+            implicit = {"name", "value"} if hasattr(native, "__members__") else set()
+            members = {name for name in vars(native) if not name.startswith("_")} - implicit
+            findings += mismatch(node.name, declared(node.body), members)
+    return findings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path)
-    parser.add_argument("--wheel", type=Path)
     arguments = parser.parse_args()
-    if (arguments.build_dir is None) != (arguments.wheel is None):
-        parser.error("--build-dir and --wheel must be supplied together")
 
     archive_findings, archive_built = rule_archive_is_python_free(arguments.build_dir)
     checks = [
@@ -426,14 +497,15 @@ def main() -> int:
         ("policy entries are named, listed and consumed", rule_policy_entries_name_themselves()),
         ("budget readers carry records", rule_budget_readers_carry_records()),
         ("core and trace boundaries", rule_core_and_trace_boundaries()),
+        ("known eager trace-payload forms are absent", rule_known_eager_trace_payload_forms()),
         ("selectors are declared", rule_declared_selectors()),
         ("surface has no physical defaults", rule_surface_defaults()),
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
-    if arguments.wheel is not None:
-        checks.append(("identified installed wheel", verify_identified_wheel(arguments.wheel)))
+    if arguments.build_dir is not None:
+        checks.append(("type stub matches the extension", rule_stub_matches_extension()))
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")

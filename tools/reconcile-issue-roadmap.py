@@ -100,6 +100,9 @@ def ensure_labels(repo: str) -> None:
         )
 
 
+BODY_LIMIT = 8000  # characters: current state in about one screen
+
+
 def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
     if apply:
         ensure_labels(repo)
@@ -127,6 +130,8 @@ def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
     blocked_by = {item["number"]: item["blockedBy"] for item in relations}
     changes = 0
     for issue in issues:
+        if issue["state"] == "open" and len(issue.get("body") or "") > BODY_LIMIT:
+            print(f"#{issue['number']}: body is {len(issue['body'])} characters; compact it to current state")
         relationship = blocked_by.get(issue["number"], {"nodes": [], "totalCount": 0})
         if relationship["totalCount"] != len(relationship["nodes"]):
             wanted = "status:needs-attention" if issue["state"] == "open" else None

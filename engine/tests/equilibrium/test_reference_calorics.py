@@ -12,7 +12,7 @@ import pytest
 
 from epcsaft import (
     ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, ParameterFamily, IdealCorrelation, IdealInterval, IdealPolynomial, Mixture,
-    PropertyObservable as Property, Pure, ThermochemistryRecord,
+    PropertyObservable as Property, Pure,
 )
 from epcsaft.equilibrium import (
     Amounts, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial, ReactionReference,
@@ -20,36 +20,9 @@ from epcsaft.equilibrium import (
     SolvedStateActionStatus as Status, SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
-from tests.native_inputs import ETHANE, aqueous_electrolyte, parameters, same
+from tests.native_inputs import A_RECORD, CP_A, DIMER_LAW, ETHANE, aqueous_electrolyte, dimer_problem, parameters, records, same, twin_ethane
 
 T0, P0 = 260.0, 3.0e6
-LAW = ReactionLogPolynomial(math.log(0.3), 200.0, 3.0, -0.004, 300.0, 250.0, 350.0, "analytic-source")
-CP_A = (52.0, 0.12)  # ideal-gas cp(T) = 52 + 0.12 (T - 300) J/(mol K), anchored h = s = 0 at 300 K
-FEED = {"s0": 2.0, "s1": 0.2}
-
-
-def _record(*species: list[IdealInterval]) -> ThermochemistryRecord:
-    return ThermochemistryRecord(1.0e5, list(species))
-
-
-A_RECORD = [IdealInterval(200.0, 400.0, True, True, IdealCorrelation(IdealPolynomial(CP_A, 300.0, 0.0, 0.0), 1.0e5))]
-
-
-def _problem(temperature: float, reference_pressure: float | None, feed: dict[str, float] = FEED,
-             pressure: float = P0) -> Problem:
-    return Problem(
-        T=temperature, P=pressure, feed=Amounts(feed), phases=[Phase("L", kind="liquid")],
-        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
-                                           standard_molality_mol_per_kg=1.0),
-        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=LAW, reference=ReactionReference(
-            Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
-    )
-
-
-def _model(*record: list[IdealInterval]) -> Mixture:
-    return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]), thermochemistry=_record(*record))
-
-
 H, CP = (SolvedStateObservable(Kind.PhaseProperty, 0, 0, p) for p in (Property.TotalEnthalpy,
                                                                      Property.TotalIsobaricHeatCapacity))
 AMOUNT = SolvedStateObservable(Kind.PhaseAmount, 0)
@@ -75,18 +48,18 @@ def test_reference_calorics_recover_pure_fluid_chain(evidence: Any, reference_pr
     assert ref.residual_isobaric_heat_capacity is not None and system.residual_isobaric_heat_capacity is not None
     lam1 = -(ref.residual_enthalpy + rt) / (rt * t)
     lam2 = -(ref.residual_isobaric_heat_capacity + R) / (rt * t) + 2 * (ref.residual_enthalpy + rt) / (rt * t * t)
-    l1 = -LAW.b / t**2 + LAW.c / t + LAW.d
-    l2 = 2 * LAW.b / t**3 - LAW.c / t**2
+    l1 = -DIMER_LAW.b / t**2 + DIMER_LAW.c / t + DIMER_LAW.d
+    l2 = 2 * DIMER_LAW.b / t**3 - DIMER_LAW.c / t**2
     c1, c2 = -lam1, -lam2  # C = Δν Λ with Δν = -1
     dt = t - 300.0
     h_a, cp_a = CP_A[0] * dt + CP_A[1] * dt * dt / 2, CP_A[0] + CP_A[1] * dt
     h_b = 2 * (h_a - rt) + rt * t * (l1 + c1) + rt
     cp_b = 2 * (cp_a - R) + 2 * rt * (l1 + c1) + rt * t * (l2 + c2) + R
-    model = _model(A_RECORD, [])
-    result = solve_equilibrium(model, _problem(t, reference_pressure))
+    model = twin_ethane(A_RECORD, [])
+    result = solve_equilibrium(model, dimer_problem(t, reference_pressure))
     assert result.success, result.message
     x_a, x_b = result.mole_fractions
-    items = _values(model, _problem(t, reference_pressure), [H, CP], Direction(0.0, 0.0, [0.0, 0.0], []))
+    items = _values(model, dimer_problem(t, reference_pressure), [H, CP], Direction(0.0, 0.0, [0.0, 0.0], []))
     name = f"reference-calorics/{'system' if reference_pressure is None else 'fixed'}"
     inputs = {"T_K": t, "P_Pa": P0, "P_ref_Pa": reference_pressure}
     same(evidence, name + "/h", items[0].value, x_a * h_a + x_b * h_b + system.residual_enthalpy,
@@ -100,8 +73,8 @@ def test_reference_calorics_recover_pure_fluid_chain(evidence: Any, reference_pr
 def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence: Any) -> None:
     """Feed and T actions of nH equal centered re-solves, and the apparent partial enthalpy
     satisfies h_A - d(nH)/dn_A = RT² d ln f_A/dT at fixed P and feed (the absorption heat)."""
-    model = _model(A_RECORD, [])
-    problem = _problem(T0, None)
+    model = twin_ethane(A_RECORD, [])
+    problem = dimer_problem(T0, None)
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
     compiled = compile_problem(model, problem)
@@ -121,7 +94,7 @@ def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence:
          claim="caloric apparent partial enthalpy equals the equilibrium's T-derivative of ln f")
 
     def extensive(temperature: float, extra: float) -> float:
-        values = _values(model, _problem(temperature, None, {"s0": 2.0 + extra, "s1": 0.2}), [H, AMOUNT],
+        values = _values(model, dimer_problem(temperature, None, {"s0": 2.0 + extra, "s1": 0.2}), [H, AMOUNT],
                          Direction(0.0, 0.0, [0.0, 0.0], []))
         return float(values[0].value * values[1].value)
 
@@ -141,10 +114,10 @@ def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, refe
     """d(nH)/dP equals centred pressure re-solves (O(step^2) shown). A system-pressure row moves the
     completed species' h with P through d(Delta_r h_rho)/dP = RT^2 d2C/dTdP; without it the action
     misses the pure-liquid v - T dv/dT of the reference."""
-    model = _model(A_RECORD, [])
+    model = twin_ethane(A_RECORD, [])
 
     def extensive(pressure: float, *direction: Direction) -> float:
-        problem = _problem(T0, reference_pressure, pressure=pressure)
+        problem = dimer_problem(T0, reference_pressure, pressure=pressure)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
         h, n = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
@@ -162,23 +135,13 @@ def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, refe
          basis="Identity", method="richardson-centered-resolve", claim="referenced enthalpy pressure action equals re-solves")
 
 
-def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> None:
-    model = _model(A_RECORD, [])
-    problem = _problem(T0, None)
-    result = solve_equilibrium(model, problem)
-    compiled = compile_problem(model, problem)
+def test_reference_calorics_preserve_residuals_without_consistent_anchors() -> None:
+    # Driven higher caloric actions are falsified natively by F1/F3/F4/F5;
+    # the superseded blanket order-refusal assertions are deliberately retired.
+    problem = dimer_problem(T0, None)
     residual = SolvedStateObservable(Kind.PhaseProperty, 0, 0, Property.ResidualEnthalpy)
-    thermal, pressure = solved_state_first_actions(compiled, result, [H, CP, residual], [
-        Direction(1.0, 0.0, [0.0, 0.0], []), Direction(0.0, 1.0e5, [0.0, 0.0], [])])
-    assert thermal.results[0].status == pressure.results[0].status == Status.Available
-    for refused in (thermal.results[1], pressure.results[1]):  # cp along T or P needs d3C/dT3 or d3C/dT2dP
-        assert refused.status == Status.ReferenceUnavailable and refused.value is not None and refused.action is None
-    assert pressure.results[2].status == Status.Available and pressure.results[2].action is not None
-    twice = Direction(0.0, 0.0, [1.0, 0.0], [])
-    second = solved_state_actions(compiled, result, SolvedStateActionRequest([H], [twice, twice])).results[0]
-    assert second.status == Status.ReferenceUnavailable and second.value is not None
     for record in ((A_RECORD, A_RECORD), ([], [])):  # overdetermined-inconsistent; element gauge undetermined
-        other = _model(*record)
+        other = twin_ethane(*record)
         solved = solve_equilibrium(other, problem)
         item = solved_state_actions(compile_problem(other, problem), solved, SolvedStateActionRequest(
             [H, residual], [Direction(0.0, 0.0, [0.0, 0.0], [])])).results
@@ -188,7 +151,7 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
 
 def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> None:
     """Case N referenced d(nH)/dtheta actions agree with rebuilt-model Richardson ladders."""
-    base = _problem(T0, None)
+    base = dimer_problem(T0, None)
     cases = (
         ("kij", [ActiveParameter(ParameterFamily.Kij, (1, 2))], [1.0], 1.0e-4),
         ("tied-epsilon", [ActiveParameter(ParameterFamily.DispersionEnergyOverK, (0,)),
@@ -201,7 +164,7 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
         else:
             components = tuple((*ETHANE[:3], ETHANE[3] + shift) for _ in range(2))
             params = parameters(components, [("k_ij", (0, 1), 0.0)])
-        return Mixture(params, thermochemistry=_record(A_RECORD, []),
+        return Mixture(params, thermochemistry=records(A_RECORD, []),
                        active_parameters=active)
 
     for label, active, parameter_direction, step in cases:
@@ -232,15 +195,13 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
              claim="referenced total enthalpy parameter action equals rebuilt-model re-solves")
 
     model = rebuilt("kij", 0.0, [ActiveParameter(ParameterFamily.Kij, (1, 2))])
-    problem = _problem(T0, None)
+    problem = dimer_problem(T0, None)
     result = solve_equilibrium(model, problem)
     compiled = compile_problem(model, problem)
     fraction = SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)
     k = Direction(0.0, 0.0, [0.0, 0.0], [1.0])
     composition = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k])).results[0]
     assert composition.status == Status.Available and composition.action is not None
-    second = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k, k])).results[0]
-    assert second.status == Status.ReferenceUnavailable and second.value is not None and second.action is None
 
 
 def _ionic(temperature: float, reference_pressure: float | None) -> Problem:
@@ -264,7 +225,7 @@ def test_ionic_reference_calorics_reproduce_native_rows_and_resolves(
     centered re-solves."""
     water = [IdealInterval(200.0, 500.0, True, True, IdealCorrelation(
         IdealPolynomial([33.59], 298.15, -241826.0, 188.83), 1.0e5))]
-    model = Mixture(aqueous_electrolyte(), thermochemistry=_record(water, [], []))
+    model = Mixture(aqueous_electrolyte(), thermochemistry=records(water, [], []))
     zero = Direction(0.0, 0.0, [0.0, 0.0, 0.0], [])
     items = _values(model, _ionic(298.15, reference_pressure), [H, CP], zero)
     name = f"reference-calorics/ionic/{'system' if reference_pressure is None else 'fixed'}"

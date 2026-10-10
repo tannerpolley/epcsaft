@@ -23,8 +23,9 @@ The declaration reader
 [`zero_inventory.py`](../../../../analyses/2026-addition-enthalpy-fitting/scripts/zero_inventory.py)
 sets the diagnosis's explicit Born shell and dielectric scales to one. It
 exports the native parameter document, original reactions and ideal caloric
-coefficients with `--native-input`. The native `regression_checks
---zero-inventory` reader owns coefficient conversion, equilibrium re-solves,
+coefficients with `--native-input`. The native reader
+[`zero_inventory.cpp`](../../../../analyses/2026-addition-enthalpy-fitting/scripts/zero_inventory.cpp)
+(compiled and run by `zero_inventory.py --native-run`) owns coefficient conversion, equilibrium re-solves,
 finite-addition values and all derivative-verification arithmetic. Python
 declares the model and retains native results; it never imports downstream
 source. The source bundle's historical qualification labels remain part of

@@ -18,10 +18,13 @@ if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
 fi
 
 build_root="$workspace_root/build/native-quality"
+# The checkout's build-job count sets the compile and clang-tidy parallelism.
+jobs="$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)"
 extension_suffix="$($workspace_root/.venv/bin/python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')"
+# The tree is always the Clang debug build, so a warm tree reconfigures instead of rebuilding.
 setup_args=()
 if [[ -f "$build_root/meson-private/coredata.dat" ]]; then
-    setup_args+=(--wipe)
+    setup_args+=(--reconfigure)
 elif [[ -d "$build_root" ]]; then
     rm -rf -- "$build_root"
 fi
@@ -30,11 +33,14 @@ CC=clang-18 CXX=clang++-18 meson setup \
     --buildtype=debug \
     "$build_root" \
     "$engine_root"
-meson compile -C "$build_root" \
+meson compile -C "$build_root" -j "$jobs" \
     "_core$extension_suffix"
 
+# Clang ships no quadmath.h; the binary128 test units take GCC's after Clang's own headers.
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
+    -extra-arg="-idirafter$(gcc -print-file-name=include)" \
+    -j "$jobs" \
     -quiet \
     'engine/(native|tests/native)/.*\.cpp$'

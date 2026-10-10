@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Build and run one native case from a chosen source state in a detached worktree under
+build/native-isolated/, with its own Meson build directory and the shared ccache (#355). The
+caller's source files and build directory are never touched; the temporary tree is removed.
+
+  falsify <program> <case> <plant.diff>         working tree + a unified diff (git apply)
+  falsify <program> <case> <file> <old> <new>   working tree + one replacement (old occurs once)
+      Passes (exit 0) only if a recorded claim fails; prints that row.
+  compare <program> <case> <base-commit>        base commit vs working tree
+      Rows compared by comparison_id: model and reference within 1e-10 relative, absolute floor
+      1e-10 x the row's own target, sigma or atol; verdicts equal. Exit 1 on any mismatch,
+      on no common rows, or when either run exits non-zero.
+
+The working tree is HEAD plus the caller's uncommitted and untracked files.
+Run as: tools/native-isolated falsify equilibrium_checks E5-1 plant.diff"""
+import json, math, os, re, shutil, signal, subprocess, sys, tempfile, time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+WORK = ROOT / "build/native-isolated"
+
+
+def git(*args, cwd=ROOT, **kw):
+    return subprocess.run(["git", *args], cwd=cwd, check=True, **kw)
+
+
+def run_state(label, commit, program, case, plant=None):
+    """Build `program` from `commit` (None: the working tree) plus `plant`; return (exit, log path)."""
+    WORK.mkdir(parents=True, exist_ok=True)
+    tree = Path(tempfile.mkdtemp(dir=WORK))
+    git("worktree", "add", "--detach", "--quiet", str(tree), commit or "HEAD")
+    try:
+        if commit is None:
+            diff = git("diff", "--binary", "HEAD", capture_output=True).stdout
+            if diff:
+                git("apply", "--binary", "-", cwd=tree, input=diff)
+            untracked = git("ls-files", "-z", "--others", "--exclude-standard", capture_output=True).stdout
+            for name in filter(None, untracked.decode().split("\0")):
+                (tree / name).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / name, tree / name)
+        if isinstance(plant, Path):
+            if plant.stat().st_size:
+                git("apply", str(plant), cwd=tree)
+        elif plant:
+            path, old, new = plant
+            text = (tree / path).read_text()
+            if text.count(old) != 1:
+                sys.exit(f"native-isolated: the old text occurs {text.count(old)} times in {path}")
+            (tree / path).write_text(text.replace(old, new))
+        # Downloaded subprojects are untracked; reuse the caller's instead of downloading again.
+        for item in (ROOT / "engine/build/subprojects").iterdir():
+            if item.is_dir() and not (tree / item.relative_to(ROOT)).exists():
+                (tree / item.relative_to(ROOT)).symlink_to(item)
+        # The same build directory path relative to the tree as the caller's keeps ccache hits.
+        caller_build = Path((ROOT / "build/environment-wheel/meson-build-dir").read_text().strip())
+        build = tree / caller_build.relative_to(ROOT)
+        options = (caller_build / "meson-private/cmd_line.txt").read_text()
+        pkg = re.search(r"^pkg_config_path = (.*)$", options, re.M).group(1)
+        env = {**os.environ, "PATH": f"{ROOT}/.venv/bin:{os.environ['PATH']}"}
+        jobs = (ROOT / "build/environment-wheel/build-jobs").read_text().strip()
+        log = WORK / f"{program}.{case.replace('/', '_')}.{label}.{tree.name}.log"
+        with log.open("w") as out:
+            for step in (["meson", "setup", f"-Dpkg_config_path={pkg}", str(build), str(tree / "engine")],
+                         ["meson", "compile", "-C", str(build), "-j", jobs, program]):
+                if subprocess.run(step, env=env, stdout=out, stderr=subprocess.STDOUT).returncode:
+                    sys.exit(f"native-isolated: {label} build failed; see {log}")
+            out.flush()
+            # Cases resolve data from the source root, as tools/native-run does.
+            status = subprocess.run([str(build / program), case], cwd=tree, env=env, stdout=out,
+                                    stderr=subprocess.STDOUT).returncode
+        return status, log
+    finally:
+        git("worktree", "remove", "--force", str(tree))
+
+
+def rows(log):
+    out = {}
+    for line in log.read_text().splitlines():
+        if line.startswith("EPCSAFT_COMPARE_JSON "):
+            row = json.loads(line.split(" ", 1)[1])
+            out[row["comparison_id"]] = row
+    return out
+
+
+def floor(row):
+    inputs = row.get("inputs") if isinstance(row.get("inputs"), dict) else {}
+    values = [inputs.get("target"), inputs.get("sigma"), row.get("atol")]
+    return max([abs(v) for v in values if isinstance(v, (int, float)) and math.isfinite(v)] + [0.0])
+
+
+def scaled_difference(x, y, scale):
+    """|x - y| / max(|x|, |y|, scale); 0 for equal values, inf for unequal non-numbers."""
+    if x == y or (isinstance(x, float) and isinstance(y, float) and math.isnan(x) and math.isnan(y)):
+        return 0.0
+    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (x, y)):
+        return math.inf
+    return abs(x - y) / max(abs(x), abs(y), scale)
+
+
+def compare(base_log, work_log):
+    a, b = rows(base_log), rows(work_log)
+    worst, bad = 0.0, []
+    for key in sorted(a.keys() & b.keys()):
+        scale = max(floor(a[key]), floor(b[key]))
+        for field in ("model", "reference"):
+            d = scaled_difference(a[key].get(field), b[key].get(field), scale)
+            if d > 1e-10:
+                bad.append(f"{key} {field} base={a[key].get(field)!r} work={b[key].get(field)!r} scaled={d:.3g}")
+            elif d > worst:
+                worst = d
+        if a[key].get("verdict") != b[key].get("verdict") and a[key].get("judgment") != "Observation only":
+            bad.append(f"{key} verdict base={a[key].get('verdict')} work={b[key].get('verdict')}")
+    bad += [f"{key} only at base" for key in sorted(a.keys() - b.keys())]
+    bad += [f"{key} only in working tree" for key in sorted(b.keys() - a.keys())]
+    print(f"rows {len(a.keys() & b.keys())} common; worst scaled difference within tolerance {worst:.3g}; "
+          f"mismatches {len(bad)}")
+    for item in bad[:20]:
+        print("  MISMATCH", item)
+    return 1 if bad else 0
+
+
+def first_failure(log):
+    """The first failed claim row of a case that reported Failed or Error; None otherwise. An exception
+    with no failed claim (a crash, a solver error, an unmatched case) is not a falsification."""
+    lines = log.read_text().splitlines()
+    event = any(re.match(r"EPCSAFT_CASE .*execution=(Failed|Error)", l) for l in lines)
+    row = next((l for l in lines if '"verdict":false' in l and '"Observation only"' not in l), None)
+    return row if event else None
+
+
+def main(argv):
+    if argv in (["-h"], ["--help"]):
+        print(__doc__)
+        return 0
+    if len(argv) not in (4, 6) or argv[0] not in ("falsify", "compare") or (argv[0] == "compare" and len(argv) != 4):
+        sys.exit(__doc__)
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # timeout sends SIGTERM; run the cleanup
+    mode, program, case = argv[:3]
+    start = time.monotonic()
+    if mode == "compare":
+        base = git("rev-parse", "--verify", f"{argv[3]}^{{commit}}", capture_output=True, text=True).stdout.strip()
+        base_status, base_log = run_state("base", base, program, case)
+        work_status, work_log = run_state("work", None, program, case)
+        print(f"base {base[:8]} exit {base_status}: {base_log}\nwork exit {work_status}: {work_log}")
+        status = compare(base_log, work_log)
+        if base_status or work_status or not rows(base_log).keys() & rows(work_log).keys():
+            print("native-isolated: a run exited non-zero or no rows are common; nothing was compared")
+            status = 1
+    else:
+        plant = Path(argv[3]).resolve() if len(argv) == 4 else tuple(argv[3:])
+        case_status, log = run_state("plant", None, program, case, plant)
+        failure = first_failure(log)
+        print(f"case exit {case_status}: {log}")
+        print("falsified:", failure[:900] if failure else "NO, no recorded claim failed")
+        status = 0 if failure else 1
+    print(f"{time.monotonic() - start:.1f} s")
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

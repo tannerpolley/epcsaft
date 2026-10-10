@@ -78,7 +78,7 @@ inline constexpr Tolerance SITE_FRACTION_CEILING{"SITE_FRACTION_CEILING",
 inline constexpr Tolerance ASSOCIATION_RESIDUAL{"ASSOCIATION_RESIDUAL",
     2.0e-13,
     Category::AlgorithmTolerance,
-    "carried unchanged; Newton reaches it in 3-8 steps from a warm start",
+    "Newton reaches it in 3-8 steps from a warm start",
 };
 
 inline constexpr Tolerance ASSOCIATION_ACTION_RESIDUAL{"ASSOCIATION_ACTION_RESIDUAL",
@@ -95,8 +95,7 @@ inline constexpr Tolerance ASSOCIATION_BOUNDARY_FRACTION{"ASSOCIATION_BOUNDARY_F
 inline constexpr Tolerance ASSOCIATION_MAX_ITERATIONS{"ASSOCIATION_MAX_ITERATIONS",
     50.0,
     Category::AlgorithmTolerance,
-    "budget; measured 3-8 Newton steps, the substitution solver it replaces "
-    "needed 126-31056",
+    "budget; measured 3-8 Newton steps",
 };
 
 // Below this the Jacobian's smallest pivot no longer separates from its largest
@@ -116,8 +115,8 @@ inline constexpr Tolerance ASSOCIATION_JACOBIAN_RANK{"ASSOCIATION_JACOBIAN_RANK"
 // The pressure row is solved in reduced units where the residual is O(1).
 inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL, 5.0, "DENSITY_ROOT_RESIDUAL",
     "bracketed Newton on the reduced pressure residual; the tolerance is on "
-    "the reduced residual; the delivered relative pressure error is |r|/z, "
-    "about 1e-8 on a dense liquid root, measured worst 1.7e-8"
+    "the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; "
+    "relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)"
 );
 
 inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
@@ -126,10 +125,9 @@ inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
     "budget for each root refinement, spinodal bisection and slope-minimum search",
 };
 
-// The coarse sweep that brackets the roots before Newton refines them. The tree
-// this replaces used 360 intervals here and a second 64-interval scan subdivided
-// to depth 8 elsewhere, for a root that a bracket plus Newton finds in single
-// digits. Two scanners became one; this is its only discretisation number.
+// The coarse sweep that brackets the roots before Newton refines them; a bracket
+// plus Newton finds the root in single digits. This is the scan's only
+// discretisation number.
 inline constexpr Tolerance DENSITY_BRACKET_INTERVALS{"DENSITY_BRACKET_INTERVALS",
     40.0,
     Category::AlgorithmTolerance,
@@ -157,6 +155,9 @@ inline constexpr Tolerance DENSITY_ANCHOR_LOG_WINDOW{"DENSITY_ANCHOR_LOG_WINDOW"
     Category::AlgorithmTolerance, "approved P2 local density envelope log1p(0.01)"};
 inline constexpr Tolerance DENSITY_ANCHOR_SCAN_INTERVALS{"DENSITY_ANCHOR_SCAN_INTERVALS", 5.0,
     Category::AlgorithmTolerance, "approved P2 centered local anchor uniqueness scan"};
+inline constexpr Tolerance DENSITY_ANCHOR_REGULARITY{"DENSITY_ANCHOR_REGULARITY",
+    DENSITY_ANCHOR_LOG_WINDOW.value / 100.0, Category::AlgorithmTolerance,
+    "admitted relative density error of an anchored root, one hundredth of DENSITY_ANCHOR_LOG_WINDOW"};
 
 inline constexpr Tolerance COMPOSITION_SUM_TOLERANCE{"COMPOSITION_SUM_TOLERANCE",
     1.0e-12,
@@ -220,7 +221,7 @@ inline constexpr Tolerance REFERENCE_HEAT_CAPACITY_TOLERANCE{"REFERENCE_HEAT_CAP
 // step regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
 // so without the barrier the line search takes steps of order 1e4 in ln x and lands in another
 // basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is not the
-// domain: the Newton polish carries a trace solution below it, down to STABILITY_COMPOSITION_FLOOR.
+// domain: the Newton polish carries a trace solution below it to any positive root (#266).
 inline constexpr Tolerance EQUILIBRIUM_COMPOSITION_BOX{"EQUILIBRIUM_COMPOSITION_BOX",
     1.0e-8,
     Category::AlgorithmTolerance,
@@ -234,27 +235,36 @@ inline constexpr Tolerance EQUILIBRIUM_BOX_INVENTORY_FRACTION{"EQUILIBRIUM_BOX_I
     Category::AlgorithmTolerance,
     "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound",
 };
-// Structural-absence cutoff for a composition coordinate: continuation admission, solved-
-// state differentiability and the Newton polish treat x_i at or below it as a vanished
-// species. Aqueous ions consumed by the applications reach x ~ 1e-12 (hydronium at pH 10
-// in water), so the cutoff sits far below any consumed trace; the analytic trace solution
-// x_B = K/(1+K) at K = 1e-8 lies below the optimizer box and above this cutoff.
-inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
+// Lower bound of the inventory-scaled box of all-free cells: it binds only below an attainable
+// inventory of 1e-18 N_feed, under the balance rows' rounding resolution. No root, action,
+// continuation step or seed is cut at it (#266, #322): x_B = K/(1+K) = 1e-24 solves, has exact
+// actions and continues. Feasibility cells are bounded by the smallest normal double instead.
+inline constexpr Tolerance EQUILIBRIUM_BOX_FLOOR{"EQUILIBRIUM_BOX_FLOOR",
     1.0e-20,
     Category::AlgorithmTolerance,
-    "dimensionless x_i cutoff for continuation admission, action differentiability and the polish domain; not an accuracy bound",
+    "dimensionless lower bound of the all-free optimizer log-composition box; not a solution domain or accuracy bound",
 };
-inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
+inline constexpr Tolerance PHASE_DISAPPEARANCE_AMOUNT{"PHASE_DISAPPEARANCE_AMOUNT",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff; not a stability result or accuracy bound",
+    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff and interior guard of the "
+    "split seed; not a stability result or accuracy bound",
+};
+inline constexpr Tolerance EQUILIBRIUM_AMOUNT_STEP_RETENTION{"EQUILIBRIUM_AMOUNT_STEP_RETENTION",
+    0.1,
+    Category::AlgorithmTolerance,
+    "dimensionless kappa_N: an optimizer trial point keeps at least kappa_N of each free phase amount's distance to "
+    "its relaxed lower bound at the search base (ALG-EQUILIBRIUM); provisional numerical choice, not an amount floor, "
+    "stability result or accuracy bound",
 };
 
 // ------------------------------------------------------------- regression
 
+// Also the conservation test of ALG-STABILITY's amount correction, finite split and phase removal,
+// whose component and moiety errors are divided by max(1 mol, N_feed).
 inline constexpr Tolerance ADDITION_MATERIAL_BALANCE{"ADDITION_MATERIAL_BALANCE", 1.0e-12,
     Category::AlgorithmTolerance, "#210: component feed balance divided by max(1 mol, endpoint feed amounts); "
-    "admission of two declared endpoints, independent of equilibrium stopping error"};
+    "admission of two declared endpoints and of stability inventory conservation, independent of equilibrium stopping error"};
 
 // Ceres trust-region stopping criteria for the bounded least-squares fit (ALG-FIT). The
 // caller's FitControls override them; these are the only defaults and are not accuracy claims.
@@ -298,6 +308,10 @@ inline constexpr Tolerance FIT_RANK_RECIPROCAL_CONDITION{"FIT_RANK_RECIPROCAL_CO
     "reciprocal condition number separating an identifiable direction from a null direction",
 };
 
+// ALG-FIT/#245: maximum physical-chart change for an optional density initializer.
+inline constexpr Tolerance FIT_DENSITY_PARAMETER_FRACTION{"FIT_DENSITY_PARAMETER_FRACTION", 0.10,
+    Category::AlgorithmTolerance, "abs(new-old)/max(1,abs(new),abs(old)); includes held diameters"};
+
 // ------------------------------------------------------------- equilibrium
 
 inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
@@ -324,20 +338,20 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
     0.1,
     Category::AlgorithmTolerance,
     "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, "
-    "dual_inf_tol and constr_viol_tol settings; the caller criterion classifies rows",
+    "constr_viol_tol and the objective-normalized dual stop; the caller criterion classifies rows",
 };
 
-// The optimizer bounds a trace row only by tau N_feed/(N_p x_i) (#87, 2026-09-21).
-// Three exact-Jacobian steps contract raw rows inside the physical cutoff.
-// Return the visited point with lowest classified residual, including the optimizer
-// start; transient classified increases do not discard a useful direction (#66).
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     3.0,
     Category::AlgorithmTolerance,
-    "maximum raw-contracting Newton steps inside the composition cutoff; return the lowest "
-    "classified residual among the optimizer start and accepted steps",
+    "raw-contracting Newton steps at positive compositions, more while raw rows exceed the caller "
+    "criterion; return the lowest classified residual among the optimizer start and accepted steps",
 };
 
+inline constexpr Tolerance EQUILIBRIUM_POLISH_CORRECTION{"EQUILIBRIUM_POLISH_CORRECTION",
+    1.0e-12, Category::AlgorithmTolerance,
+    "#272 scaled undamped Newton correction and forward-error estimate; local termination, not a state-error certificate",
+};
 // A reacting one-phase start is the ideal-solution speciation of its feed with frozen nonideal terms
 // (ALG-EQUILIBRIUM, #154/#157); its element-potential Newton iteration stops when every log-amount step,
 // trace species included, is below this. The frozen terms bound the start's accuracy, not this value.
@@ -366,8 +380,9 @@ inline constexpr Tolerance PACKING_FRACTION_CEILING{"PACKING_FRACTION_CEILING",
     "fluid-coordinate ceiling below close packing",
 };
 
-// Floor of the log-packing chart, shared by the driver's variable bounds and the
-// continuation predictor's domain test so both admit the same coordinates.
+// Floor of the log-packing chart, shared by the compiled preparation's domain test, the
+// optimizer bounds of multi-phase solves and feasibility cells, and the continuation
+// predictor's domain test so all admit the same coordinates.
 inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
     1.0e-12,
     Category::AlgorithmTolerance,
@@ -380,11 +395,8 @@ inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
 // references (2026-09-23), the worst relative errors of chi and its first and second
 // Taylor derivatives are 3e-14, 7e-13 and 1.1e-11 on either side of 0.2; the former
 // switch at 1e-3 with six series terms left the closed form's second derivative wrong
-// by a factor of 3.3 just above it.
-//
-// It is also a recording-time predicate: the branch taken is baked into a tape, so a tape
-// recorded on one side of it is wrong on the other. That is why the tape cache is keyed on
-// the predicate signature and not on topology alone.
+// by a factor of 3.3 just above it. Both branches are on the tape behind a conditional
+// expression, so one tape serves either side.
 inline constexpr Tolerance SCREENING_SERIES_SWITCH{"SCREENING_SERIES_SWITCH",
     0.2,
     Category::AlgorithmTolerance,
@@ -417,14 +429,14 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
-    &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
+    &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &DENSITY_ANCHOR_REGULARITY, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
     &OSMOTIC_MOLALITY_FLOOR, &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
     &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
-    &STABILITY_COMPOSITION_FLOOR,
-    &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
-    &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
+    &EQUILIBRIUM_BOX_FLOOR,
+    &PHASE_DISAPPEARANCE_AMOUNT, &EQUILIBRIUM_AMOUNT_STEP_RETENTION, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
+    &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
-    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
+    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
     &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 }  // namespace epcsaft::policy

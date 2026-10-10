@@ -74,11 +74,16 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("values", &FeedSpec::values)
         .def_readwrite("solvent", &FeedSpec::solvent)
         .def_readwrite("solvent_mass_kg", &FeedSpec::solvent_mass_kg);
+    py::enum_<SpeciesReference>(module, "SpeciesReference")
+        .value("InfiniteDilution", SpeciesReference::InfiniteDilution)
+        .value("PureLiquid", SpeciesReference::PureLiquid)
+        .value("PureGas", SpeciesReference::PureGas);
     py::class_<NeutralReferenceDeclaration>(module, "NeutralReferenceDeclaration")
         .def(py::init<>())
         .def_readwrite("solvent_index", &NeutralReferenceDeclaration::solvent_index)
         .def_readwrite("solute_molality_ratios", &NeutralReferenceDeclaration::solute_molality_ratios)
-        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg);
+        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg)
+        .def_readwrite("species_reference", &NeutralReferenceDeclaration::species_reference);
     py::enum_<ReferenceSourceBasis>(module, "ReferenceSourceBasis")
         .value("CommonMolalityInfiniteDilution", ReferenceSourceBasis::CommonMolalityInfiniteDilution)
         .value("RawMoleFractionInfiniteDilution", ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
@@ -120,10 +125,24 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("reference", &ReactionSpec::reference);
     py::class_<StabilityOptions>(module, "StabilityOptions")
         .def(py::init<>())
+        .def_readwrite("evaluate_supplied_trials", &StabilityOptions::evaluate_supplied_trials)
         .def_readwrite("trials", &StabilityOptions::trials)
         .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
         .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
         .def_readwrite("standard_uncertainty_over_rt", &StabilityOptions::standard_uncertainty_over_rt);
+    py::class_<CriticalDeclaration>(module, "CriticalDeclaration")
+        .def(py::init<>())
+        .def_readwrite("density_guess_mol_per_m3", &CriticalDeclaration::density_guess_mol_per_m3)
+        .def_readwrite("mode_guess", &CriticalDeclaration::mode_guess);
+    py::enum_<EnvelopeCoordinate>(module, "EnvelopeCoordinate")
+        .value("LogTemperature", EnvelopeCoordinate::LogTemperature)
+        .value("LogPressure", EnvelopeCoordinate::LogPressure)
+        .value("LogK", EnvelopeCoordinate::LogK);
+    py::class_<EnvelopeCondition>(module, "EnvelopeCondition")
+        .def(py::init<>())
+        .def_readwrite("kind", &EnvelopeCondition::kind)
+        .def_readwrite("component", &EnvelopeCondition::component)
+        .def_readwrite("target", &EnvelopeCondition::target);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)
@@ -135,18 +154,28 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
         .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
         .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
+        .def_readwrite("enthalpy_j", &EquilibriumProblem::enthalpy_j)
+        .def_readwrite("entropy_j_per_k", &EquilibriumProblem::entropy_j_per_k)
+        .def_readwrite("critical", &EquilibriumProblem::critical)
+        .def_readwrite("envelope", &EquilibriumProblem::envelope)
         .def_readwrite("discovery", &EquilibriumProblem::discovery);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
         .value("Pressure", RowKind::Pressure)
         .value("Moiety", RowKind::Moiety)
         .value("Electro", RowKind::Electro)
-        .value("Normalization", RowKind::Normalization);
+        .value("Normalization", RowKind::Normalization)
+        .value("Enthalpy", RowKind::Enthalpy)
+        .value("Entropy", RowKind::Entropy)
+        .value("CriticalMode", RowKind::CriticalMode)
+        .value("CriticalNormalization", RowKind::CriticalNormalization)
+        .value("CriticalCubic", RowKind::CriticalCubic)
+        .value("EnvelopeCondition", RowKind::EnvelopeCondition);
     py::class_<Row>(module, "Row")
         .def_readonly("kind", &Row::kind)
         .def_readonly("phase", &Row::phase)
         .def_readonly("index", &Row::index)
-        .def_readonly("eqid", &Row::eqid);
+        .def_property_readonly("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     py::class_<PointEvaluation>(module, "PointEvaluation")
         .def_readonly("values", &PointEvaluation::values)
         .def_readonly("jacobian", &PointEvaluation::jacobian)
@@ -159,7 +188,6 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("rank", &CompiledSystem::rank)
         .def_readonly("charge_row_count", &CompiledSystem::charge_row_count)
         .def_readonly("primal_size", &CompiledSystem::primal_size)
-        .def_readonly("rows_minus_unknowns", &CompiledSystem::rows_minus_unknowns)
         .def_readonly("generic_nullity", &CompiledSystem::generic_nullity)
         .def_readonly("feed_total", &CompiledSystem::feed_total)
         .def_readonly("has_ions", &CompiledSystem::has_ions)
@@ -214,7 +242,16 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("requested_tolerance_met", &EquilibriumResult::requested_tolerance_met)
         .def_readonly("topology_event", &EquilibriumResult::topology_event)
         .def_readonly("topology_phase", &EquilibriumResult::topology_phase)
-        .def_readonly("topology_pair", &EquilibriumResult::topology_pair);
+        .def_readonly("topology_pair", &EquilibriumResult::topology_pair)
+        .def_readonly("critical", &EquilibriumResult::critical);
+    py::class_<CriticalRecord>(module, "CriticalRecord")
+        .def_readonly("eigenvalues", &CriticalRecord::eigenvalues)
+        .def_readonly("mode", &CriticalRecord::mode)
+        .def_readonly("cubic", &CriticalRecord::cubic)
+        .def_readonly("zero_band", &CriticalRecord::zero_band)
+        .def_readonly("condition_estimate", &CriticalRecord::condition_estimate)
+        .def_readonly("backward_error", &CriticalRecord::backward_error)
+        .def_readonly("rank", &CriticalRecord::rank);
     py::class_<StabilityTrial>(module, "StabilityTrial")
         .def_readonly("phase", &StabilityTrial::phase)
         .def_readonly("seed", &StabilityTrial::seed)
@@ -256,27 +293,36 @@ void register_equilibrium(py::module_& module) {
         .value("PhasesCoalesced", TopologyEvent::PhasesCoalesced);
     auto continuation_stops = py::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
-         value <= static_cast<int>(ContinuationStop::budget_exhausted); ++value) {
+         value <= static_cast<int>(ContinuationStop::critical_endpoint); ++value) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }
     py::class_<ContinuationOptions>(module, "ContinuationOptions")
         .def(py::init<>())
+        .def(py::init([](double initial_step, double minimum_step, std::size_t max_steps, std::size_t max_retries_per_step,
+                         double envelope_max_log_step, double envelope_straddle) {
+            return ContinuationOptions{initial_step, minimum_step, max_steps, max_retries_per_step, envelope_max_log_step, envelope_straddle};
+        }), py::kw_only(), py::arg("initial_step"), py::arg("minimum_step"), py::arg("max_steps"), py::arg("max_retries_per_step"),
+            py::arg("envelope_max_log_step") = 0.0, py::arg("envelope_straddle") = 0.0)
         .def_readwrite("initial_step", &ContinuationOptions::initial_step)
         .def_readwrite("minimum_step", &ContinuationOptions::minimum_step)
         .def_readwrite("max_steps", &ContinuationOptions::max_steps)
-        .def_readwrite("max_retries_per_step", &ContinuationOptions::max_retries_per_step);
+        .def_readwrite("max_retries_per_step", &ContinuationOptions::max_retries_per_step)
+        .def_readwrite("envelope_max_log_step", &ContinuationOptions::envelope_max_log_step)
+        .def_readwrite("envelope_straddle", &ContinuationOptions::envelope_straddle);
     py::class_<ContinuationRequest>(module, "ContinuationRequest")
         .def(py::init<>())
         .def_readwrite("start_problem", &ContinuationRequest::start_problem)
         .def_readwrite("target_problem", &ContinuationRequest::target_problem)
         .def_readwrite("start_result", &ContinuationRequest::start_result)
-        .def_readwrite("options", &ContinuationRequest::options);
+        .def_readwrite("options", &ContinuationRequest::options)
+        .def_readwrite("parameter_targets", &ContinuationRequest::parameter_targets);
     py::class_<ContinuationResult>(module, "ContinuationResult")
         .def_readonly("success", &ContinuationResult::success)
         .def_readonly("message", &ContinuationResult::message)
         .def_readonly("stop", &ContinuationResult::stop)
         .def_readonly("path_values", &ContinuationResult::path_values)
+        .def_readonly("parameter_values", &ContinuationResult::parameter_values)
         .def_readonly("states", &ContinuationResult::states)
         .def_readonly("reached_path", &ContinuationResult::reached_path)
         .def_readonly("attempted_path", &ContinuationResult::attempted_path)
@@ -288,9 +334,49 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("last_result", &ContinuationResult::last_result)
         .def_readonly("cause_stop", &ContinuationResult::cause_stop)
         .def_readonly("cause_convergence", &ContinuationResult::cause_convergence)
-        .def_readonly("cause_message", &ContinuationResult::cause_message);
+        .def_readonly("cause_message", &ContinuationResult::cause_message)
+        .def_readonly("conditions", &ContinuationResult::conditions)
+        .def_readonly("critical_points", &ContinuationResult::critical_points)
+        .def_readonly("critical_seeds", &ContinuationResult::critical_seeds);
+    py::class_<EquilibriumStart>(module, "EquilibriumStart")
+        .def(py::init([](std::vector<double> coordinates, std::vector<double> amounts, std::vector<std::vector<double>> compositions,
+                         std::vector<std::optional<double>> packing_fractions, std::optional<double> temperature,
+                         std::optional<double> pressure, std::optional<EquilibriumResult> previous) {
+            return EquilibriumStart{std::move(coordinates), std::move(amounts), std::move(compositions),
+                                    std::move(packing_fractions), temperature, pressure, std::move(previous)};
+        }), py::kw_only(), py::arg("coordinates") = std::vector<double>{}, py::arg("amounts") = std::vector<double>{},
+            py::arg("compositions") = std::vector<std::vector<double>>{}, py::arg("packing_fractions") = std::vector<std::optional<double>>{},
+            py::arg("temperature") = py::none(), py::arg("pressure") = py::none(), py::arg("previous") = py::none())
+        .def_readwrite("coordinates", &EquilibriumStart::coordinates)
+        .def_readwrite("amounts", &EquilibriumStart::amounts)
+        .def_readwrite("compositions", &EquilibriumStart::compositions)
+        .def_readwrite("packing_fractions", &EquilibriumStart::packing_fractions)
+        .def_readwrite("temperature", &EquilibriumStart::temperature)
+        .def_readwrite("pressure", &EquilibriumStart::pressure)
+        .def_readwrite("previous", &EquilibriumStart::previous);
+    py::class_<EquilibriumWorkLimits>(module, "EquilibriumWorkLimits")
+        .def(py::init([](std::optional<std::size_t> attempts, std::optional<std::size_t> iterations,
+                         std::optional<std::size_t> attempt_iterations, std::optional<double> seconds, std::optional<double> attempt_seconds) {
+            return EquilibriumWorkLimits{attempts, iterations, attempt_iterations, seconds, attempt_seconds};
+        }), py::kw_only(), py::arg("attempts") = py::none(), py::arg("iterations") = py::none(),
+            py::arg("attempt_iterations") = py::none(), py::arg("seconds") = py::none(), py::arg("attempt_seconds") = py::none())
+        .def_readwrite("attempts", &EquilibriumWorkLimits::attempts)
+        .def_readwrite("iterations", &EquilibriumWorkLimits::iterations)
+        .def_readwrite("attempt_iterations", &EquilibriumWorkLimits::attempt_iterations)
+        .def_readwrite("seconds", &EquilibriumWorkLimits::seconds)
+        .def_readwrite("attempt_seconds", &EquilibriumWorkLimits::attempt_seconds);
+    py::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult")
+        .def_readonly("selected", &EquilibriumStartsResult::selected)
+        .def_readonly("results", &EquilibriumStartsResult::results)
+        .def_readonly("causes", &EquilibriumStartsResult::causes)
+        .def_readonly("attempt_seconds", &EquilibriumStartsResult::attempt_seconds)
+        .def_readonly("iterations", &EquilibriumStartsResult::iterations)
+        .def_readonly("seconds", &EquilibriumStartsResult::seconds)
+        .def_readonly("overrun_seconds", &EquilibriumStartsResult::overrun_seconds)
+        .def_readonly("budget_exhausted", &EquilibriumStartsResult::budget_exhausted);
+    module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
-    // E5 solved-state actions: the existing native records and owner, transported unchanged.
+    // Solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
         .value("Temperature", SolvedStateObservableKind::Temperature)
         .value("Pressure", SolvedStateObservableKind::Pressure)
@@ -304,7 +390,10 @@ void register_equilibrium(py::module_& module) {
         .value("PhaseResidualChemicalPotentialOverRt",
                SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt)
         .value("PhaseProperty", SolvedStateObservableKind::PhaseProperty)
-        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity);
+        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity)
+        .value("PhaseGibbsMolarVolume", SolvedStateObservableKind::PhaseGibbsMolarVolume)
+        .value("SystemEnthalpy", SolvedStateObservableKind::SystemEnthalpy)
+        .value("EquilibriumIsobaricHeatCapacity", SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
     py::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(py::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), py::arg("kind"), py::arg("phase") = 0, py::arg("component") = 0,
             py::arg("property") = PropertyObservable::IdealEnthalpy)
@@ -313,12 +402,25 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("component", &SolvedStateObservable::component)
         .def_readonly("property", &SolvedStateObservable::property);
     py::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
-        .def(py::init<double, double, std::vector<double>, std::vector<double>>(), py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
-            py::arg("active_parameters"))
+        .def(py::init([](double t, double p, std::vector<double> feed, std::vector<double> theta,
+                         std::vector<std::array<double, 4>> coefficients, double h, double s) {
+                 SolvedStateActionDirection result{t, p, std::move(feed), std::move(theta)};
+                 result.reaction_coefficients = std::move(coefficients);
+                 result.enthalpy_j = h;
+                 result.entropy_j_per_k = s;
+                 return result;
+             }),
+             py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
+             py::arg("active_parameters"),
+             py::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{},
+             py::arg("enthalpy_j") = 0.0, py::arg("entropy_j_per_k") = 0.0)
         .def_readonly("temperature_k", &SolvedStateActionDirection::temperature_k)
         .def_readonly("pressure_pa", &SolvedStateActionDirection::pressure_pa)
         .def_readonly("feed_amounts_mol", &SolvedStateActionDirection::feed_amounts_mol)
-        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters);
+        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters)
+        .def_readonly("reaction_coefficients", &SolvedStateActionDirection::reaction_coefficients)
+        .def_readonly("enthalpy_j", &SolvedStateActionDirection::enthalpy_j)
+        .def_readonly("entropy_j_per_k", &SolvedStateActionDirection::entropy_j_per_k);
     py::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
         .def(py::init<std::vector<SolvedStateObservable>, std::vector<SolvedStateActionDirection>>(), py::arg("observables"), py::arg("directions"))
         .def_readonly("observables", &SolvedStateActionRequest::observables)

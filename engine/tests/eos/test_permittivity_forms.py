@@ -22,6 +22,8 @@ SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alt
 COMPONENTS = ("water", "sodium-cation", "chloride-anion")
 T, RHO, X = 298.15, 55000.0, (0.96, 0.02, 0.02)
 AVOGADRO, BOLTZMANN = 6.02214076e23, 1.380649e-23
+# Debye^2 in J A^3 from the SI Debye (1e-21/c C m), CODATA 2018 epsilon_0 and the angstrom.
+DEBYE_SQUARED_J_A3 = (1.0e-21 / 299792458.0) ** 2 / (4.0 * math.pi * 8.8541878128e-12 * 1.0e-30)
 
 
 def _document(name: str) -> dict[str, Any]:
@@ -41,7 +43,7 @@ def _pure_water_permittivity(name: str, document: dict[str, Any], temperature: f
         return 1.0 + density * volume * (_record(document, "water", "dielectric_temperature") / temperature - 1.0)
     number_density = density * AVOGADRO * 1.0e-30  # 1/A^3
     y = 4.0 * math.pi / 9.0 * number_density * (
-        _record(document, "water", "dipole_scaling") * 1.0e-19 / (BOLTZMANN * temperature)
+        _record(document, "water", "dipole_scaling") * DEBYE_SQUARED_J_A3 / (BOLTZMANN * temperature)
         + 3.0 * _record(document, "water", "polarizability_scaling"))
     integral = 1.0 + _record(document, "water", "correlation_integral_parameter") * (math.exp(-y) - 1.0)
     return 1.0 + 3.0 * y * (1.0 + y + (17.0 / 16.0 * integral - 1.0) * y * y)

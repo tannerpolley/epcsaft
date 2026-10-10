@@ -1,6 +1,7 @@
 #pragma once
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -63,19 +64,22 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));
+    admit(options->SetStringValue("sb", "yes"));  // no banner on stdout; an ipopt.opt file still overrides both
     admit(options->SetStringValue("nlp_scaling_method", "none"));
     admit(options->SetNumericValue("obj_scaling_factor", objective_factor));
     admit(options->SetStringValue("hessian_approximation", exact ? "exact" : "limited-memory"));
-    for (const auto* name : {"tol", "acceptable_tol", "dual_inf_tol", "constr_viol_tol"})
+    for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol"})
         admit(options->SetNumericValue(name, tolerance));
+    // ALG-EQUILIBRIUM: the absolute dual stop follows the extensive objective basis.
+    const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
+    admit(options->SetNumericValue("dual_inf_tol", dual_tolerance));
     admit(options->SetIntegerValue("acceptable_iter", 0));
     admit(options->SetIntegerValue("max_iter", iterations));
+    if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds));
     if (!exact) {
         admit(options->SetStringValue("limited_memory_update_type", "bfgs"));
-        admit(options->SetStringValue("sb", "yes"));
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
-        admit(options->SetNumericValue("max_cpu_time", seconds));
     }
     const auto initialized = exact ? app->Initialize() : app->Initialize("");
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};

@@ -3,6 +3,7 @@
 #include "equilibrium/problem.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -42,24 +43,25 @@ std::vector<std::vector<double>> reaction_target_series(
     double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
 );
 
+// A constant supplied Gibbs vector admits no temperature-dependent reaction target: the first
+// reaction whose |T^k t^(k)|, k = 1..3, exceeds sqrt(eps) max(1, |t|), if any.
+std::optional<std::size_t> thermal_reference_missing(
+    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied
+);
+
 // True when the declared reaction space conserves total moles: rank([B; e]) == rank(B).
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis);
+
+// participant[i]: species i has a nonzero coefficient in a declared reaction. With the fed species
+// it forms ALG-STABILITY's U.
+std::vector<bool> reaction_participants(std::size_t components, const std::vector<ReactionSpec>& reactions);
 
 std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector
 );
 
-double vector_norm(const std::vector<double>& values);
-
-double feed_total(const std::vector<double>& feed);
-
-std::vector<double> normalized_feed(const std::vector<double>& feed);
-
-std::vector<double> reaction_affinities(
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& standard_gibbs
-);
+double sum(const std::vector<double>& values);
 
 std::size_t reaction_rank(
     std::size_t components, const std::vector<ReactionSpec>& reactions

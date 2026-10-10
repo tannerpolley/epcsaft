@@ -13,20 +13,11 @@
 
 namespace recording_support {
 
+// execution_policy is read only by meson for equilibrium_checks (Automatic_fast or Explicit).
 struct Declaration final {
     const char* test_id;
-    const char* title;
-    const char* kind;
-    const char* category;
-    const char* execution_policy;
-    const char* evidence_expectation;
-    const char* property_group;
-    const char* requirement_id;
-    const char* expected_comparisons;
-    const char* source;
-    const char* runner;
     const char* arguments;
-    const char* expected_counts = nullptr;
+    const char* execution_policy = nullptr;
 };
 
 using TestFunction = void (*)();
@@ -208,30 +199,6 @@ inline const char*& active_test_id() {
     return value;
 }
 
-inline void print_json_expect(
-    const char* test_id, const char* comparison_group_id, const char* comparison_id,
-    const char* comparison_id_prefix, std::size_t expected_count,
-    const char* point_id, const char* coordinates, const std::string* definition
-) {
-    std::string payload = "{\"schema_version\":1";
-    if (test_id != nullptr) payload += ",\"test_id\":" + json_string(test_id);
-    if (comparison_group_id != nullptr)
-        payload += ",\"comparison_group_id\":" + json_string(comparison_group_id);
-    if (comparison_id != nullptr)
-        payload += ",\"comparison_id\":" + json_string(comparison_id);
-    if (comparison_id_prefix != nullptr)
-        payload += ",\"comparison_id_prefix\":" + json_string(comparison_id_prefix);
-    payload += ",\"expected_count\":" + std::to_string(expected_count);
-    if (point_id != nullptr) payload += ",\"point_id\":" + json_string(point_id);
-    if (coordinates != nullptr)
-        payload += ",\"coordinates\":" + json_fields_object(coordinates);
-    if (definition != nullptr)
-        payload += ",\"definition\":" + json_fields_object(*definition);
-    payload += '}';
-    std::printf("EPCSAFT_EXPECT_JSON %s\n", payload.c_str());
-    std::fflush(stdout);
-}
-
 inline void print_json_compare(
     const char* comparison_id, const char* quantity, const char* unit,
     double model, std::optional<double> reference, const std::string& inputs, const char* basis,
@@ -287,27 +254,6 @@ inline void print_json_compare(
     std::fflush(stdout);
 }
 
-inline void expect_group(
-    const char* test_id, const char* comparison_group_id,
-    const char* comparison_id_prefix, std::size_t expected_count,
-    const std::string& definition, const char* coordinates = nullptr
-) {
-    print_json_expect(
-        test_id, comparison_group_id, nullptr, comparison_id_prefix, expected_count,
-        nullptr, coordinates, &definition
-    );
-}
-
-inline void expect(
-    const char* test_id, const char* comparison_group_id, const char* comparison_id,
-    const char* point_id, const char* coordinates, std::size_t expected_count = 1
-) {
-    print_json_expect(
-        test_id, comparison_group_id, comparison_id, nullptr, expected_count,
-        point_id, coordinates, nullptr
-    );
-}
-
 inline bool scalar_verdict(double model, double reference, const char* criterion,
                            double atol, double rtol) {
     const std::string rule = criterion == nullptr ? std::string() : std::string(criterion);
@@ -350,82 +296,12 @@ inline bool scalar_verdict(double model, double reference, const char* criterion
     return error <= atol + rtol * std::max(1.0, std::abs(reference));
 }
 
-inline void print(const Declaration& declaration) {
-    std::printf(
-        "EPCSAFT_DECL schema_version=1 test_id=%s title=%s kind=%s category=%s "
-        "lifecycle=Implemented execution_policy=%s evidence_expectation=%s",
-        declaration.test_id, declaration.title, declaration.kind, declaration.category,
-        declaration.execution_policy, declaration.evidence_expectation
-    );
-    if (declaration.property_group != nullptr)
-        std::printf(" property_group=%s", declaration.property_group);
-    if (declaration.requirement_id != nullptr)
-        std::printf(" requirement_id=%s", declaration.requirement_id);
-    if (declaration.expected_comparisons != nullptr)
-        std::printf(" expected_comparison_keys=%s", declaration.expected_comparisons);
-    if (declaration.source != nullptr)
-        std::printf(" source=%s", declaration.source);
-    if (declaration.runner != nullptr)
-        std::printf(" runner=%s", declaration.runner);
-    if (declaration.arguments != nullptr)
-        std::printf(" arguments=%s", declaration.arguments);
-    if (declaration.expected_counts != nullptr)
-        std::printf(" expected_comparison_counts=%s", declaration.expected_counts);
+inline void print(const Declaration& declaration, const char* alias) {
+    std::printf("EPCSAFT_DECL schema_version=1 test_id=%s arguments=%s", declaration.test_id, declaration.arguments);
+    if (declaration.execution_policy != nullptr)
+        std::printf(" execution_policy=%s", declaration.execution_policy);
+    if (alias != nullptr) std::printf(" alias=%s", alias);
     std::putchar('\n');
-    std::fflush(stdout);
-}
-
-inline void print_declaration_expectations(const Declaration& declaration) {
-    if (declaration.expected_comparisons == nullptr
-        || std::string(declaration.expected_comparisons).empty()
-        || std::string(declaration.expected_comparisons) == "*") {
-        return;
-    }
-    std::string payload = "{\"schema_version\":1,\"test_id\":"
-        + json_string(declaration.test_id) + ",\"expected_comparison_keys\":[";
-    std::size_t start = 0;
-    bool first = true;
-    const std::string keys = declaration.expected_comparisons;
-    while (start <= keys.size()) {
-        const std::size_t end = keys.find(',', start);
-        const std::string key = keys.substr(
-            start, end == std::string::npos ? std::string::npos : end - start
-        );
-        if (!key.empty()) {
-            if (!first) payload += ',';
-            payload += json_string(key);
-            first = false;
-        }
-        if (end == std::string::npos) break;
-        start = end + 1;
-    }
-    payload += ']';
-    if (declaration.expected_counts != nullptr
-        && std::string(declaration.expected_counts).size() != 0) {
-        payload += ",\"expected_comparison_counts\":{";
-        start = 0;
-        first = true;
-        const std::string counts = declaration.expected_counts;
-        while (start <= counts.size()) {
-            const std::size_t end = counts.find(',', start);
-            const std::string entry = counts.substr(
-                start, end == std::string::npos ? std::string::npos : end - start
-            );
-            const std::size_t separator = entry.rfind(':');
-            if (separator != std::string::npos && separator != 0
-                && separator + 1 < entry.size()) {
-                if (!first) payload += ',';
-                payload += json_string(entry.substr(0, separator)) + ":"
-                    + entry.substr(separator + 1);
-                first = false;
-            }
-            if (end == std::string::npos) break;
-            start = end + 1;
-        }
-        payload += '}';
-    }
-    payload += '}';
-    std::printf("EPCSAFT_EXPECT_JSON %s\n", payload.c_str());
     std::fflush(stdout);
 }
 
@@ -448,6 +324,7 @@ inline bool compare(
     if (verdict != asserted_verdict)
         throw std::logic_error(
             std::string("recorded criterion disagrees with assertion: ") + comparison_id);
+    if (!verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
     return verdict;
 }
 
@@ -466,6 +343,7 @@ inline bool compare_custom(
         comparison_group_id, point_id, quantity_latex, inputs_latex, relationship_latex,
         coordinates, rule
     );
+    if (!asserted_verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
     return asserted_verdict;
 }
 
@@ -500,7 +378,6 @@ inline int run_case(const Case& item) {
     case_event(item.declaration.test_id, "Running");
     active_test_id() = item.declaration.test_id;
     try {
-        print_declaration_expectations(item.declaration);
         item.function();
         case_event(item.declaration.test_id, "Passed");
         active_test_id() = nullptr;
@@ -528,10 +405,13 @@ inline bool selected(const Case& item, const std::string& argument) {
 
 inline int run(int argc, char** argv, std::initializer_list<Case> cases) {
     if (listing(argc, argv)) {
-        for (const auto& item : cases) print(item.declaration);
+        for (const auto& item : cases) print(item.declaration, item.alias);
         return 0;
     }
-    if (argc > 2) return 2;
+    if (argc > 2) {
+        std::fprintf(stderr, "expected one case selector; --list shows test ids, arguments and aliases\n");
+        return 2;
+    }
     int status = 0;
     if (argc == 2) {
         // A test id or argument selects one case; an alias shared by several cases runs them all.
@@ -542,6 +422,7 @@ inline int run(int argc, char** argv, std::initializer_list<Case> cases) {
             any = true;
             status |= run_case(item);
         }
+        if (!any) std::fprintf(stderr, "no case matches %s; --list shows test ids, arguments and aliases\n", argument.c_str());
         return any ? status : 2;
     }
     for (const auto& item : cases) status |= run_case(item);

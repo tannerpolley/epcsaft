@@ -17,13 +17,6 @@ bool finite_values(const std::vector<double>& values) {
 bool nonnegative_values(const std::vector<double>& values) {
     return finite_values(values) && std::all_of(values.begin(), values.end(), [](double value) { return value >= 0.0; });
 }
-void require_sizes(const std::vector<double>& first, const std::vector<double>& second, const char* field) {
-    if (first.size() != second.size()) throw std::invalid_argument(std::string("thermochemistry ") + field + " size");
-}
-void validate_positive_values(const std::vector<double>& values, const char* field) {
-    if (!std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value) && value > 0.0; }))
-        throw std::invalid_argument(std::string("invalid ") + field);
-}
 void validate_identity(const std::string& identity) {
     if (identity.empty()) throw std::invalid_argument("missing standard-state identity");
 }
@@ -49,18 +42,6 @@ void validate_correlation_temperature(const ReactionLogPolynomial& correlation, 
     validate_correlation(correlation);
     if (!std::isfinite(temperature) || temperature < correlation.temperature_min || temperature > correlation.temperature_max)
         throw std::invalid_argument("temperature outside reaction correlation");
-}
-void validate_reaction_properties(const ReactionProperties& value) {
-    if (!std::isfinite(value.ln_k) || !std::isfinite(value.derivative)
-        || !std::isfinite(value.enthalpy)) throw std::invalid_argument("invalid reaction properties");
-    if (value.k.has_value() && (!std::isfinite(*value.k) || *value.k <= 0.0))
-        throw std::invalid_argument("invalid reaction properties");
-    validate_identity(value.standard_state_id);
-}
-bool contains_temperature(const std::vector<IdealInterval>& intervals, double temperature) {
-    return std::any_of(intervals.begin(), intervals.end(), [temperature](const IdealInterval& interval) {
-        return ideal_interval_contains(interval, temperature);
-    });
 }
 ReactionProperties make_reaction_properties(
     double ln_k, double derivative, double enthalpy, const std::string& identity,
@@ -91,7 +72,8 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
     const ThermochemistryRecord& record, double temperature, double molar_density,
     const std::vector<double>& mole_fractions
 ) {
-    validate_thermochemistry(record, mole_fractions.size());
+    if (record.component_intervals.size() != mole_fractions.size())
+        throw std::invalid_argument("thermochemistry component order");
     if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(molar_density) || molar_density <= 0.0)
         throw std::invalid_argument("invalid ideal state");
     validate_composition(mole_fractions);
@@ -99,7 +81,7 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
                     [](const auto& intervals) { return intervals.empty(); }))
         return {std::nullopt, ThermochemistryStatus::MissingRecord};
     if (std::any_of(record.component_intervals.begin(), record.component_intervals.end(),
-                    [temperature](const auto& intervals) { return !contains_temperature(intervals, temperature); }))
+                    [temperature](const auto& intervals) { return ideal_interval(intervals, temperature) == nullptr; }))
         return {std::nullopt, ThermochemistryStatus::OutsideInterval};
 
     try {
@@ -108,8 +90,7 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
         correlations.reserve(mole_fractions.size());
         supported.reserve(mole_fractions.size());
         for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-            correlations.push_back(ideal_interval(
-                record.component_intervals[component], temperature).correlation);
+            correlations.push_back(ideal_interval(record.component_intervals[component], temperature)->correlation);
             supported.push_back(mole_fractions[component] > 0.0);
         }
         const auto value = evaluate_ideal_mixture(
@@ -126,173 +107,13 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
     } catch (const std::domain_error&) { return {std::nullopt, ThermochemistryStatus::Nonfinite}; }
 }
 
-DensityStandardState pressure_to_density_standard(
-    double gibbs, double enthalpy, double entropy, double temperature, double pressure, double density
-) {
-    if (!std::isfinite(gibbs) || !std::isfinite(enthalpy) || !std::isfinite(entropy)
-        || !std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(pressure) || pressure <= 0.0
-        || !std::isfinite(density) || density <= 0.0) throw std::invalid_argument("invalid standard-state conversion");
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
-    const double shift = rt * std::log(rt * density / pressure);
-    return {gibbs + shift, enthalpy - rt, entropy - GAS_CONSTANT_J_PER_MOL_K - shift / temperature};
-}
-
-ActivitySet direct_activities(const std::vector<double>& values, const std::string& identity) {
-    validate_positive_values(values, "activities");
-    validate_identity(identity);
-    return {values, identity};
-}
-ActivitySet mole_fraction_activities(
-    const std::vector<double>& coefficients, const std::vector<double>& mole_fractions,
-    const std::string& identity
-) {
-    require_sizes(coefficients, mole_fractions, "mole fraction");
-    validate_positive_values(coefficients, "activity coefficients");
-    validate_composition(mole_fractions);
-    validate_identity(identity);
-    ActivitySet result{{}, identity};
-    result.values.resize(coefficients.size());
-    for (std::size_t i = 0; i < result.values.size(); ++i) result.values[i] = coefficients[i] * mole_fractions[i];
-    return result;
-}
-ActivitySet molarity_activities(
-    const std::vector<double>& coefficients, double molar_density, const std::vector<double>& mole_fractions,
-    double standard, const std::string& identity
-) {
-    require_sizes(coefficients, mole_fractions, "molarity");
-    validate_positive_values(coefficients, "activity coefficients");
-    validate_identity(identity);
-    validate_composition(mole_fractions);
-    if (!std::isfinite(molar_density) || molar_density <= 0.0 || !std::isfinite(standard) || standard <= 0.0)
-        throw std::invalid_argument("invalid molarity inputs");
-    ActivitySet result{{}, identity};
-    result.values.resize(coefficients.size());
-    for (std::size_t i = 0; i < result.values.size(); ++i)
-        result.values[i] = coefficients[i] * molar_density * mole_fractions[i] / standard;
-    return result;
-}
-ActivitySet molality_activities(
-    const std::vector<double>& coefficients, const std::vector<double>& amounts_mol, double solvent_mass_kg,
-    double standard, const std::string& identity
-) {
-    require_sizes(coefficients, amounts_mol, "molality");
-    validate_positive_values(coefficients, "activity coefficients");
-    validate_identity(identity);
-    if (!std::isfinite(solvent_mass_kg) || solvent_mass_kg <= 0.0
-        || !std::isfinite(standard) || standard <= 0.0 || !nonnegative_values(amounts_mol))
-        throw std::invalid_argument("invalid molality inputs");
-    ActivitySet result{{}, identity};
-    result.values.resize(coefficients.size());
-    for (std::size_t i = 0; i < result.values.size(); ++i)
-        result.values[i] = coefficients[i] * amounts_mol[i] / (solvent_mass_kg * standard);
-    return result;
-}
-
-double reaction_ln_quotient(
-    const std::vector<double>& stoichiometry, const ActivitySet& activities,
-    const std::vector<int>& charges, const ReactionLogPolynomial& correlation
-) {
-    require_sizes(stoichiometry, activities.values, "reaction");
-    validate_identity(activities.standard_state_id);
-    validate_correlation(correlation);
-    if (activities.standard_state_id != correlation.standard_state_id)
-        throw std::invalid_argument("reference-basis-mismatch");
-    if (!charges.empty() && charges.size() != stoichiometry.size()) throw std::invalid_argument("reaction charge size");
-    if (!finite_values(stoichiometry)) throw std::invalid_argument("invalid stoichiometry");
-    double charge = 0.0;
-    bool ionic = false;
-    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
-        if (charges.empty()) continue;
-        ionic = ionic || (stoichiometry[i] != 0.0 && charges[i] != 0);
-        charge += stoichiometry[i] * static_cast<double>(charges[i]);
-    }
-    if (ionic && charge != 0.0) throw std::invalid_argument("ionic-gauge-missing");
-    double result = 0.0;
-    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
-        if (stoichiometry[i] == 0.0) continue;
-        if (!std::isfinite(activities.values[i]) || activities.values[i] <= 0.0)
-            throw std::invalid_argument("reaction activity unavailable");
-        result += stoichiometry[i] * std::log(activities.values[i]);
-    }
-    if (!std::isfinite(result)) throw std::domain_error("nonfinite reaction quotient");
-    return result;
-}
-
 ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial& correlation, double temperature) {
     validate_correlation_temperature(correlation, temperature);
-    const double derivative = -correlation.b / (temperature * temperature)
-        + correlation.c / temperature + correlation.d;
+    const double derivative = reaction_log_value(correlation, temperature, 1);
     const double enthalpy = GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * derivative;
-    const double ln_k = correlation.a + correlation.b / temperature
-        + correlation.c * std::log(temperature / correlation.reference_temperature) + correlation.d * temperature;
-    const double t2 = temperature * temperature, t3 = t2 * temperature, t4 = t3 * temperature;
-    return make_reaction_properties(ln_k, derivative, enthalpy, correlation.standard_state_id,
-        2.0 * correlation.b / t3 - correlation.c / t2, -6.0 * correlation.b / t4 + 2.0 * correlation.c / t3);
-}
-
-ReactionLogPolynomial normalize_legacy_reaction_correlation(
-    double a_old, double b, double c, double d, double reference_temperature,
-    double temperature_min, double temperature_max, const std::string& identity
-) {
-    return {a_old + c * std::log(reference_temperature), b, c, d, reference_temperature,
-            temperature_min, temperature_max, identity};
-}
-ReactionLogPolynomial normalize_log10_reciprocal_correlation(
-    double a, double b, double c, double temperature_min, double temperature_max,
-    const std::string& identity, double reference_temperature
-) {
-    return {-std::log(10.0) * b, -std::log(10.0) * a, 0.0, -std::log(10.0) * c,
-            reference_temperature, temperature_min, temperature_max, identity};
-}
-ReactionProperties reaction_pressure_to_density(
-    const ReactionProperties& pressure_properties, const std::vector<double>& stoichiometry,
-    const std::string& density_identity, double temperature, double pressure, double density
-) {
-    validate_reaction_properties(pressure_properties);
-    if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(pressure) || pressure <= 0.0
-        || !std::isfinite(density) || density <= 0.0 || !finite_values(stoichiometry) || density_identity.empty())
-        throw std::invalid_argument("invalid reaction standard-state conversion");
-    const double delta_nu = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
-    const double shift = std::log(rt * density / pressure);
-    const double t2 = temperature * temperature;
-    return make_reaction_properties(
-        pressure_properties.ln_k - delta_nu * shift,
-        pressure_properties.derivative - delta_nu / temperature,
-        pressure_properties.enthalpy - delta_nu * rt, density_identity,
-        pressure_properties.second_derivative + delta_nu / t2,
-        pressure_properties.third_derivative - 2.0 * delta_nu / (t2 * temperature)
-    );
-}
-ReactionLogPolynomial reaction_standard_state_shift(
-    const ReactionLogPolynomial& source, const std::vector<double>& stoichiometry,
-    const std::vector<double>& delta_h, const std::vector<double>& delta_s,
-    const std::vector<double>& delta_cp, const std::vector<double>& delta_cp_slope,
-    double t0, const std::string& identity
-) {
-    for (const auto* values : {&delta_h, &delta_s, &delta_cp, &delta_cp_slope}) {
-        require_sizes(stoichiometry, *values, "standard-state");
-        if (!finite_values(*values)) throw std::invalid_argument("invalid standard-state shift");
-    }
-    validate_identity(identity);
-    if (!std::isfinite(t0) || t0 <= 0.0 || !(source.reference_temperature > 0.0)
-        || !finite_values(stoichiometry))
-        throw std::invalid_argument("invalid standard-state shift");
-    double h = 0.0, s = 0.0, cp = 0.0, cp_slope = 0.0;
-    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
-        h += stoichiometry[i] * delta_h[i];
-        s += stoichiometry[i] * delta_s[i];
-        cp += stoichiometry[i] * delta_cp[i];
-        cp_slope += stoichiometry[i] * delta_cp_slope[i];
-    }
-    // EqID: reaction_standard_state_polynomial_image; the ln(T/T0) term is re-centred on
-    // the source reference temperature.
-    const double r = GAS_CONSTANT_J_PER_MOL_K;
-    const double c0 = (h - cp * t0 + 0.5 * cp_slope * t0 * t0) / r, c1 = (cp - s) / r;
-    const double c2 = (cp_slope * t0 - cp) / r, c3 = -0.5 * cp_slope / r;
-    return {source.a + c1 + c2 * std::log(source.reference_temperature / t0), source.b + c0,
-            source.c + c2, source.d + c3, source.reference_temperature, source.temperature_min,
-            source.temperature_max, identity};
+    return make_reaction_properties(reaction_log_value(correlation, temperature), derivative, enthalpy,
+        correlation.standard_state_id, reaction_log_value(correlation, temperature, 2),
+        reaction_log_value(correlation, temperature, 3));
 }
 
 std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
@@ -305,10 +126,9 @@ std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
     double delta_nu = 0.0;
     for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
         if (stoichiometry[i] == 0.0) continue;
-        if (!contains_temperature(record.component_intervals[i], temperature)) return std::nullopt;
-        const auto thermal = evaluate_ideal_correlation(
-            ideal_interval(record.component_intervals[i], temperature).correlation,
-            temperature, record.standard_pressure);
+        const auto* interval = ideal_interval(record.component_intervals[i], temperature);
+        if (interval == nullptr) return std::nullopt;
+        const auto thermal = evaluate_ideal_correlation(interval->correlation, temperature, record.standard_pressure);
         pressure_basis.gibbs += stoichiometry[i] * (thermal.h - temperature * thermal.s);
         pressure_basis.enthalpy += stoichiometry[i] * thermal.h;
         pressure_basis.heat_capacity += stoichiometry[i] * thermal.cp;

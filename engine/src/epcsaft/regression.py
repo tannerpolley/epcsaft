@@ -1,4 +1,4 @@
-"""Thin public fitting exposure (#49): names map to native indices; the native owners do the science."""
+"""Public fitting: names map to native indices; the native owners do the science."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import overload
 from . import _core
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
-    Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
+    CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
@@ -17,12 +17,14 @@ from .equilibrium import Discover, Problem
 from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
+    "born_c_dielectric": _core.ParameterFamily.BornCDielectric,
+    "ionic_region_relative_permittivity": _core.ParameterFamily.IonicRegionRelativePermittivity,
     "segment_count": _core.ParameterFamily.SegmentCount,
-    "packing_diameter_angstrom": _core.ParameterFamily.PackingDiameter,
-    "debye_huckel_diameter_angstrom": _core.ParameterFamily.DebyeHuckelDiameter,
-    "born_diameter_angstrom": _core.ParameterFamily.BornDiameter,
+    "packing_diameter": _core.ParameterFamily.PackingDiameter,
+    "debye_huckel_diameter": _core.ParameterFamily.DebyeHuckelDiameter,
+    "born_diameter": _core.ParameterFamily.BornDiameter,
     "ion_suppression_coefficient": _core.ParameterFamily.IonSuppressionCoefficient,
-    "sigma_constant": _core.ParameterFamily.SigmaConstant,
+    "segment_diameter": _core.ParameterFamily.SigmaConstant,
     "dispersion_energy_over_k": _core.ParameterFamily.DispersionEnergyOverK,
     "k_ij": _core.ParameterFamily.Kij,
     "l_ij": _core.ParameterFamily.Lij,
@@ -34,6 +36,7 @@ _PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}
 _FORMS = {"difference": ResidualForm.Difference, "log_ratio": ResidualForm.LogRatio}
 _KINDS = {
+    "equilibrium_isobaric_heat_capacity": ObservationKind.EquilibriumIsobaricHeatCapacity,
     "phase_density": ObservationKind.PhaseDensity,
     "pressure": ObservationKind.EquilibriumPressure,
     "temperature": ObservationKind.EquilibriumTemperature,
@@ -42,7 +45,7 @@ _KINDS = {
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
-__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
+__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
@@ -58,6 +61,10 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
+    if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
+        if target is not None:
+            raise ParameterError(f"{family} is global and takes no component target")
+        return [0]
     if family not in _PAIRS and family not in _SITE_PAIRS:
         return [_index(parameters.component_ids, target, "component")]
     if not isinstance(target, tuple) or len(target) != 2:
@@ -69,17 +76,18 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     return [i * len(ids) + i] if i == j else [i * len(ids) + j, j * len(ids) + i]
 
 
-def coordinate(parameters: Parameters, family: str, *targets: object, origin: float, scale: float,
+def coordinate(parameters: Parameters, targets: Sequence[tuple[str, object, float]], *, origin: float, scale: float,
                bounds: tuple[float, float] | None = None) -> Coordinate:
-    """One optimizer coordinate u, theta = origin + scale u in the family's native unit (1, angstrom, K),
-    driving every tied target: component ids, (a, b) component pairs, or ((component, site), ...) site pairs."""
-    if family not in _FAMILIES:
-        raise ParameterError(f"unknown parameter family {family}")
-    if not targets:
-        raise ParameterError("a coordinate needs at least one target")
+    """Declare (family, component/pair or None for a global scalar, coefficient) targets of q."""
     result = Coordinate()
-    result.family = _FAMILIES[family]
-    result.slots = [_slot(parameters, family, target) for target in targets]
+    rows = []
+    for family, name, coefficient in targets:
+        if family not in _FAMILIES:
+            raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
+        target = CoordinateTarget()
+        target.family, target.indices, target.coefficient = _FAMILIES[family], _slot(parameters, family, name), coefficient
+        rows.append(target)
+    result.targets = rows
     result.origin, result.scale = origin, scale
     result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
     return result
@@ -89,7 +97,7 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
                         bounds: tuple[float, float] | None = None) -> Coordinate:
     """Fit a/ln K (1), b (K), c (1) or d (1/K), tied on the named source-basis reaction."""
     if coefficient not in ("a", "b", "c", "d"):
-        raise ParameterError(f"unknown reaction coefficient {coefficient}")
+        raise ParameterError(f"unknown reaction coefficient {coefficient}; expected a, b, c or d")
     target = _core.ReactionCoordinate()
     target.name, target.coefficient = name, getattr(_core.ReactionCoefficient, coefficient.upper())
     result = Coordinate()
@@ -100,7 +108,7 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
 
 def _finish(result: Observation, observed: float, form: str, scale: float | None, mass_basis: bool) -> Observation:
     if form not in _FORMS:
-        raise ParameterError(f"unknown residual form {form}")
+        raise ParameterError(f"unknown residual form {form}; expected one of {', '.join(_FORMS)}")
     if (scale is None) != (form == "log_ratio"):
         raise ParameterError("a difference residual needs its scale; a log_ratio residual has none")
     result.observed, result.form, result.mass_basis = observed, _FORMS[form], mass_basis
@@ -136,14 +144,15 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
     mole_fraction (summed over `species` in `phase`), partial_pressure (P times that sum, Pa) or
-    phase_fraction (mole basis), or amount_ratio (phase-component amounts)."""
+    phase_fraction (mole basis), amount_ratio (phase-component amounts), or
+    equilibrium_isobaric_heat_capacity (J/(mol-feed K), driven T/P)."""
     if kind not in _KINDS:
         raise ParameterError(f"unknown observation kind {kind}")
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
     result.kind = _KINDS[kind]
-    if phase is None and kind not in ("pressure", "temperature"):
+    if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
         raise ParameterError(f"{kind} needs its phase")
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
@@ -179,14 +188,14 @@ def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradien
 
 @overload
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
-        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None, minimax: MinimaxRequest | None = None) -> FitResult: ...
 
 
 @overload
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
-        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
@@ -200,8 +209,10 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
         shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> FitResult | list[FitResult]:
     """Native least squares, or declared guarded minimax, over the held chart (ALG-FIT)."""
+    if controls is None:
+        raise ParameterError("fit requires controls: the iteration and time budgets are scientific inputs (ALG-FIT)")
     return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
-                     FitControls() if controls is None else controls, list(holds or ()), list(checks or ()),
+                     controls, list(holds or ()), list(checks or ()),
                      None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax)
 
 

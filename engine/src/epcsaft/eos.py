@@ -44,10 +44,12 @@ def _branch(phase: str | None) -> _core.DensityBranch:
         return _core.DensityBranch.Vapor
     if phase == "liquid":
         return _core.DensityBranch.Liquid
-    raise ParameterError(f"unknown phase {phase}")
+    raise ParameterError(f"unknown phase {phase}; expected liquid, vapor or None")
 
 
 class Mixture:
+    """A mixture states its composition x; Pure, with one component, has x = (1,)."""
+
     __slots__ = ("_model", "component_ids", "parameters", "site_ids")
 
     parameters: Parameters
@@ -63,7 +65,7 @@ class Mixture:
         active_parameters: Sequence[ActiveParameter] | None = None,
     ) -> None:
         """Thermal intervals follow component_ids order; the native model copies every input."""
-        if len(parameters.component_ids) < 2:
+        if len(parameters.component_ids) < 2 and type(self) is Mixture:
             raise ParameterError("Mixture requires at least two components")
         self.parameters = parameters
         self.component_ids = parameters.component_ids
@@ -76,7 +78,7 @@ class Mixture:
         *,
         rho: float | None = None,
         P: float | None = None,
-        x: Sequence[float],
+        x: Sequence[float] | None = None,
         phase: str | None = None,
         anchor: State | None = None,
     ) -> State:
@@ -84,9 +86,9 @@ class Mixture:
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
         if rho is not None:
-            return self._model.state(T, rho, x)
+            return self._model.state(T, rho, self._composition(x))
         assert P is not None
-        return self._model.state_at_pressure(T, P, x, branch, anchor.molar_density if anchor else None)
+        return self._model.state_at_pressure(T, P, self._composition(x), branch, anchor.molar_density if anchor else None)
 
     def reference(
         self,
@@ -111,19 +113,19 @@ class Mixture:
         T: float,
         rho: float,
         *,
-        x: Sequence[float],
+        x: Sequence[float] | None = None,
         observables: Sequence[PropertyObservable],
         directions: Sequence[DensityActionDirection],
     ) -> PropertyActionBatch:
         """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
-        return self._model.density_actions(T, rho, x, observables, directions)
+        return self._model.density_actions(T, rho, self._composition(x), observables, directions)
 
     def pressure_actions(
         self,
         T: float,
         P: float,
         *,
-        x: Sequence[float],
+        x: Sequence[float] | None = None,
         phase: str,
         observables: Sequence[PropertyObservable],
         directions: Sequence[PressureActionDirection],
@@ -131,24 +133,31 @@ class Mixture:
     ) -> PropertyActionBatch:
         """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
         return self._model.pressure_actions(
-            T, P, x, _branch(phase), observables, directions,
+            T, P, self._composition(x), _branch(phase), observables, directions,
             anchor.molar_density if anchor else None,
         )
 
     def density_diagnostics(
-        self, T: float, P: float, *, x: Sequence[float], nodes: Sequence[float],
+        self, T: float, P: float, *, x: Sequence[float] | None = None, nodes: Sequence[float],
         density_tolerance: float, log_tolerance: float,
         max_evaluations: int, max_seconds: float, adaptive: bool,
         finite_upper: float, evaluation_order: _core.DerivativeOrder,
         finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         return self._model.density_diagnostics(
-            T, P, x, nodes, density_tolerance, log_tolerance, max_evaluations,
+            T, P, self._composition(x), nodes, density_tolerance, log_tolerance, max_evaluations,
             max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
         )
 
-    def molar_density_upper_bound(self, T: float, *, x: Sequence[float]) -> float:
-        return self._model.molar_density_upper_bound(T, x)
+    def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:
+        return self._model.molar_density_upper_bound(T, self._composition(x))
+
+    def _composition(self, x: Sequence[float] | None) -> Sequence[float]:
+        if x is not None:
+            return x
+        if len(self.component_ids) != 1:
+            raise ParameterError("a mixture requires its composition x")
+        return (1.0,)
 
     def counters(self) -> _core.SweepCounters:
         return self._model.counters()
@@ -157,13 +166,10 @@ class Mixture:
         self._model.reset_counters()
 
 
-class Pure:
-    __slots__ = ("_model", "component_ids", "parameters", "site_ids")
+class Pure(Mixture):
+    """One component: the Mixture methods at x = (1,), plus saturation."""
 
-    parameters: Parameters
-    component_ids: tuple[str, ...]
-    site_ids: tuple[tuple[str, str], ...]
-    _model: _core.HelmholtzModel
+    __slots__ = ()
 
     def __init__(
         self,
@@ -174,80 +180,37 @@ class Pure:
     ) -> None:
         if len(parameters.component_ids) != 1:
             raise ParameterError("Pure requires exactly one component")
-        self.parameters = parameters
-        self.component_ids = parameters.component_ids
-        self.site_ids = parameters.site_ids
-        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry)
-
-    def state(
-        self,
-        T: float,
-        *,
-        rho: float | None = None,
-        P: float | None = None,
-        phase: str | None = None,
-    ) -> State:
-        if (rho is None) == (P is None):
-            raise ParameterError("exactly one of rho or P is required")
-        branch = _branch(phase)
-        if rho is not None:
-            return self._model.state(T, rho, (1.0,))
-        assert P is not None
-        return self._model.state_at_pressure(T, P, (1.0,), branch, None)
+        super().__init__(parameters, thermochemistry=thermochemistry, active_parameters=active_parameters)
 
     def density_actions(
         self,
         T: float,
         rho: float,
         *,
+        x: Sequence[float] | None = None,
         observables: Sequence[PropertyObservable],
         directions: Sequence[DensityActionDirection],
     ) -> PropertyActionBatch:
-        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
-        native = tuple(
-            DensityActionDirection(
-                item.temperature, item.molar_density,
-                item.composition or (0.0,), item.parameter,
-            )
-            for item in directions
-        )
-        return self._model.density_actions(T, rho, (1.0,), observables, native)
+        """A direction may omit its composition change, which is zero for one component."""
+        native = tuple(DensityActionDirection(item.temperature, item.molar_density, item.composition or (0.0,), item.parameter)
+                       for item in directions)
+        return super().density_actions(T, rho, x=x, observables=observables, directions=native)
 
     def pressure_actions(
         self,
         T: float,
         P: float,
         *,
+        x: Sequence[float] | None = None,
         phase: str,
         observables: Sequence[PropertyObservable],
         directions: Sequence[PressureActionDirection],
+        anchor: State | None = None,
     ) -> PropertyActionBatch:
-        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
-        native = tuple(
-            PressureActionDirection(
-                item.temperature, item.pressure,
-                item.composition or (0.0,), item.parameter,
-            )
-            for item in directions
-        )
-        return self._model.pressure_actions(
-            T, P, (1.0,), _branch(phase), observables, native, None,
-        )
-
-    def density_diagnostics(
-        self, T: float, P: float, *, nodes: Sequence[float],
-        density_tolerance: float, log_tolerance: float,
-        max_evaluations: int, max_seconds: float, adaptive: bool,
-        finite_upper: float, evaluation_order: _core.DerivativeOrder,
-        finite_anchor: float | None = None,
-    ) -> DensityDiagnostics:
-        return self._model.density_diagnostics(
-            T, P, (1.0,), nodes, density_tolerance, log_tolerance, max_evaluations,
-            max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
-        )
-
-    def molar_density_upper_bound(self, T: float) -> float:
-        return self._model.molar_density_upper_bound(T, (1.0,))
+        """A direction may omit its composition change, which is zero for one component."""
+        native = tuple(PressureActionDirection(item.temperature, item.pressure, item.composition or (0.0,), item.parameter)
+                       for item in directions)
+        return super().pressure_actions(T, P, x=x, phase=phase, observables=observables, directions=native, anchor=anchor)
 
     def saturation(self, T: float) -> Problem:
         from .equilibrium import Amounts, Free, Phase, Pinned, Problem

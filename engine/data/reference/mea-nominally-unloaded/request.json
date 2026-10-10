@@ -1,0 +1,719 @@
+{
+  "continuation": {
+    "identity": "Bottinger2008_state_046-candidate-v1",
+    "state": {
+      "parameter_fingerprint": "sha256:927cc368a166c5503566778d997e847f04a51c3e4d54b548fb3a0afe474640e1",
+      "phase_identities": [
+        "mea-nine-species-liquid"
+      ],
+      "phases": [
+        {
+          "chemical_potential_component_ids": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water",
+            "protonated-monoethanolamine",
+            "carbamate-anion",
+            "bicarbonate-anion",
+            "carbonate-anion",
+            "hydronium-cation",
+            "hydroxide-anion"
+          ],
+          "chemical_potential_over_rt": [
+            -83.28404246419234,
+            -68.94660264661186,
+            -246.22598764564444,
+            -43.09488407314244,
+            -178.08236368427367,
+            -355.36174868330625,
+            -381.2134672567758,
+            -220.37426907217497,
+            -272.0777062191139
+          ],
+          "mechanical_class": "strict_stable_local_minimum",
+          "molar_density_mol_m3": 50024.69691417036,
+          "molar_volume_m3_per_mol": 1.999012611142343e-05,
+          "mole_fractions": [
+            0.00012044382032884565,
+            0.03820530851007986,
+            0.88492326364512,
+            0.03838499164509782,
+            0.03561505266280674,
+            0.0027319402457567526,
+            1.899928767640581e-05,
+            1.0976016899728266e-11,
+            1.7215753829197593e-10
+          ],
+          "packing_fraction": 0.4472453309570584,
+          "pressure_pa": 101325.000001557,
+          "role": "liquid",
+          "support": "all_components",
+          "supported_component_ids": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water",
+            "protonated-monoethanolamine",
+            "carbamate-anion",
+            "bicarbonate-anion",
+            "carbonate-anion",
+            "hydronium-cation",
+            "hydroxide-anion"
+          ]
+        }
+      ],
+      "pressure_pa": 101325.000001557,
+      "problem_fingerprint": "sha256:5ec788b1cae66646b3f803841d4242677b898da0c89c9bec92c7e8a942b65327",
+      "reaction_fingerprint": "sha256:f91ef4496d1d87fd40664f1eeab1d2a6797a460116a41c0549ab078e0caa9b5a",
+      "topology_fingerprint": "sha256:e69807b69093e09e21ec3914bf1590a8969f5b987acb3574d75fe192f3f02fc0"
+    }
+  },
+  "feed": {
+    "basis": "7 mol MEA/kg water",
+    "numerical_seed_scale": 0.01,
+    "proxy_loading": 1e-05
+  },
+  "identity": "Bottinger2008_state_046",
+  "intensive_boundaries": [],
+  "outputs": [
+    {
+      "aggregate_identity": "Bottinger2008_state_046-mea_meah",
+      "basis": "true-species-liquid-mole-fraction-linear-aggregate",
+      "censor_limit": null,
+      "coefficients": [
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "covariance_identity": "speciation|Bottinger2008|w=0.3|T=40",
+      "identity": "Bottinger2008_state_046-mea_meah",
+      "phase_identity": "mea-nine-species-liquid",
+      "selector": "phase.mole_fraction",
+      "solvent_mass_coefficients_kg_per_mol": [],
+      "support": "positive",
+      "unit": "dimensionless"
+    },
+    {
+      "aggregate_identity": null,
+      "basis": "true-species-liquid-mole-fraction",
+      "censor_limit": null,
+      "coefficients": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "covariance_identity": null,
+      "identity": "Bottinger2008_state_046-meacoo",
+      "phase_identity": "mea-nine-species-liquid",
+      "selector": "phase.mole_fraction",
+      "solvent_mass_coefficients_kg_per_mol": [],
+      "support": "positive",
+      "unit": "dimensionless"
+    }
+  ],
+  "phase_reactions": null,
+  "phases": [
+    {
+      "amount_role": "finite",
+      "fluid_role": "liquid",
+      "identity": "mea-nine-species-liquid",
+      "model": {
+        "admissible_packing_fraction_interval": [
+          1e-06,
+          0.74
+        ],
+        "kind": "eos",
+        "reference_id": "installed-eos"
+      },
+      "start": null,
+      "support": {
+        "component_ids": [],
+        "kind": "all_components"
+      }
+    }
+  ],
+  "pressure": {
+    "bounds": [
+      1.0,
+      10000000.0
+    ],
+    "role": "fixed",
+    "value": 101325.0
+  },
+  "reaction_phase_ids": [
+    "mea-nine-species-liquid"
+  ],
+  "reaction_system": {
+    "balance_matrix": [
+      [
+        1.0,
+        2.0,
+        0.0,
+        2.0,
+        3.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "charges": [
+      0,
+      0,
+      0,
+      1,
+      -1,
+      -1,
+      -2,
+      1,
+      -1
+    ],
+    "conserved_totals": [
+      2.00001,
+      1.0
+    ],
+    "engine_reactions": [
+      {
+        "engine_correlation": {
+          "a": 3.7290977365566675,
+          "b": -13445.9,
+          "c": -22.4773,
+          "d": 0.0,
+          "reference_temperature": 313.15,
+          "standard_state_id": "aqueous-mole-fraction-infinite-dilution-water-v1",
+          "temperature_max": 498.15,
+          "temperature_min": 273.15
+        },
+        "engine_reference": {
+          "reference_pressure_pa": null,
+          "source_basis": "RawMoleFractionInfiniteDilution"
+        },
+        "parameter_role": "candidate",
+        "reaction_id": "R1",
+        "stoichiometry": [
+          0.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "engine_correlation": {
+          "a": 20.959245323180852,
+          "b": -11105.640030520277,
+          "c": -36.7816,
+          "d": 0.0,
+          "reference_temperature": 313.15,
+          "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+          "temperature_max": 393.15,
+          "temperature_min": 293.15
+        },
+        "engine_reference": {
+          "reference_pressure_pa": null,
+          "source_basis": "CommonMolalityInfiniteDilution"
+        },
+        "parameter_role": "selected",
+        "reaction_id": "R2",
+        "stoichiometry": [
+          -1.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      {
+        "engine_correlation": {
+          "a": 12.145792981306897,
+          "b": -12431.7,
+          "c": -35.4819,
+          "d": 0.0,
+          "reference_temperature": 313.15,
+          "standard_state_id": "aqueous-mole-fraction-infinite-dilution-water-v1",
+          "temperature_max": 498.15,
+          "temperature_min": 273.15
+        },
+        "engine_reference": {
+          "reference_pressure_pa": null,
+          "source_basis": "RawMoleFractionInfiniteDilution"
+        },
+        "parameter_role": "candidate",
+        "reaction_id": "R3",
+        "stoichiometry": [
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          -1.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      },
+      {
+        "engine_correlation": {
+          "a": 2.151,
+          "b": -1545.3,
+          "c": 0.0,
+          "d": 0.0,
+          "reference_temperature": 313.15,
+          "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+          "temperature_max": 393.15,
+          "temperature_min": 293.15
+        },
+        "engine_reference": {
+          "reference_pressure_pa": 100000.0,
+          "source_basis": "CommonMolalityInfiniteDilution"
+        },
+        "parameter_role": "selected",
+        "reaction_id": "R4",
+        "stoichiometry": [
+          0.0,
+          1.0,
+          -1.0,
+          0.0,
+          -1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "engine_correlation": {
+          "a": 2.3424545466714632,
+          "b": -6994.424474742253,
+          "c": 0.0,
+          "d": -0.0009848156442735533,
+          "reference_temperature": 313.15,
+          "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+          "temperature_max": 393.15,
+          "temperature_min": 293.15
+        },
+        "engine_reference": {
+          "reference_pressure_pa": 100000.0,
+          "source_basis": "CommonMolalityInfiniteDilution"
+        },
+        "parameter_role": "selected",
+        "reaction_id": "R5",
+        "stoichiometry": [
+          0.0,
+          1.0,
+          -1.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "equilibrium_constants": [
+      [
+        -39.20847211814555,
+        "Austgen1991",
+        "aqueous-molality-infinite-dilution-water-v1",
+        "products_positive",
+        "source-standard-state-to-provider-neutral-reference",
+        true,
+        {
+          "reaction_id": "R1",
+          "source_correlation": {
+            "a": 132.899,
+            "b_k": -13445.9,
+            "c": -22.4773,
+            "d_per_k": 0.0,
+            "kind": "ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t"
+          },
+          "source_standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+        }
+      ],
+      [
+        -18.52157205941222,
+        "Austgen1991",
+        "aqueous-molality-infinite-dilution-water-v1",
+        "products_positive",
+        "source-standard-state-to-provider-neutral-reference",
+        true,
+        {
+          "effective_coefficient_identities": [
+            "reaction:R2:correlation:a",
+            "reaction:R2:correlation:b_k",
+            "reaction:R2:correlation:c",
+            "reaction:R2:correlation:d_per_k"
+          ],
+          "effective_coefficient_values": {
+            "a": 232.33141533884407,
+            "b_k": -11105.640030520277,
+            "c": -36.7816,
+            "d_per_k": 0.0
+          },
+          "effective_parameter_role": "selected",
+          "reaction_id": "R2",
+          "selected_coefficient_values": {
+            "a": 232.33141533884407,
+            "b_k": -11105.640030520277,
+            "c": -36.7816,
+            "d_per_k": 0.0
+          },
+          "selected_correlation_kind": "ln-k-a-plus-b-over-t-plus-c-ln-t-plus-d-t",
+          "selected_correlation_source": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "analyses/mea_parameter_bundle/results/reaction-temperature-fit/candidate-receipt.json:proposal=unbounded; constant reaction-enthalpy shift preserving ln K at 313.15 K; R2 base: Austgen 1991 converted to the common aqueous-molality standard state (ln K offset +4.0165349923); supersedes the source-contract R2 for this record",
+            "source_id": "mea-reaction-temperature-fit-2026-09-03"
+          },
+          "selected_parameter_role": "owner-adopted",
+          "source_correlation": {
+            "a": 231.465,
+            "b_k": -12092.1,
+            "c": -36.7816,
+            "d_per_k": 0.0,
+            "kind": "ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t"
+          },
+          "source_standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+        }
+      ],
+      [
+        -27.55307337666852,
+        "Austgen1991",
+        "aqueous-molality-infinite-dilution-water-v1",
+        "products_positive",
+        "source-standard-state-to-provider-neutral-reference",
+        true,
+        {
+          "reaction_id": "R3",
+          "source_correlation": {
+            "a": 216.049,
+            "b_k": -12431.7,
+            "c": -35.4819,
+            "d_per_k": 0.0,
+            "kind": "ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t"
+          },
+          "source_standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+        }
+      ],
+      [
+        -2.7836958326680508,
+        "Tong2012+Aroua1999",
+        "aqueous-molality-infinite-dilution-water-v1",
+        "products_positive",
+        "source-standard-state-to-provider-neutral-reference",
+        true,
+        {
+          "coefficient_identities": [
+            "reaction:R4:correlation:a",
+            "reaction:R4:correlation:b_k"
+          ],
+          "coefficient_values": [
+            2.151,
+            -1545.3
+          ],
+          "effective_coefficient_identities": [
+            "reaction:R4:correlation:a",
+            "reaction:R4:correlation:b_k"
+          ],
+          "effective_coefficient_values": {
+            "a": 2.151,
+            "b_k": -1545.3
+          },
+          "effective_parameter_role": "selected",
+          "kind": "ln-k-a-plus-b-over-t",
+          "reaction_id": "R4",
+          "selected_coefficient_values": {
+            "a": 2.151,
+            "b_k": -1545.3
+          },
+          "selected_correlation_kind": "ln-k-a-plus-b-over-t",
+          "selected_correlation_source": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "analyses/mea_parameter_bundle/results/reaction-temperature-fit/candidate-receipt.json:proposal=unbounded; constant reaction-enthalpy shift preserving ln K at 313.15 K; a and b_k set to the source correlation (Tong 2012 via Aroua 1999, chemical_reaction_source_contract.json) (analyses/mea_parameter_bundle/model-d/1-1-S1-40-80C-multistart.json)",
+            "source_id": "mea-reaction-temperature-fit-2026-09-03"
+          },
+          "selected_parameter_role": "owner-adopted",
+          "source_correlation": {
+            "a": 2.151,
+            "b_k": -1545.3,
+            "kind": "ln_a_plus_b_over_t"
+          },
+          "source_standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+        }
+      ],
+      [
+        -20.889878783626997,
+        "BatesPinching1951",
+        "aqueous-molality-infinite-dilution-water-v1",
+        "products_positive",
+        "source-standard-state-to-provider-neutral-reference",
+        true,
+        {
+          "coefficient_identities": [
+            "reaction:R5:correlation:a_k",
+            "reaction:R5:correlation:b",
+            "reaction:R5:correlation:c_per_k"
+          ],
+          "coefficient_values": [
+            3037.6399534696106,
+            -1.0173150837285996,
+            0.0004277
+          ],
+          "effective_coefficient_identities": [
+            "reaction:R5:correlation:a_k",
+            "reaction:R5:correlation:b",
+            "reaction:R5:correlation:c_per_k"
+          ],
+          "effective_coefficient_values": {
+            "a_k": 3037.6399534696106,
+            "b": -1.0173150837285996,
+            "c_per_k": 0.0004277
+          },
+          "effective_parameter_role": "selected",
+          "kind": "negative-log10-temperature-polynomial",
+          "reaction_id": "R5",
+          "selected_coefficient_values": {
+            "a_k": 3037.6399534696106,
+            "b": -1.0173150837285996,
+            "c_per_k": 0.0004277
+          },
+          "selected_correlation_kind": "negative-log10-temperature-polynomial",
+          "selected_correlation_source": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "analyses/mea_parameter_bundle/results/reaction-temperature-fit/candidate-receipt.json:proposal=unbounded; constant reaction-enthalpy shift preserving ln K at 313.15 K",
+            "source_id": "mea-reaction-temperature-fit-2026-09-03"
+          },
+          "selected_parameter_role": "owner-adopted",
+          "source_correlation": {
+            "a_k": 2677.91,
+            "b": 0.3869,
+            "c_per_k": 0.0004277,
+            "kind": "ln_from_negative_log10_a_over_t_plus_b_plus_c_t"
+          },
+          "source_standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+        }
+      ]
+    ],
+    "feed_amounts_mol": [
+      9e-06,
+      0.9999998,
+      7.929467317564624,
+      1.0000000000000001e-07,
+      1.0000000000000001e-07,
+      8.000000000000001e-07,
+      1.0000000000000001e-07,
+      1.1e-06,
+      1.0000000000000001e-07
+    ],
+    "molar_masses_kg_per_mol": [
+      0.04400839250000016,
+      0.061080535833333255,
+      0.018015221250000022,
+      0.06208747291666655,
+      0.10408199125000012,
+      0.06101667666666688,
+      0.06000973958333358,
+      0.019022158333333324,
+      0.01700828416666672
+    ],
+    "reaction_matrix": [
+      [
+        0.0,
+        0.0,
+        -2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      [
+        -1.0,
+        0.0,
+        -2.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        -1.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        -1.0,
+        0.0,
+        -1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        -1.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "source_standard_state": {
+      "activity_convention_id": "molality-infinite-dilution-v1",
+      "activity_scale_id": "aqueous-molality-infinite-dilution-water-v1",
+      "component_ids": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "id": "aqueous-molality-infinite-dilution-water-v1",
+      "ion_pairs": [
+        [
+          [
+            "protonated-monoethanolamine",
+            "carbamate-anion"
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            "protonated-monoethanolamine",
+            "bicarbonate-anion"
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            "protonated-monoethanolamine",
+            "carbonate-anion"
+          ],
+          [
+            2,
+            1
+          ]
+        ],
+        [
+          [
+            "protonated-monoethanolamine",
+            "hydroxide-anion"
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            "hydronium-cation",
+            "carbamate-anion"
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      ],
+      "log_activity_scale_factors": [
+        -4.016534992299479,
+        -4.016534992299479,
+        0.0,
+        -4.016534992299479,
+        -4.016534992299479,
+        -4.016534992299479,
+        -4.016534992299479,
+        -4.016534992299479,
+        -4.016534992299479
+      ],
+      "phase": "liquid",
+      "pure_components": [],
+      "reference_convention": "molality-infinite-dilution",
+      "reference_pressure_pa": 100000.0,
+      "solvent_composition": [
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "standard_molality_mol_per_kg": 1.0
+    },
+    "species_ids": [
+      "carbon-dioxide",
+      "monoethanolamine",
+      "water",
+      "protonated-monoethanolamine",
+      "carbamate-anion",
+      "bicarbonate-anion",
+      "carbonate-anion",
+      "hydronium-cation",
+      "hydroxide-anion"
+    ],
+    "strict_interior_amount_floor_mol": 1e-12
+  },
+  "temperature": {
+    "role": "fixed",
+    "unit": "kelvin",
+    "value": 353.15
+  }
+}

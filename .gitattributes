@@ -6,8 +6,6 @@ analyses/reproduction/*/results/data/*.json                     -diff linguist-g
 
 # Measured data. Reviewed line by line when it lands, but it is evidence rather than
 # code, and it should not inflate a code diff.
-engine/tests/oracle/entry-point-profile.json                    -diff linguist-generated=true
-engine/tests/oracle/floor-measurements.json                     -diff linguist-generated=true
 data/packets/**/parameters/parameters.json                      -diff linguist-generated=true
 
 # Language-aware diffs: hunk headers name the enclosing function instead of a stray
@@ -24,3 +22,7 @@ data/packets/**/parameters/parameters.json                      -diff linguist-g
 
 # Retained numerical CSV hashes include their original line endings.
 analyses/2026-tpd-phase-discovery/results/**/*.csv -text
+
+# Empty terminal TSV fields retain their tab delimiters.
+analyses/2026-reactive-caloric-actions/results/main-2026-10-06/*.tsv whitespace=-blank-at-eol
+analyses/2026-reactive-caloric-actions/results/slice4/*.tsv whitespace=-blank-at-eol

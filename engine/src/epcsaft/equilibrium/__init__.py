@@ -19,18 +19,26 @@ from .problem import (
     dew_point,
     problem_from_mapping,
     solve_equilibrium,
+    solve_equilibrium_starts,
     solved_state_actions,
 )
 
+EquilibriumStart = _core.EquilibriumStart
+EquilibriumWorkLimits = _core.EquilibriumWorkLimits
+EquilibriumStartsResult = _core.EquilibriumStartsResult
 inventory_bounds = _core.inventory_bounds
 InventoryBound = _core.InventoryBound
 
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
+CriticalDeclaration = _core.CriticalDeclaration
+EnvelopeCondition = _core.EnvelopeCondition
+EnvelopeCoordinate = _core.EnvelopeCoordinate
 ReactionLogPolynomial = _core.ReactionLogPolynomial
 ReactionReference = _core.ReactionReference
 ReferenceSourceBasis = _core.ReferenceSourceBasis
+SpeciesReference = _core.SpeciesReference
 NeutralReferenceStatus = _core.NeutralReferenceStatus
 SolvedStateActionBatch = _core.SolvedStateActionBatch
 SolvedStateActionDiagnostics = _core.SolvedStateActionDiagnostics
@@ -56,9 +64,15 @@ __all__ = (
     "Continuation",
     "ContinuationResult",
     "ContinuationStop",
+    "CriticalDeclaration",
+    "EnvelopeCondition",
+    "EnvelopeCoordinate",
     "Discover",
     "EOS_STANDARD_STATE_ID",
     "EquilibriumResult",
+    "EquilibriumStart",
+    "EquilibriumWorkLimits",
+    "EquilibriumStartsResult",
     "Feed",
     "Free",
     "MassFractions",
@@ -66,6 +80,7 @@ __all__ = (
     "MoleFractions",
     "NeutralReference",
     "NeutralReferenceStatus",
+    "SpeciesReference",
     "Pinned",
     "Phase",
     "Problem",
@@ -87,6 +102,7 @@ __all__ = (
     "dew_point",
     "problem_from_mapping",
     "solve_equilibrium",
+    "solve_equilibrium_starts",
     "solved_state_actions",
     "solved_state_first_actions",
 )

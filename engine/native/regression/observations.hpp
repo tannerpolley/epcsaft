@@ -10,12 +10,12 @@
 
 namespace epcsaft::regression {
 
-// The built-in observation inventory (#46). Values come from the shared owners only:
+// The built-in observation inventory. Values come from the shared owners only:
 // Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
-    Density, IsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
+    Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
 };
 inline bool pressure_closed(ObservationKind kind) {
@@ -67,16 +67,17 @@ struct HydrationHold final {
     double energy_tolerance = 0.0, diameter_tolerance = 0.0;
     int maximum_iterations = 0;
 };
+// correction is the last Newton step |H/H_d| (Angstrom); uncertainty bounds the achieved diameter
+// error, min(correction, bracket width), the quantity the diameter criterion accepts.
 struct HoldResult final {
     double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
     std::vector<double> parameter_derivative;
     int iterations = 0;
-    std::string cause;
 };
 struct EvaluatedCoordinates final {
     Parameters parameters;
     std::vector<ActiveParameter> active;
-    std::vector<double> physical, map;  // independent physical rows, then held Born rows; row-major D
+    std::vector<double> physical, map;  // independent EOS, held Born, then reaction rows; row-major D
     std::vector<HoldResult> holds;
 };
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
@@ -121,7 +122,9 @@ using ReferenceCache = std::vector<std::pair<Observation, InfiniteDilutionRefere
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
-    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr
+    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr,
+    const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
+    bool same_parameters = false
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction

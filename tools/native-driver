@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Compile an analysis C++ driver with a native test program's flags and link it against that
+# program's libraries (#341), then print the executable path. The program's own test objects are
+# left out, so the driver includes the test sources it needs (one family file or a *_shared.hpp
+# header) and defines main. Run as: tools/native-driver regression_checks <driver.cpp>
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
+(($# == 2)) || { echo "usage: tools/native-driver <program> <driver.cpp>" >&2; exit 2; }
+program=$1 source=$(realpath "$2")
+build_dir="$(<build/environment-wheel/meson-build-dir)"
+out="$PWD/build/native-drivers/$(basename "$source" .cpp)"
+mkdir -p "$out"
+meson compile -C "$build_dir" "$program" >&2
+python3 - "$build_dir" "$program" "$source" "$out" "$PWD/engine/tests/native" <<'PY' >&2
+import json, shlex, subprocess, sys
+build, program, source, out, tests = sys.argv[1:]
+entry = next(e for e in json.load(open(f"{build}/compile_commands.json")) if e["file"].endswith(f"/tests/native/{program}.cpp"))
+args = shlex.split(entry["command"]); args[args.index("-o") + 1] = f"{out}/driver.o"; args[-1] = source
+subprocess.run(args + [f"-I{tests}"], cwd=entry["directory"], check=True)
+link = shlex.split(subprocess.check_output(["ninja", "-C", build, "-t", "commands", program], text=True).splitlines()[-1])
+link[link.index("-o") + 1] = f"{out}/driver"
+own = [i for i, a in enumerate(link) if a.startswith(f"{program}.p/tests_native_")]
+link[own[0]:own[-1] + 1] = [f"{out}/driver.o"]
+subprocess.run(link, cwd=build, check=True)
+PY
+echo "$out/driver"

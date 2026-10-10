@@ -1,8 +1,7 @@
 {
-  "rows": 478,
-  "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
-  "build_fingerprint": "b249274f421cf689760cfea4dd6bba53bf6ba33e05bca056aa054298274fa9e5",
-  "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+  "rows": 350,
+  "recorded_at_revision": "044f79824a98f15f9e728cb9178ba9d396737a04",
+  "engine_clean": true,
   "commands": [
     {
       "command": "properties_checks P3",
@@ -30,10 +29,6 @@
     },
     {
       "command": "equilibrium_checks E5-7",
-      "exit": 0
-    },
-    {
-      "command": "equilibrium_checks E5-8",
       "exit": 0
     },
     {

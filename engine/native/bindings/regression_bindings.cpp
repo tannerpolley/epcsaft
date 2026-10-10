@@ -8,6 +8,17 @@
 
 namespace py = pybind11;
 namespace epcsaft::regression {
+namespace {
+
+// The point readers' request: fit's model inputs at a declared point, without optimizer controls.
+FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> coordinates, std::vector<HydrationHold> holds,
+                         std::vector<Observation> observations, std::optional<ThermochemistryRecord> thermochemistry) {
+    FitRequest request; request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
+    request.coordinates.coordinates = std::move(coordinates); request.holds = std::move(holds); request.observations = std::move(observations);
+    return request;
+}
+
+}  // namespace
 
 void register_regression(py::module_& module) {
     module.def("formula_composition", [](const std::vector<double>& solvent, const Parameters& parameters,
@@ -22,6 +33,7 @@ void register_regression(py::module_& module) {
         .value("TransferGibbsEnergy", ObservationKind::TransferGibbsEnergy)
         .value("BulkRelativePermittivity", ObservationKind::BulkRelativePermittivity)
         .value("IsobaricHeatCapacity", ObservationKind::IsobaricHeatCapacity)
+        .value("EquilibriumIsobaricHeatCapacity", ObservationKind::EquilibriumIsobaricHeatCapacity)
         .value("LogEquilibriumConstant", ObservationKind::LogEquilibriumConstant)
         .value("Density", ObservationKind::Density)
         .value("PhaseDensity", ObservationKind::PhaseDensity)
@@ -87,8 +99,7 @@ void register_regression(py::module_& module) {
         .def_readonly("uncertainty", &HoldResult::uncertainty)
         .def_readonly("derivative", &HoldResult::derivative)
         .def_readonly("parameter_derivative", &HoldResult::parameter_derivative)
-        .def_readonly("iterations", &HoldResult::iterations)
-        .def_readonly("cause", &HoldResult::cause);
+        .def_readonly("iterations", &HoldResult::iterations);
     py::class_<EvaluatedCoordinates>(module, "EvaluatedCoordinates")
         .def_readonly("parameters", &EvaluatedCoordinates::parameters)
         .def_readonly("active", &EvaluatedCoordinates::active)
@@ -141,10 +152,14 @@ void register_regression(py::module_& module) {
         .def(py::init<>())
         .def_readwrite("name", &ReactionCoordinate::name)
         .def_readwrite("coefficient", &ReactionCoordinate::coefficient);
+    py::class_<CoordinateTarget>(module, "CoordinateTarget")
+        .def(py::init<>())
+        .def_readwrite("family", &CoordinateTarget::family)
+        .def_readwrite("indices", &CoordinateTarget::indices)
+        .def_readwrite("coefficient", &CoordinateTarget::coefficient);
     py::class_<Coordinate>(module, "Coordinate")
         .def(py::init<>())
-        .def_readwrite("family", &Coordinate::family)
-        .def_readwrite("slots", &Coordinate::slots)
+        .def_readwrite("targets", &Coordinate::targets)
         .def_readwrite("reaction", &Coordinate::reaction)
         .def_readwrite("origin", &Coordinate::origin)
         .def_readwrite("scale", &Coordinate::scale)
@@ -154,9 +169,16 @@ void register_regression(py::module_& module) {
         .def(py::init<>())
         .def_readwrite("coordinates", &CoordinateSet::coordinates)
         .def("active", [](const CoordinateSet& set) { return set.active_parameters(); })
-        .def("tie", [](const CoordinateSet& set) { return set.tie(); });
+        .def("tie", [](const CoordinateSet& set) { return set.tie(); })
+        .def("start", &CoordinateSet::start, py::arg("parameters"), py::arg("observations") = std::vector<Observation>{},
+             py::arg("thermochemistry") = std::optional<ThermochemistryRecord>{});
+    // The two budgets are scientific inputs (ALG-FIT); zero tolerances select the policy defaults.
     py::class_<FitControls>(module, "FitControls")
-        .def(py::init<>())
+        .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, double function_tolerance,
+                         double gradient_tolerance, double parameter_tolerance) {
+            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds};
+        }), py::kw_only(), py::arg("maximum_iterations"), py::arg("maximum_elapsed_time_seconds"),
+            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0)
         .def_readwrite("function_tolerance", &FitControls::function_tolerance)
         .def_readwrite("gradient_tolerance", &FitControls::gradient_tolerance)
         .def_readwrite("parameter_tolerance", &FitControls::parameter_tolerance)
@@ -280,34 +302,40 @@ void register_regression(py::module_& module) {
        py::arg("checks") = std::vector<CheckGroup>{}, py::arg("baseline") = std::nullopt, py::arg("singular_vectors") = false,
        py::arg("starts") = std::nullopt, py::arg("iterations") = std::nullopt, py::arg("seconds") = std::nullopt, py::arg("minimax") = std::nullopt);
     module.def("observations_at", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
-        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations, const std::vector<double>& errors) {
-        FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
-        request.holds = std::move(holds); request.observations = std::move(observations);
-        return observations_at(request, optimizer, errors);
-    });
+        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
+        const std::vector<double>& errors, std::optional<ThermochemistryRecord> thermochemistry) {
+        return observations_at(point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
+            std::move(thermochemistry)), optimizer, errors);
+    }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
+       py::arg("errors"), py::arg("thermochemistry") = std::nullopt);
     py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         .def_readonly("predictions", &ObservationEvaluation::predictions).def_readonly("gradient", &ObservationEvaluation::gradient)
         .def_readonly("optimizer_gradient", &ObservationEvaluation::optimizer_gradient).def_readonly("chart", &ObservationEvaluation::chart)
+        .def_readonly("residual_optimizer_gradient", &ObservationEvaluation::residual_optimizer_gradient)
         .def_readonly("statuses", &ObservationEvaluation::statuses);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
-        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations) {
+        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
+        std::optional<ThermochemistryRecord> thermochemistry) {
         core::Scope scope("evaluate_observations");
-        FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
-        request.holds = std::move(holds); request.observations = std::move(observations);
+        const auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
+            std::move(thermochemistry));
         std::vector<std::size_t> rows(request.observations.size()); std::iota(rows.begin(), rows.end(), 0);
         FitResult failures; ObservationEvaluator evaluator(request, failures, rows); ObservationEvaluation out;
         if (!evaluator.evaluate(optimizer, true, out)) throw std::invalid_argument(failures.failures.back().message);
         return out;
-    });
+    }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
+       py::arg("thermochemistry") = std::nullopt);
     module.def("evaluate_minimax", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
-        std::vector<CheckGroup> checks, std::optional<Parameters> baseline, const MinimaxRequest& minimax) {
+        std::vector<CheckGroup> checks, std::optional<Parameters> baseline, const MinimaxRequest& minimax,
+        std::optional<ThermochemistryRecord> thermochemistry) {
         core::Scope scope("evaluate_minimax");
-        FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
-        request.holds = std::move(holds); request.observations = std::move(observations); request.checks = std::move(checks);
-        request.baseline = std::move(baseline); request.minimax = minimax;
+        auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
+            std::move(thermochemistry));
+        request.checks = std::move(checks); request.baseline = std::move(baseline); request.minimax = minimax;
         return fit_minimax(request, optimizer);
-    });
+    }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
+       py::arg("checks"), py::arg("baseline"), py::arg("minimax"), py::arg("thermochemistry") = std::nullopt);
     module.def("evaluate_coordinates", &evaluate_coordinates, py::arg("parameters"), py::arg("set"), py::arg("optimizer"),
         py::arg("holds"), py::arg("thermochemistry") = std::nullopt);
     module.def("evaluate_checks", [](const Parameters& stored, std::vector<Observation> observations,

@@ -56,12 +56,32 @@ struct ParameterActionDirection final {
     double value = 0.0;
 };
 enum class PropertyObservable {
-    IdealEnthalpy, IdealInternalEnergy, IdealEntropy, IdealIsobaricHeatCapacity,
-    IdealIsochoricHeatCapacity, ResidualEnthalpy, ResidualInternalEnergy,
-    ResidualEntropy, ResidualIsobaricHeatCapacity, ResidualIsochoricHeatCapacity,
-    TotalEnthalpy, TotalInternalEnergy, TotalEntropy, TotalIsobaricHeatCapacity,
-    TotalIsochoricHeatCapacity
+    IdealEnthalpy,
+    IdealInternalEnergy,
+    IdealEntropy,
+    IdealIsobaricHeatCapacity,
+    IdealIsochoricHeatCapacity,
+    ResidualEnthalpy,
+    ResidualInternalEnergy,
+    ResidualEntropy,
+    ResidualIsobaricHeatCapacity,
+    ResidualIsochoricHeatCapacity,
+    TotalEnthalpy,
+    TotalInternalEnergy,
+    TotalEntropy,
+    TotalIsobaricHeatCapacity,
+    TotalIsochoricHeatCapacity,
+    MolarVolumeTemperatureDerivative,
+    MolarVolumePressureDerivative
 };
+// The first CALORIC_PROPERTY_COUNT members are three families (ideal 0, residual 1, total 2) of
+// five kinds (enthalpy 0, internal energy 1, entropy 2, Cp 3, Cv 4), in that order.
+inline constexpr std::size_t CALORIC_PROPERTY_COUNT = 15;
+inline std::size_t property_family(PropertyObservable o) noexcept { return static_cast<std::size_t>(o) / 5; }
+inline std::size_t property_kind(PropertyObservable o) noexcept { return static_cast<std::size_t>(o) % 5; }
+inline PropertyObservable property_observable(std::size_t family, std::size_t kind) noexcept {
+    return static_cast<PropertyObservable>(5 * family + kind);
+}
 enum class PropertyActionStatus {
     Available, MissingThermochemistry, OutsideInterval, ThermalBoundary,
     SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
@@ -92,8 +112,7 @@ struct PropertyActionDiagnostics final {
     double pressure_density_derivative = 0.0, pressure_residual = 0.0;
     double stability_determinant = 0.0;
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
-    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0;
-    std::size_t forward_sweeps = 0, dense_hessian_calls = 0;
+    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
 };
@@ -158,6 +177,7 @@ struct State final {
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
+    std::optional<double> negative_slope_density;  // mol/m3, sampled cold mechanical-loop witness
 };
 
 struct DensityRoot final {
@@ -168,6 +188,7 @@ struct DensityRoot final {
     std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
+    std::optional<double> negative_slope_density;  // no new EOS evaluation
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
@@ -198,10 +219,13 @@ struct DensityDiagnostics final {
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit
 // full-width solute molality-ratio vector.  Mixed-solvent declarations are
 // intentionally outside this first native consumer contract.
+enum class SpeciesReference { InfiniteDilution, PureLiquid, PureGas };
+
 struct NeutralReferenceDeclaration final {
     std::optional<std::size_t> solvent_index;
     std::vector<double> solute_molality_ratios;
     double standard_molality_mol_per_kg = 0.0;
+    std::vector<SpeciesReference> species_reference;  // empty retains the existing solvent reference
 };
 
 enum class ReferenceSourceBasis {
@@ -232,27 +256,26 @@ struct NeutralReferenceReactionDiagnostic final {
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
     std::optional<double> observed_terminal_change;
-    // Pressure derivatives of the finite terminal contraction.  These are native
-    // reference-path diagnostics; explicit fixed-pressure sources carry exact zero
-    // system-pressure derivatives.
+    // Pressure derivatives of the reference contraction, admitted like dC/dT at scales P and P^2;
+    // explicit fixed-pressure sources carry exact zero system-pressure derivatives.
     std::optional<double> terminal_contraction_pressure_derivative;
     std::optional<double> terminal_contraction_pressure_second_derivative;
+    // Values and columns are sqrt(m) Richardson limits of the 1e-10..1e-14 mol/kg ladder, admitted
+    // on scale times the change between the two limits (EqID: reference_limit_terminal_pair).
     // dC/dT at the reference pressure, set only when requested and when T times its
-    // last ladder change is within the value's terminal criterion.
+    // limit change is within the value's terminal criterion.
     std::optional<double> terminal_contraction_temperature_derivative;
     std::optional<double> observed_temperature_derivative_change;
     // d2C/dT2 at the reference pressure, set only for temperature order two and when T^2
-    // times its last ladder change is within the same criterion.
+    // times its limit change is within the same criterion.
     std::optional<double> terminal_contraction_temperature_second_derivative;
     std::optional<double> observed_temperature_second_derivative_change;
     // d2C/dTdP, only with temperature and pressure jets; admitted like the first slope at scales T, P.
     std::optional<double> terminal_contraction_temperature_pressure_derivative;
     // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
-    // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
+    // where max(|theta_a|, 1) times its limit change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
-    std::vector<std::array<std::optional<double>, 3>> temperature_parameter_ladder;  // last three C_Ttheta values per active coordinate
-    std::vector<std::optional<double>> observed_temperature_parameter_change;  // T max(1, |theta|) times ladder change
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
@@ -264,8 +287,34 @@ struct NeutralReferenceReactionDiagnostic final {
         std::array<double, 2> scaled_changes{};
         std::optional<double> value;
         std::string message;
+        std::optional<PropertyActionStatus> action_status;
+        std::optional<double> criterion;
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
+    std::vector<Derivative> lower_derivatives;
+    // d^(a+b+[p]) C / dT^a dP^b [dtheta_p], nullopt where it was not admitted or not requested.
+    std::optional<double> derivative_value(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+        const auto parameter = [&p](const std::vector<std::optional<double>>& v) {
+            return *p < v.size() ? v[*p] : std::nullopt; };
+        if (p && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
+        if (p && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
+        if (!p && a + b == 0) return terminal_contraction;
+        if (!p && a == 1 && b == 0) return terminal_contraction_temperature_derivative;
+        if (!p && a == 2 && b == 0) return terminal_contraction_temperature_second_derivative;
+        if (!p && a == 0 && b == 1) return terminal_contraction_pressure_derivative;
+        if (!p && a == 0 && b == 2) return terminal_contraction_pressure_second_derivative;
+        if (!p && a == 1 && b == 1) return terminal_contraction_temperature_pressure_derivative;
+        for (const auto& column : derivatives)
+            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p) return column.value;
+        return std::nullopt;
+    }
+    std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+        for (const auto* columns : {&lower_derivatives, &derivatives})
+            for (const auto& column : *columns)
+                if (column.temperature_order == a && column.pressure_order == b && column.parameter == p && !column.value)
+                    return column.message;
+        return message;
+    }
 };
 
 class HelmholtzModel final {
@@ -282,8 +331,8 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order
     ) const;
-    // Mixed contraction of the extensive residual Helmholtz scalar with three or four
-    // directions of width 2 + C + A in [T, V, n, active parameters]: E3 or E4.
+    // Mixed contraction of the extensive residual Helmholtz scalar with three to five
+    // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
@@ -321,11 +370,6 @@ public:
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    double phase_packing_fraction(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume
-    ) const;
     double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions
@@ -356,10 +400,7 @@ private:
     ) const;
     void validate_composition(const std::vector<double>& composition) const;
     detail::PredicateSignature predicate_signature(
-        double temperature,
-        double density,
-        const std::vector<double>& composition,
-        bool residual = true, bool ideal = false
+        double temperature, const std::vector<double>& composition, bool ideal = false
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
@@ -404,11 +445,11 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-// Fixed terminal composition, raw source-pressure partial; no ladder reselection.
-ResidualEnergyAction reference_partial(const HelmholtzModel&, double temperature,
-    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+// Fixed terminal composition and source-pressure state, raw partial; no ladder reselection.
+ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter = std::nullopt, std::optional<double> anchor = std::nullopt);
+    std::optional<std::size_t> parameter, const State& state);
 
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the
@@ -435,6 +476,7 @@ struct InfiniteDilutionReference final {
     std::optional<State> pure_solvent_state;
     std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
     std::vector<double> parameter_convergence_error;
+    State first_rung_state;
 };
 
 struct ElectrolyteActivity final {
@@ -444,6 +486,7 @@ struct ElectrolyteActivity final {
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
     std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
+    State state;
 };
 
 std::vector<double> formula_composition(
@@ -460,7 +503,9 @@ InfiniteDilutionReference infinite_dilution_reference(
     double pressure,
     const std::vector<double>& solvent_fractions,
     const std::array<std::size_t, 2>& ion_indices,
-    const std::array<int, 2>& stoichiometry
+    const std::array<int, 2>& stoichiometry,
+    std::optional<double> first_rung_density = std::nullopt,
+    std::optional<double> pure_solvent_density = std::nullopt
 );
 
 ElectrolyteActivity electrolyte_activity(
@@ -471,7 +516,15 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality,
-    const InfiniteDilutionReference& reference
+    const InfiniteDilutionReference& reference,
+    std::optional<double> finite_density = std::nullopt
 );
+
+namespace properties {
+bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
+// Anchored closure, regularity-checked; a failed anchor is traced and retried once cold on the same branch.
+State close_density(const HelmholtzModel& model, double temperature, double pressure,
+                    const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
+}  // namespace properties
 
 }  // namespace epcsaft

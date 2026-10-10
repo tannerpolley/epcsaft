@@ -19,6 +19,12 @@
 namespace epcsaft {
 namespace {
 
+// The diagnostic scan's evaluation or time budget ran out; it ends the scan instead of
+// becoming one sample's cause.
+struct DiagnosticBudgetExhausted final : std::runtime_error {
+    DiagnosticBudgetExhausted() : std::runtime_error("density diagnostic budget exhausted") {}
+};
+
 // 2 - phi: the golden-section interior fraction, a mathematical constant.
 constexpr double GOLDEN_SECTION = 0.3819660112501051;
 
@@ -50,7 +56,7 @@ double residual_derivative(
         / (density * density * GAS_CONSTANT_J_PER_MOL_K * temperature);
 }
 
-bool association_failure(const std::runtime_error& error) {
+bool association_failure(const std::exception& error) {
     const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
     // Who threw, not how it stopped. Enumerating stops silently narrowed this when
     // `classify` gained `stalled`: the scan propagated instead of skipping the point.
@@ -58,31 +64,19 @@ bool association_failure(const std::runtime_error& error) {
         && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
 }
 
-DensityRoot publish_root(
-    double density, double pressure_residual, double pressure_slope, std::size_t iteration_count,
-    std::optional<std::size_t> stable_count, DensityBranch root_branch,
-    const core::Convergence& record, bool at_iteration_cap = false
-) {
-    if (record.stop == core::Stop::nonfinite
-        || (at_iteration_cap && record.stop != core::Stop::converged)) {
-        throw core::ConvergenceFailure(record);
-    }
-    return {
-        density, pressure_residual, pressure_slope, iteration_count,
-        stable_count, root_branch, record
-    };
-}
-
-// Safeguarded Newton from a cell endpoint inside [lower, upper]; lower_residual carries the
-// sign at the lower end so the bracket keeps shrinking around one crossing. The caller
+// Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.
+// Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
 DensityRoot refine(
     const HelmholtzModel& model, double temperature, double pressure,
-    const std::vector<double>& composition, double lower, double upper, double lower_residual,
-    double density, PressurePoint point, core::Scope& parent_scope, std::size_t& evaluations
+    const std::vector<double>& composition, double lower, PressurePoint low,
+    double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations
 ) {
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
     const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);
+    double density = from_lower ? lower : upper;
+    PressurePoint point = from_lower ? low : high;
     core::ResidualHistory history;
     history.push(std::abs(point.residual));
     std::size_t iterations = 0;
@@ -109,14 +103,16 @@ DensityRoot refine(
         const PressurePoint next = at_density(model, temperature, pressure, composition, candidate,
                                               evaluations, DerivativeOrder::PressureSlope);
         history.push(std::abs(next.residual));
-        if (lower_residual * next.residual <= 0.0) {
+        if (low.residual * next.residual <= 0.0) {
             upper = candidate;
+            high = next;
         } else {
             lower = candidate;
-            lower_residual = next.residual;
+            low = next;
         }
-        density = candidate;
-        point = next;
+        const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);
+        density = from_lower ? lower : upper;
+        point = from_lower ? low : high;
     }
     const double derivative = residual_derivative(point, density, pressure, temperature);
     parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
@@ -132,8 +128,12 @@ DensityRoot refine(
                                  record.amplification);
     if (iterations == maximum && record.stop == core::Stop::converged)
         throw std::runtime_error("density root bracket unresolved within the search budget");
-    const auto root = publish_root(density, point.pressure - pressure, point.slope, iterations + 1,
-                                   std::nullopt, DensityBranch::Unspecified, record, iterations == maximum);
+    if (record.stop == core::Stop::nonfinite
+        || (iterations == maximum && record.stop != core::Stop::converged)) {
+        throw core::ConvergenceFailure(record);
+    }
+    const DensityRoot root{density, point.pressure - pressure, point.slope, iterations + 1,
+                           std::nullopt, DensityBranch::Unspecified, record};
     parent_scope.probe("density_root", {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
                        static_cast<std::uint32_t>(iterations));
     return root;
@@ -183,9 +183,8 @@ void scan_cell(
     }
     if (low.residual < 0.0 && high.residual > 0.0) {
         scope.probe("density_bracket", {lower, upper, low.residual, high.residual});
-        const bool from_lower = std::abs(low.residual) < std::abs(high.residual);
-        roots.push_back(refine(model, temperature, pressure, composition, lower, upper,
-            low.residual, from_lower ? lower : upper, from_lower ? low : high, scope, evaluations));
+        roots.push_back(refine(model, temperature, pressure, composition, lower, low,
+            upper, high, scope, evaluations));
     }
 }
 
@@ -257,35 +256,52 @@ std::vector<DensityRoot> scan_roots(
     std::size_t intervals, core::Scope& scope, std::size_t& evaluations
 ) {
     std::vector<ScanPoint> points;
+    std::string interruptions;
     bool linked = false;
+    if (scope.diagnostics_on()) scope.probe("density_scan_input",
+        {temperature, pressure, std::exp(log_lower), std::exp(log_upper), static_cast<double>(intervals)});
     for (std::size_t index = 0; index <= intervals; ++index) {
         const double density = std::exp(log_lower + static_cast<double>(index) / intervals
                                         * (log_upper - log_lower));
         try {
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
-        } catch (const std::runtime_error& error) {
-            if (!association_failure(error)) throw;
+        } catch (const std::exception& error) {
+            const bool association = association_failure(error);
+            if (scope.diagnostics_on()) scope.probe(association ? "density_scan_skip" : "density_scan_failure",
+                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
+            if (!association && interruptions.empty()) throw;
+            interruptions += "node " + std::to_string(index) + " rho "
+                + core::optional_number(density) + ": " + error.what() + "\n";
+            if (!association)
+                throw std::runtime_error("density scan interrupted by association: " + interruptions);
             linked = false;
             continue;
         }
         scope.probe("density_scan_point", {density, points.back().point.residual,
-                    points.back().point.slope}, static_cast<std::uint32_t>(index));
+            points.back().point.slope, linked ? 1.0 : 0.0}, static_cast<std::uint32_t>(index));
         linked = true;
     }
+    if (!interruptions.empty())
+        throw std::runtime_error("density scan interrupted by association: " + interruptions);
     search_slope(model, temperature, pressure, composition, points, scope, evaluations);
     std::vector<DensityRoot> roots;
     for (std::size_t i = 0; i < points.size(); ++i) {
         const auto& node = points[i];
         if (node.point.residual == 0.0 && node.point.slope > 0.0)
             roots.push_back(refine(model, temperature, pressure, composition, node.density,
-                node.density, 0.0, node.density, node.point, scope, evaluations));
+                node.point, node.density, node.point, scope, evaluations));
         if (i != 0 && points[i].linked) {
             scan_cell(model, temperature, pressure, composition, points[i - 1].density,
                       points[i - 1].point, points[i].density, points[i].point, scope, evaluations,
                       roots);
         }
     }
+    const auto witness = std::find_if(points.begin(), points.end(), [](const auto& node) {
+        return std::isfinite(node.point.slope) && node.point.slope < 0.0;
+    });
+    if (witness != points.end())
+        for (auto& root : roots) root.negative_slope_density = witness->density;
     return roots;
 }
 
@@ -321,20 +337,20 @@ DensityRoot anchor(
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
-            std::size_t local_stable_roots = 0;
-            for (const auto& root : scan_roots(model, temperature, pressure, composition,
-                     std::log(local_lower), std::log(local_upper),
-                     static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
-                     anchor_scope, evaluations)) {
-                if (root.pressure_density_derivative > 0.0) ++local_stable_roots;
-            }
+            auto roots = scan_roots(model, temperature, pressure, composition,
+                std::log(local_lower), std::log(local_upper),
+                static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
+                anchor_scope, evaluations);
+            roots.erase(std::remove_if(roots.begin(), roots.end(),
+                [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
             anchor_record.evaluations = evaluations;
-            anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                anchor_record.floor, anchor_record.contraction, false, anchor_record.amplification);
-            if (local_stable_roots == 1) {
-                const auto result = publish_root(density, point.pressure - pressure, point.slope,
-                                                 iteration + 1, std::nullopt, branch, anchor_record);
-                anchor_scope.finish(anchor_record);
+            if (roots.size() == 1) {
+                auto result = roots.front();
+                result.branch = branch;
+                result.convergence.iterations += iteration + 1;
+                result.convergence.evaluations = evaluations;
+                result.iterations = result.convergence.iterations;
+                anchor_scope.finish(result.convergence);
                 return result;
             }
             anchor_record.stop = core::Stop::infeasible;
@@ -395,7 +411,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
-            throw std::runtime_error("density diagnostic budget exhausted");
+            throw DiagnosticBudgetExhausted();
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
         auto point = at_density(*this, temperature, pressure, composition, rho, result.evaluations, order);
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
@@ -464,8 +480,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 result.declared_crossings = result.declared_brackets.size();
                 points.push_back({rho, point, linked});
                 linked = true;
+            } catch (const DiagnosticBudgetExhausted&) { throw;
             } catch (const std::runtime_error& error) {
-                if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                 DensityDiagnosticPoint sample;
                 sample.molar_density = sample.lower = sample.upper = rho;
                 sample.cause = error.what();
@@ -539,8 +555,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 hi = std::min(2.0 * lo, cap);
                 result.finite_domain->upper = hi;
                 try { evaluate(hi, evaluation_order); lo = hi; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     result.finite_domain->cause = error.what(); unavailable = true; break;
                 }
                 result.finite_domain->lower = lo;
@@ -548,8 +564,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             while (unavailable && std::nextafter(lo, hi) < hi) {
                 const double rho = lo + 0.5 * (hi - lo);
                 try { evaluate(rho, evaluation_order); lo = rho; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     hi = rho; result.finite_domain->cause = error.what();
                 }
                 result.finite_domain->lower = lo; result.finite_domain->upper = hi;
@@ -566,6 +582,18 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     return result;
 }
 
+bool properties::regular_density(double density, double slope, const std::optional<core::Convergence>& record) {
+    if (!(density > 0.0) || !std::isfinite(density) || !(slope > 0.0) || !std::isfinite(slope)
+        || !record || !record->floor || !record->amplification) return false;
+    const auto& c = *record;
+    return std::isfinite(c.residual) && c.residual <= policy::DENSITY_ROOT_RESIDUAL.value
+        && *c.floor >= 0.0 && std::isfinite(*c.floor)
+        && *c.amplification > 0.0 && std::isfinite(*c.amplification)
+        && (policy::DENSITY_ROOT_RESIDUAL.value + *c.floor) * *c.amplification / density
+            <= policy::DENSITY_ANCHOR_REGULARITY.value;
+}
+
+
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
@@ -577,6 +605,7 @@ DensityRoot solve_density(
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
+    // EqID: ideal_gas_density
     const double ideal_density = pressure
         / (GAS_CONSTANT_J_PER_MOL_K * temperature);
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
@@ -586,17 +615,22 @@ DensityRoot solve_density(
     std::size_t evaluations = 0;
     DensityRoot result;
     if (anchor_density.has_value()) {
-        if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
-        if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
-            throw std::invalid_argument("invalid density anchor");
+        try {
+            if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
+            if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
+                throw std::invalid_argument("invalid density anchor");
+            }
+            if (!(*anchor_density > lower && *anchor_density < upper)) {
+                core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
+                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
+                throw core::ConvergenceFailure(record);
+            }
+            result = anchor(model, temperature, pressure, mole_fractions, branch, lower, upper,
+                            *anchor_density, evaluations);
+        } catch (const std::exception& error) {
+            if (scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
+            throw;
         }
-        if (!(*anchor_density > lower && *anchor_density < upper)) {
-            core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
-                std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
-            throw core::ConvergenceFailure(record);
-        }
-        result = anchor(model, temperature, pressure, mole_fractions, branch, lower, upper,
-                        *anchor_density, evaluations);
     } else {
         const auto roots = scan_roots(model, temperature, pressure, mole_fractions,
             std::log(lower), std::log(upper),
@@ -610,25 +644,17 @@ DensityRoot solve_density(
             return left.molar_density < right.molar_density;
         });
         scope.probe("stable_root_count", static_cast<double>(stable.size()));
-        if (stable.size() == 1) {
-            result = stable.front();
-            result.stable_root_count = 1;
-            result.branch = DensityBranch::Unspecified;
-            if (sibling_root != nullptr) *sibling_root = result;
-        } else {
-            if (branch == DensityBranch::Unspecified) {
-                throw std::runtime_error("density root is ambiguous (stable count "
-                                         + std::to_string(stable.size()) + ")");
-            }
-            result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
-            result.stable_root_count = stable.size();
-            result.branch = branch;
-            if (sibling_root != nullptr) {
-                *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
-                sibling_root->stable_root_count = stable.size();
-                sibling_root->branch = branch == DensityBranch::Vapor
-                    ? DensityBranch::Liquid : DensityBranch::Vapor;
-            }
+        if (stable.size() > 1 && branch == DensityBranch::Unspecified)
+            throw std::runtime_error("density root is ambiguous (stable count "
+                                     + std::to_string(stable.size()) + ")");
+        result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
+        result.stable_root_count = stable.size();
+        result.branch = stable.size() == 1 ? DensityBranch::Unspecified : branch;
+        if (sibling_root != nullptr) {
+            *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
+            sibling_root->stable_root_count = stable.size();
+            sibling_root->branch = stable.size() == 1 ? DensityBranch::Unspecified
+                : branch == DensityBranch::Vapor ? DensityBranch::Liquid : DensityBranch::Vapor;
         }
     }
     scope.probe("density_root", result.molar_density);

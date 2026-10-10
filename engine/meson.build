@@ -15,6 +15,9 @@ project(
 py = import('python').find_installation('python3', pure: false)
 cpp = meson.get_compiler('cpp')
 native_warnings = cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
+# Pinned alignment makes key-solve timing less sensitive to code placement on the measured host, at no measurable cost
+# and +1.2% .text (#356; build/issue-356/alignment).
+add_project_arguments(cpp.get_supported_arguments('-falign-functions=64'), language: 'cpp')
 release_link_args = get_option('buildtype') == 'release' \
   ? cpp.get_supported_link_arguments('-s') \
   : []
@@ -43,20 +46,25 @@ cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
 
-highs_project = subproject(
-  'highs',
-  default_options: [
-    'default_library=static',
-    'do_install=false',
-    'fast_build=true',
-    'highsint64=false',
-    'use_zlib=disabled',
-    'with_pybind11=false',
-    'with_tests=false',
-  ],
-)
-highs_dep = highs_project.get_variable('highs_dep')
-highs_conf_file = highs_project.get_variable('highs_conf_file')
+# tools/build-engine.sh supplies a shared HiGHS build with these options (#319).
+highs_dep = dependency('epcsaft-highs', method: 'pkg-config', required: false)
+highs_conf_file = []
+if not highs_dep.found()
+  highs_project = subproject(
+    'highs',
+    default_options: [
+      'default_library=static',
+      'do_install=false',
+      'fast_build=true',
+      'highsint64=false',
+      'use_zlib=disabled',
+      'with_pybind11=false',
+      'with_tests=false',
+    ],
+  )
+  highs_dep = highs_project.get_variable('highs_dep')
+  highs_conf_file = highs_project.get_variable('highs_conf_file')
+endif
 
 # One include root. A layer names its neighbours by path ("properties/density.hpp"),
 # which is what makes the include direction checkable.
@@ -79,6 +87,7 @@ equilibrium_sources = files(
   'native/equilibrium/stoichiometry.cpp',
   'native/equilibrium/request_compile.cpp',
   'native/equilibrium/gibbs_minimizer.cpp',
+  'native/equilibrium/phase_stability.cpp',
   'native/equilibrium/phase_boundary.cpp',
   'native/equilibrium/implicit_sensitivity.cpp',
 )
@@ -142,6 +151,9 @@ py.extension_module(
         'native/bindings/equilibrium_bindings.cpp',
         'native/bindings/regression_bindings.cpp'),
   cpp_args: native_warnings,
+  # pybind11 glue only; the calculations are in epcsaft_native at -O3. -O1 cuts the
+  # largest binding file's compile from 37 s to 28 s.
+  override_options: ['optimization=1'],
   dependencies: [
     pybind11_dep,
     ipopt_dep,
@@ -166,17 +178,24 @@ contributions_checks = executable(
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   install: false,
+  build_by_default: false,
 )
 test('contributions', contributions_checks)
 
 properties_checks = executable(
   'properties_checks',
-  'tests/native/properties_checks.cpp',
+  files('tests/native/properties_checks.cpp',
+        'tests/native/properties_p1_m3_checks.cpp',
+        'tests/native/properties_m4_c2_checks.cpp',
+        'tests/native/properties_p2_checks.cpp',
+        'tests/native/properties_p3_f9_checks.cpp',
+        'tests/native/properties_p4_checks.cpp'),
   cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('properties', properties_checks)
 
@@ -188,35 +207,36 @@ diagnostics_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('diagnostics', diagnostics_checks)
 
-properties_floor = executable(
-  'properties_floor',
-  'tests/native/properties_floor.cpp',
-  cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  install: false,
-)
-test(
-  'properties_floor', properties_floor,
-  suite: 'floor',
-  env: {'OMP_NUM_THREADS': '1'},
-  timeout: 600,
-)
-
 equilibrium_checks = executable(
   'equilibrium_checks',
-  'tests/native/equilibrium_checks.cpp',
+  files('tests/native/equilibrium_checks.cpp',
+        'tests/native/equilibrium_s1_s2_checks.cpp',
+        'tests/native/equilibrium_s6_e2_checks.cpp',
+        'tests/native/equilibrium_e5_checks.cpp',
+        'tests/native/equilibrium_tpd_checks.cpp',
+        'tests/native/equilibrium_caloric_specification_checks.cpp',
+        'tests/native/equilibrium_critical_envelope_checks.cpp',
+        'tests/native/equilibrium_reactive_caloric_checks.cpp'),
   cpp_args: native_warnings,
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
-test('equilibrium', equilibrium_checks, timeout: 600)
+# One test per case, named equilibrium/<execution_policy>/<case> from the case table,
+# so the slow group runs in parallel and check-affected.sh can honor the policy.
+equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').split('{{"native.equilibrium.')
+foreach index : range(1, equilibrium_cases.length())
+  fields = equilibrium_cases[index].split('"')
+  assert(fields[4] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
+  test('equilibrium/' + fields[4] + '/' + fields[0], equilibrium_checks,
+    args: ['native.equilibrium.' + fields[0]], timeout: 600)
+endforeach
 
 # A Python-free caller of the native interface; it includes no test support header.
 surface_example = executable(
@@ -227,6 +247,7 @@ surface_example = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('surface_example', surface_example)
 
@@ -238,30 +259,37 @@ boundary_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('boundary', boundary_checks, timeout: 600)
 
 regression_checks = executable(
   'regression_checks',
-  'tests/native/regression_checks.cpp',
+  files('tests/native/regression_checks.cpp',
+        'tests/native/regression_f1_j1_checks.cpp',
+        'tests/native/regression_j2_inventory_checks.cpp',
+        'tests/native/regression_reaction_checks.cpp'),
   cpp_args: native_warnings,
-  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
+test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 
 specification_checks = executable(
   'specification_checks',
   'tests/native/specification_checks.cpp',
   cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('specification', specification_checks)
 
@@ -273,6 +301,7 @@ association_comparison_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('association-comparison', association_comparison_checks, timeout: 600)
 

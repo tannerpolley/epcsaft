@@ -5,10 +5,6 @@
 /.ruff_cache/
 /**/__pycache__/
 *.py[cod]
-/.management-state/
-/.workflow/
-/docs/scientific/.research/
-/docs/baton_pass/
 
 # Serena code-navigation state, per checkout
 .serena/*
@@ -25,3 +21,6 @@
 
 # Engine paper build products (the PDF is rebuilt from docs/scientific/latex/main.tex)
 /docs/scientific/latex/builds/
+
+# Notebook renders are derived from retained results; render into build/ (#341).
+analyses/**/*.html

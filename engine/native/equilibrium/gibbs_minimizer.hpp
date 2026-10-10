@@ -2,15 +2,19 @@
 
 #include "equilibrium/problem.hpp"
 
+#include <IpIpoptData.hpp>
 #include <IpTNLP.hpp>
 
 #include <cstddef>
+#include <chrono>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace epcsaft::core { class Scope; }
+namespace Ipopt { class TNLPAdapter; }
 
 namespace epcsaft::equilibrium {
 
@@ -24,20 +28,28 @@ struct EvaluationWork final {
     std::size_t constraint_hessians = 0;
 };
 
-struct NlpShape final {
-    Ipopt::Index variables = 0;
-    Ipopt::Index constraints = 0;
-    Ipopt::Index jacobian_entries = 0;
-    Ipopt::Index hessian_entries = 0;
+struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
+    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
+    void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
+    void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; }
 };
-
-// `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true);
+// `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
+// A `packed` phase's packing guess is supplied by the caller and replaces its density root.
+struct DriverLimits;
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
+                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool supports_split_seed(const CompiledSystem& compiled);
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
+// The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
+// and fixed T and P. Empty when equal; shared by previous-result starts and stability tests.
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
+// It owns the chart reading: normalized phase compositions, phase amounts and ln eta.
 struct TopologyCheck final {
+    std::vector<std::vector<double>> compositions;
+    std::vector<double> amounts, log_packing;
     TopologyEvent event = TopologyEvent::None;
     std::optional<std::size_t> phase;
     std::optional<std::pair<std::size_t, std::size_t>> pair;
@@ -56,23 +68,65 @@ struct BranchCheck final {
 
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
 );
 
+struct DriverLimits final {
+    std::size_t iterations;
+    std::chrono::steady_clock::time_point deadline;
+    mutable std::size_t consumed = 0;  // summed over the solve and its seed sub-solves
+    bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
+    void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
+};
+// The driver internals the stability search (phase_stability.cpp) shares.
+void clear_state(EquilibriumResult& result);
+double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
+std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point);
+EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
+EquilibriumResult run_driver(
+    const HelmholtzModel& model, const CompiledSystem& compiled,
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr
+);
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr
+    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr
 );
+
+// Declared seeds carry no thermodynamic declarations: all share the one problem.
+struct EquilibriumStart final {
+    std::vector<double> coordinates, amounts;
+    std::vector<std::vector<double>> compositions;
+    std::vector<std::optional<double>> packing_fractions;
+    std::optional<double> temperature, pressure;
+    std::optional<EquilibriumResult> previous;
+};
+struct EquilibriumWorkLimits final {
+    std::optional<std::size_t> attempts, iterations, attempt_iterations;
+    std::optional<double> seconds, attempt_seconds;
+};
+struct EquilibriumStartsResult final {
+    std::optional<std::size_t> selected;
+    std::vector<std::optional<EquilibriumResult>> results;
+    std::vector<std::string> causes;
+    std::vector<double> attempt_seconds;
+    std::size_t iterations = 0;
+    double seconds = 0.0, overrun_seconds = 0.0;
+    bool budget_exhausted = false;
+};
+EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
+    const EquilibriumProblem& problem, const std::vector<EquilibriumStart>& starts,
+    const EquilibriumWorkLimits& limits);
 
 // ---------------------------------------------------------------- continuation
 
 enum class ContinuationStop {
     reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
     phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
-    step_too_small, budget_exhausted
+    step_too_small, budget_exhausted, critical_endpoint
 };
 
 const char* continuation_stop_name(ContinuationStop stop) noexcept;
@@ -82,6 +136,9 @@ struct ContinuationOptions final {
     double minimum_step = 0.0;
     std::size_t max_steps = 0;
     std::size_t max_retries_per_step = 0;
+    // Envelope mode: largest |delta s| of the local coordinate and the near-critical |ln K| straddle threshold.
+    double envelope_max_log_step = 0.0;
+    double envelope_straddle = 0.0;
 };
 
 struct ContinuationRequest final {
@@ -89,6 +146,7 @@ struct ContinuationRequest final {
     EquilibriumProblem target_problem;
     std::optional<EquilibriumResult> start_result;
     ContinuationOptions options;
+    std::vector<double> parameter_targets;  // Physical endpoints in model.active_parameters() order.
 };
 
 struct ContinuationResult final {
@@ -96,6 +154,7 @@ struct ContinuationResult final {
     std::string message;
     ContinuationStop stop = ContinuationStop::initial_failure;
     std::vector<double> path_values;
+    std::vector<std::vector<double>> parameter_values;
     std::vector<EquilibriumResult> states;
     double reached_path = 0.0;
     std::optional<double> attempted_path;
@@ -108,17 +167,22 @@ struct ContinuationResult final {
     std::optional<ContinuationStop> cause_stop;
     std::optional<core::Convergence> cause_convergence;
     std::optional<std::string> cause_message;
+    std::vector<EnvelopeCondition> conditions;        // envelope: the selected condition at each accepted state
+    std::vector<EquilibriumResult> critical_points;   // envelope: critical-equation candidates in trace order
+    std::vector<std::vector<double>> critical_seeds;  // their seeds: ln(T/1 K), ln(P/1 Pa), ln(rho/(1 mol/m^3))
 };
 
 // Declared-branch continuation along a straight path in fixed intensives and resolved feed
-// amounts, with a tangent predictor and the one Ipopt driver as corrector.
+// amounts, with a tangent predictor and the one Ipopt driver as corrector. A start problem with an
+// envelope condition traces that envelope instead (ALG-EQUILIBRIUM); its target problem is unused.
 ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
+// J dy = -F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
+    const PhasePoint& prepared,
     const std::vector<double>& parameter_rows
 );
 
@@ -145,7 +209,7 @@ SensitivityInfo inspect_sensitivity(
 class GibbsMinimizer final : public Ipopt::TNLP {
 public:
     GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
-                   core::Scope* scope = nullptr);
+                   core::Scope* scope = nullptr, const DriverLimits* limits = nullptr);
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
@@ -186,6 +250,8 @@ public:
     const std::vector<double>& constraint_multipliers() const noexcept {
         return constraint_multipliers_;
     }
+    const std::optional<PointEvaluation>& last_rows() const noexcept { return rows_; }
+    std::vector<double> last_classified() const { return rows_ && prepared_ ? compiled_.classified_residuals(*prepared_, rows_->values) : std::vector<double>{}; }
     Ipopt::SolverReturn status() const noexcept { return status_; }
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
@@ -193,23 +259,10 @@ public:
 
     double regularization_size() const noexcept { return regularization_size_; }
     const EvaluationWork& work() const noexcept { return work_; }
+    const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
     const std::optional<std::string>& preparation_error() const noexcept {
         return preparation_error_;
     }
-
-    NlpShape shape() const {
-        const Ipopt::Index variables = static_cast<Ipopt::Index>(
-            compiled_.pinned_count == 0
-                ? compiled_.primal_size
-                : compiled_.primal_size + compiled_.rank + compiled_.charge_row_count);
-        const Ipopt::Index constraints = static_cast<Ipopt::Index>(constraint_rows().size());
-        return {variables, constraints, variables * constraints,
-                variables * (variables + 1) / 2};
-    }
-
-    std::size_t primal_size() const noexcept { return compiled_.primal_size; }
-
-    bool is_square() const noexcept { return compiled_.is_square(); }
 
 private:
     std::vector<std::size_t> constraint_rows() const;
@@ -237,6 +290,16 @@ private:
     std::size_t hessian_calls_ = 0;
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
+    const DriverLimits* limits_ = nullptr;
+    std::size_t consumed_before_ = limits_ ? limits_->consumed : 0;  // the earlier stages' iterations
+    // The latest callback's iterate owner, regular or restoration: its current point is the base of every search.
+    Ipopt::SmartPtr<const Ipopt::IpoptData> search_;
+    Ipopt::TNLPAdapter* adapter_ = nullptr;
+    std::vector<double> base_, lower_;  // TNLP order; lower_ is the active problem's relaxed lower bounds
+    std::vector<std::size_t> amount_columns_;  // the free phase amounts
+    unsigned int base_tag_ = 0, lower_tag_ = 0;  // Ipopt's vector tags of the cached base and bounds
+    std::optional<std::string> step_rule_error_;
+    const std::vector<double>& search_base();
 };
 
 }  // namespace epcsaft::equilibrium

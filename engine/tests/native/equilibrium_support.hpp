@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/trace.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/problem.hpp"
 #include "properties_support.hpp"
 #include "recording_support.hpp"
@@ -11,25 +12,45 @@
 #include <cstdio>
 #include <exception>
 #include <string>
+#include <numeric>
+#include <stdexcept>
 #include <vector>
 
 namespace equilibrium_support {
 
-inline int failures = 0;
-
-inline void fail(const char* file, int line, const char* expression) {
-    std::fprintf(stderr, "%s:%d: failed: %s\n", file, line, expression);
-    ++failures;
+// Record labels of declaration enums.
+inline const char* phase_kind_name(epcsaft::equilibrium::PhaseKind kind) noexcept {
+    return kind == epcsaft::equilibrium::PhaseKind::Liquid ? "liquid" : "vapor";
 }
 
-inline void check(bool condition, const char* file, int line, const char* expression) {
-    if (!condition) {
-        fail(file, line, expression);
-        throw recording_support::Failure(
-            std::string(file) + ":" + std::to_string(line)
-            + ": failed: " + expression
-        );
+inline const char* amount_kind_name(epcsaft::equilibrium::AmountKind kind) noexcept {
+    return kind == epcsaft::equilibrium::AmountKind::Free ? "free" : "pinned";
+}
+
+inline const char* feed_kind_name(epcsaft::equilibrium::FeedKind kind) noexcept {
+    using epcsaft::equilibrium::FeedKind;
+    switch (kind) {
+    case FeedKind::MoleFractions: return "mole_fractions";
+    case FeedKind::Amounts: return "amounts";
+    case FeedKind::MassFractions: return "mass_fractions";
+    case FeedKind::Molalities: return "molalities";
     }
+    return "unknown";
+}
+
+// nu_r . g for each reaction; zero affinities without a standard state.
+inline std::vector<double> reaction_affinities(
+    const std::vector<epcsaft::equilibrium::ReactionSpec>& reactions, const std::vector<double>& standard_gibbs
+) {
+    std::vector<double> result(reactions.size(), 0.0);
+    if (standard_gibbs.empty()) return result;
+    for (std::size_t r = 0; r < reactions.size(); ++r) {
+        if (reactions[r].stoichiometry.size() != standard_gibbs.size())
+            throw std::invalid_argument("stoichiometry size does not match standard state");
+        result[r] = std::inner_product(reactions[r].stoichiometry.begin(), reactions[r].stoichiometry.end(),
+                                       standard_gibbs.begin(), 0.0);
+    }
+    return result;
 }
 
 inline void print_trace(const epcsaft::core::Trace& trace) {
@@ -42,24 +63,6 @@ inline void print_trace(const epcsaft::core::Trace& trace) {
                      event.iteration, event.name);
         for (const double value : event.values) std::fprintf(stderr, " %.17g", value);
         std::fputc('\n', stderr);
-    }
-}
-
-template <class Function>
-void run_check(const char* name, Function function) {
-    epcsaft::core::Capture capture;
-    const int before = failures;
-    try {
-        function();
-    } catch (const std::exception& error) {
-        std::fprintf(stderr, "%s: exception: %s\n", name, error.what());
-        ++failures;
-    }
-    if (failures == before) {
-        std::printf("%s passed\n", name);
-    } else {
-        std::fprintf(stderr, "%s failed\n", name);
-        print_trace(capture.trace());
     }
 }
 
@@ -92,6 +95,46 @@ inline epcsaft::equilibrium::EquilibriumProblem boundary() {
               epcsaft::equilibrium::AmountSpec::pinned(0.0)),
     };
     result.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    return result;
+}
+
+// The neutral-binary bubble problem at T: L free, V pinned 0, equimolar feed, P free from 1e5 Pa.
+inline epcsaft::equilibrium::EquilibriumProblem bubble_at(double temperature) {
+    auto problem = boundary();
+    problem.feed.values = {0.5, 0.5};
+    problem.temperature = epcsaft::equilibrium::FreeValue::fixed(temperature);
+    return problem;
+}
+
+// The E4-B interior tie line: neutral binary at 180 K, feed at the mean of the bubble
+// compositions, both amounts free at half the bubble pressure; the recorded coordinate seed
+// is used only if the cold solve of the same problem is not accepted.
+struct Interior final {
+    epcsaft::equilibrium::EquilibriumProblem problem;
+    epcsaft::equilibrium::EquilibriumResult start;
+    double bubble_pressure = 0.0;
+    std::vector<double> feed;
+};
+
+inline Interior interior(const epcsaft::HelmholtzModel& model) {
+    Interior result;
+    const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, bubble_at(180.0));
+    recording_support::check(bubble.success, __FILE__, __LINE__, "bubble.success");
+    result.bubble_pressure = bubble.pressure.front();
+    result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
+                   0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
+    result.problem = bubble_at(180.0);
+    result.problem.feed.values = result.feed;
+    result.problem.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
+    result.problem.pressure = epcsaft::equilibrium::FreeValue::fixed(0.5 * result.bubble_pressure);
+    result.start = epcsaft::equilibrium::solve_equilibrium(model, result.problem);
+    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
+        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
+            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
+            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
+        result.start = epcsaft::equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
+    }
+    recording_support::check(result.start.success, __FILE__, __LINE__, "result.start.success");
     return result;
 }
 
@@ -297,7 +340,159 @@ Vector permute_vector(const Vector& source, const std::vector<std::size_t>& orde
     return result;
 }
 
+// Problem and compiled-system context recorded with equilibrium rows.
+inline std::string weighted_hessian_context(
+    const epcsaft::equilibrium::CompiledSystem& compiled
+) {
+    const auto& problem = compiled.problem;
+    std::string phase_definition;
+    for (const auto& phase : problem.phases) {
+        if (!phase_definition.empty()) phase_definition += ',';
+        phase_definition += phase.name + ":"
+            + phase_kind_name(phase.kind) + ":"
+            + amount_kind_name(phase.amount.kind) + ":"
+            + recording_support::number(phase.amount.fraction)
+            + ":support=" + std::to_string(phase.support.size()) + ":guess=";
+        for (std::size_t index = 0; index < phase.composition_guess.size(); ++index) {
+            if (index != 0) phase_definition += ',';
+            phase_definition += recording_support::number(phase.composition_guess[index]);
+        }
+        if (phase.packing_guess.has_value())
+            phase_definition += ":packing=" + recording_support::number(*phase.packing_guess);
+    }
+    std::string reaction_definition;
+    for (const auto& reaction : problem.reactions) {
+        if (!reaction_definition.empty()) reaction_definition += ',';
+        reaction_definition += reaction.name + ":K="
+            + (reaction.equilibrium_constant.has_value()
+               ? recording_support::number(*reaction.equilibrium_constant)
+               : reaction.affinity_j_per_mol.has_value() ? "A=" + recording_support::number(*reaction.affinity_j_per_mol)
+               : std::string("correlation")) + ":nu=";
+        for (std::size_t index = 0; index < reaction.stoichiometry.size(); ++index) {
+            if (index != 0) reaction_definition += ',';
+            reaction_definition += recording_support::number(reaction.stoichiometry[index]);
+        }
+    }
+    const auto* model = compiled.model;
+    if (model == nullptr) {
+        return recording_support::fields({
+            recording_support::field("compiled_model", "missing"),
+            recording_support::field("temperature", problem.temperature.value),
+            recording_support::field("pressure", problem.pressure.value),
+            recording_support::field("feed_kind",
+                                     feed_kind_name(problem.feed.kind)),
+            recording_support::field("feed", problem.feed.values),
+            recording_support::field("phase_definition", phase_definition),
+            recording_support::field("reaction_definition", reaction_definition),
+        });
+    }
+    const auto& parameters = model->parameters();
+    std::string row_names;
+    for (const auto& row : compiled.rows) {
+        if (!row_names.empty()) row_names += ',';
+        row_names += epcsaft::equilibrium::row_kind_name(row.kind);
+    }
+    return recording_support::fields({
+        recording_support::field("temperature", problem.temperature.value),
+        recording_support::field("temperature_free", problem.temperature.free ? 1U : 0U),
+        recording_support::field("temperature_absent", problem.temperature.absent ? 1U : 0U),
+        recording_support::field("pressure", problem.pressure.value),
+        recording_support::field("pressure_free", problem.pressure.free ? 1U : 0U),
+        recording_support::field("pressure_absent", problem.pressure.absent ? 1U : 0U),
+        recording_support::field("feed_kind",
+                                 feed_kind_name(problem.feed.kind)),
+        recording_support::field("feed", problem.feed.values),
+        recording_support::field("feed_solvent_count", problem.feed.solvent.size()),
+        recording_support::field("feed_solvent_mass_kg", problem.feed.solvent_mass_kg),
+        recording_support::field("phase_definition", phase_definition),
+        recording_support::field("reaction_definition", reaction_definition),
+        recording_support::field("standard_gibbs", problem.standard_gibbs_j_per_mol),
+        recording_support::field("topology_declared", problem.topology_declared ? 1U : 0U),
+        recording_support::field("compiled_primal_size", compiled.primal_size),
+        recording_support::field("compiled_rank", compiled.rank),
+        recording_support::field("compiled_pinned_count", compiled.pinned_count),
+        recording_support::field("compiled_free_intensive_count", compiled.free_intensive_count),
+        recording_support::field("compiled_charge_row_count", compiled.charge_row_count),
+        recording_support::field("compiled_rows", compiled.rows.size()),
+        recording_support::field("compiled_generic_nullity", compiled.generic_nullity),
+        recording_support::field("compiled_jacobian_rank", compiled.jacobian_rank),
+        recording_support::field("compiled_n_feed", compiled.n_feed),
+        recording_support::field("compiled_feed_composition", compiled.feed_composition),
+        recording_support::field("compiled_balance", compiled.balance),
+        recording_support::field("compiled_feed_total", compiled.feed_total),
+        recording_support::field("compiled_feasible", compiled.feasible ? 1U : 0U),
+        recording_support::field("compiled_has_ions", compiled.has_ions ? 1U : 0U),
+        recording_support::field("compiled_has_reaction", compiled.has_reaction ? 1U : 0U),
+        recording_support::field("compiled_row_names", row_names),
+        recording_support::field("model_component_count", parameters.component_count()),
+        recording_support::field("model_segment_count", parameters.segment_count),
+        recording_support::field("model_sigma_constant", parameters.sigma_constant),
+        recording_support::field("model_sigma_term_component", parameters.sigma_term_component),
+        recording_support::field("model_sigma_term_amplitude", parameters.sigma_term_amplitude),
+        recording_support::field("model_sigma_term_exponent", parameters.sigma_term_exponent),
+        recording_support::field("model_dispersion_energy_over_k", parameters.dispersion_energy_over_k),
+        recording_support::field("model_molar_mass_kg_per_mol", parameters.molar_mass_kg_per_mol),
+        recording_support::field("model_k_ij", parameters.k_ij),
+        recording_support::field("model_k_ij_reciprocal_temperature_slope",
+                                 parameters.k_ij_reciprocal_temperature_slope),
+        recording_support::field("model_k_ij_reference_temperature_k",
+                                 parameters.k_ij_reference_temperature_k),
+        recording_support::field("model_l_ij", parameters.l_ij),
+        recording_support::field("model_site_component", parameters.site_component),
+        recording_support::field("model_site_multiplicity", parameters.site_multiplicity),
+        recording_support::field("model_association_active", parameters.association_active),
+        recording_support::field("model_association_energy_over_k", parameters.association_energy_over_k),
+        recording_support::field("model_association_volume", parameters.association_volume),
+        recording_support::field("model_charge_number", parameters.charge_number),
+        recording_support::field("model_packing_diameter_angstrom", parameters.packing_diameter_angstrom),
+        recording_support::field("model_debye_huckel_diameter_angstrom", parameters.debye_huckel_diameter_angstrom),
+        recording_support::field("model_born_diameter_angstrom", parameters.born_diameter_angstrom),
+        recording_support::field("model_solvation_factor", parameters.solvation_factor),
+        recording_support::field("model_ionic_region_relative_permittivity",
+                                 parameters.ionic_region_relative_permittivity),
+        recording_support::field("model_born_c_shell", parameters.born_c_shell),
+        recording_support::field("model_born_c_dielectric", parameters.born_c_dielectric),
+        recording_support::field("model_electrolyte_form_declared",
+                                 parameters.electrolyte_form.declared() ? 1U : 0U),
+        recording_support::field("model_electrolyte_form",
+                                 parameters.electrolyte_form.declared()
+                                     ? static_cast<int>(parameters.electrolyte_form.require("electrolyte_form"))
+                                     : -1),
+        recording_support::field("model_ionic_dispersion_declared",
+                                 parameters.ionic_dispersion.declared() ? 1U : 0U),
+        recording_support::field("model_ionic_dispersion",
+                                 parameters.ionic_dispersion.declared()
+                                     ? static_cast<int>(parameters.ionic_dispersion.require("ionic_dispersion"))
+                                     : -1),
+        recording_support::field("model_relative_permittivity", parameters.relative_permittivity),
+        recording_support::field("model_permittivity_term_component",
+                                 parameters.permittivity_term_component),
+        recording_support::field("model_permittivity_term_coefficient",
+                                 parameters.permittivity_term_coefficient),
+        recording_support::field("model_permittivity_term_power",
+                                 parameters.permittivity_term_power),
+        recording_support::field("model_permittivity_reference_temperature_k",
+                                 parameters.permittivity_reference_temperature_k),
+        recording_support::field("model_ion_suppression_coefficient", parameters.ion_suppression_coefficient),
+        recording_support::field("model_permittivity_form_declared",
+                                 parameters.permittivity_form.declared() ? 1U : 0U),
+        recording_support::field("model_permittivity_form",
+                                 parameters.permittivity_form.declared()
+                                     ? static_cast<int>(parameters.permittivity_form.require("permittivity_form"))
+                                     : -1),
+        recording_support::field("model_dielectric_volume_m3_per_mol",
+                                 parameters.dielectric_volume_m3_per_mol),
+        recording_support::field("model_dielectric_temperature_k",
+                                 parameters.dielectric_temperature_k),
+        recording_support::field("model_dipole_scaling_debye2", parameters.dipole_scaling_debye2),
+        recording_support::field("model_polarizability_scaling_angstrom3",
+                                 parameters.polarizability_scaling_angstrom3),
+        recording_support::field("model_correlation_integral_parameter",
+                                 parameters.correlation_integral_parameter),
+    });
+}
+
 }  // namespace equilibrium_support
 
 #define CHECK(condition) \
-    equilibrium_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)
+    recording_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)

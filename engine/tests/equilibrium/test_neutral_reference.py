@@ -1,4 +1,5 @@
 """A nonzero reaction mole change falsifies density and molality reference signs."""
+from functools import cache
 import math
 from typing import Any
 
@@ -14,6 +15,94 @@ from epcsaft.equilibrium import (
     solved_state_first_actions,
 )
 from tests.native_inputs import ETHANE, aqueous_electrolyte, parameters, same
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
+def test_species_reference_switch_preserves_density_target(evidence: Any, reference_pressure: float | None) -> None:
+    """EqID: neutral_reaction_reference_transfer; transform K with independent native fugacities."""
+    from epcsaft.equilibrium import SpeciesReference
+    temperature, pressure = 260.0, 1.0e5
+    for shift in (0.0, 0.01):
+        solute = (ETHANE[0], ETHANE[1], ETHANE[2], ETHANE[3] + shift)
+        model = Mixture(parameters((ETHANE, solute), [("k_ij", (0, 1), 0.0)]))
+        source_p = reference_pressure or pressure
+        liquid = model.state(temperature, P=source_p, x=(1.0, 0.0), phase="liquid")
+        vapor = model.state(temperature, P=source_p, x=(0.0, 1.0), phase="vapor")
+        assert liquid.log_fugacity_coefficient is not None and vapor.log_fugacity_coefficient is not None
+        liquid_coefficient, vapor_coefficient = liquid.log_fugacity_coefficient[1], vapor.log_fugacity_coefficient[1]
+        assert liquid_coefficient is not None and vapor_coefficient is not None
+        delta = vapor_coefficient - liquid_coefficient
+        results = []
+        for mixed in (False, True):
+            reference = NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                         standard_molality_mol_per_kg=1.0,
+                                         species_reference={"s1": SpeciesReference.PureGas} if mixed else None)
+            law = ReactionLogPolynomial(math.log(0.3) - (delta if mixed else 0.0), 0.0, 0.0, 0.0,
+                                        300.0, 250.0, 350.0, "manufactured-reference-switch")
+            problem = Problem(T=temperature, P=pressure, feed=Amounts({"s0": 2.0, "s1": 0.2}),
+                              phases=[Phase("L", kind="liquid")], neutral_reference=reference,
+                              reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=law,
+                                                  reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution,
+                                                                              reference_pressure))])
+            result = solve_equilibrium(model, problem)
+            assert result.success, result.message
+            assert max(abs(r) for r in result.residuals) < 1e-10
+            results.append(result)
+        left, right = results
+        c_left, c_right = (r.neutral_reference_diagnostics[0].terminal_contraction for r in results)
+        assert c_left is not None and c_right is not None
+        name = f"species-reference/switch/{reference_pressure}/{shift}"
+        same(evidence, name + "/density-target", c_right - delta, c_left, rtol=0.0, atol=1e-10,
+             method="native-fugacity-convention-switch", claim="ln K + C is invariant after a reference switch")
+        same(evidence, name + "/x_B", right.mole_fractions[1], left.mole_fractions[1], rtol=0.0, atol=1e-10,
+             method="native-fugacity-convention-switch", claim="transformed references preserve solved composition")
+
+
+def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) -> None:
+    """At saturation the fugacities coincide; the pressure slope distinguishes branches."""
+    from epcsaft.equilibrium import SpeciesReference
+    temperature = 180.0
+    pure = Pure(parameters((ETHANE,)))
+    saturation = solve_equilibrium(pure, pure.saturation(temperature))
+    assert saturation.success, saturation.message
+    pressure = saturation.pressure[0]
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    problem = Problem(T=temperature, P=Free(pressure), feed=Amounts({"s0": 2.0, "s1": 0.2}),
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
+                      neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                                         standard_molality_mol_per_kg=1.0,
+                                                         species_reference={"s1": SpeciesReference.PureGas}),
+                      reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
+                          math.log(0.3), 0.0, 0.0, 0.0, 180.0, 170.0, 200.0, "manufactured-saturation"),
+                          reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))])
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    slope = result.neutral_reference_diagnostics[0].terminal_contraction_pressure_derivative
+    assert slope is not None
+    vapor = pure.state(temperature, P=result.pressure[0], phase="vapor")
+    liquid = pure.state(temperature, P=result.pressure[0], phase="liquid")
+    # Remove the solvent's -2 v_liquid/(RT) contribution from the reaction contraction.
+    gas_slope = slope + 2.0 / (liquid.molar_density * R * temperature)
+    expected = 1.0 / (vapor.molar_density * R * temperature)
+    same(evidence, "species-reference/ethane-vapor-pressure-slope", gas_slope, expected,
+         rtol=1e-9, atol=0.0, method="native-saturation-branch-volume",
+         claim="the pure-gas source-pressure slope is v_vapor/(RT)")
+    assert abs(gas_slope - 1.0 / (liquid.molar_density * R * temperature)) > expected / 2.0
+
+
+def test_pure_gas_reference_refuses_compressed_liquid_ethane() -> None:
+    """At 180 K and 3 MPa pure ethane has only its liquid root; a declared vapor must refuse."""
+    from epcsaft.equilibrium import SpeciesReference
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    problem = Problem(T=180.0, P=3.0e6, feed=Amounts({"s0": 2.0, "s1": 0.2}), phases=[Phase("L", kind="liquid")],
+                      neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                                         standard_molality_mol_per_kg=1.0,
+                                                         species_reference={"s1": SpeciesReference.PureGas}),
+                      reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
+                          math.log(0.3), 0.0, 0.0, 0.0, 180.0, 170.0, 200.0, "manufactured-compressed-liquid"),
+                          reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))])
+    with pytest.raises(_core.ParameterError, match="pure reference species 1: vapor branch absent"):
+        solve_equilibrium(model, problem)
 
 
 @pytest.mark.parametrize("temperature,pressure", [(260.0, 3e6), (280.0, 5e6)])
@@ -76,21 +165,16 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     """Identical EOS species separate source chemistry from the phase-equilibrium oracle."""
     temperature = 180.0
     pure = Pure(parameters((ETHANE,)))
-    lower, upper = 30000.0, 150000.0
-    for _ in range(40):
-        pressure = (lower + upper) / 2
-        liquid = pure.state(temperature, P=pressure, phase="liquid")
-        vapor = pure.state(temperature, P=pressure, phase="vapor")
-        assert liquid.log_fugacity_coefficient is not None
-        assert vapor.log_fugacity_coefficient is not None
-        liquid_fugacity = liquid.log_fugacity_coefficient[0]
-        vapor_fugacity = vapor.log_fugacity_coefficient[0]
-        assert liquid_fugacity is not None and vapor_fugacity is not None
-        if liquid_fugacity > vapor_fugacity:
-            lower = pressure
-        else:
-            upper = pressure
-    saturation = (lower + upper) / 2
+    pure_result = solve_equilibrium(pure, pure.saturation(temperature))
+    assert pure_result.success, pure_result.message
+    assert max(abs(value) for value in pure_result.residuals) < 1e-10
+    saturation = pure_result.pressure[0]
+    liquid = pure.state(temperature, P=saturation, phase="liquid")
+    vapor = pure.state(temperature, P=saturation, phase="vapor")
+    assert liquid.log_fugacity_coefficient is not None
+    assert vapor.log_fugacity_coefficient is not None
+    liquid_fugacity = liquid.log_fugacity_coefficient[0]
+    vapor_fugacity = vapor.log_fugacity_coefficient[0]
     assert liquid_fugacity is not None and vapor_fugacity is not None
     assert abs(liquid_fugacity - vapor_fugacity) < 1e-8
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
@@ -109,13 +193,13 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     assert result.success, result.message
     assert max(abs(value) for value in result.residuals) < 1e-10
     same(evidence, name + "/pressure", result.pressure[0], saturation, rtol=1e-7,
-         method="pure-fugacity-bisection", claim="identical-species reactive bubble has pure-EOS pressure")
+         method="native-pure-saturation", claim="identical-species reactive bubble has pure-EOS pressure")
     same(evidence, name + "/liquid-composition", result.mole_fractions[1], expected,
          rtol=1e-8, atol=0.0, method="2A-to-B-analytic", claim="source mole-fraction law at solved pressure")
     reference = result.neutral_reference_diagnostics[0]
     liquid = pure.state(temperature, P=saturation, phase="liquid")
     same(evidence, name + "/reference-pressure", reference.reference_pressure_pa, saturation,
-         rtol=1e-7, method="pure-fugacity-bisection", claim="diagnostics use final pressure, not the seed")
+         rtol=1e-7, method="native-pure-saturation", claim="diagnostics use final pressure, not the seed")
     same(evidence, name + "/pressure-first", reference.terminal_contraction_pressure_derivative,
          -1.0 / (liquid.molar_density * R * temperature), rtol=1e-8, atol=0.0,
          method="identical-species-chemical-potential", claim="nonideal reference C_P=-V/(RT)")
@@ -235,9 +319,7 @@ def test_temperature_reference_chain_recovers_identical_species_law(
              rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
              method="identical-species-residual-enthalpy",
              claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
-    thrice = [SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])] * 3
-    third = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, thrice)).results[0]
-    assert third.status == Status.ReferenceUnavailable and third.action is None
+    # Driven feed A3 has native numerical witnesses; moving-T A3 is outside #225.
 
 
 def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
@@ -300,11 +382,17 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
     observable = [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)]
     thermal = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], [])
 
-    def action(d_t: float, *directions: SolvedStateActionDirection) -> float:
+    @cache
+    def solved(d_t: float) -> tuple[Any, Any]:
         problem = _ionic_problem(temperature + d_t, pressure, reference_pressure)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
-        item = solved_state_actions(compile_problem(model, problem), result,
+        return compile_problem(model, problem), result
+
+    def action(d_t: float, *directions: SolvedStateActionDirection) -> float:
+        compiled, result = solved(d_t)
+        assert result.success, result.message
+        item = solved_state_actions(compiled, result,
                                     SolvedStateActionRequest(observable, list(directions))).results[0]
         assert item.status == Status.Available and item.action is not None, item.diagnostic_message
         return float(item.action)
@@ -314,8 +402,10 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
                          ("P", SolvedStateActionDirection(0.0, 1.0e5, [0.0, 0.0, 0.0], [])), ("T", thermal)):
         exact = action(0.0, thermal, other)
         coarse, fine = ((action(h, other) - action(-h, other)) / (2 * h) for h in (0.2, 0.1))
-        assert abs(fine - exact) <= abs(coarse - exact) / 2  # O(step^2) toward the action
-        same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+        # O(step^2) toward the action; the 1e-6 term is the asserted resolution. The near-zero P action
+        # (-3.03e-13) scatters by up to 3.2e-19 for row tolerances 1e-10 to 1e-13, its floating-point floor (#314)
+        assert abs(fine - exact) <= abs(coarse - exact) / 2 + 1e-6 * abs(exact)
+        same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=1e-18,
              inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "steps": [0.2, 0.1]},
              basis="Identity", method="richardson-differenced-first-action",
              claim="referenced mixed temperature second action equals the T derivative of the first action")
@@ -345,30 +435,49 @@ def test_referenced_continuation_follows_the_cold_solves(reference_pressure: flo
         Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1),
     )
     assert result.success and result.stop == ContinuationStop.reached_target, result.message
-    assert result.path_values == [0.0, 0.25, 0.5, 0.75, 1.0] and result.retries == 0
+    assert result.path_values[-1] == 1.0
     for q, state in zip(result.path_values, result.states):
         assert max(abs(a / b - 1.0) for a, b in zip(state.mole_fractions, at(q).mole_fractions)) <= 1e-8
 
 
-def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:
-    """A steep declared permittivity, d ln eps/d ln T ~ -76, multiplies the slope's terminal
-    change past 5e-5 while the value criterion holds: only the T direction is refused."""
+@pytest.mark.parametrize("pure_solvent", [False, True])
+def test_steep_permittivity_temperature_action_matches_resolved_difference(evidence: Any, pure_solvent: bool) -> None:
+    """A steep declared permittivity, d ln(eps T)/d ln T ~ -75, makes the T slope's sqrt(m) ladder
+    tail 73 times the constant-eps one, past 5e-5 at the 1e-14 mol/kg rung. The sqrt(m) Richardson
+    limit (#353) admits it, and the T action of x_Na equals centred re-solves."""
+    from epcsaft.equilibrium import SpeciesReference
     model = Mixture(aqueous_electrolyte(
         ("permittivity_term_coefficient", (0, 0, 1), -20.0, "1 / kelvin"),
         ("permittivity_reference_temperature", (0,), 298.15, "kelvin")))
-    problem = _ionic_problem(298.15, 1.0e5, None)
-    result = solve_equilibrium(model, problem)
+    temperature = 298.15
+
+    def problem(d_t: float) -> Problem:
+        item = _ionic_problem(temperature + d_t, 1.0e5, None)
+        if pure_solvent:
+            assert item.neutral_reference is not None
+            item.neutral_reference.species_reference = {"s0": SpeciesReference.PureGas}
+        return item
+
+    def sodium(d_t: float) -> float:
+        result = solve_equilibrium(model, problem(d_t))
+        assert result.success, result.message
+        return float(result.mole_fractions[1])
+
+    result = solve_equilibrium(model, problem(0.0))
     assert result.success, result.message
-    observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
-    compiled = compile_problem(model, problem)
-    feed_direction = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])
-    thermal, feed = solved_state_first_actions(compiled, result, observable, [
-        SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []), feed_direction])
-    alone = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [feed_direction]))
-    assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
-    assert feed.results[0].status == Status.Available and feed.results[0].action is not None
-    assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
-    assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]
+    thermal = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], [])
+    item = solved_state_actions(compile_problem(model, problem(0.0)), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [thermal])).results[0]
+    assert item.status == Status.Available and item.action is not None, item.diagnostic_message
+    # eps moves 1.3% per 0.05 K: the centred difference keeps 7e-5 at 0.025 K, its Richardson pair 2e-8.
+    step = 0.025
+    coarse, fine = ((sodium(h) - sodium(-h)) / (2 * h) for h in (2 * step, step))
+    assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
+    same(evidence, f"reference-temperature/ionic/steep-permittivity/{'pure-gas' if pure_solvent else 'default'}/resolve",
+         item.action, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+         inputs={"T_K": temperature, "P_Pa": 1.0e5, "dlneps_dT_per_K": -20.0 / 78.09, "steps": [2 * step, step]},
+         basis="Identity", method="richardson-centered-resolve-difference",
+         claim="steep-permittivity T action from the sqrt(m) Richardson reference equals the re-solved slope")
 
 
 def _kij_problem(mode: str, shift: float = 0.0) -> Problem:

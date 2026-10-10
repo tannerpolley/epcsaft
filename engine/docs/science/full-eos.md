@@ -370,7 +370,7 @@ Defining relation: [EqID: `salt_free_solvent_permittivity`](../equations.md#salt
 
 Figiel2025 Eq. (11) then gives
 
-Defining relation: [EqID: `ion_fraction_suppressed_bulk_permittivity`](../equations.md#ion_fraction_suppressed_bulk_permittivity).
+Defining relation: [EqID: `ion_suppressed_bulk_permittivity`](../equations.md#ion_suppressed_bulk_permittivity), with `alpha_i = C_epsilon` for every ion.
 
 `C_epsilon = 7.01` is a source-bearing model record. The relation is empirical
 for water and methanol correlations, was checked against ethanol, uses data up
@@ -410,7 +410,7 @@ permittivity record under this choice fail closed.
 
 For a single source-supported solvent, Zuber2014 Eq. (9) is
 
-Defining relation: [EqID: `ion_specific_suppressed_bulk_permittivity`](../equations.md#ion_specific_suppressed_bulk_permittivity).
+Defining relation: [EqID: `ion_suppressed_bulk_permittivity`](../equations.md#ion_suppressed_bulk_permittivity), with one `alpha_i,s` per ion.
 
 The water/Na+/Cl- comparison uses the Table 2 coefficients
 `alpha_Na+,water = 3.62` and `alpha_Cl-,water = 6.80`. These parameters are
@@ -670,10 +670,15 @@ not equal to residual calorics. Standard-pressure and standard-density bases
 must be converted consistently; see EqID: `standard_pressure_density_conversion`.
 A reaction-consistent reference gauge alone does not determine absolute
 enthalpy, entropy or heat capacity. An empty record list declares a species
-without ideal-gas data; on a referenced reactive problem its enthalpy and heat
-capacity are completed from the reaction chain only when supplied records leave
-nothing but the ionic charge gauge (EqID: `reference_species_calorics`). The source reference pressure is fixed
-when trial pressure changes.
+without ideal-gas data; its Gibbs standard and consumed derivatives are completed
+from the reaction chain only when supplied records leave nothing but the ionic
+charge gauge (EqID: `reference_species_calorics`). Caloric completion retains
+the supplied h/s anchors, independently of the chemical rows' conserved gauge.
+Fixed source pressure stays fixed when system pressure moves; system-pressure
+references move with it. Their frozen internal energy and heat capacity use the
+same Gibbs-conjugate volume (EqID: `gibbs_conjugate_molar_volume`), separately
+from EOS mechanical volume. A regular local volume chart does not establish a
+globally stable reacting minimum.
 
 ## 10. Electrolyte reference states
 
@@ -699,7 +704,8 @@ establish current public availability. Mixed-solvent MIAC does not imply a
 unique scalar osmotic coefficient. Multi-salt paths require a separately
 specified reference convention.
 
-Properties supplies the bounded higher-order reference columns in EqID:
+Properties supplies the raw lower reference partials C_T, C_TT, C_theta,
+C_Ttheta and C_TP and the bounded higher-order reference columns in EqID:
 `reference_mixed_temperature_pressure_derivatives`, using EqID:
 `reference_single_insertion_taylor`. The [F8/F9 notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
 qualifies the stated finite-terminal derivatives and observed dilution changes.

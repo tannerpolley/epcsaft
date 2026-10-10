@@ -61,48 +61,7 @@ Scalar ideal_mechanical_helmholtz(
     return result;
 }
 
-// EqID: ideal_gas_helmholtz
-// h and s are explicit source-anchored standard-state values at T and P0.
-template <typename Scalar>
-Scalar ideal_reference_helmholtz(
-    const Scalar& temperature,
-    const Scalar& rho0,
-    const Scalar& pressure0,
-    const std::vector<Scalar>& mole_fractions,
-    const std::vector<Scalar>& enthalpy,
-    const std::vector<Scalar>& entropy
-) {
-    if (mole_fractions.size() != enthalpy.size()
-        || mole_fractions.size() != entropy.size()) {
-        throw std::invalid_argument("ideal thermal input size");
-    }
-    if constexpr (std::is_same_v<Scalar, double>) {
-        if (!(temperature > 0.0) || !std::isfinite(temperature)
-            || !(rho0 > 0.0) || !std::isfinite(rho0)
-            || !(pressure0 > 0.0) || !std::isfinite(pressure0))
-            throw std::invalid_argument("invalid ideal reference scale");
-        for (const double fraction : mole_fractions)
-            if (!std::isfinite(fraction) || fraction < 0.0)
-                throw std::invalid_argument("invalid ideal mole fraction");
-        for (std::size_t i = 0; i < enthalpy.size(); ++i)
-            if (!std::isfinite(enthalpy[i]) || !std::isfinite(entropy[i]))
-                throw std::invalid_argument("nonfinite ideal reference value");
-    }
-    const Scalar rt = Scalar(GAS_CONSTANT_J_PER_MOL_K) * temperature;
-    const Scalar log_standard = scalar_log(Scalar(GAS_CONSTANT_J_PER_MOL_K))
-        + scalar_log(temperature) + scalar_log(rho0) - scalar_log(pressure0);
-    Scalar result = Scalar(0.0);
-    for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
-        result += mole_fractions[i] * (
-            enthalpy[i] / rt - entropy[i] / Scalar(GAS_CONSTANT_J_PER_MOL_K)
-            + log_standard);
-    }
-    if constexpr (std::is_same_v<Scalar, double>) {
-        if (!std::isfinite(result)) throw std::domain_error("nonfinite ideal reference result");
-    }
-    return result;
-}
-
+// Gross and Sadowski (2001) Table 1; FeOs carries extra digits (#222).
 inline constexpr std::array<double, 7> A0 = {
     0.9105631445, 0.6361281449, 2.6861347891, -26.547362491,
     97.759208784, -159.59154087, 91.297774084,
@@ -189,8 +148,7 @@ template <typename Scalar, typename ParameterSet>
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>* dispersion_energy_override = nullptr
+    const std::vector<Scalar>& sigma
 ) {
     std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
@@ -198,9 +156,7 @@ std::vector<Scalar> segment_diameter(
             ? sigma[component] *
                 (Scalar(1.0) - Scalar(0.12) * scalar_exp(
                     Scalar(-3.0)
-                        * (dispersion_energy_override == nullptr
-                               ? Scalar(parameters.dispersion_energy_over_k[component])
-                               : (*dispersion_energy_override)[component])
+                        * Scalar(parameters.dispersion_energy_over_k[component])
                         / temperature
                 ))
             : Scalar(parameters.packing_diameter_angstrom[component]);
@@ -223,6 +179,40 @@ Scalar packing_fraction_from_geometry(
             * diameter[component] * diameter[component] * diameter[component];
     }
     return (PI / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
+}
+
+// EqID: packing_moments
+// zeta_3 comes from packing_fraction_from_geometry, the owner of the density bound.
+template <typename Scalar, typename ParameterSet>
+std::array<Scalar, 4> packing_moments(
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const ParameterSet& parameters,
+    const std::vector<Scalar>& diameter
+) {
+    const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
+    std::array<Scalar, 4> zeta;
+    for (std::size_t order = 0; order < 3; ++order) {
+        Scalar moment = Scalar(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+            Scalar power = Scalar(1.0);
+            for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
+            moment += mole_fractions[i] * parameters.segment_count[i] * power;
+        }
+        zeta[order] = (PI / 6.0) * number_density * moment;
+    }
+    zeta[3] = packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
+    return zeta;
+}
+
+// EqID: hard_sphere_contact
+// Contact value at reduced diameter d_i d_j/(d_i + d_j); d_i/2 for a like pair.
+template <typename Scalar>
+Scalar hard_sphere_contact(const Scalar& reduced_diameter, const Scalar& zeta_2, const Scalar& one_minus_eta) {
+    return Scalar(1.0) / one_minus_eta
+        + 3.0 * reduced_diameter * zeta_2 / (one_minus_eta * one_minus_eta)
+        + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
+            / (one_minus_eta * one_minus_eta * one_minus_eta);
 }
 
 template <typename Scalar>
@@ -258,9 +248,7 @@ Scalar dipolar_helmholtz(
     const std::vector<Scalar>& sigma, const std::vector<Scalar>& epsilon
 ) {
     const std::size_t size = x.size();
-    constexpr double scale = DEBYE_C_M * DEBYE_C_M
-        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K
-           * ANGSTROM_M * ANGSTROM_M * ANGSTROM_M);
+    constexpr double scale = DEBYE_SQUARED_J_ANGSTROM3 / BOLTZMANN_J_PER_K;
     std::vector<Scalar> q(size, Scalar(0.0));
     std::vector<std::size_t> polar;
     for (std::size_t i = 0; i < size; ++i) {
@@ -316,8 +304,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
-    const Scalar& born,
-    const std::vector<Scalar>* dispersion_energy_override = nullptr
+    const Scalar& born
 ) {
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
@@ -328,29 +315,9 @@ HelmholtzResult<Scalar> residual_helmholtz(
         mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
     }
 
-    // EqID: packing_moments
-    std::array<Scalar, 4> zeta = {
-        Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
-    };
-    const std::size_t moment_count =
-        size == 1 ? zeta.size() : zeta.size() - 1;
-    for (std::size_t order = 0; order < moment_count; ++order) {
-        Scalar moment = Scalar(0.0);
-        for (std::size_t i = 0; i < size; ++i) {
-            Scalar power = Scalar(1.0);
-            for (std::size_t exponent = 0; exponent < order; ++exponent) {
-                power *= diameter[i];
-            }
-            moment += mole_fractions[i] * parameters.segment_count[i] * power;
-        }
-        zeta[order] = (PI / 6.0) * number_density * moment;
-    }
-    if (size != 1) {
-        zeta[3] = packing_fraction_from_geometry(
-            molar_density, mole_fractions, parameters, diameter
-        );
-    }
+    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
     if constexpr (std::is_same_v<Scalar, double>) {
+        // EqID: close_packing_fraction
         if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {
             throw std::invalid_argument("packing fraction is at or above close packing");
         }
@@ -369,16 +336,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // EqID: hard_chain_helmholtz
     Scalar hard_chain = mean_segment_count * hard_sphere;
     for (std::size_t i = 0; i < size; ++i) {
-        const Scalar contact_diameter = diameter[i] / Scalar(2.0);
-        // EqID: hard_sphere_contact
-        const Scalar contact =
-            Scalar(1.0) / one_minus_eta +
-            contact_diameter * 3.0 * zeta[2] /
-                (one_minus_eta * one_minus_eta) +
-            contact_diameter * contact_diameter * 2.0 * zeta[2] * zeta[2] /
-                (one_minus_eta * one_minus_eta * one_minus_eta);
         hard_chain -= mole_fractions[i] * (parameters.segment_count[i] - 1.0) *
-            scalar_log(contact);
+            scalar_log(hard_sphere_contact(diameter[i] / Scalar(2.0), zeta[2], one_minus_eta));
     }
 
     // EqID: dispersion_chain_coefficients
@@ -432,12 +391,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
             const bool same_sign_excluded =
                 parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)
                 && charge_i * charge_j > 0;
-            const Scalar epsilon_i = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[i])
-                : (*dispersion_energy_override)[i];
-            const Scalar epsilon_j = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[j])
-                : (*dispersion_energy_override)[j];
+            const Scalar epsilon_i = Scalar(parameters.dispersion_energy_over_k[i]);
+            const Scalar epsilon_j = Scalar(parameters.dispersion_energy_over_k[j]);
             const Scalar epsilon_ij = same_sign_excluded
                 ? Scalar(0.0)
                 : scalar_sqrt(epsilon_i * epsilon_j) * (Scalar(1.0) - k_ij);
@@ -459,18 +414,14 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // Optional: an undeclared polar family leaves the dipole arrays empty.
     Scalar dipolar = Scalar(0.0);
     if (!parameters.dipole_moment_debye.empty()) {
-        std::vector<Scalar> epsilon(size);
-        for (std::size_t i = 0; i < size; ++i) {
-            epsilon[i] = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[i])
-                : (*dispersion_energy_override)[i];
-        }
+        const std::vector<Scalar> epsilon(
+            parameters.dispersion_energy_over_k.begin(), parameters.dispersion_energy_over_k.end());
         dipolar = dipolar_helmholtz(
             temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon);
     }
 
     // EqID: association_helmholtz
-    Scalar association = 0.0;
+    Scalar association = Scalar(0.0);
     for (std::size_t site = 0; site < site_fraction.size(); ++site) {
         const std::size_t component =
             static_cast<std::size_t>(parameters.site_component[site]);

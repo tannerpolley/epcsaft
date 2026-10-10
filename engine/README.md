@@ -24,46 +24,18 @@ toolchain and dependency contents. It builds and installs before any test
 starts. The root [`README.md`](../README.md) owns routine, full, native,
 sanitizer, and scientific validation commands.
 
-## Direct Meson development
+## Native development
 
-Run root setup once so the locked Python build tools and native prerequisites
-are available. A direct Meson build is useful for compile diagnostics:
+`tools/native-run <program> [case|--list]` rebuilds one native program in the
+checkout's Meson build directory (configured by setup with the shared HiGHS) and
+runs it without building the wheel. Do not use `meson install`; the wheel is the
+installation boundary.
 
-```bash
-export PATH="$PWD/.venv/bin:$PATH"
-meson setup build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-Source changes need only `meson compile`. Re-read changed build definitions or
-dependency metadata with:
-
-```bash
-meson setup --reconfigure build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-Use a clean configure after changing the compiler or fundamental Meson options:
-
-```bash
-meson setup --wipe build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-The Meson graph includes native scientific checks. Run installed-wheel Python
-checks through the root commands; expensive native evidence remains explicit. Do not use `meson
-install`; the wheel is the installation boundary.
-
-The supported direct native test route records one coherent outcome through the
-shared recorder and defaults to the fast suites:
-
-```bash
-bash engine/tools/run-native-tests.sh
-```
-
-It runs `contributions`, `properties`, `diagnostics`, `specification` and
-`surface_example`; the equilibrium, boundary, and Properties-floor suites remain
-explicit owner commands.
+`bash engine/tools/run-native-tests.sh` compiles and runs the fast suites
+`contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
+and `regression`; name other tests to run them. `tools/check-affected.sh` selects
+the equilibrium, boundary, Explicit and `association-comparison` tests when their
+code changes (root [`README.md`](../README.md) "Checks").
 
 ## C++ usage and debugging
 
@@ -80,9 +52,7 @@ of its identities fails, and it links `epcsaft_native`; there is no installed
 SDK or ABI.
 
 ```bash
-meson compile -C build/engine-dev surface_example
-meson test -C build/engine-dev surface_example --print-errorlogs
-build/engine-dev/surface_example            # prints every value with its unit
+tools/native-run surface_example   # prints every value with its unit
 ```
 
 For a debugger, configure an unstripped debug tree once and run the same target:
@@ -144,6 +114,27 @@ row = solved_state_actions(compiled, central, request).results[0]
 fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
 ```
 
+`solve_equilibrium` has no time limit; `solve_equilibrium_starts` tries declared
+starts in order under shared work limits and stops at the first that succeeds with its requested tolerance met:
+
+```python
+limits = equilibrium.EquilibriumWorkLimits(seconds=60.0, attempt_seconds=20.0)
+tried = equilibrium.solve_equilibrium_starts(model, problem, [equilibrium.EquilibriumStart()], limits)
+result = None if tried.selected is None else tried.results[tried.selected]  # tried.causes says why not
+```
+
+A default `EquilibriumStart` runs the cold start of `solve_equilibrium`. If the limits are not exhausted, it
+reaches the same state with the same work (#350), except where the plain solve's speciated seeded attempt fails:
+`solve_equilibrium` then retries from its own start and the bounded start does not. A partial start generates only what it omits. Seed solves,
+such as a reacting bubble's liquid pre-solve, spend the same limits, and both functions include their work in
+the reported counts.
+
+Invalid declarations and inputs raise `ParameterError` (a `ValueError`) before iterating. A
+solve that runs reports non-convergence, structural infeasibility and rejected density
+branches as `success=False` with `message` and `convergence.stop`, but a failure to
+evaluate the returned point still raises `EosError` or `ParameterError`; handle both.
+`solve_equilibrium_starts` records an attempt's exception in `causes` instead of raising.
+
 For a fixed-T/P, declared two-free-liquid equilibrium, `equilibrium.asl_record`
 constructs the immutable record consumed by the installed
 `epcsaft_equilibrium_phase_component_amount` external function:
@@ -194,15 +185,14 @@ convergence record and the stopping cause remain, and the candidate state vector
 cleared: in Python, `success` (equivalently non-empty state vectors) is the availability
 predicate, the native `has_state()`.
 
-Create and install wheels only through root setup. When the root environment is
-already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
-wheel build and installation.
+Root setup installs this package editable; `tools/build-engine.sh` owns every
+Engine build, including the wheels for application pins and A/B timing.
 
 ## Native dependency graph
 
 The package owns one Meson graph and no installed cross-module SDK. Data
 packet materializations are explicit and hash-bound. Installed-wheel analyses
-live in `../analyses/`. See `AGENTS.md`, `../ARCHITECTURE.yaml`, and
+live in `../analyses/`. See `../AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
@@ -220,5 +210,5 @@ and never enter the wheel.
 The [scientific owner map](../docs/scientific/CONTEXT.md) identifies the
 permanent equations and methods. The
 [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
-records implementation gaps, including the absent regression module. Do not infer
+records implementation gaps. Do not infer
 availability from historical usage examples or a registered equation.

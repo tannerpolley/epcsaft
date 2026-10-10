@@ -113,19 +113,27 @@ class Molalities(Feed):
 
 class NeutralReference:
     """Pure neutral solvent and an explicit charge-neutral molality dilution path."""
-    __slots__ = ("solvent", "solute_molality_ratios", "standard_molality_mol_per_kg")
+    __slots__ = ("solvent", "solute_molality_ratios", "standard_molality_mol_per_kg", "species_reference")
 
     def __init__(self, *, solvent: str, solute_molality_ratios: Mapping[str, float],
-                 standard_molality_mol_per_kg: float) -> None:
+                 standard_molality_mol_per_kg: float,
+                 species_reference: Mapping[str, _core.SpeciesReference] | None = None) -> None:
         self.solvent = solvent
         self.solute_molality_ratios = dict(solute_molality_ratios)
         self.standard_molality_mol_per_kg = standard_molality_mol_per_kg
+        self.species_reference = dict(species_reference or {})
 
     def _native(self, model: _Species) -> _core.NeutralReferenceDeclaration:
         item = _core.NeutralReferenceDeclaration()
         item.solvent_index = _index(model.component_ids, self.solvent)
         item.solute_molality_ratios = _vector(self.solute_molality_ratios, model.component_ids)
         item.standard_molality_mol_per_kg = self.standard_molality_mol_per_kg
+        if self.species_reference:
+            choices = [_core.SpeciesReference.InfiniteDilution] * len(model.component_ids)
+            choices[item.solvent_index] = _core.SpeciesReference.PureLiquid
+            for species, choice in self.species_reference.items():
+                choices[_index(model.component_ids, species)] = choice
+            item.species_reference = choices
         return item
 
 
@@ -149,13 +157,8 @@ class Reaction:
         reference: _core.ReactionReference | None = None,
     ) -> None:
         """Exactly one target; source-basis correlations also require an explicit reference."""
-        targets = sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation))
-        if targets == 0:
-            raise TypeError("Reaction requires equilibrium_constant, affinity_j_per_mol or correlation")
-        if targets != 1:
-            raise _core.ParameterError(
-                "reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation"
-            )
+        if sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation)) != 1:
+            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
         name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
@@ -182,7 +185,7 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
 class Problem:
     __slots__ = (
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "critical", "envelope",
     )
     phases: tuple[Phase, ...] | Discover
     T: float | Free
@@ -193,6 +196,10 @@ class Problem:
     topology_declared: bool
     row_tolerance: float | None
     neutral_reference: NeutralReference | None
+    enthalpy_j: float | None
+    entropy_j_per_k: float | None
+    critical: _core.CriticalDeclaration | None
+    envelope: _core.EnvelopeCondition | None
 
     def __init__(
         self,
@@ -205,9 +212,17 @@ class Problem:
         standard_gibbs_j_per_mol: Sequence[float] | None = None,
         topology_declared: bool | None = None,
         row_tolerance: float | None = None,
+        enthalpy_j: float | None = None,
+        entropy_j_per_k: float | None = None,
         neutral_reference: NeutralReference | None = None,
+        critical: _core.CriticalDeclaration | None = None,
+        envelope: _core.EnvelopeCondition | None = None,
     ) -> None:
+        self.critical = critical
+        self.envelope = envelope
         self.row_tolerance = row_tolerance
+        self.enthalpy_j = enthalpy_j
+        self.entropy_j_per_k = entropy_j_per_k
         self.neutral_reference = neutral_reference
         phases = () if phases is None else phases
         reactions = () if reactions is None else reactions
@@ -230,6 +245,10 @@ class Problem:
         if self.feed.solvent_mass_kg is not None:
             native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
+        native.enthalpy_j = self.enthalpy_j
+        native.entropy_j_per_k = self.entropy_j_per_k
+        native.critical = self.critical
+        native.envelope = self.envelope
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
@@ -274,7 +293,7 @@ class Problem:
 def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     allowed = {
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k",
     }
     if set(mapping) - allowed:
         raise _core.ParameterError("unknown Problem key")
@@ -301,6 +320,8 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
         topology_declared=topology,
         row_tolerance=cast(float | None, mapping.get("row_tolerance")),
+        enthalpy_j=cast(float | None, mapping.get("enthalpy_j")),
+        entropy_j_per_k=cast(float | None, mapping.get("entropy_j_per_k")),
         neutral_reference=_neutral_reference_from_mapping(mapping.get("neutral_reference")),
     )
 
@@ -325,7 +346,8 @@ def _neutral_reference_from_mapping(value: object) -> NeutralReference | None:
     if not isinstance(solvent, str) or not isinstance(ratios, Mapping) or "standard_molality_mol_per_kg" not in record:
         raise _core.ParameterError("neutral_reference requires solvent, solute_molality_ratios and standard_molality_mol_per_kg")
     return NeutralReference(solvent=solvent, solute_molality_ratios=ratios,
-                            standard_molality_mol_per_kg=cast(float, record["standard_molality_mol_per_kg"]))
+                            standard_molality_mol_per_kg=cast(float, record["standard_molality_mol_per_kg"]),
+                            species_reference=cast(Mapping[str, _core.SpeciesReference] | None, record.get("species_reference")))
 
 
 def _reaction_reference_from_mapping(value: object) -> _core.ReactionReference | None:
@@ -394,8 +416,6 @@ def _feed_from_mapping(value: object) -> Feed:
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
-    if not {"equilibrium_constant", "affinity_j_per_mol", "correlation"} & set(value):
-        raise _core.ParameterError("missing equilibrium_constant, affinity_j_per_mol or correlation")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
@@ -420,11 +440,11 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
     kind = phase.kind
     if kind is None:
         raise _core.ParameterError(f"phase {phase.name} requires an explicit kind (liquid or vapor)")
-    if kind.lower() in {"vapor", "gas"}:
+    if kind == "vapor":
         return _core.PhaseKind.Vapor
-    if kind.lower() == "liquid":
+    if kind == "liquid":
         return _core.PhaseKind.Liquid
-    raise _core.ParameterError(f"unknown phase kind {kind}")
+    raise _core.ParameterError(f"unknown phase kind {kind}; expected liquid or vapor")
 
 
 def solve_equilibrium(
@@ -445,12 +465,7 @@ def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) 
 solved_state_actions = _core.solved_state_actions
 
 
-@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
-class Continuation:
-    initial_step: float
-    minimum_step: float
-    max_steps: int
-    max_retries_per_step: int
+Continuation = _core.ContinuationOptions
 
 
 def continue_equilibrium(
@@ -459,15 +474,15 @@ def continue_equilibrium(
     target: Problem,
     options: Continuation,
     start_result: _core.EquilibriumResult | None = None,
+    *,
+    parameter_targets: Sequence[float] | None = None,
 ) -> _core.ContinuationResult:
     request = _core.ContinuationRequest()
     request.start_problem = start._native(model)
     request.target_problem = target._native(model)
     request.start_result = start_result
-    request.options.initial_step = options.initial_step
-    request.options.minimum_step = options.minimum_step
-    request.options.max_steps = options.max_steps
-    request.options.max_retries_per_step = options.max_retries_per_step
+    request.parameter_targets = () if parameter_targets is None else parameter_targets
+    request.options = options
     return _core.continue_equilibrium(model._model, request)
 
 
@@ -493,25 +508,6 @@ def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reactio
     )
 
 
-__all__ = (
-    "Amounts",
-    "Continuation",
-    "Discover",
-    "Feed",
-    "Free",
-    "MassFractions",
-    "Molalities",
-    "MoleFractions",
-    "NeutralReference",
-    "Pinned",
-    "Phase",
-    "Problem",
-    "Reaction",
-    "bubble_point",
-    "compile_problem",
-    "continue_equilibrium",
-    "dew_point",
-    "problem_from_mapping",
-    "solve_equilibrium",
-    "solved_state_actions",
-)
+def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_core.EquilibriumStart],
+                             limits: _core.EquilibriumWorkLimits) -> _core.EquilibriumStartsResult:
+    return _core.solve_equilibrium_starts(model._model, problem._native(model), list(starts), limits)

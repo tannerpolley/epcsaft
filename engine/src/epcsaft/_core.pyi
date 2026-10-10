@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 EOS_STANDARD_STATE_ID: str
@@ -53,6 +53,7 @@ class Event:
     span: int
     iteration: int
     values: list[float]
+    reason: str
 
 class Span:
     name: str
@@ -64,8 +65,10 @@ class Trace:
     spans: list[Span]
     events: list[Event]
     current: Optional[int]
+    incomplete: bool
 
 class Capture:
+    def __init__(self, diagnostics: bool = False) -> None: ...
     trace: Optional[Trace]
     spans: list[Span]
     events: list[Event]
@@ -165,6 +168,8 @@ class ReactionLogPolynomial:
                  temperature_min: float, temperature_max: float, standard_state_id: str) -> None: ...
 
 class ParameterFamily:
+    BornCDielectric: ParameterFamily
+    IonicRegionRelativePermittivity: ParameterFamily
     BornDiameter: ParameterFamily
     DebyeHuckelDiameter: ParameterFamily
     PackingDiameter: ParameterFamily
@@ -287,7 +292,6 @@ class PropertyActionDiagnostics:
     recordings: int
     directional_paths: int
     forward_sweeps: int
-    dense_hessian_calls: int
     branch: DensityBranch
     stable_root_count: Optional[int]
 
@@ -311,6 +315,7 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
+    # None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
     residual_chemical_potential_over_rt: list[Optional[float]]
     log_fugacity_coefficient: Optional[list[Optional[float]]]
     component_property_status: list[PropertyActionStatus]
@@ -390,6 +395,7 @@ class HelmholtzModel:
                          observables: Sequence[PropertyObservable],
                          directions: Sequence[PressureActionDirection],
                          anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
+    def packing_fraction_coefficient(self, temperature: float, composition: list[float]) -> float: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
     def molar_density_upper_bound(self, temperature: float, composition: Sequence[float]) -> float: ...
     def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
@@ -449,10 +455,16 @@ class FeedSpec:
     solvent_mass_kg: float
     def __init__(self) -> None: ...
 
+class SpeciesReference:
+    InfiniteDilution: SpeciesReference
+    PureLiquid: SpeciesReference
+    PureGas: SpeciesReference
+
 class NeutralReferenceDeclaration:
     solvent_index: Optional[int]
     solute_molality_ratios: list[float]
     standard_molality_mol_per_kg: float
+    species_reference: list[SpeciesReference]
     def __init__(self) -> None: ...
 
 class ReferenceSourceBasis:
@@ -497,6 +509,7 @@ class ReactionSpec:
     def __init__(self) -> None: ...
 
 class StabilityOptions:
+    evaluate_supplied_trials: bool
     trials: Optional[list[PhaseSpec]]
     declaration_budget: Optional[int]
     trial_budget: Optional[int]
@@ -543,6 +556,31 @@ class DiscoveryRecord:
 def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
                    options: StabilityOptions = ...) -> StabilityReport: ...
 
+class CriticalDeclaration:
+    density_guess_mol_per_m3: float
+    mode_guess: list[float]
+    def __init__(self) -> None: ...
+
+class EnvelopeCoordinate:
+    LogTemperature: EnvelopeCoordinate
+    LogPressure: EnvelopeCoordinate
+    LogK: EnvelopeCoordinate
+
+class EnvelopeCondition:
+    kind: EnvelopeCoordinate
+    component: int
+    target: float
+    def __init__(self) -> None: ...
+
+class CriticalRecord:
+    eigenvalues: list[float]
+    mode: list[float]
+    cubic: float
+    zero_band: float
+    condition_estimate: float
+    backward_error: float
+    rank: int
+
 class EquilibriumProblem:
     discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
@@ -553,6 +591,10 @@ class EquilibriumProblem:
     standard_gibbs_j_per_mol: list[float]
     topology_declared: bool
     row_tolerance: float
+    enthalpy_j: float | None
+    entropy_j_per_k: float | None
+    critical: Optional[CriticalDeclaration]
+    envelope: Optional[EnvelopeCondition]
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
@@ -585,6 +627,12 @@ class RowKind:
     Moiety: RowKind
     Electro: RowKind
     Normalization: RowKind
+    Enthalpy: RowKind
+    Entropy: RowKind
+    CriticalMode: RowKind
+    CriticalNormalization: RowKind
+    CriticalCubic: RowKind
+    EnvelopeCondition: RowKind
 
 class Row:
     kind: RowKind
@@ -605,7 +653,6 @@ class CompiledSystem:
     rank: int
     charge_row_count: int
     primal_size: int
-    rows_minus_unknowns: int
     generic_nullity: int
     feed_total: float
     has_ions: bool
@@ -653,6 +700,7 @@ class EquilibriumResult:
     topology_event: TopologyEvent
     topology_phase: Optional[int]
     topology_pair: Optional[tuple[int, int]]
+    critical: Optional[CriticalRecord]
 
 class TopologyEvent:
     None_: TopologyEvent
@@ -673,19 +721,27 @@ class ContinuationStop:
     stalled: ContinuationStop
     step_too_small: ContinuationStop
     budget_exhausted: ContinuationStop
+    critical_endpoint: ContinuationStop
 
 class ContinuationOptions:
     initial_step: float
     minimum_step: float
     max_steps: int
     max_retries_per_step: int
+    envelope_max_log_step: float
+    envelope_straddle: float
+    @overload
     def __init__(self) -> None: ...
+    @overload
+    def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int,
+                 envelope_max_log_step: float = 0.0, envelope_straddle: float = 0.0) -> None: ...
 
 class ContinuationRequest:
     start_problem: EquilibriumProblem
     target_problem: EquilibriumProblem
     start_result: Optional[EquilibriumResult]
     options: ContinuationOptions
+    parameter_targets: Sequence[float]
     def __init__(self) -> None: ...
 
 class ContinuationResult:
@@ -693,6 +749,7 @@ class ContinuationResult:
     message: str
     stop: ContinuationStop
     path_values: list[float]
+    parameter_values: list[list[float]]
     states: list[EquilibriumResult]
     reached_path: float
     attempted_path: Optional[float]
@@ -705,6 +762,9 @@ class ContinuationResult:
     cause_stop: Optional[ContinuationStop]
     cause_convergence: Optional[Convergence]
     cause_message: Optional[str]
+    conditions: list[EnvelopeCondition]
+    critical_points: list[EquilibriumResult]
+    critical_seeds: list[list[float]]
 
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult: ...
 
@@ -721,6 +781,9 @@ class SolvedStateObservableKind:
     PhaseResidualChemicalPotentialOverRt: SolvedStateObservableKind
     PhaseProperty: SolvedStateObservableKind
     PhaseLogActivity: SolvedStateObservableKind
+    PhaseGibbsMolarVolume: SolvedStateObservableKind
+    SystemEnthalpy: SolvedStateObservableKind
+    EquilibriumIsobaricHeatCapacity: SolvedStateObservableKind
 
 class SolvedStateObservable:
     kind: SolvedStateObservableKind
@@ -735,8 +798,12 @@ class SolvedStateActionDirection:
     pressure_pa: float
     feed_amounts_mol: list[float]
     active_parameters: list[float]
+    reaction_coefficients: list[list[float]]
+    enthalpy_j: float
+    entropy_j_per_k: float
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
-                 active_parameters: Sequence[float]) -> None: ...
+                 active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...,
+                 enthalpy_j: float = ..., entropy_j_per_k: float = ...) -> None: ...
 
 class SolvedStateActionRequest:
     observables: list[SolvedStateObservable]
@@ -837,6 +904,7 @@ class ObservationKind:
     BulkRelativePermittivity: ObservationKind
     LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
+    EquilibriumIsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
     PhaseDensity: ObservationKind
     EquilibriumPressure: ObservationKind
@@ -914,9 +982,13 @@ class ReactionCoordinate:
     name: str
     coefficient: ReactionCoefficient
 
-class Coordinate:
+class CoordinateTarget:
     family: ParameterFamily
-    slots: list[list[int]]
+    indices: list[int]
+    coefficient: float
+
+class Coordinate:
+    targets: list[CoordinateTarget]
     reaction: Optional[ReactionCoordinate]
     origin: float
     scale: float
@@ -927,6 +999,7 @@ class CoordinateSet:
     coordinates: list[Coordinate]
     def active(self) -> list[ActiveParameter]: ...
     def tie(self) -> list[int]: ...
+    def start(self, parameters: Parameters, observations: list[Observation] = ..., thermochemistry: Optional[ThermochemistryRecord] = ...) -> list[float]: ...
 
 class FitControls:
     function_tolerance: float
@@ -934,6 +1007,8 @@ class FitControls:
     parameter_tolerance: float
     maximum_iterations: int
     maximum_elapsed_time_seconds: float
+    def __init__(self, *, maximum_iterations: int, maximum_elapsed_time_seconds: float, function_tolerance: float = 0.0,
+                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0) -> None: ...
 
 class TrialFailure:
     trial: int
@@ -1068,7 +1143,6 @@ class HoldResult:
     derivative: float
     parameter_derivative: list[float]
     iterations: int
-    cause: str
 
 class EvaluatedCoordinates:
     parameters: Parameters
@@ -1107,18 +1181,56 @@ class CheckResult:
 def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ...) -> EvaluatedCoordinates: ...
 def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
 
-def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float]) -> list[Observation]: ...
+def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float],
+    thermochemistry: Optional[ThermochemistryRecord] = None) -> list[Observation]: ...
 
 class ObservationEvaluation:
     predictions: list[float]
     gradient: list[float]
     optimizer_gradient: list[float]
+    residual_optimizer_gradient: list[float]
     chart: EvaluatedCoordinates
     statuses: list[ObservationStatus]
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
-    holds: Sequence[HydrationHold], observations: Sequence[Observation]) -> ObservationEvaluation: ...
+    holds: Sequence[HydrationHold], observations: Sequence[Observation],
+    thermochemistry: Optional[ThermochemistryRecord] = None) -> ObservationEvaluation: ...
 def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
-    baseline: Parameters | None, minimax: MinimaxRequest) -> FitResult: ...
+    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None) -> FitResult: ...
 def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
     stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
+
+class EquilibriumStart:
+    coordinates: list[float]
+    amounts: list[float]
+    compositions: list[list[float]]
+    packing_fractions: list[Optional[float]]
+    temperature: Optional[float]
+    pressure: Optional[float]
+    previous: Optional[EquilibriumResult]
+    def __init__(self, *, coordinates: Sequence[float] = ..., amounts: Sequence[float] = ...,
+                 compositions: Sequence[Sequence[float]] = ..., packing_fractions: Sequence[Optional[float]] = ...,
+                 temperature: Optional[float] = None, pressure: Optional[float] = None,
+                 previous: Optional[EquilibriumResult] = None) -> None: ...
+
+class EquilibriumWorkLimits:
+    attempts: Optional[int]
+    iterations: Optional[int]
+    attempt_iterations: Optional[int]
+    seconds: Optional[float]
+    attempt_seconds: Optional[float]
+    def __init__(self, *, attempts: Optional[int] = None, iterations: Optional[int] = None,
+                 attempt_iterations: Optional[int] = None, seconds: Optional[float] = None,
+                 attempt_seconds: Optional[float] = None) -> None: ...
+
+class EquilibriumStartsResult:
+    selected: Optional[int]
+    results: list[Optional[EquilibriumResult]]
+    causes: list[str]
+    attempt_seconds: list[float]
+    iterations: int
+    seconds: float
+    overrun_seconds: float
+    budget_exhausted: bool
+
+def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem, starts: list[EquilibriumStart], limits: EquilibriumWorkLimits) -> EquilibriumStartsResult: ...

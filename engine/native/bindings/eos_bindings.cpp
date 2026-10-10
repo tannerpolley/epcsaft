@@ -72,6 +72,8 @@ void register_thermal_inputs(py::module_& module) {
         .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
         .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
     py::enum_<ParameterFamily>(module, "ParameterFamily")
+        .value("BornCDielectric", ParameterFamily::BornCDielectric)
+        .value("IonicRegionRelativePermittivity", ParameterFamily::IonicRegionRelativePermittivity)
         .value("BornDiameter", ParameterFamily::BornDiameter)
         .value("DebyeHuckelDiameter", ParameterFamily::DebyeHuckelDiameter)
         .value("PackingDiameter", ParameterFamily::PackingDiameter)
@@ -209,7 +211,6 @@ void register_eos(py::module_& module) {
         .def_readonly("recordings", &Diagnostics::recordings)
         .def_readonly("directional_paths", &Diagnostics::directional_paths)
         .def_readonly("forward_sweeps", &Diagnostics::forward_sweeps)
-        .def_readonly("dense_hessian_calls", &Diagnostics::dense_hessian_calls)
         .def_readonly("branch", &Diagnostics::branch)
         .def_readonly("stable_root_count", &Diagnostics::stable_root_count);
     py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
@@ -236,6 +237,7 @@ void register_eos(py::module_& module) {
         .def_readonly("residual_helmholtz", &epcsaft::State::residual_helmholtz)
         .def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)
         .def_readonly("pressure", &epcsaft::State::pressure)
+        // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
         .def_readonly("residual_chemical_potential_over_rt", &epcsaft::State::residual_chemical_potential_over_rt)
         .def_readonly("component_property_status", &epcsaft::State::component_property_status)
         .def_readonly("log_fugacity_coefficient", &epcsaft::State::log_fugacity_coefficient)
@@ -259,8 +261,8 @@ void register_eos(py::module_& module) {
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
         .def_readonly("site_fractions", &epcsaft::State::site_fractions)
         .def_readonly("density_convergence", &epcsaft::State::density_convergence)
-        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
+        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("density_branch", &epcsaft::State::density_branch)
         .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
     py::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
@@ -328,6 +330,11 @@ void register_eos(py::module_& module) {
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("observables"), py::arg("directions"),
              py::arg("anchor_density") = std::nullopt)
+        .def("packing_fraction_coefficient", [](const epcsaft::HelmholtzModel& model,
+                                               double temperature, const std::vector<double>& composition) {
+            epcsaft::core::Scope scope("packing_fraction_coefficient");
+            return model.packing_fraction_coefficient(temperature, composition);
+        })
         .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("anchor_density") = std::nullopt)
@@ -352,6 +359,13 @@ void register_eos(py::module_& module) {
         .def_readonly("mean_ionic_log_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_log_molality_scale)
         .def_readonly("mean_ionic_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_molality_scale)
         .def_readonly("osmotic_coefficient", &epcsaft::ElectrolyteActivity::osmotic_coefficient);
-    module.def("infinite_dilution_reference", &epcsaft::infinite_dilution_reference);
-    module.def("electrolyte_activity", &epcsaft::electrolyte_activity);
+    module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+        const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
+        return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);
+    });
+    module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+        const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
+        double molality, const epcsaft::InfiniteDilutionReference& reference) {
+        return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference);
+    });
 }

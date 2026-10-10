@@ -3,19 +3,17 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+# The report reads whatever records exist, pass or fail; it never changes this gate's status.
+trap 'python3 tools/report.py || true' EXIT
 
+/usr/bin/time -f 'readiness: %e s' bash -e -c '
 python3 engine/scripts/docs/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
+'
 
-EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
+/usr/bin/time -f 'engine-build: %e s' bash .codex/environments/setup.sh
 build_dir="$(<build/environment-wheel/meson-build-dir)"
-mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
-if ((${#engine_wheels[@]} != 1)); then
-    echo "expected exactly one Engine wheel, found ${#engine_wheels[@]}" >&2
-    exit 1
-fi
-wheel="${engine_wheels[0]}"
 mkdir -p build/test-results
 
 failed=0
@@ -29,19 +27,25 @@ run_check() {
     fi
 }
 
+# Native tests run alongside the Python checks.
+(
+    run_check native-tests engine/tools/run-native-tests.sh
+    exit "$failed"
+) &
+native_pid=$!
+
 run_check packets .venv/bin/python data/tools/validate_packets.py
-run_check python-tests bash -c \
-    'cd "$1/engine" && ../.venv/bin/python -m pytest -q --junitxml=../build/test-results/pytest.xml' \
-    _ "$repo_root"
-run_check native-tests env EPCSAFT_NATIVE_BUILD_READY=1 \
-    engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example regression
+# JUnit goes to a temporary file first, so a reader never sees a partial report.
+run_check python-tests bash -c 'cd "$1/engine" && s=0 && xml=../build/test-results/pytest.xml
+    ../.venv/bin/python -m pytest -q --junitxml="$xml.tmp" || s=$?
+    mv "$xml.tmp" "$xml" && python3 ../tools/report.py --stamp "$xml"; exit "$s"' _ "$repo_root"
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
-run_check analysis-layout .venv/bin/python tools/check-analysis-layout.py
-run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
+run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir"
 
+wait "$native_pid" || failed=1
 if ((failed)); then
     exit 1
 fi
-echo "fast installed-wheel checks passed"
+echo "fast checks passed"
 echo "slow Engine evidence, analysis reproductions, clang-tidy, and sanitizers run only by explicit owner command"

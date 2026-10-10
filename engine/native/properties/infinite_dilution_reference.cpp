@@ -15,15 +15,50 @@
 
 namespace epcsaft {
 
+State properties::close_density(const HelmholtzModel& model, double temperature, double pressure,
+                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density) {
+    if (prior_density) {
+        core::Scope scope("density_anchor");
+        try {
+            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
+            if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
+            if (state.density_convergence) scope.finish(*state.density_convergence);
+            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
+        } catch (const std::runtime_error& error) {
+            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
+            scope.probe("anchor_failure", {*prior_density}, 0, error.what());
+        }
+    }
+    return model.state_at_pressure(temperature, pressure, composition, branch);
+}
+
 namespace {
 
-constexpr std::array<double, 5> NEUTRAL_REFERENCE_MOLALITIES = {
+std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
+    if (!state.log_fugacity_coefficient.has_value())
+        throw std::runtime_error("reference fugacity is unavailable");
+    return {require_component_property((*state.log_fugacity_coefficient)[ions[0]]),
+            require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
+}
+
+// EqID: reference_molality_sequence; the fifth rung is the convergence witness.
+constexpr std::array<double, 5> REFERENCE_MOLALITIES = {
     policy::REFERENCE_MOLALITY_ONE.value,
     policy::REFERENCE_MOLALITY_TWO.value,
     policy::REFERENCE_MOLALITY_THREE.value,
     policy::REFERENCE_MOLALITY_FOUR.value,
     policy::REFERENCE_CONVERGENCE_WITNESS.value,
 };
+
+// A declaration whose solvent, pure reference species, solute ratios or reaction carry net charge.
+struct NonNeutralDeclaration final : std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
+
+NeutralReferenceStatus declaration_status(const std::invalid_argument& error) {
+    return dynamic_cast<const NonNeutralDeclaration*>(&error) != nullptr
+        ? NeutralReferenceStatus::NonNeutralDeclaration : NeutralReferenceStatus::InvalidDeclaration;
+}
 
 double validate_neutral_reference_declaration(
     const Parameters& parameters,
@@ -39,9 +74,21 @@ double validate_neutral_reference_declaration(
         || stoichiometry.size() != components) {
         throw std::invalid_argument("invalid neutral reference declaration");
     }
+    if (!declaration.species_reference.empty()) {
+        if (declaration.species_reference.size() != components)
+            throw std::invalid_argument("species reference size");
+        for (std::size_t i = 0; i < components; ++i) {
+            const auto choice = declaration.species_reference[i];
+            if (choice != SpeciesReference::InfiniteDilution && choice != SpeciesReference::PureLiquid
+                && choice != SpeciesReference::PureGas)
+                throw std::invalid_argument("species reference convention");
+            if (choice != SpeciesReference::InfiniteDilution && parameters.charge_number[i] != 0)
+                throw NonNeutralDeclaration("pure reference species is charged");
+        }
+    }
     const std::size_t solvent = *declaration.solvent_index;
     if (parameters.charge_number[solvent] != 0) {
-        throw std::invalid_argument("neutral reference solvent is charged");
+        throw NonNeutralDeclaration("neutral reference solvent is charged");
     }
     const auto& molar_masses = parameters.molar_mass_kg_per_mol;
     const double solvent_mass = molar_masses[solvent];
@@ -64,10 +111,10 @@ double validate_neutral_reference_declaration(
         reaction_charge += coefficient * static_cast<double>(parameters.charge_number[component]);
     }
     if (!std::isfinite(charge) || charge != 0.0) {
-        throw std::invalid_argument("neutral reference solute ratios are not charge neutral");
+        throw NonNeutralDeclaration("neutral reference solute ratios are not charge neutral");
     }
     if (!std::isfinite(reaction_charge) || reaction_charge != 0.0) {
-        throw std::invalid_argument("neutral reference reaction is not charge neutral");
+        throw NonNeutralDeclaration("neutral reference reaction is not charge neutral");
     }
     return solvent_mass;
 }
@@ -98,18 +145,63 @@ std::vector<double> neutral_reference_composition(
     return composition;
 }
 
+}  // namespace
+
+ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    std::size_t temperature_order, std::size_t pressure_order,
+    std::optional<std::size_t> parameter, const State& state) {
+    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
+    ResidualEnergyAction result;
+    const double pressure_scale = state.pressure_density_derivative * state.molar_density;
+    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
+    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
+    double contraction = 0.0;
+    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        PressureActionDirection direction;
+        double weight = 1.0;
+        for (std::size_t j = 0; j < order; ++j) {
+            const double sign = j && (mask & (std::size_t(1) << (j-1))) ? -1.0 : 1.0;
+            weight *= sign;
+            if (j < temperature_order) direction.temperature += sign * temperature;
+            else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
+            else {
+                const auto& active = model.active_parameters()[*parameter];
+                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
+            }
+        }
+        const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
+            composition, stoichiometry, direction, order);
+        result.status = series.status;
+        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
+        result.diagnostics.site_solves += series.diagnostics.site_solves;
+        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
+        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
+        result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
+        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
+        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
+        result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
+        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
+        result.diagnostics.site_rank = series.diagnostics.site_rank;
+        result.diagnostics.site_pivot_ratio = std::max(result.diagnostics.site_pivot_ratio, series.diagnostics.site_pivot_ratio);
+        if (series.status != PropertyActionStatus::Available) return result;
+        contraction += weight * series.contraction[order];
+    }
+    result.action = contraction / (double(std::size_t(1) << (order-1)) * scale);
+    if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
+    return result;
+}
+
+namespace {
+
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     double solvent_mass = 0.0;
-    std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
-    std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
-    std::optional<HelmholtzDerivatives> terminal_derivatives;
-    // E2 at the last three ladder points for the temperature/parameter slopes and their limit check.
-    std::array<std::optional<HelmholtzDerivatives>, 3> thermal_derivatives;
+    std::array<std::vector<double>, REFERENCE_MOLALITIES.size()> composition;
+    std::array<State, REFERENCE_MOLALITIES.size()> state;
+    std::vector<std::optional<State>> pure_state;
     std::size_t temperature_order = 0;
     bool parameter_jets = false;
-    double pressure_v = 0.0;
-    double pressure_vv = 0.0;
 };
 
 struct NeutralReferenceTraceResult final {
@@ -123,7 +215,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     double temperature,
     double pressure,
     const NeutralReferenceDeclaration& declaration,
-    bool pressure_jets,
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
     bool parameter_jets
@@ -148,15 +239,17 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         // A known liquid solvent density is tried first as a locally unique anchor; any failure
         // falls back to the cold scan and its branch admission.
         std::optional<double> anchor = solvent_anchor;
-        for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
+        for (std::size_t point = 0; point < REFERENCE_MOLALITIES.size(); ++point) {
             trace.composition[point] = neutral_reference_composition(
-                declaration, solvent_mass, NEUTRAL_REFERENCE_MOLALITIES[point]);
+                declaration, solvent_mass, REFERENCE_MOLALITIES[point]);
             try {
                 try {
                     trace.state[point] = model.state_at_pressure(
                         temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
-                } catch (const std::exception&) {
+                } catch (const std::exception& error) {
                     if (point != 0 || !anchor) throw;
+                    if (scope.diagnostics_on()) scope.probe("anchor_cold_retry",
+                        {*anchor, static_cast<double>(point)}, 0, error.what());
                     trace.state[point] = model.state_at_pressure(
                         temperature, pressure, trace.composition[point], DensityBranch::Liquid, std::nullopt);
                 }
@@ -185,63 +278,57 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             }
             anchor = trace.state[point].molar_density;
         }
-        if (pressure_jets) {
-            const double volume = 1.0 / trace.state.back().molar_density;
-            const auto derivatives = model.evaluate(
-                temperature, volume, trace.composition.back(), DerivativeOrder::Hessian);
-            const std::size_t width = derivatives.gradient.size();
-            if (width != 2 + components + model.active_parameters().size()
-                || derivatives.hessian.size() != width * width) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet has invalid Hessian shape";
-                return result;
-            }
-            std::vector<double> volume_direction(width, 0.0);
-            volume_direction[1] = 1.0;
-            const auto pressure_third = model.residual_energy_action(
-                temperature, volume, trace.composition.back(),
-                {volume_direction, volume_direction, volume_direction});
-            if (!pressure_third.action.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet unavailable from residual E3";
-                return result;
-            }
-            const double phi_vv = derivatives.hessian[width + 1];
-            const double pressure_v = GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (-1.0 / (volume * volume) - phi_vv);
-            const double pressure_vv = GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (2.0 / (volume * volume * volume) - *pressure_third.action);
-            if (!std::isfinite(pressure_v) || pressure_v >= 0.0
-                || !std::isfinite(pressure_vv)) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure response is nonfinite";
-                return result;
-            }
-            trace.terminal_derivatives = derivatives;
-            trace.pressure_v = pressure_v;
-            trace.pressure_vv = pressure_vv;
+        std::vector<std::size_t> pure_indices;
+        for (std::size_t i = 0; i < declaration.species_reference.size(); ++i) {
+            const auto choice = declaration.species_reference[i];
+            if (choice != SpeciesReference::InfiniteDilution
+                && !(i == *declaration.solvent_index && choice == SpeciesReference::PureLiquid)) pure_indices.push_back(i);
         }
-        // A failed slope evaluation leaves only the slope unavailable, never the value.
-        for (std::size_t point = 0; (temperature_order > 0 || parameter_jets) && point < 3; ++point) {
-            const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-            try {
-                trace.thermal_derivatives[point] = model.evaluate(temperature,
-                    1.0 / trace.state[ladder].molar_density, trace.composition[ladder],
-                    DerivativeOrder::Hessian);
-            } catch (const std::exception&) {
-                trace.thermal_derivatives[point].reset();
+        if (!pure_indices.empty()) {
+            trace.pure_state.resize(components);
+            for (const auto i : pure_indices) {
+                const auto choice = declaration.species_reference[i];
+                std::vector<double> composition(components, 0.0);
+                composition[i] = 1.0;
+                try {
+                    auto state = model.state_at_pressure(temperature, pressure, composition,
+                        choice == SpeciesReference::PureGas ? DensityBranch::Vapor : DensityBranch::Liquid);
+                    if (!(state.pressure_density_derivative > 0.0))
+                        throw std::runtime_error("nonpositive pure-reference pressure slope");
+                    if (state.density_branch == DensityBranch::Unspecified) {
+                        // One stable root serves the declared branch unless it lies past the mechanical
+                        // loop. The ALG-DENSITY scan grid finds the folds; a stable root is already sided
+                        // against an unrefined fold sign bracket, so no refinement or budget is requested.
+                        const double low = std::log(policy::DENSITY_LOWER_FRACTION.value * pressure
+                            / (GAS_CONSTANT_J_PER_MOL_K * temperature)), span = std::log(policy::DENSITY_UPPER_FRACTION.value
+                            * model.molar_density_upper_bound(temperature, composition)) - low;
+                        const auto n = static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value);
+                        std::vector<double> nodes(n + 1);
+                        for (std::size_t k = 0; k <= n; ++k) nodes[k] = std::exp(low + static_cast<double>(k) / n * span);
+                        constexpr double none = std::numeric_limits<double>::max();
+                        const auto loop = model.density_diagnostics(temperature, pressure, composition, nodes, none, none,
+                            std::numeric_limits<std::size_t>::max(), none, true, std::nullopt, none, DerivativeOrder::PressureSlope);
+                        const bool gas = choice == SpeciesReference::PureGas;
+                        if (!loop.unresolved.empty() || (!loop.spinodals.empty() && (gas
+                            ? state.molar_density > loop.spinodals.front().upper
+                            : state.molar_density < loop.spinodals.back().lower)))
+                            throw std::runtime_error(std::string(gas ? "vapor" : "liquid")
+                                + " branch absent: the single stable root lies across the mechanical loop");
+                    }
+                    trace.pure_state[i] = std::move(state);
+                } catch (const std::exception& error) {
+                    result.status = NeutralReferenceStatus::DensityUnavailable;
+                    result.message = "pure reference species " + std::to_string(i) + ": " + error.what();
+                    return result;
+                }
             }
         }
         result.trace = std::move(trace);
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        result.status = message.find("charged") != std::string::npos
-                || message.find("charge neutral") != std::string::npos
-            ? NeutralReferenceStatus::NonNeutralDeclaration
-            : NeutralReferenceStatus::InvalidDeclaration;
-        result.message = message;
+        result.status = declaration_status(error);
+        result.message = error.what();
         return result;
     } catch (const std::exception& error) {
         result.status = NeutralReferenceStatus::Nonfinite;
@@ -250,134 +337,116 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     }
 }
 
-bool supported_reference_basis(ReferenceSourceBasis basis) {
-    return basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
-        || basis == ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
+ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, double temperature,
+    const NeutralReferenceTrace& trace, std::size_t rung, const std::vector<double>& stoichiometry,
+    std::size_t a, std::size_t b, std::optional<std::size_t> parameter) {
+    if (trace.pure_state.empty())
+        return reference_partial_from_state(model, temperature, trace.composition[rung],
+            stoichiometry, a, b, parameter, trace.state[rung]);
+    auto dilute = stoichiometry;
+    for (std::size_t i = 0; i < dilute.size(); ++i)
+        if (trace.pure_state[i]) dilute[i] = 0.0;
+    ResidualEnergyAction result;
+    result.status = PropertyActionStatus::Available;
+    result.action = 0.0;
+    if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0.0; })) {
+        result = reference_partial_from_state(model, temperature, trace.composition[rung],
+            dilute, a, b, parameter, trace.state[rung]);
+        if (!result.action) return result;
+    }
+    for (std::size_t i = 0; i < dilute.size(); ++i) {
+        if (!trace.pure_state[i] || stoichiometry[i] == 0.0) continue;
+        std::vector<double> composition(dilute.size(), 0.0), insertion(dilute.size(), 0.0);
+        composition[i] = 1.0; insertion[i] = stoichiometry[i];
+        const auto partial = reference_partial_from_state(model, temperature, composition,
+            insertion, a, b, parameter, *trace.pure_state[i]);
+        if (!partial.action) return partial;
+        *result.action += *partial.action;
+    }
+    if (!std::isfinite(*result.action)) {
+        result.action.reset(); result.status = PropertyActionStatus::Nonfinite;
+    }
+    return result;
+}
+
+// EqID: reference_limit_terminal_pair: the 1e-10, 1e-12, 1e-14 mol/kg rungs carry the
+// Debye-Hueckel tail f0 + c sqrt(m) + O(m); each rung pair, a factor 100 in m, extrapolates
+// sqrt(m) away as (10 f(m/100) - f(m)) / 9. The column returns the terminal pair's limit and
+// is admitted on the scaled change between the two extrapolations, O(m) ~ 1e-11 relative to the
+// tail. scaled_changes keep the raw rung changes. Returns the admitted change when the ladder is
+// complete and finite.
+std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivative& column, double scale, double tolerance) {
+    column.criterion = tolerance;
+    const auto& ladder = column.ladder;
+    if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+    if (!std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) {
+        column.message = "nonfinite reference ladder"; return std::nullopt;
+    }
+    for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
+    const auto limit = [&](std::size_t k) { return (10.0 * *ladder[k+1] - *ladder[k]) / 9.0; };
+    const double change = scale * std::abs(limit(1) - limit(0));
+    if (change <= tolerance) column.value = limit(1);
+    else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
+    return change;
+}
+
+// Scale is T^a P^b max(1, |theta|). Columns that enter ln K and its first slopes admit at
+// REFERENCE_CONVERGENCE_TOLERANCE; d2C/dT2 and the temperature-bearing higher columns (reference
+// order >= 2) enter the reaction heat capacity and its derivatives, so they admit at
+// REFERENCE_HEAT_CAPACITY_TOLERANCE / R. Pure-pressure higher columns are volume and compressibility
+// quantities that share that tolerance by convention; their scaled changes are 1e-21 to 2e-17 in the
+// reference-limits case, against 1.2e-3.
+NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
+    const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
+    std::optional<std::size_t> parameter, double scale, double tolerance, std::optional<double>* observed = nullptr) {
+    NeutralReferenceReactionDiagnostic::Derivative column;
+    column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
+    for (std::size_t point = 0; point < 3; ++point) {
+        try {
+            const auto partial = reference_partial_from_trace(model, temperature, trace,
+                REFERENCE_MOLALITIES.size() - 3 + point, stoichiometry, a, b, parameter);
+            column.ladder[point] = partial.action;
+            if (!partial.action) {
+                column.action_status = partial.status;
+                column.message = "reference action status " + std::to_string(int(partial.status));
+            }
+        } catch (const std::exception& error) { column.message = error.what(); }
+    }
+    const auto change = admit_ladder(column, scale, tolerance);
+    if (observed && change) *observed = change;
+    return column;
 }
 
 NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     const HelmholtzModel& model,
     double temperature,
-    const NeutralReferenceDeclaration& declaration,
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference,
     bool pressure_jets,
     const NeutralReferenceTrace& trace
 ) {
-    // EqID: standard_state_transfer_temperature_derivative
-    // dC/dT|_P = sum nu psi_{n T} + C_V V_T, V_T = -p_T/p_V, at fixed ladder composition.
-    // EqID: standard_state_transfer_parameter_derivative
-    // The same first slope in an active coordinate theta, with p_theta = -RT psi_{V theta}.
-    // EqID: standard_state_transfer_temperature_second_derivative
-    // d2C/dT2|_P = D2C[w,w] + C_V V_TT along w = e_T + V_T e_V, V_TT = -D2p[w,w]/p_V.
-    // EqID: standard_state_transfer_temperature_pressure_derivative
-    // d2C/dTdP = D(C_V/p_V)[w] = (DC_V[w] - C_V Dp_V[w]/p_V)/p_V at a system-pressure reference.
-    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0) -> std::array<std::optional<double>, 3> {
-        const auto& derivatives = trace.thermal_derivatives[point];
-        const std::size_t width = derivatives ? derivatives->gradient.size() : 0;
-        if (!derivatives || width < 2 + stoichiometry.size() || width <= coordinate
-            || derivatives->hessian.size() != width * width) return {};
-        const auto& h = derivatives->hessian;
-        const double gas = GAS_CONSTANT_J_PER_MOL_K;
-        const double rt = gas * temperature;
-        const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-        const double volume = 1.0 / trace.state[ladder].molar_density;
-        const double pressure_t = (coordinate == 0 ? gas * (1.0 / volume - derivatives->gradient[1]) : 0.0)
-            - rt * h[width + coordinate];
-        const double pressure_v = rt * (-1.0 / (volume * volume) - h[width + 1]);
-        double contraction_t = 0.0, contraction_v = 0.0, delta_nu = 0.0;
-        std::vector<double> reaction(width, 0.0);
-        for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-            contraction_t += stoichiometry[component] * h[(2 + component) * width + coordinate];
-            contraction_v += stoichiometry[component]
-                * (h[(2 + component) * width + 1] - 1.0 / volume);
-            delta_nu += stoichiometry[component];
-            reaction[2 + component] = stoichiometry[component];
-        }
-        const double volume_t = -pressure_t / pressure_v;
-        const double slope = contraction_t + contraction_v * volume_t;
-        if (!(pressure_v < 0.0) || !std::isfinite(slope)) return {};
-        std::array<std::optional<double>, 3> result{slope};
-        if (coordinate != 0) {
-            if (trace.temperature_order == 0) return result;
-            // EqID: standard_state_transfer_temperature_parameter_derivative
-            const double vt = -(gas * (1.0 / volume - derivatives->gradient[1]) - rt * h[width]) / pressure_v;
-            const double theta_scale = std::max(1.0, std::abs(model.active_parameter_values()[coordinate - 2 - stoichiometry.size()]));
-            const double alpha = std::max(1.0 / theta_scale, std::abs(volume_t) / volume)
-                / std::max(1.0 / temperature, std::abs(vt) / volume);
-            std::vector<double> plus(width, 0.0), minus(width, 0.0), along_volume(width, 0.0);
-            plus[0] = minus[0] = alpha;
-            plus[1] = alpha * vt + volume_t; minus[1] = alpha * vt - volume_t;
-            plus[coordinate] = 1.0; minus[coordinate] = -1.0; along_volume[1] = 1.0;
-            const auto mixed = [&](const auto& q) -> std::optional<double> {
-                const auto a = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, plus, plus}).action;
-                const auto b = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, minus, minus}).action;
-                return a && b ? std::optional<double>((*a - *b) / (4.0 * alpha)) : std::nullopt;
-            };
-            const auto reaction_wu = mixed(reaction), volume_wu = mixed(along_volume);
-            if (reaction_wu && volume_wu) {
-                const double pressure_wu = -gas * (h[width + coordinate] + volume_t * h[width + 1] + volume_t / (volume * volume))
-                    + 2.0 * rt * vt * volume_t / (volume * volume * volume) - rt * *volume_wu;
-                result[1] = *reaction_wu + delta_nu * vt * volume_t / (volume * volume) - contraction_v * pressure_wu / pressure_v;
-            }
-            return result;
-        }
-        std::vector<double> path(width, 0.0), along_volume(width, 0.0);
-        path[0] = 1.0;
-        path[1] = volume_t;
-        along_volume[1] = 1.0;
-        // D3psi[u, v, v]: the repeated-direction E3 route keeps the singular pure-ionic reaction
-        // third derivative out of every mixed response at dilute ionic states.
-        const auto third = [&](const std::vector<double>& u, const std::vector<double>& v) {
-            return model.residual_energy_action(temperature, volume, trace.composition[ladder], {u, v, v}).action;
-        };
-        const auto reaction_ww = trace.temperature_order < 2 ? std::nullopt : third(reaction, path);
-        const auto volume_ww = trace.temperature_order < 2 ? std::nullopt : third(along_volume, path);
-        if (reaction_ww && volume_ww) {
-            const double contraction_ww = *reaction_ww + delta_nu * volume_t * volume_t / (volume * volume);
-            const double pressure_ww = -2.0 * gas * volume_t / (volume * volume)
-                + 2.0 * rt * volume_t * volume_t / (volume * volume * volume)
-                - gas * (2.0 * (h[width] + volume_t * h[width + 1]) + temperature * *volume_ww);
-            result[1] = contraction_ww - contraction_v * pressure_ww / pressure_v;
-        }
-        if (!pressure_jets) return result;
-        // D3psi[nu, e_V, w] by balanced polarization in (a e_V +- w), a sizing e_V to w on the E3 scales.
-        const double a = volume * std::max(1.0 / temperature, std::abs(volume_t) / volume);
-        const auto shifted = [&](double step) { auto v = path; v[1] += step; return third(reaction, v); };
-        const auto reaction_plus = shifted(a), reaction_minus = shifted(-a);
-        const auto volume_vw = third(path, along_volume);
-        if (reaction_plus && reaction_minus && volume_vw) {
-            const double contraction_vw = (*reaction_plus - *reaction_minus) / (4.0 * a) + delta_nu * volume_t / (volume * volume);
-            const double pressure_vw = gas * (-1.0 / (volume * volume) - h[width + 1])
-                + 2.0 * rt * volume_t / (volume * volume * volume) - rt * *volume_vw;
-            result[2] = (contraction_vw - contraction_v * pressure_vw / pressure_v) / pressure_v;
-        }
-        return result;
-    };
+    // EqID: reference_single_insertion_taylor
+    // Raw lower T/P/EOS partials reuse each resolved terminal state; admission stays below.
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
     try {
-        validate_neutral_reference_declaration(
-            model.parameters(), declaration, stoichiometry);
-        if (!supported_reference_basis(reference.source_basis)) {
-            result.status = NeutralReferenceStatus::UnsupportedSourceBasis;
-            result.message = "unsupported neutral reference source basis";
-            return result;
-        }
-        std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
+        std::array<double, REFERENCE_MOLALITIES.size()> contractions{};
         for (std::size_t point = 0; point < contractions.size(); ++point) {
             const auto& state = trace.state[point];
             const double log_density = std::log(state.molar_density / 1.0);
             double contraction = 0.0;
             for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
                 if (stoichiometry[component] == 0.0) continue;
-                const double chemical = require_component_property(state.residual_chemical_potential_over_rt[component]);
+                const auto& source = !trace.pure_state.empty() && trace.pure_state[component]
+                    ? *trace.pure_state[component] : state;
+                const double component_log_density = &source == &state ? log_density : std::log(source.molar_density / 1.0);
+                const double chemical = require_component_property(source.residual_chemical_potential_over_rt[component]);
                 if (!std::isfinite(chemical)) {
                     result.status = NeutralReferenceStatus::Nonfinite;
                     result.message = "neutral reference residual chemical potential is nonfinite";
                     return result;
                 }
-                contraction += stoichiometry[component] * (log_density + chemical);
+                contraction += stoichiometry[component] * (component_log_density + chemical);
             }
             if (!std::isfinite(contraction)) {
                 result.status = NeutralReferenceStatus::Nonfinite;
@@ -386,52 +455,37 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             }
             contractions[point] = contraction;
         }
-        result.observed_terminal_change = std::max(
-            std::abs(contractions[4] - contractions[3]),
-            std::abs(contractions[3] - contractions[2]));
-        if (!std::isfinite(*result.observed_terminal_change)) {
-            result.status = NeutralReferenceStatus::Nonfinite;
-            result.message = "neutral reference terminal change is nonfinite";
-            return result;
-        }
-        if (*result.observed_terminal_change > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+        NeutralReferenceReactionDiagnostic::Derivative terminal;
+        terminal.ladder = {contractions[2], contractions[3], contractions[4]};
+        result.observed_terminal_change = admit_ladder(terminal, 1.0, policy::REFERENCE_CONVERGENCE_TOLERANCE.value);
+        if (!terminal.value) {
             result.status = NeutralReferenceStatus::TerminalChangeExceeded;
-            result.message = "neutral reference terminal change exceeds tolerance";
+            result.message = "neutral reference " + terminal.message;
             return result;
         }
-        result.terminal_contraction = contractions.back();
-        const std::array<std::array<std::optional<double>, 3>, 3> slopes = {
-            temperature_slopes(0), temperature_slopes(1), temperature_slopes(2)};
-        // A slope is admitted when its scaled change over the last three ladder points meets the value's
-        // criterion: T|dD| (first), T P|dD| (mixed) and max(|theta|, 1)|dD| (parameter) at most 5e-5. The
-        // second slope is sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
-        const auto admit = [](const std::array<std::optional<double>, 3>& ladder, double scale, double tolerance,
-                              std::optional<double>* observed = nullptr) -> std::optional<double> {
-            if (!ladder[0] || !ladder[1] || !ladder[2] || !std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) return std::nullopt;
-            const double change = scale * std::max(std::abs(*ladder[2] - *ladder[1]), std::abs(*ladder[1] - *ladder[0]));
-            if (observed != nullptr) *observed = change;
-            return change <= tolerance ? ladder[2] : std::nullopt;
+        result.terminal_contraction = terminal.value;
+        const auto admit = [&](std::size_t a, std::size_t b, std::optional<std::size_t> parameter,
+                               double scale, double tolerance, std::optional<double>* observed = nullptr) {
+            return result.lower_derivatives.emplace_back(reference_column(model, temperature, trace, stoichiometry,
+                a, b, parameter, scale, tolerance, observed)).value;
         };
-        const auto order = [&](std::size_t k) { return std::array{slopes[0][k], slopes[1][k], slopes[2][k]}; };
         const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
-        result.terminal_contraction_temperature_derivative = admit(order(0), temperature, tolerance,
-            &result.observed_temperature_derivative_change);
-        result.terminal_contraction_temperature_second_derivative = admit(order(1), temperature * temperature,
-            policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
-            &result.observed_temperature_second_derivative_change);
-        result.terminal_contraction_temperature_pressure_derivative = admit(order(2), temperature * trace.pressure, tolerance);
+        if (trace.temperature_order > 0 || trace.parameter_jets) {
+            result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt, temperature, tolerance,
+                &result.observed_temperature_derivative_change);
+            if (trace.temperature_order > 1)
+                result.terminal_contraction_temperature_second_derivative = admit(2, 0, std::nullopt, temperature * temperature,
+                    policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
+                    &result.observed_temperature_second_derivative_change);
+            if (pressure_jets)
+                result.terminal_contraction_temperature_pressure_derivative = admit(1, 1, std::nullopt, temperature * trace.pressure, tolerance);
+        }
         const auto values = model.active_parameter_values();
-        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
-            const std::array jets{temperature_slopes(0, column + a), temperature_slopes(1, column + a), temperature_slopes(2, column + a)};
+        for (std::size_t a = 0; trace.parameter_jets && a < values.size(); ++a) {
             const double scale = std::max(std::abs(values[a]), 1.0);
-            result.terminal_contraction_parameter_derivative.push_back(admit({jets[0][0], jets[1][0], jets[2][0]}, scale, tolerance));
-            if (trace.temperature_order > 0) {
-                result.temperature_parameter_ladder.push_back({jets[0][1], jets[1][1], jets[2][1]});
-                result.observed_temperature_parameter_change.emplace_back();
-                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(
-                    result.temperature_parameter_ladder.back(), temperature * scale, tolerance,
-                    &result.observed_temperature_parameter_change.back()));
-            }
+            result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a, scale, tolerance));
+            if (trace.temperature_order > 0)
+                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance));
         }
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;
@@ -439,66 +493,19 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             result.terminal_contraction_temperature_pressure_derivative = 0.0;
         } else if (!pressure_jets) {
             // The reference value and terminal-change gate are available from the
-            // ladder alone.  Defer E2/E3 pressure contractions until a pressure
+            // ladder alone.  Defer the pressure columns until a pressure
             // direction is actually requested by the equilibrium caller.
         } else {
-            if (!trace.terminal_derivatives.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet is missing";
-                return result;
-            }
-            const auto& derivatives = *trace.terminal_derivatives;
-            const std::size_t width = derivatives.gradient.size();
-            std::vector<double> volume_direction(width, 0.0);
-            std::vector<double> stoichiometry_direction(width, 0.0);
-            volume_direction[1] = 1.0;
-            for (std::size_t component = 0; component < stoichiometry.size(); ++component)
-                stoichiometry_direction[2 + component] = stoichiometry[component];
-            const double volume = 1.0 / trace.state.back().molar_density;
-            const auto contraction_third = model.residual_energy_action(
-                temperature, volume, trace.composition.back(),
-                {stoichiometry_direction, volume_direction, volume_direction});
-            if (!contraction_third.action.has_value()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet unavailable from residual E3";
-                return result;
-            }
-            double delta_nu = 0.0;
-            double chemical_volume = 0.0;
-            for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-                delta_nu += stoichiometry[component];
-                chemical_volume += stoichiometry[component]
-                    * derivatives.hessian[(2 + component) * width + 1];
-            }
-            const double contraction_v = -delta_nu / volume + chemical_volume;
-            const double contraction_vv = delta_nu / (volume * volume)
-                + *contraction_third.action;
-            const double volume_pressure = 1.0 / trace.pressure_v;
-            const double volume_pressure_pressure = -trace.pressure_vv
-                / (trace.pressure_v * trace.pressure_v * trace.pressure_v);
-            const double contraction_pressure = contraction_v * volume_pressure;
-            const double contraction_pressure_pressure = contraction_vv
-                    * volume_pressure * volume_pressure
-                + contraction_v * volume_pressure_pressure;
-            if (!std::isfinite(contraction_pressure)
-                || !std::isfinite(contraction_pressure_pressure)) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference pressure jet is nonfinite";
-                return result;
-            }
-            result.terminal_contraction_pressure_derivative = contraction_pressure;
-            result.terminal_contraction_pressure_second_derivative =
-                contraction_pressure_pressure;
+            // The pressure slopes come from the same sqrt(m) limit as the value and its T slopes.
+            result.terminal_contraction_pressure_derivative = admit(0, 1, std::nullopt, trace.pressure, tolerance);
+            result.terminal_contraction_pressure_second_derivative = admit(0, 2, std::nullopt,
+                trace.pressure * trace.pressure, policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K);
         }
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        result.status = message.find("charged") != std::string::npos
-                || message.find("charge neutral") != std::string::npos
-            ? NeutralReferenceStatus::NonNeutralDeclaration
-            : NeutralReferenceStatus::InvalidDeclaration;
-        result.message = message;
+        result.status = declaration_status(error);
+        result.message = error.what();
         return result;
     } catch (const std::exception& error) {
         result.status = NeutralReferenceStatus::Nonfinite;
@@ -566,54 +573,6 @@ std::vector<double> formula_composition(
     return composition;
 }
 
-ResidualEnergyAction reference_partial(const HelmholtzModel& model, double temperature,
-    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-    std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, std::optional<double> anchor) {
-    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
-    if (order == 0 || order > 4 || (parameter && *parameter >= model.active_parameters().size()))
-        throw std::invalid_argument("reference partial order or coordinate");
-    ResidualEnergyAction result;
-    const auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
-    const double pressure_scale = state.pressure_density_derivative * state.molar_density;
-    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
-    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
-    double contraction = 0.0;
-    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
-        PressureActionDirection direction;
-        double weight = 1.0;
-        for (std::size_t j = 0; j < order; ++j) {
-            const double sign = j && (mask & (std::size_t(1) << (j-1))) ? -1.0 : 1.0;
-            weight *= sign;
-            if (j < temperature_order) direction.temperature += sign * temperature;
-            else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
-            else {
-                const auto& active = model.active_parameters()[*parameter];
-                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
-            }
-        }
-        const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
-            composition, stoichiometry, direction, order);
-        result.status = series.status;
-        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
-        result.diagnostics.site_solves += series.diagnostics.site_solves;
-        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
-        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
-        result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
-        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
-        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
-        result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
-        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
-        result.diagnostics.site_rank = series.diagnostics.site_rank;
-        result.diagnostics.site_pivot_ratio = std::max(result.diagnostics.site_pivot_ratio, series.diagnostics.site_pivot_ratio);
-        if (series.status != PropertyActionStatus::Available) return result;
-        contraction += weight * series.contraction[order];
-    }
-    result.action = contraction / (double(std::size_t(1) << (order-1)) * scale);
-    if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
-    return result;
-}
-
 double reaction_reference_log_scale(
     const HelmholtzModel& model,
     const NeutralReferenceDeclaration& declaration,
@@ -647,20 +606,17 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     core::Scope scope("reaction_references");
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
     if (scope.on()) {
-        scope.probe("reference_inputs", std::vector<double>{temperature, system_pressure, double(pressure_jets),
+        scope.probe("reference_inputs", {temperature, system_pressure, double(pressure_jets),
             double(temperature_order), double(parameter_jets), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
-        scope.probe("reference_declaration", std::vector<double>{double(declaration.solvent_index.has_value()),
+        scope.probe("reference_declaration", {double(declaration.solvent_index.has_value()),
             double(declaration.solvent_index.value_or(0)), declaration.standard_molality_mol_per_kg});
         scope.probe("reference_ratios", declaration.solute_molality_ratios);
-        scope.probe("active_parameter_values", model.active_parameter_values());
+        scope.observe([&] { scope.probe("active_parameter_values", model.active_parameter_values()); });
     }
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
     struct CachedTrace final {
         double pressure = 0.0;
-        bool pressure_jets = false;
-        std::size_t temperature_order = 0;
-        bool parameter_jets = false;
         NeutralReferenceTraceResult result;
     };
     std::vector<CachedTrace> cache;
@@ -676,39 +632,26 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
         auto& diagnostic = result[row];
         const auto& reference = references[row];
-        if (!supported_reference_basis(reference.source_basis)) {
-            diagnostic.status = NeutralReferenceStatus::UnsupportedSourceBasis;
-            diagnostic.message = "unsupported neutral reference source basis";
-            continue;
-        }
         try {
             validate_neutral_reference_declaration(
                 model.parameters(), declaration, stoichiometries[row]);
         } catch (const std::invalid_argument& error) {
-            const std::string message = error.what();
-            diagnostic.status = message.find("charged") != std::string::npos
-                    || message.find("charge neutral") != std::string::npos
-                ? NeutralReferenceStatus::NonNeutralDeclaration
-                : NeutralReferenceStatus::InvalidDeclaration;
-            diagnostic.message = message;
+            diagnostic.status = declaration_status(error);
+            diagnostic.message = error.what();
             continue;
         }
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
         const bool need_jets = pressure_jets && !reference.reference_pressure_pa.has_value();
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
-            return item.pressure == pressure && (!need_jets || item.pressure_jets)
-                && item.temperature_order >= temperature_order && (!parameter_jets || item.parameter_jets);
+            return item.pressure == pressure;
         });
-        if (scope.on()) scope.probe("reference_row", std::vector<double>{double(row), pressure,
+        if (scope.on()) scope.probe("reference_row", {double(row), pressure,
             double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(need_jets), double(found != cache.end())});
         if (found == cache.end()) {
             CachedTrace item;
             item.pressure = pressure;
-            item.pressure_jets = need_jets;
-            item.temperature_order = temperature_order;
-            item.parameter_jets = parameter_jets;
             item.result = build_neutral_reference_trace(model, temperature, pressure,
-                declaration, need_jets, solvent_anchor, temperature_order, parameter_jets);
+                declaration, solvent_anchor, temperature_order, parameter_jets);
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
@@ -718,11 +661,16 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             diagnostic.message = found->result.message;
             continue;
         }
+        if (!found->result.trace->pure_state.empty() && reference.source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution) {
+            diagnostic.status = NeutralReferenceStatus::UnsupportedSourceBasis;
+            diagnostic.message = "mixed species references require raw mole fractions; common molality is not qualified";
+            continue;
+        }
         diagnostic = neutral_reference_from_trace(
-            model, temperature, declaration, stoichiometries[row], reference,
+            model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
-        // Additional consumed columns, with independent admission on both terminal changes.
+        // Additional consumed columns, each the admitted sqrt(m) limit of its ladder.
         const auto& trace = *found->result.trace;
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
@@ -731,34 +679,16 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                     const std::size_t a = d-b-c;
                     if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
                     for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
+                        const auto parameter = c ? std::optional<std::size_t>(coordinate) : std::nullopt;
                         NeutralReferenceReactionDiagnostic::Derivative column;
-                        column.temperature_order = a; column.pressure_order = b;
-                        if (c) column.parameter = coordinate;
                         if (b && reference.reference_pressure_pa) {
+                            column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
                             column.ladder = {0.0, 0.0, 0.0}; column.value = 0.0;
                         } else {
-                            for (std::size_t k = 0; k < 3; ++k) {
-                                const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size()-3+k;
-                                try {
-                                    const auto partial = reference_partial(model, temperature, pressure,
-                                        trace.composition[rung], stoichiometries[row], a, b, column.parameter,
-                                        trace.state[rung].molar_density);
-                                    column.ladder[k] = partial.action;
-                                    if (!partial.action) column.message = "reference action status " + std::to_string(int(partial.status));
-                                } catch (const std::exception& error) { column.message = error.what(); }
-                            }
-                            const double scale = GAS_CONSTANT_J_PER_MOL_K * std::pow(temperature, int(a))
-                                * std::pow(pressure, int(b)) * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0);
-                            if (column.ladder[0] && column.ladder[1] && column.ladder[2]) {
-                                bool admitted = true;
-                                for (std::size_t k = 0; k < 2; ++k) {
-                                    column.scaled_changes[k] = scale * std::abs(*column.ladder[k+1]-*column.ladder[k]);
-                                    admitted &= std::isfinite(column.scaled_changes[k])
-                                        && column.scaled_changes[k] <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value;
-                                }
-                                if (admitted) column.value = column.ladder[2];
-                                else column.message = "reference scaled terminal change exceeds heat-capacity tolerance";
-                            }
+                            column = reference_column(model, temperature, trace, stoichiometries[row], a, b, parameter,
+                                std::pow(temperature, int(a)) * std::pow(pressure, int(b))
+                                    * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0),
+                                policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K);
                         }
                         if (!column.value) column.message = "reaction " + std::to_string(row) + " C_"
                             + std::to_string(a) + std::to_string(b) + (c ? " coordinate " + std::to_string(coordinate) : "")
@@ -785,130 +715,73 @@ NeutralReferenceReactionDiagnostic reaction_reference(
 }
 
 InfiniteDilutionReference infinite_dilution_reference(
-    const HelmholtzModel& model,
-    double temperature,
-    double pressure,
-    const std::vector<double>& solvent_fractions,
-    const std::array<std::size_t, 2>& ion_indices,
-    const std::array<int, 2>& stoichiometry
+    const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& solvent_fractions, const std::array<std::size_t, 2>& ion_indices,
+    const std::array<int, 2>& stoichiometry,
+    std::optional<double> first_rung_density, std::optional<double> pure_solvent_density
 ) {
     core::Scope scope("infinite_dilution_reference");
-    std::array<double, 4> molalities = {
-        policy::REFERENCE_MOLALITY_ONE.value,
-        policy::REFERENCE_MOLALITY_TWO.value,
-        policy::REFERENCE_MOLALITY_THREE.value,
-        policy::REFERENCE_MOLALITY_FOUR.value,
-    };
+    InfiniteDilutionReference result;
     std::optional<double> anchor;
     std::array<double, 2> previous{};
-    std::array<double, 2> current{};
-    double convergence_error = 0.0;
-    double terminal_error = 0.0;
     const std::size_t columns = model.active_parameters().size();
-    std::vector<std::array<double, 2>> previous_columns(columns), current_columns(columns);
-    std::vector<double> column_error(columns, 0.0);
+    std::vector<std::array<double, 2>> previous_columns(columns);
+    result.parameter_convergence_error.assign(columns, 0.0);
+    result.parameter_derivative.resize(columns);
     const auto values = model.active_parameter_values();
-    const auto read_columns = [&](const State& state, auto& out) {
-        for (std::size_t a = 0; a < columns; ++a)
-            for (std::size_t i = 0; i < 2; ++i)
-                out[a][i] = state.log_fugacity_parameter_derivative.empty() ? NAN
-                    : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
-    };
-    bool observed = false;
-    for (std::size_t index = 0; index < molalities.size(); ++index) {
-        const double molality = molalities[index];
-        const auto composition = formula_composition(
-            solvent_fractions,
-            model.parameters(),
-            ion_indices,
-            stoichiometry,
-            molality
-        );
-        const auto state = model.state_at_pressure(
-            temperature, pressure, composition, DensityBranch::Liquid, anchor
-        );
-        if (!state.log_fugacity_coefficient.has_value()) {
-            throw std::runtime_error("reference fugacity is unavailable");
-        }
-        current = {
-            require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]),
-            require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]),
+    for (std::size_t index = 0; index < REFERENCE_MOLALITIES.size(); ++index) {
+        const bool witness = index + 1 == REFERENCE_MOLALITIES.size();
+        const auto failed_column = [&](double e) {
+            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
         };
-        scope.probe(
-            "reference_ladder_point", {molality, current[0], current[1]},
-            static_cast<std::uint32_t>(index)
-        );
-        if (observed) {
-            // EqID: reference_limit_terminal_pair
-            convergence_error = std::max(
-                std::abs(current[0] - previous[0]),
-                std::abs(current[1] - previous[1])
-            );
-            terminal_error = convergence_error;
+        if (witness && !(result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+            || std::any_of(result.parameter_convergence_error.begin(), result.parameter_convergence_error.end(), failed_column))) break;
+        const auto composition = formula_composition(solvent_fractions, model.parameters(),
+            ion_indices, stoichiometry, REFERENCE_MOLALITIES[index]);
+        auto state = index == 0 ? properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, first_rung_density)
+            : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
+        const auto current = ion_log_fugacity(state, ion_indices);
+        // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
+        const double error = std::max(std::abs(current[0] - previous[0]), std::abs(current[1] - previous[1]));
+        if (witness) {
+            scope.probe("reference_witness_error", error);
+            if (result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+                && error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+                throw std::runtime_error("reference limit did not converge");
+        } else {
+            if (index) result.convergence_error = error;
+            result.log_fugacity = current;
+            result.molality = REFERENCE_MOLALITIES[index];
+            scope.probe("reference_ladder_point", {REFERENCE_MOLALITIES[index], current[0], current[1]}, static_cast<std::uint32_t>(index));
         }
-        read_columns(state, current_columns);
-        if (observed) for (std::size_t a = 0; a < columns; ++a)
-            column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
-                std::abs(current_columns[a][0] - previous_columns[a][0]),
-                std::abs(current_columns[a][1] - previous_columns[a][1]));
-        previous_columns = current_columns;
-        previous = current;
-        observed = true;
-        anchor = state.molar_density;
-        scope.probe("reference_convergence_error", convergence_error,
-                    static_cast<std::uint32_t>(index));
+        for (std::size_t a = 0; a < columns; ++a) {
+            std::array<double, 2> column;
+            for (std::size_t i = 0; i < 2; ++i) column[i] = state.log_fugacity_parameter_derivative.empty() ? NAN
+                : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
+            if (index && (!witness || failed_column(result.parameter_convergence_error[a])))
+                result.parameter_convergence_error[a] = std::max(1.0, std::abs(values[a]))
+                    * std::max(std::abs(column[0] - previous_columns[a][0]), std::abs(column[1] - previous_columns[a][1]));
+            if (!witness) previous_columns[a] = column;
+        }
+        if (!witness) {
+            previous = current;
+            anchor = state.molar_density;
+            scope.probe("reference_convergence_error", result.convergence_error, static_cast<std::uint32_t>(index));
+            if (index == 0) result.first_rung_state = std::move(state);
+        }
     }
-    if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-        || std::any_of(column_error.begin(), column_error.end(), [](double e) {
-            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value; })) {
-        const auto composition = formula_composition(
-            solvent_fractions,
-            model.parameters(),
-            ion_indices,
-            stoichiometry,
-            policy::REFERENCE_CONVERGENCE_WITNESS.value
-        );
-        const auto state = model.state_at_pressure(
-            temperature, pressure, composition, DensityBranch::Liquid, anchor
-        );
-        if (!state.log_fugacity_coefficient.has_value()) {
-            throw std::runtime_error("reference fugacity is unavailable");
-        }
-        const double witness_error = std::max(
-            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]) - current[0]),
-            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]) - current[1])
-        );
-        scope.probe("reference_witness_error", witness_error);
-        if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-            && witness_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
-            throw std::runtime_error("reference limit did not converge");
-        }
-        std::vector<std::array<double, 2>> witness(columns);
-        read_columns(state, witness);
-        for (std::size_t a = 0; a < columns; ++a)
-            if (!std::isfinite(column_error[a]) || column_error[a] > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-                column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
-                    std::abs(current_columns[a][0] - witness[a][0]), std::abs(current_columns[a][1] - witness[a][1]));
-    }
-    std::optional<double> pure_solvent;
-    std::optional<State> pure_state;
-    if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(),
-                     [](double x) { return x > 0.0; }) == 1) {
-        const auto solvent = std::distance(solvent_fractions.begin(),
-            std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
+    for (std::size_t a = 0; a < columns; ++a)
+        if (std::isfinite(result.parameter_convergence_error[a])
+            && result.parameter_convergence_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+            result.parameter_derivative[a] = {previous_columns[a][0], previous_columns[a][1]};
+    if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x > 0.0; }) == 1) {
+        const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
         std::vector<double> pure(solvent_fractions.size(), 0.0);
         pure[solvent] = 1.0;
-        pure_state = model.state_at_pressure(
-            temperature, pressure, pure, DensityBranch::Liquid, std::nullopt);
-        if (pure_state->log_fugacity_coefficient.has_value()) {
-            pure_solvent = (*pure_state->log_fugacity_coefficient)[solvent];
-        }
+        result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, pure_solvent_density);
+        if (result.pure_solvent_state->log_fugacity_coefficient)
+            result.pure_solvent_log_fugacity = (*result.pure_solvent_state->log_fugacity_coefficient)[solvent];
     }
-    InfiniteDilutionReference result{current, molalities.back(), terminal_error, pure_solvent, std::move(pure_state), {}, column_error};
-    result.parameter_derivative.resize(columns);
-    for (std::size_t a = 0; a < columns; ++a)
-        if (std::isfinite(column_error[a]) && column_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-            result.parameter_derivative[a] = {current_columns[a][0], current_columns[a][1]};
     return result;
 }
 
@@ -920,7 +793,7 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality,
-    const InfiniteDilutionReference& reference
+    const InfiniteDilutionReference& reference, std::optional<double> finite_density
 ) {
     core::Scope scope("electrolyte_activity");
     const auto composition = formula_composition(
@@ -930,22 +803,20 @@ ElectrolyteActivity electrolyte_activity(
         stoichiometry,
         molality
     );
-    const auto state = model.state_at_pressure(
-        temperature, pressure, composition, DensityBranch::Liquid, std::nullopt
-    );
-    if (!state.log_fugacity_coefficient.has_value()) {
-        throw std::runtime_error("reference fugacity is unavailable");
-    }
+    ElectrolyteActivity result;
+    result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
+    const auto& state = result.state;
+    const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient
-    const double first = require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]])
-        - reference.log_fugacity[0];
-    const double second = require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]])
-        - reference.log_fugacity[1];
+    const double first = log_fugacity[0] - reference.log_fugacity[0];
+    const double second = log_fugacity[1] - reference.log_fugacity[1];
     const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
     ) / coefficient_sum;
+    const auto solvent = std::distance(solvent_fractions.begin(),
+        std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
     double solvent_mass = 0.0;
     for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
         solvent_mass += solvent_fractions[component]
@@ -954,7 +825,6 @@ ElectrolyteActivity electrolyte_activity(
     // EqID: molality_activity_conversion
     const double mean_log_m = mean_log_x
         - std::log(1.0 + solvent_mass * molality * coefficient_sum);
-    ElectrolyteActivity result;
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
@@ -963,8 +833,6 @@ ElectrolyteActivity electrolyte_activity(
         if (molality < policy::OSMOTIC_MOLALITY_FLOOR.value) {
             result.osmotic_coefficient = core::Stop::converged_to_floor;
         } else {
-            const auto solvent = std::distance(solvent_fractions.begin(),
-                std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             const auto& pure = *reference.pure_solvent_state;
             const double s = coefficient_sum * molality * solvent_mass;
             // Extensive Helmholtz Euler identity, with the prescribed pressure in Z.
@@ -989,7 +857,6 @@ ElectrolyteActivity electrolyte_activity(
             ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
                 + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
         if (result.osmotic_coefficient && std::holds_alternative<double>(*result.osmotic_coefficient)) {
-            const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             result.osmotic_parameter_derivative.push_back(-(g(solvent)
                 - require_component_property(reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a)))
                 / (coefficient_sum * molality * solvent_mass));

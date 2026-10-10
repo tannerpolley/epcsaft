@@ -18,11 +18,16 @@ struct ReactionCoordinate final {
     ReactionCoefficient coefficient = ReactionCoefficient::A;
 };
 
-// An affine optimizer coordinate theta = origin + scale * u, with inclusive native-unit
-// bounds: either tied EOS slots of one family, or one named reaction coefficient.
+struct CoordinateTarget final {
+    ParameterFamily family;
+    std::vector<std::size_t> indices;
+    double coefficient = 1.0;
+};
+
+// Base value q = origin + scale * v, with inclusive bounds on q.
+// EOS targets are coefficient*q; reaction coordinates have no EOS targets.
 struct Coordinate final {
-    ParameterFamily family = ParameterFamily::SegmentCount;
-    std::vector<std::vector<std::size_t>> slots;
+    std::vector<CoordinateTarget> targets;
     double origin = 0.0;
     double scale = 1.0;
     double lower = -std::numeric_limits<double>::infinity();
@@ -40,7 +45,7 @@ struct CoordinateSet final {
     // Optimizer values of the parameters' current physical values; tied slots must agree.
     std::vector<double> start(const Parameters& parameters, const std::vector<Observation>& observations = {},
                               const std::optional<ThermochemistryRecord>& thermochemistry = {}) const;
-    // theta per physical row from u.
+    // Mapped target value per physical row from v.
     std::vector<double> physical(const std::vector<double>& optimizer) const;
     bool within_bounds(const std::vector<double>& optimizer) const;
     // Optimizer-space bounds (lower, upper): (bound - origin) / scale.

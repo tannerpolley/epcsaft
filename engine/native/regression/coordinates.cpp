@@ -30,21 +30,23 @@ using detail::family_values;
 std::vector<ActiveParameter> CoordinateSet::active_parameters() const {
     std::vector<ActiveParameter> result;
     for (const auto& coordinate : coordinates)
-        if (!coordinate.reaction) for (const auto& slot : coordinate.slots) result.push_back({coordinate.family, slot});
+        if (!coordinate.reaction) for (const auto& target : coordinate.targets) result.push_back({target.family, target.indices});
     return result;
 }
 
 std::vector<std::size_t> CoordinateSet::tie() const {
     std::vector<std::size_t> result;
     for (std::size_t column = 0; column < coordinates.size(); ++column)
-        result.insert(result.end(), coordinates[column].slots.size(), column);
+        result.insert(result.end(), coordinates[column].targets.size(), column);
     for (std::size_t column = 0; column < coordinates.size(); ++column)
         if (coordinates[column].reaction) result.push_back(column);
     return result;
 }
 
 std::vector<double> CoordinateSet::start(const Parameters& parameters, const std::vector<Observation>& observations,
-                                         const std::optional<ThermochemistryRecord>& thermochemistry) const {
+    const std::optional<ThermochemistryRecord>& thermochemistry) const {
+    core::Scope scope("coordinate_start");
+    (void)optimizer_bounds();
     std::vector<double> result;
     std::set<std::pair<std::string, ReactionCoefficient>> seen;
     for (const auto& coordinate : coordinates) {
@@ -74,7 +76,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
                     check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
                     check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
-                    check(!reaction.reference || !problem.temperature.free, "referenced reaction at free temperature");
                     check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
                     check(reaction.reference || !thermochemistry || !reaction_thermochemistry_density(*thermochemistry,
                           reaction.stoichiometry, problem.temperature.value), "K fixed by thermochemistry");
@@ -97,24 +98,45 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             }
             check(prior, "unmatched name");
         } else {
-            const auto& values = family_values(parameters, coordinate.family);
-            require(!coordinate.slots.empty() && !coordinate.slots.front().empty(), "slots");
-            first = values.at(coordinate.slots.front().front());
-            for (const auto& slot : coordinate.slots)
-                for (const auto index : slot) require(values.at(index) == first, "tied values disagree");
+            const auto& initial = coordinate.targets.front();
+            require(initial.indices.front() < family_values(parameters, initial.family).second, "slot index");
+            first = family_values(parameters, initial.family).first[initial.indices.front()] / initial.coefficient;
+            require(std::isfinite(first), "nonfinite base start");
+            const bool identity = std::all_of(coordinate.targets.begin(), coordinate.targets.end(),
+                [](const auto& target) { return target.coefficient == 1.0; });
+            for (const auto& target : coordinate.targets) {
+                const auto& values = family_values(parameters, target.family);
+                const double mapped = target.coefficient * first;
+                require(std::isfinite(mapped), "nonfinite mapped start");
+                for (const auto index : target.indices) {
+                    require(index < values.second, "slot index");
+                    const double stored = values.first[index];
+                    const double allowance = identity ? 0.0
+                        : 8 * std::numeric_limits<double>::epsilon() * std::max(std::abs(stored), std::abs(mapped));
+                    require(std::isfinite(stored) && std::abs(stored - mapped) <= allowance, "tied values disagree");
+                }
+            }
         }
         result.push_back((first - coordinate.origin) / coordinate.scale);
     }
+    require(within_bounds(result), "start outside bounds");
     return result;
 }
 
 std::vector<double> CoordinateSet::physical(const std::vector<double>& optimizer) const {
+    (void)optimizer_bounds();
     require(optimizer.size() == coordinates.size(), "optimizer width");
     std::vector<double> result;
-    for (const auto column : tie()) {
+    for (std::size_t column = 0; column < coordinates.size(); ++column) {
         const auto& coordinate = coordinates[column];
-        result.push_back(std::clamp(coordinate.origin + coordinate.scale * optimizer[column], coordinate.lower, coordinate.upper));
+        const double q = std::clamp(coordinate.origin + coordinate.scale * optimizer[column], coordinate.lower, coordinate.upper);
+        for (const auto& target : coordinate.targets) result.push_back(target.coefficient * q);
     }
+    for (const auto& coordinate : coordinates)
+        if (coordinate.reaction) {
+            const auto column = &coordinate - coordinates.data();
+            result.push_back(std::clamp(coordinate.origin + coordinate.scale * optimizer[column], coordinate.lower, coordinate.upper));
+        }
     return result;
 }
 
@@ -131,6 +153,11 @@ bool CoordinateSet::within_bounds(const std::vector<double>& optimizer) const {
 std::pair<std::vector<double>, std::vector<double>> CoordinateSet::optimizer_bounds() const {
     std::vector<double> lower, upper;
     for (const auto& c : coordinates) {
+        require(c.reaction ? c.targets.empty() : !c.targets.empty(), "targets");
+        for (const auto& target : c.targets) {
+            require(std::isfinite(target.coefficient) && target.coefficient != 0.0, "target coefficient");
+            require(!target.indices.empty(), "slot is empty");
+        }
         require(std::isfinite(c.scale) && c.scale > 0.0, "scale");
         require(std::isfinite(c.origin), "origin");
         require(!std::isnan(c.lower) && !std::isnan(c.upper)
@@ -145,9 +172,13 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     const auto physical_values = physical(optimizer);
     const auto active = active_parameters();
     for (std::size_t row = 0; row < active.size(); ++row) {
-        auto& values = family_values(parameters, active[row].family);
-        for (const auto index : active[row].indices) values.at(index) = physical_values[row];
+        auto values = family_values(parameters, active[row].family);
+        for (const auto index : active[row].indices) {
+            require(index < values.second, "slot index");
+            values.first[index] = physical_values[row];
+        }
     }
+    (void)HelmholtzModel(parameters, active);
     return parameters;
 }
 
@@ -174,17 +205,8 @@ void CoordinateSet::apply(std::vector<Observation>& observations, const std::vec
 void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations,
               const std::optional<ThermochemistryRecord>& thermochemistry) {
     require(!set.coordinates.empty(), "set is empty");
-    for (const auto& coordinate : set.coordinates) {
-        require(coordinate.reaction ? coordinate.slots.empty() : !coordinate.slots.empty(), "slots");
-        if (coordinate.reaction) continue;
-        const auto& values = family_values(parameters, coordinate.family);
-        for (const auto& slot : coordinate.slots) {
-            require(!slot.empty(), "slot is empty");
-            for (const auto index : slot) require(index < values.size(), "slot index");
-        }
-    }
-    require(set.within_bounds(set.start(parameters, observations, thermochemistry)), "start outside bounds");
-    (void)HelmholtzModel(parameters, set.active_parameters());
+    (void)set.start(parameters, observations, thermochemistry);
+    (void)HelmholtzModel(parameters, set.active_parameters(), thermochemistry);
 }
 
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
@@ -201,8 +223,13 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
     out.physical.resize(independent);
     out.map.assign((rows + holds.size()) * columns, 0.0);
     const auto tie = set.tie();
-    for (std::size_t r = 0; r < rows; ++r)
-        out.map[(r < independent ? r : r + holds.size()) * columns + tie[r]] = set.coordinates[tie[r]].scale;
+    std::size_t r = 0;
+    for (const auto& coordinate : set.coordinates)
+        for (const auto& target : coordinate.targets) {
+            out.map[r * columns + tie[r]] = target.coefficient * coordinate.scale;
+            ++r;
+        }
+    for (; r < rows; ++r) out.map[(r + holds.size()) * columns + tie[r]] = set.coordinates[tie[r]].scale;
     std::set<std::size_t> held;
     for (const auto& hold : holds) {
         require(hold.reference.kind == ObservationKind::SolvationGibbsEnergy
@@ -240,17 +267,17 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
         admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), "hydration root outside bracket");
         double diameter = std::clamp(parameters.born_diameter_angstrom.at(ion), lower, upper);
         HoldResult result;
+        bool converged = false;
         for (int iteration = 0; iteration < hold.maximum_iterations; ++iteration) {
             const auto [error, gradient] = evaluate(diameter);
             const double hd = gradient.at(active_row);
             admit(std::isfinite(hd) && std::abs(hd) > std::numeric_limits<double>::epsilon()
                 * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter)), "singular hydration derivative");
             result.energy_error = error; result.correction = std::abs(error / hd);
-            result.uncertainty = std::abs(error / hd); result.derivative = hd;
+            result.uncertainty = std::min(result.correction, upper - lower); result.derivative = hd;
             result.parameter_derivative = gradient; result.iterations = iteration + 1;
-            if (std::abs(error) <= hold.energy_tolerance
-                && std::min(result.correction, upper - lower) <= hold.diameter_tolerance) {
-                result.cause = "converged";
+            converged = std::abs(error) <= hold.energy_tolerance && result.uncertainty <= hold.diameter_tolerance;
+            if (converged) {
                 // EqID: dependent_born_diameter_derivative
                 for (std::size_t c = 0; c < columns; ++c)
                     for (std::size_t r = 0; r < set.active_parameters().size(); ++r)
@@ -262,7 +289,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             const double next = diameter - error / hd;
             diameter = next > lower && next < upper ? next : 0.5 * (lower + upper);
         }
-        admit(result.cause == "converged", "hydration hold exhausted");
+        admit(converged, "hydration hold exhausted");
         out.physical.push_back(out.parameters.born_diameter_angstrom.at(ion));
         out.holds.push_back(std::move(result));
     }

@@ -6,7 +6,7 @@ repository role: tool
 
 agent role: chemical engineer specializing in electrolyte equations of state, phase and reaction equilibrium, and numerical thermodynamics
 
-Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with MEA-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
+Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with Amine-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
 ## Purpose and first acceptance
 
@@ -17,7 +17,7 @@ special cases encoded into the Engine. Generality means admitting physical
 specifications and source-backed models within documented domains; it does not
 promise every fluid, specification or derivative order before evidence exists.
 
-MEA-Thermodynamics first requires reactive properties and fitting;
+Amine-Thermodynamics first requires reactive properties and fitting;
 MEA-Absorption-Column requires consistent total caloric properties and the
 solved-state actions its process equations consume; Lithium_Extraction requires
 reactive liquid-liquid equilibrium and extraction observations. Their chemistry,
@@ -69,6 +69,11 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
+The [analysis index](../../analyses/README.md#analysis-index) names each leaf's
+question and status; the #234 native conversions and retirements are recorded in
+the leaves they changed. A zero `scipy.optimize` count is a lexical result, not a
+physical validation claim.
+
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 [native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
 
@@ -89,9 +94,41 @@ Taylor coefficients along a fixed-composition, pressure-closed base path.
 column and both terminal changes. Their meanings and bounded inventory follow
 [the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
 and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
-These standalone Properties derivatives are numerically verified on the stated
-manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
-consumers remain separate #225 work.
+These standalone Properties derivatives and all five lower reference partials
+are numerically verified on the stated manufactured cases. The current-source
+replay and its distinct wheel identity are retained in that notebook; Properties
+reuses the resolved terminal States through one single-insertion Taylor owner.
+The same diagnostic retains actual lower-column evaluation/admission causes
+for chemical rows and caloric completion; the notebook retains the bounded
+corrected-source failure case separately from the admitted-case replay.
+The [current runtime review](../../analyses/2026-reactive-caloric-actions/results/current-source-review.md)
+is Supported at `14c32d1a`, accepted for the bounded integrated reference and
+prescribed-T/P caloric slice, without manuscript promotion. The same notebook
+retains separate driven-T/P numerical
+checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
+direction and feed-only A3. Referenced free-intensive combinations and
+apparent-Cp fitting remain separate #225 qualification. The subsequent source
+implementation refreshes referenced free-T/P row jets at their current point
+and transports coefficient increments through the native law at T(t), including
+free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
+volume with finite nonzero pressure slope, recording stable-chart signs separately.
+The temperature-scaling correction received Supported delivered re-review at
+`e4342588`. The current-main replay at `2428781b`, integrating `d7739584`, retains
+that correction, the density publication behavior, native duplication removals,
+trace payload construction inside `Scope::observe` and the separate exact-inventory
+incipient extension. The notebook reads its retained native values, action
+comparisons, reference refinements, lower-admission ladder, binary128 pin,
+independent moved-row evidence and paired work/timing. All shared movements from
+the common native recording have independent comparisons before refresh.
+This is numerical verification on the declared manufactured branches.
+Independent delivered review of the current integration remains with the lead;
+earlier scoped reviews do not establish its acceptance. The subsequent apparent-Cp
+build uses Equilibrium extensive H jets and its shared action factorization,
+including feed-normalization actions and exact fitting columns. The
+[slice-four numerical record](../../analyses/2026-reactive-caloric-actions/results/slice4/provenance.json)
+and the existing notebook retain independent H-value comparisons, both quadrature
+identities, nonreacting reduction, rebuilt-prediction columns and synthetic recovery.
+Delivered review of this build remains pending; it establishes no physical calorimetry.
 
 ### Residual, ideal and state responsibilities
 
@@ -170,14 +207,15 @@ through third order on admitted smooth branches, with correct implicit chains.
 Fitting admits residual-EOS parameters and named source-basis reaction constants
 (scalar ln K or stored a/b/c/d), with exact first derivatives, including
 finite-addition enthalpy actions for referenced endpoints at fixed temperature;
-reference declarations stay fixed, and referenced free-temperature fitting is
-unavailable.
+reference declarations stay fixed. Referenced free-temperature finite-addition
+endpoints consume the same H owner at each solved temperature; driven-T/P
+apparent isobaric heat-capacity fitting consumes mixed thermal H actions.
 The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-fitting/notebook.qmd)
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
-Declared phase specifications are current work; PH, PS and UV are deferred
-future implementations outside current completion. Caloric properties/actions
+Declared neutral PH/PS specifications use extensive caloric balances and exact
+controls/actions in the existing driver; UV remains deferred. Caloric properties/actions
 consumed by MEA and the absorber remain current requirements. Fitting uses
 density, total molar isobaric heat capacity with fixed thermochemistry,
 finite-addition enthalpy with fixed ideal-gas records and declared reference
@@ -196,7 +234,7 @@ remaining work.
   are explicit and never silently reinterpret parameter records.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P. Phase fractions and absolute
-  phase amounts are distinct. PH, PS and UV remain future work; explicit native
+  phase amounts are distinct. Neutral PH/PS uses the same driver; UV remains future work; explicit native
   fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P
   discovery. Discover at initialization, then reuse its declared topology where
@@ -205,7 +243,7 @@ remaining work.
   owns that conditioning limit. Native finite searches admit charge-neutral trials and conserved
   donor splits with estimated uncertainty; they supply no global certificate.
   Mechanical and local checks remain available; a declared result implies no
-  unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)
+  unperformed search. [ADR 0012](decisions/0012-native-tangent-plane-phase-discovery.md)
   records the adopted choices, not numerical support.
 - Charged trial supports in explicit testing/discovery require a declared bulk
   permittivity form with the vacuum limit: Schreckenberg `DensityTemperature`
@@ -250,7 +288,10 @@ Properties owns the exact pressure-closed fugacity/permittivity columns,
 terminal-reference admission and electrolyte contractions. Parameter regression
 owns five observations, the dependent hydration chart, unweighted final checks
 and local SVD/covariance diagnostics; [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit)
-owns execution doctrine. `HydrationHold` means a single-ion solvation equality
+owns execution doctrine. `CoordinateTarget` means one physical family and its
+component or reciprocal-pair indices with a proportional coefficient, defined
+by [the affine parameter map](../../engine/docs/equations.md#affine_parameter_coordinate_map).
+`HydrationHold` means a single-ion solvation equality
 with a dependent Born diameter. `ObservationEvaluator` means the shared native
 point evaluator with caller-selected rows and exact columns. `MinimaxRequest`
 means a scaled epigraph estimation problem with declared max/mean guards;
@@ -300,9 +341,9 @@ recovery question. Historical stage completion is never current acceptance.
 | Parameter regression observation and fit meaning | [parameter regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
 | Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
-| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
+| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), resolved by `tools/project-map.py` |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
-| Accepted decisions | [adr/](adr/README.md), sole sequence |
+| Accepted decisions | [decisions/](decisions/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
 | Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
 | Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
@@ -313,31 +354,27 @@ Mathematics defines required behavior. Code records actual behavior. Evidence
 supports bounded claims about their agreement and physical adequacy. Neither
 an architecture scan nor a successful solve proves model validity.
 
+## Review rules
+
+Reviewers apply these to every readiness and delivered review:
+
+- **Falsifier tolerance.** A falsifier's tolerance is at least as tight as the
+  claim it protects (a 1e-12 state-preservation claim needs a 1e-12 check, not
+  an existing 1e-6 composition test).
+- **Evaluation point.** Evidence is evaluated at the point the claim concerns:
+  a solved-endpoint claim uses the Jacobian at the solved coordinates, not a
+  generic-point rank; a returned-state claim compares returned states.
+- **Causal claims.** "Caused by" needs an isolating comparison (one variable
+  changed, the other inputs and the wheel identified). Otherwise report the
+  difference and its conditions.
+- **Numbers in prose** come from retained data or are computed inline from it.
+- **Speed.** The owner's no-slowdown rule for ionic LLE and the MEA flash is
+  judged on work counts (iterations, evaluations, Hessians); paired wall time is
+  supporting evidence with its spread.
+
 ## Vocabulary and conventions
 
-| Term | Meaning and source |
-|---|---|
-| independent reference case | Analytic identity, measurement, evaluated reference, or source model calculation; source class and uncertainty remain distinct (CSE terminology and transfer audit §7) |
-| support | Species with coordinates in a phase; omitted species have structural zero amount (equilibrium formulation) |
-| inventory face | Nonnegative amount states with species forced absent by an exactly zero globally nonnegative conserved inventory; state balances restrict to surviving coordinates while the full feed map and original reaction/reference completion remain (equilibrium formulation, #231) |
-| admission | Checking declared physical inputs and the requested mathematical domain before evaluation (full EOS §12) |
-| derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
-| convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
-| numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
-| tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance (algorithms) |
-| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy ([packet requirements](../../data/docs/packet-contract.md) and root `AGENTS.md`) |
-| typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
-| claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
-| tangent-plane distance | Reduced molar energy above the candidate conserved supporting plane on normalized electroneutral composition/volume trials (Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation) |
-| numerically resolved descending split | Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof (equilibrium formulation; #223 adopted D9) |
-| proved instability witness | Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient (equilibrium formulation) |
-| stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
-| component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
-| layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
-| capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
-| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers |
-| file role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
-| qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
+Project vocabulary: [GLOSSARY.md](../../GLOSSARY.md).
 
 Use bubble, dew, saturation and flash as mathematical specifications or data
 constructors. Shared solvers must not select physics by an application or paper
@@ -367,7 +404,7 @@ acceptance, reuse decisions and estimates. Native issue relationships own
 prerequisites; milestone numbering expresses delivery priority, not an additional
 scientific dependency. Do not maintain a competing sequence here.
 Finish and verify each prerequisite's current agreed scope before dependent
-implementation; deferred PH/PS/UV and global certification do not block current work.
+implementation; deferred UV and global certification do not block current work.
 Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher
@@ -379,76 +416,14 @@ source/data adoption: zotero
 
 ## Analysis workflow choice
 
-The owner confirmed deferred Snakemake adoption for these populated analyses
-on 2026-09-29. Existing study commands remain in use; a later adoption needs
-confirmation.
+The owner deferred Snakemake adoption for all analyses on 2026-09-29; existing study commands remain in use, and a later adoption needs confirmation.
 
-| Analysis | Snakemake adoption |
-|---|---|
-| `analyses/2026-association-native-comparison` | Deferred |
-| `analyses/2026-binary-methane-ethane-bubble-point` | Deferred |
-| `analyses/2026-binary-methane-ethane-tp-flash` | Deferred |
-| `analyses/2026-density-closure-diagnosis` | Deferred |
-| `analyses/2026-dielectric-alternatives` | Deferred |
-| `analyses/2026-fitting-state-reuse` | Deferred |
-| `analyses/2026-fixed-pressure-anchor` | Deferred |
-| `analyses/2026-grepe-hard-cut` | Deferred |
-| `analyses/2026-idaes-asl-adapter` | Deferred |
-| `analyses/2026-initialization-diagnosis` | Deferred |
-| `analyses/2026-khudaida-idaes-settler` | Deferred |
-| `analyses/2026-khudaida-lineage-diagnosis` | Deferred |
-| `analyses/2026-mea-association-diameter` | Deferred |
-| `analyses/2026-mea-grepe-regression` | Deferred |
-| `analyses/2026-mea-parameter-estimation` | Deferred |
-| `analyses/2026-mea-reactive-fit-timing` | Deferred |
-| `analyses/2026-mea-recovered-state-actions` | Deferred |
-| `analyses/2026-neutral-pcsaft-equilibrium-comparison` | Deferred |
-| `analyses/2026-open-source-equilibrium-comparison` | Deferred |
-| `analyses/2026-polar-dipole` | Deferred |
-| `analyses/2026-pure-saturation-regression` | Deferred |
-| `analyses/2026-reacting-mixed-actions` | Deferred |
-| `analyses/2026-reactive-electrolyte-driver` | Deferred |
-| `analyses/2026-reactive-liquid-cold-start` | Deferred |
-| `analyses/2026-shared-derivative-qualification` | Deferred |
-| `analyses/2026-stability-noise-band` | Deferred |
-| `analyses/2026-trace-action-diagnosis` | Deferred |
-| `analyses/2026-wolbach-sandler-requalification` | Deferred |
-| `analyses/phase-stability-cutover` | Deferred |
-| `analyses/reproduction/1989-esteso` | Deferred |
-| `analyses/reproduction/1998-chase` | Deferred |
-| `analyses/reproduction/2001-gross` | Deferred |
-| `analyses/reproduction/2002-gross` | Deferred |
-| `analyses/reproduction/2004-glos` | Deferred |
-| `analyses/reproduction/2005-cameretti` | Deferred |
-| `analyses/reproduction/2008-held` | Deferred |
-| `analyses/reproduction/2010-nasrifar-mdea` | Deferred |
-| `analyses/reproduction/2012-held` | Deferred |
-| `analyses/reproduction/2013-pahlavanzadeh-mdea` | Deferred |
-| `analyses/reproduction/2014-held` | Deferred |
-| `analyses/reproduction/2015-baygi` | Deferred |
-| `analyses/reproduction/2015-may` | Deferred |
-| `analyses/reproduction/2015-uyan` | Deferred |
-| `analyses/reproduction/2018-iapws` | Deferred |
-| `analyses/reproduction/2018-wangler` | Deferred |
-| `analyses/reproduction/2019-bulow` | Deferred |
-| `analyses/reproduction/2019-iapws` | Deferred |
-| `analyses/reproduction/2020-bulow` | Deferred |
-| `analyses/reproduction/2020-cleeton` | Deferred |
-| `analyses/reproduction/2020-haslam` | Deferred |
-| `analyses/reproduction/2021-bulow` | Deferred |
-| `analyses/reproduction/2021-bulow-sour-gas` | Deferred |
-| `analyses/reproduction/2022-ascani` | Deferred |
-| `analyses/reproduction/2023-ascani` | Deferred |
-| `analyses/reproduction/2023-belov` | Deferred |
-| `analyses/reproduction/2023-schick` | Deferred |
-| `analyses/reproduction/2024-hubach` | Deferred |
-| `analyses/reproduction/2024-yu` | Deferred |
-| `analyses/reproduction/2025-figiel` | Deferred |
-| `analyses/reproduction/2025-figiel-engine-crosswalk` | Deferred |
-| `analyses/reproduction/2025-pakravesh` | Deferred |
-| `analyses/reproduction/2025-perdomo` | Deferred |
-| `analyses/reproduction/2025-rezaee` | Deferred |
-| `analyses/reproduction/2026-09-03-stage-05-repair` | Deferred |
-| `analyses/reproduction/2026-eos-literature-handoff` | Deferred |
-| `analyses/reproduction/2026-khudaida` | Deferred |
-| `analyses/reproduction/2026-rezaee` | Deferred |
+Declared equilibrium starts means caller-supplied initial physical guesses or full
+compiled coordinates for one unchanged thermodynamic problem (ALG-EQUILIBRIUM).
+`EquilibriumStart` carries those guesses; `EquilibriumWorkLimits` bounds attempts,
+optimizer iterations and elapsed seconds; `EquilibriumStartsResult` records ordered
+attempts, residual-bearing results, initialization causes, consumed work and the
+first admitted index. `DriverLimits` passes the remaining work into the existing
+Ipopt driver and the start's seed sub-solves. An empty or partial start uses the
+cold start of `solve_equilibrium`; limits bound the work and never choose the start (#350). These names describe inputs, quantities and operations, not new
+thermodynamic models.

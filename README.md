@@ -18,27 +18,9 @@ records its reuse decision, acceptance and evidence links. Repository scientific
 records distinguish required capability from implemented and numerically
 qualified behavior.
 
-For the live Map, Roadmap and Results website, run
-`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`
-and open the
-[Quarto companion](http://127.0.0.1:8766/). The companion links to the GitHub
-roadmap and renders the local project map, ordinary check reports, and retained
-numerical results. Starting or refreshing it never builds the Engine, collects
-tests, or runs a scientific calculation.
-
-To keep the companion running for this checkout, install the user service and
-enable it:
-
-```bash
-install -Dm644 tools/systemd/epcsaft-companion.service \
-  "$HOME/.config/systemd/user/epcsaft-companion.service"
-loginctl enable-linger "$USER"  # start the user service at boot without login
-systemctl --user daemon-reload
-systemctl --user enable --now epcsaft-companion.service
-```
-
-Check it with `systemctl --user status epcsaft-companion.service`.
-The unit serves from this repository root and restarts after a service failure.
+`build/report.html` shows the latest test results, key-solve work and wall-time trend per
+main commit, and the analysis index, each with the commit and time of its data. `check-all`
+writes it, `tools/report` rewrites it on demand, and `xdg-open build/report.html` opens it.
 
 ## Prerequisites
 
@@ -46,8 +28,8 @@ The supported development environment is Linux with Git, Python 3.13, `uv`, a
 C and C++ compiler, Ninja, CMake, pkg-config, and `flock`. The locked root
 environment supplies Meson, meson-python, pybind11, and `patchelf`. The native
 graph also needs the environment-provided Ipopt and Eigen development
-packages. The first build needs network access for the four
-checksum-pinned Meson subproject archives. The native owner checks additionally
+packages. The first build needs network access for the two
+checksum-pinned Meson subproject archives (CppAD and HiGHS). The native owner checks additionally
 require `clang-18`, `clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file`,
 and `nm`. `ccache` is optional.
 
@@ -60,46 +42,82 @@ bash .codex/environments/setup.sh
 bash tools/status.sh
 ```
 
-Setup syncs the locked root `.venv`, builds `engine/` through meson-python,
-writes one verified wheel under `build/environment-wheel/`, and installs that
-wheel non-editably. Re-running setup reuses checkout-local Ninja state,
-`ccache`, and the content-addressed machine-local wheel cache when the wheel
-fingerprint (wheel inputs and toolchain, not native test sources) matches.
-
-Python consumers use the installed package and do not invoke Meson:
+Setup syncs the locked root `.venv` and installs `engine/` editable through
+meson-python, building into `build/engine-meson/shared` with `ccache` and the
+shared HiGHS.
+`import epcsaft` then rebuilds whatever native sources changed (Ninja's incremental
+build, printed to stderr when there is work); a Python edit needs no rebuild and no setup.
+Re-run setup after a lock change. Setup rebuilds the tree from scratch after a compiler
+or HiGHS change; after another system library upgrade, delete `build/engine-meson/shared`
+and re-run setup.
 
 ```python
 import epcsaft
 from epcsaft import equilibrium
 ```
 
-Do not use an editable install or add `engine/src` to `PYTHONPATH`. Downstream
-applications install an explicitly identified wheel and record its SHA-256.
-
-See [`engine/README.md`](engine/README.md) for direct Meson compile diagnostics
-and canonical wheel build and installation guidance.
+`tools/build-engine.sh` owns every Engine build. Wheels exist only where an exact
+wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
+and A/B timing, and `tools/build-engine.sh --install-wheel` for an analysis that
+records an installed wheel (re-run setup afterwards to return to the editable
+install). `epcsaft.provenance()` identifies the running Engine: the commit and
+whether `engine/` is clean for the editable install, the wheel path and SHA-256
+for a wheel. Downstream applications install an explicitly identified wheel and
+record its SHA-256.
 
 ## Checks
 
 Run the affected-area gate during normal development:
 
 ```bash
-bash tools/check-affected.sh
+bash tools/check-affected.sh [base]
 ```
 
-Run the fast installed-wheel gate with:
+Run the fast full gate with:
 
 ```bash
 bash tools/check-all.sh
 ```
 
-`check-affected.sh` selects checks from the changed paths. Data, analysis, or
-documentation-only changes can stop at readiness checks without building or
-installing the wheel; selected Engine checks run setup first.
-`check-all.sh` is the full fast installed-wheel gate: it always installs the
-current wheel, then covers the default EOS, equilibrium, static,
+`check-affected.sh` selects checks from the paths changed since `base` (default: the
+merge base with `origin/main`, printed first) plus uncommitted files. Data, analysis, or
+documentation-only changes can stop at readiness checks without building the
+Engine; selected Engine checks run setup first.
+`check-all.sh` is the full fast gate: it runs setup, which rebuilds what changed, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Regression checks join the gate when that capability exists.
+numerical evidence. Both gates run strict mypy over `engine/src` and `engine/tests`, so
+pytest alone misses type errors in a test edit.
+`check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
+and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
+changes; request them with
+`bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
+
+Develop and debug on native programs alone: `tools/native-run` rebuilds one program
+in the checkout's Meson build directory and runs it, whole or for one case, without
+Python. New studies can be small C++ drivers that write
+CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
+cover the Python interface too, before review.
+
+```bash
+tools/native-run equilibrium_checks --list
+tools/native-run equilibrium_checks caloric-admission
+tools/native-run equilibrium/Automatic_fast/e5-neutral
+```
+
+Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.cpp`, or with
+`--list`, which prints each case's test id, arguments and alias; `native-run` also
+takes the Meson test name that `run-native-tests.sh` prints. `equilibrium_checks`,
+`properties_checks` and `regression_checks` are each built from one unit per case family
+(e.g. `equilibrium_e5_checks.cpp`) with shared helpers in `<program>_shared.hpp`;
+`<program>.cpp` holds only the case registry, so an edit to one case recompiles one unit.
+
+`tools/native-isolated` builds one program in a temporary detached worktree with its own
+Meson build directory, leaving this checkout's source and build directory free:
+
+```bash
+tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only if the planted case fails
+tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
+```
 
 Native C++ changes use the explicit owner commands:
 
@@ -112,6 +130,18 @@ The first command builds the native extension with Clang and runs the full
 clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
 its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
+
+Each checkout has its own `.venv` from setup with an editable Engine install.
+Builds and Engine calculations run directly, with no thread, slot or memory limits.
+A warm `check-all.sh` takes about 20–40 s
+(24.0 s measured in #319). `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; build the
+checkout's side with `bash tools/build-engine.sh --wheel build/wheels/<name>`.
+After merges, `tools/refresh-main-wheel` builds main's
+wheel in the main checkout, compares its key-solve work with the previous
+`build/wheels/main-current/`, replaces that directory and its README, and keeps
+`build/wheels/main-<commit>/`, the applications' stable pin.
+There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:
 

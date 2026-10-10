@@ -6,20 +6,15 @@ build-backend = "mesonpy"
 name = "epcsaft"
 dynamic = ["version"]
 description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
-readme = "README.md"
+# No readme: engine/README.md stays out of METADATA so a docs edit keeps the wheel SHA-256 (#355).
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
 dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not expensive and not slow'"
 junit_logging = "system-out"
 junit_log_passing_tests = true
-markers = [
-  "expensive: slow white-box numerical sentinel run explicitly",
-  "slow: compact numerical evidence retained for full verification",
-]
 
 [tool.ruff]
 target-version = "py313"

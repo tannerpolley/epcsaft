@@ -95,7 +95,18 @@ struct ObservationEvaluator::Impl final {
                 trial.centers.assign(groups_.size(), Prediction{});
             }
             trial.observations = std::move(observations);
-            if (!evaluate_rows(optimizer, jacobian, out, trial, n, width)) return false;
+            const Trial* seed = nullptr;
+            if (!same_point && cached_ && trial.chart.physical.size() == cached_->chart.physical.size()) {
+                bool near = true;
+                for (std::size_t k = 0; k < trial.chart.physical.size(); ++k) {
+                    const double a = trial.chart.physical[k], b = cached_->chart.physical[k];
+                    near &= std::isfinite(a) && std::isfinite(b)
+                        && std::abs(a - b) / std::max({1.0, std::abs(a), std::abs(b)}) <= policy::FIT_DENSITY_PARAMETER_FRACTION.value;
+                }
+                if (near) seed = &*cached_;
+            }
+            scope.probe("density_seed_chart", seed ? 1.0 : 0.0);
+            if (!evaluate_rows(optimizer, jacobian, out, trial, n, width, seed)) return false;
             out.weighted.resize(n);
             for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
             // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
@@ -154,7 +165,7 @@ struct ObservationEvaluator::Impl final {
     }
 
     bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
-                       Trial& trial, std::size_t n, std::size_t width) {
+                       Trial& trial, std::size_t n, std::size_t width, const Trial* seed) {
         const auto& model = *trial.model;
         out.predictions.assign(n, 0.0);
         out.residuals.assign(n, 0.0);
@@ -169,9 +180,13 @@ struct ObservationEvaluator::Impl final {
             auto& prediction = trial.centers[g];
             if (!prediction.value) {
                 core::Scope scope("fit_group_prediction");
+                scope.probe("observation", static_cast<double>(i));
                 scope.probe("anchor", static_cast<double>(g));
                 scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references);
+                // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
+                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
+                    seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
+                    seed && trial.chart.physical == seed->chart.physical);
                 if (prediction.status != ObservationStatus::Available && starts_[g])
                     prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
             } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
@@ -215,7 +230,9 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
     impl_ = std::make_shared<Impl>(request, failures, state_groups(request.observations), selection);
 }
 bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out) {
+    out.residual_optimizer_gradient.clear();
     if (!impl_->evaluate(optimizer, columns, out)) return false;
+    if (columns) out.residual_optimizer_gradient = out.optimizer_gradient;
     if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
         const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]);
         for (std::size_t c = 0; c < optimizer.size(); ++c) out.optimizer_gradient[i * optimizer.size() + c] /= slope;
@@ -260,7 +277,7 @@ public:
         // Ceres evaluates the accepted Jacobian and updates u_ before user callbacks: this is a cache hit.
         if (!evaluator_.gradient_at(u_, gradient)) return ceres::SOLVER_ABORT;
         const auto next = select_held(u_, gradient, lower_, upper_);
-        if (scope.on()) {
+        scope.observe([&] {
             std::vector<double> mask(u_.size(), 0.0), projected(u_.size());
             for (const int c : next) mask[c] = 1.0;
             for (std::size_t c = 0; c < u_.size(); ++c)
@@ -269,7 +286,7 @@ public:
             scope.probe("held", mask, summary.iteration);
             scope.probe("weighted_gradient", gradient, summary.iteration);
             scope.probe("projected_gradient", projected, summary.iteration);
-        }
+        });
         bool contact = false;
         for (std::size_t k = 0; summary.iteration > 0 && summary.step_is_successful && k < free_.size(); ++k) {
             contact = contact || (side(u_[free_[k]], free_[k]) != 0 && side(u_[free_[k]], free_[k]) != at_bound_[k]);
@@ -429,9 +446,11 @@ void validate_checks(const FitRequest& request) {
 std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final) {
     validate_checks(request);
     std::vector<bool> selected(request.observations.size(), false);
+    const auto refreshed = [&](std::size_t i) {
+        return final && (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0));
+    };
     for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
-    if (final) for (std::size_t i = 0; i < selected.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) selected[i] = true;
+    for (std::size_t i = 0; i < selected.size(); ++i) if (refreshed(i)) selected[i] = true;
     const auto predictions = [&](const HelmholtzModel& owner) {
         std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
@@ -443,8 +462,7 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     };
     const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
-    if (final) for (std::size_t i = 0; i < candidate.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) {
+    for (std::size_t i = 0; i < candidate.size(); ++i) if (refreshed(i)) {
         final->predictions[i] = candidate[i].value.value_or(NAN);
         final->residuals[i] = candidate[i].residual.value_or(NAN);
         final->statuses[i] = candidate[i].status;
@@ -460,9 +478,9 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
             const auto& row = request.observations[i];
             const auto unit = group.metric == CheckMetric::AbsoluteLog10Ratio ? "decade" : candidate[i].unit;
             out.unit = unit;
-            const double e = check_error(group.metric, row, candidate[i].value.value_or(NAN)).first;
+            const auto [e, slope] = check_error(group.metric, row, candidate[i].value.value_or(NAN));
             out.errors.push_back(e);
-            out.slopes.push_back(check_error(group.metric, row, candidate[i].value.value_or(NAN)).second);
+            out.slopes.push_back(slope);
             if (!candidate[i].residual || !std::isfinite(e)) { out.status = "unavailable"; out.failed_rows.push_back(i); }
             if (std::abs(e) > out.maximum) { out.maximum = std::abs(e); out.argmax = i; }
             out.mean += std::abs(e);
@@ -549,9 +567,10 @@ void validate_fit_request(const FitRequest& request) {
     const auto& controls = request.controls;
     require(std::isfinite(controls.function_tolerance) && controls.function_tolerance >= 0.0
         && std::isfinite(controls.gradient_tolerance) && controls.gradient_tolerance >= 0.0
-        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0
-        && controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
-        && controls.maximum_elapsed_time_seconds > 0.0, "controls");
+        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0, "controls");
+    require(controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
+        && controls.maximum_elapsed_time_seconds > 0.0,
+        "controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
 }
 
 FitResult fit(const FitRequest& request) {
@@ -624,11 +643,11 @@ FitResult fit(const FitRequest& request) {
         held = next;
         core::Scope round_scope("fit_round");
         round_scope.probe("round", round++);
-        if (round_scope.on()) {
+        round_scope.observe([&] {
             std::vector<double> mask(width, 0.0);
             for (const int c : held) mask[c] = 1.0;
             round_scope.probe("held", mask);
-        }
+        });
         ceres::Problem problem(problem_options);
         problem.AddResidualBlock(&cost, nullptr, optimizer.data());
         auto* box = new BoxChart(optimizer, lower, upper, held, evaluator);  // owned by the problem
@@ -647,7 +666,7 @@ FitResult fit(const FitRequest& request) {
         if (summary.termination_type != ceres::CONVERGENCE && summary.termination_type != ceres::USER_SUCCESS) break;
     }
     result.termination = settled ? "convergence" : exhausted ? "no_convergence" : termination_name(summary.termination_type);
-    result.iterations = result.iteration_costs.size();
+    result.iterations = result.iteration_costs.empty() ? 0 : result.iteration_costs.size() - 1;  // entry 0 is the start
     result.message = all_held ? "every coordinate is held at an active bound"
         : exhausted ? (remaining <= 0 ? "iteration limit reached" : "time limit reached") : summary.message;
     result.status = settled ? "converged" : summary.termination_type == ceres::FAILURE
@@ -666,7 +685,9 @@ FitResult fit(const FitRequest& request) {
     if (result.usable) {
         covariance(result, request, n);
         finish_checks(result, request);
-        for (std::size_t c = 0; c < width; ++c)
+        // A limit stop leaves the round-start gradient stale; this is a cache hit on the final evaluation.
+        if (!evaluator.gradient_at(optimizer, gradient)) result.covariance.projected_gradient_norm = NAN;
+        else for (std::size_t c = 0; c < width; ++c)
             result.covariance.projected_gradient_norm = std::max(result.covariance.projected_gradient_norm,
                 std::abs(optimizer[c] - std::clamp(optimizer[c] - gradient[c], lower[c], upper[c])));
     }

@@ -40,10 +40,6 @@ struct IdealInterval final {
 };
 template <typename Scalar>
 struct IdealThermalValue final { Scalar cp, h, s; };
-struct IdealThermalEvaluation final {
-    IdealThermalValue<double> value;
-    bool derivatives_available;
-};
 
 // EqExclude: explicit coefficient and domain admission
 inline void validate_ideal_correlation(const IdealCorrelation& correlation) {
@@ -252,23 +248,12 @@ IdealThermalValue<Scalar> evaluate_ideal_correlation(
     return result;
 }
 
-// EqExclude: source-declared interval admission and derivative availability
-inline const IdealInterval& ideal_interval(const std::vector<IdealInterval>& intervals, double T) {
-    validate_ideal_intervals(intervals);
+// EqExclude: source-declared interval selection over intervals admitted by validate_ideal_intervals
+inline const IdealInterval* ideal_interval(const std::vector<IdealInterval>& intervals, double T) {
     const IdealInterval* selected = nullptr;
-    for (std::size_t i = 0; i < intervals.size(); ++i) {
-        const auto& a = intervals[i];
-        if (ideal_interval_contains(a, T)) selected = &a;
-    }
-    if (selected == nullptr) throw std::invalid_argument("temperature outside ideal intervals");
-    return *selected;
-}
-inline IdealThermalEvaluation evaluate_ideal_thermal(
-    const std::vector<IdealInterval>& intervals, double temperature, double pressure
-) {
-    const auto& interval = ideal_interval(intervals, temperature);
-    return {evaluate_ideal_correlation(interval.correlation, temperature, pressure),
-            temperature > interval.lower && temperature < interval.upper};
+    for (const auto& interval : intervals)
+        if (ideal_interval_contains(interval, T)) selected = &interval;
+    return selected;
 }
 
 } // namespace epcsaft
