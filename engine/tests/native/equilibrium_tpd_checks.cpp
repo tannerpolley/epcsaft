@@ -598,21 +598,28 @@ void check_gross_2002_bubble() {
 // cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root. Water 0.8875
 // started at 475 K: the ordinary solve succeeds on the metastable 368.061 K root, whose endpoint
 // liquid trials descend, so the onset search returns the 369.966 K declared-start dew.
+// Gross 2002 row 149 at 100 times its pressure, 1-propanol(0.413)/ethylbenzene, k_ij 0.023, 10,132,000 Pa
+// from 392.05 K: the ordinary dew lies at 227.63 K, where the feed's sole stable density root is not below
+// the scan's negative-slope sample. No vapor-side reference confirms it, so the onset refuses with no state.
 void check_gross_2002_cooling_onset() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
+    const auto component = [](ParameterDocument& d, std::size_t i, double M, double m, double eps, double sigma) {
+        d.entries.push_back({"molar mass", "molar_mass", {i}, M, "kg / mol"});
+        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
+        d.entries.push_back({"segments", "segment_count", {i}, m, "dimensionless"});
+        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps, "kelvin"});
+        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma, "angstrom"});
+    };
     ParameterDocument d;
     d.component_ids = {"water", "1-pentanol"};
     d.site_component = {0, 0, 1, 1}; d.site_multiplicity = {1, 1, 1, 1};
     d.base_choice = "pc-saft"; d.association_choice = "general-site";
     d.electrolyte_choice = d.permittivity_choice = d.polar_choice = "none";
+    auto e = d;
     const std::array<double, 2> M{0.018015, 0.08815}, m{1.0656, 3.6260}, eps{366.51, 247.28}, sigma{3.0007, 3.4508},
         eps_ab{2500.7, 2252.1}, kappa{0.034868, 0.010319};
     for (std::size_t i = 0; i < 2; ++i) {
-        d.entries.push_back({"molar mass", "molar_mass", {i}, M[i], "kg / mol"});
-        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
-        d.entries.push_back({"segments", "segment_count", {i}, m[i], "dimensionless"});
-        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps[i], "kelvin"});
-        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma[i], "angstrom"});
+        component(d, i, M[i], m[i], eps[i], sigma[i]);
         d.entries.push_back({"association energy", "association_energy_over_k", {2 * i, 2 * i + 1}, eps_ab[i], "kelvin"});
         d.entries.push_back({"association volume", "association_volume", {2 * i, 2 * i + 1}, kappa[i], "dimensionless"});
     }
@@ -620,13 +627,24 @@ void check_gross_2002_cooling_onset() {
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {0, 3, 0, 1, 2, 3}, 0.0, "dimensionless"});
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {1, 2, 0, 1, 2, 3}, 0.0, "dimensionless"});
     const HelmholtzModel model(build_parameters(d));
-    const auto onset = [&](double water, double start) {
+    e.component_ids = {"1-propanol", "ethylbenzene"};
+    e.site_component = {0, 0}; e.site_multiplicity = {1, 1};
+    component(e, 0, 0.060096, 2.9997, 233.40, 3.2522);
+    component(e, 1, 0.106167, 3.0799, 287.35, 3.7974);
+    e.entries.push_back({"association energy", "association_energy_over_k", {0, 1}, 2276.8, "kelvin"});
+    e.entries.push_back({"association volume", "association_volume", {0, 1}, 0.015268, "dimensionless"});
+    e.entries.push_back({"k_ij", "k_ij", {0, 1}, 0.023, "dimensionless"});
+    const HelmholtzModel propanol(build_parameters(e));
+    const auto run = [&](const HelmholtzModel& system, double first, double start, double pressure) {
         EquilibriumProblem problem;
         problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.0)),
                           equilibrium_support::phase("V", PhaseKind::Vapor)};
-        problem.temperature = FreeValue::variable(start); problem.pressure = FreeValue::fixed(1.013 * 1e5);
-        problem.feed.kind = FeedKind::Amounts; problem.feed.values = {water, 1.0 - water}; problem.row_tolerance = 1e-8;
-        auto onset = cooling_onset(compile_problem(model, problem));
+        problem.temperature = FreeValue::variable(start); problem.pressure = FreeValue::fixed(pressure);
+        problem.feed.kind = FeedKind::Amounts; problem.feed.values = {first, 1.0 - first}; problem.row_tolerance = 1e-8;
+        return cooling_onset(compile_problem(system, problem));
+    };
+    const auto onset = [&](double water, double start) {
+        auto onset = run(model, water, start, 1.013 * 1e5);
         CHECK(onset.first.success); CHECK(!onset.second.empty()); CHECK(onset.first.convergence.residual <= 1e-8);
         return onset;
     };
@@ -637,6 +655,9 @@ void check_gross_2002_cooling_onset() {
     const auto [metastable, checks] = onset(0.8875, 475.0);
     CHECK(std::count_if(checks.front().trials.begin(), checks.front().trials.end(), [](const auto& t) { return t.resolved_descent; }) == 1);
     tpd_compare("gross-2002-cooling-onset/T-475", metastable.temperature.at(0), 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
+    const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
+    CHECK(!refused.success); CHECK(refused.temperature.empty() && refused.molar_densities.empty());
+    CHECK(refused.message.find("cooling onset refused: vapor reference unavailable: sole density root") != std::string::npos);
 }
 
 }  // namespace equilibrium_checks

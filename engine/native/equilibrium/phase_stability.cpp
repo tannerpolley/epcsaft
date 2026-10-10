@@ -580,9 +580,13 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     std::vector<double> composition;
     const auto sample = [&](double temperature) {
         reference.temperature = FreeValue::fixed(temperature);
+        // A sole stable root is vapor-side only below the scan's negative-slope sample (the converse of #410's liquid test).
+        const auto root = solve_density(*c.model, temperature, request.pressure.value, c.feed_composition, DensityBranch::Vapor, std::nullopt);
         const auto central = solve(reference);
-        work.add(central);
-        if (!central.success) throw std::runtime_error("vapor reference unavailable: " + central.message);
+        work.add(central); work.evaluations += root.convergence.evaluations;
+        if (!central.success || (root.stable_root_count.value_or(0) < 2
+            && !(root.negative_slope_density && central.molar_densities[0] < *root.negative_slope_density)))
+            throw std::runtime_error("vapor reference unavailable: " + (central.success ? "sole density root not below a negative-slope sample" : central.message));
         reports.push_back(stability_test(compile_problem(*c.model, reference), central, options));
         auto& report = reports.back();
         work.iterations += report.work["iterations"]; work.evaluations += report.work["evaluations"]; work.hessian_calls += report.work["hessian_calls"];

@@ -1092,8 +1092,15 @@ from 375 K otherwise returns 369.425 K).
 
 The ordinary declared solve runs once; a failure other than local instability or
 infeasibility returns unchanged with an empty report list. At each sampled $T$ the
-one-phase vapor reference is solved and the complete liquid trial family of
-`stability_test(...)` is run (at most $m+1$ trials). An ordinary success is sampled at its
+one-phase vapor reference is solved and admitted only on the vapor side: the density
+owner's vapor-branch request at $(T, P, z)$ returns more than one stable root, or its sole
+stable root lies below the scan's first negative pressure-slope sample $\rho_-$ (the
+converse of the liquid-side feed test). A sole root above $\rho_-$, or with no
+negative-slope sample, is not a vapor reference, and the operation refuses before that
+sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
+10,132,000 Pa from 392.05 K otherwise confirms a 227.63 K "dew" whose two phases are
+both liquid-like). Each admitted reference then runs the complete liquid trial family of
+`stability_test(...)` (at most $m+1$ trials). An ordinary success is sampled at its
 own temperature and returned, with that report, when no trial resolves a descent; a
 resolved descent marks a metastable root (row 722 from 475 K otherwise returns
 368.061 K) and starts the search below. From the seed temperature,
