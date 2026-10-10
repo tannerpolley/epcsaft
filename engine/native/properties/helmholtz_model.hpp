@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <deque>
 #include <mutex>
 #include <limits>
 #include <optional>
@@ -381,6 +382,9 @@ public:
         std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
     ) const;
     SweepCounters counters() const;
+    // reaction_references results of this immutable model by exact inputs: a short FIFO (#380).
+    std::optional<std::vector<NeutralReferenceReactionDiagnostic>> stored_references(const std::vector<double>& inputs) const;
+    void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
@@ -417,6 +421,7 @@ private:
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
     mutable SweepCounters counters_;
+    mutable std::deque<std::pair<std::vector<double>, std::vector<NeutralReferenceReactionDiagnostic>>> references_;
     mutable std::mutex mutex_;
 };
 

@@ -21,6 +21,16 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 }  // namespace
 
 void register_regression(py::module_& module) {
+    // Fit workers rerun this interpreter on the extension image they inherit as fd 3 (#380).
+    if (const auto python = py::module_::import("sys").attr("executable"); !python.is_none() && py::len(python) > 0)
+        fit_host.worker = {python.cast<std::string>(), "-I", "-c", "import importlib.machinery as i, importlib.util as u; "
+            "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', '/proc/self/fd/3')); "
+            "m = u.module_from_spec(s); s.loader.exec_module(m); m._serve_fit()"};
+    fit_host.interrupted = [] { return PyErr_CheckSignals() != 0; };
+    py::register_exception_translator([](std::exception_ptr error) {
+        try { if (error) std::rethrow_exception(error); } catch (const FitInterrupted&) {}  // the poll raised KeyboardInterrupt
+    });
+    module.def("_serve_fit", [] { serve_fit(0); });
     module.def("formula_composition", [](const std::vector<double>& solvent, const Parameters& parameters,
         const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry, double molality) {
         core::Scope scope("formula_composition");
@@ -175,15 +185,17 @@ void register_regression(py::module_& module) {
     // The two budgets are scientific inputs (ALG-FIT); zero tolerances select the policy defaults.
     py::class_<FitControls>(module, "FitControls")
         .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, double function_tolerance,
-                         double gradient_tolerance, double parameter_tolerance) {
-            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds};
+                         double gradient_tolerance, double parameter_tolerance, int workers) {
+            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds, workers};
         }), py::kw_only(), py::arg("maximum_iterations"), py::arg("maximum_elapsed_time_seconds"),
-            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0)
+            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0,
+            py::arg("workers") = 0)
         .def_readwrite("function_tolerance", &FitControls::function_tolerance)
         .def_readwrite("gradient_tolerance", &FitControls::gradient_tolerance)
         .def_readwrite("parameter_tolerance", &FitControls::parameter_tolerance)
         .def_readwrite("maximum_iterations", &FitControls::maximum_iterations)
-        .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds);
+        .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds)
+        .def_readwrite("workers", &FitControls::workers);
     py::class_<TrialFailure>(module, "TrialFailure")
         .def_readonly("trial", &TrialFailure::trial)
         .def_readonly("observation", &TrialFailure::observation)

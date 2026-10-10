@@ -52,7 +52,7 @@ code_budgets: {
   "regression": [
     800,
     1000,
-    2550
+    2815
   ],
   "surface": [
     450,
