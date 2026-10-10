@@ -526,8 +526,9 @@ instead takes $P_w=P(T,\rho_w)$ at the cold scan's negative-slope node $\rho_w$
 both density seeds. Under the scan's single-loop shape $P_w$ lies between the
 spinodal pressures, so both stable roots exist there; distinct-root, positive-slope
 and branch admission are unchanged. A two-root $P_0$ is kept, and supplied
-coordinates still replace generated ones. Without such a $P_w$ the start keeps
-$P_0$ and refuses with `no positive mechanical-loop witness pressure`. A missing
+coordinates still replace generated ones. When this rule runs and finds no such
+$P_w$, the start keeps $P_0$ and refuses with `no positive mechanical-loop witness
+pressure`; starts the rule does not cover keep the generic coexistence refusal. A missing
 witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
 No pressure is invented and nothing retries. Evidence: Gross and Sadowski (2002)
