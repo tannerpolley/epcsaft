@@ -545,15 +545,15 @@ void check_declared_reacting_liquid_split() {
                                          : solve_equilibrium_from_coordinates(model, problem, add_multipliers(compiled, start));
                 CHECK(result.success); CHECK(result.convergence.residual <= 1e-10);
                 if (accepted.empty()) accepted.assign(result.coordinates.begin(), result.coordinates.begin() + compiled.primal_size);
-                tpd_compare(id + "/g", result.objective / N, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
-                tpd_compare(id + "/aq-amount", result.amounts[0] / N, item.minor, 1e-12, {}, "mol");
+                tpd_compare(id + "/g", result.objective / N, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)));
+                tpd_compare(id + "/aq-amount", result.amounts[0] / N, item.minor, 1e-12);
                 CHECK(result.mole_fractions[3] - result.mole_fractions[7] > 0.3);  // aq water-rich, distinct liquids
                 for (std::size_t k = 0; k < 3; ++k) {
                     double balance = 0.0;
                     for (std::size_t i = 0; i < 4; ++i)
                         balance += ascani_2023_balances[k][i] * (result.amounts[0] * result.mole_fractions[i] + result.amounts[1] * result.mole_fractions[4 + i]);
                     tpd_compare(id + "/balance/" + std::to_string(k), balance / N,
-                        ascani_2023_balances[k][0] * item.z + ascani_2023_balances[k][1] * (1.0 - item.z), 1e-12, {}, "mol");
+                        ascani_2023_balances[k][0] * item.z + ascani_2023_balances[k][1] * (1.0 - item.z), 1e-12);
                 }
             }
         }
