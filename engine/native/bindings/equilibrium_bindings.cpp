@@ -285,6 +285,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("declaration_roles", &DiscoveryRecord::declaration_roles)
         .def_readonly("declaration_attempt_coordinates", &DiscoveryRecord::declaration_attempt_coordinates)
         .def_readonly("work", &DiscoveryRecord::work);
+    module.def("cooling_onset", &cooling_onset, py::arg("compiled"));
     module.def("stability_test", &stability_test, py::arg("compiled"), py::arg("central"),
         py::arg("options") = StabilityOptions{});
     py::enum_<TopologyEvent>(module, "TopologyEvent")

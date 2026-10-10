@@ -593,4 +593,41 @@ void check_gross_2002_bubble() {
     tpd_compare("gross-2002-bubble/y-butane", result.mole_fractions.at(2), 0.7115607362253475, 1e-10, {}, "1");
 }
 
+// #391: Gross 2002 Fig. 10 water(0.87)/1-pentanol dew at 101,300 Pa, k_ij 0.016, temperature
+// started at 375 K. The ordinary solve fails; the cooling onset reaches the first liquid on
+// cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root.
+void check_gross_2002_cooling_onset() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    ParameterDocument d;
+    d.component_ids = {"water", "1-pentanol"};
+    d.site_component = {0, 0, 1, 1}; d.site_multiplicity = {1, 1, 1, 1};
+    d.base_choice = "pc-saft"; d.association_choice = "general-site";
+    d.electrolyte_choice = d.permittivity_choice = d.polar_choice = "none";
+    const std::array<double, 2> M{0.018015, 0.08815}, m{1.0656, 3.6260}, eps{366.51, 247.28}, sigma{3.0007, 3.4508},
+        eps_ab{2500.7, 2252.1}, kappa{0.034868, 0.010319};
+    for (std::size_t i = 0; i < 2; ++i) {
+        d.entries.push_back({"molar mass", "molar_mass", {i}, M[i], "kg / mol"});
+        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
+        d.entries.push_back({"segments", "segment_count", {i}, m[i], "dimensionless"});
+        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps[i], "kelvin"});
+        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma[i], "angstrom"});
+        d.entries.push_back({"association energy", "association_energy_over_k", {2 * i, 2 * i + 1}, eps_ab[i], "kelvin"});
+        d.entries.push_back({"association volume", "association_volume", {2 * i, 2 * i + 1}, kappa[i], "dimensionless"});
+    }
+    d.entries.push_back({"k_ij", "k_ij", {0, 1}, 0.016, "dimensionless"});
+    d.entries.push_back({"wolbach-sandler", "association_combining_rule", {0, 3, 0, 1, 2, 3}, 0.0, "dimensionless"});
+    d.entries.push_back({"wolbach-sandler", "association_combining_rule", {1, 2, 0, 1, 2, 3}, 0.0, "dimensionless"});
+    const HelmholtzModel model(build_parameters(d));
+    EquilibriumProblem problem;
+    problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.0)),
+                      equilibrium_support::phase("V", PhaseKind::Vapor)};
+    problem.temperature = FreeValue::variable(375.0); problem.pressure = FreeValue::fixed(1.013 * 1e5);
+    problem.feed.kind = FeedKind::Amounts; problem.feed.values = {0.87, 1.0 - 0.87}; problem.row_tolerance = 1e-8;
+    const auto [result, reports] = cooling_onset(compile_problem(model, problem));
+    CHECK(result.success); CHECK(!reports.empty()); CHECK(result.convergence.residual <= 1e-8);
+    tpd_compare("gross-2002-cooling-onset/T", result.temperature.at(0), 369.6782514610692, 1e-10 * 369.6782514610692, {}, "K");
+    tpd_compare("gross-2002-cooling-onset/x-water", result.mole_fractions.at(0), 0.46929206305581567, 1e-10, {}, "1");
+    tpd_compare("gross-2002-cooling-onset/rho-L", result.molar_densities.at(0), 13988.729693124995, 1e-10 * 13988.729693124995, {}, "mol/m3");
+}
+
 }  // namespace equilibrium_checks

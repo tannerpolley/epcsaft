@@ -459,12 +459,11 @@ Evidence (#391/#410 build, default starts): Gross 2002 712 to 721 of 724 with no
 success lost and no added iterations or evaluations; all 1,800 Cameretti 2005 aqueous
 electrolyte bubbles against 747; the 70-declaration methane/ethane bubble sweep 22 to 26
 with none lost; retained states agree within 1e-12 relative.
-Open limits: Gross 2002 water/1-pentanol dew rows 558 and 722 reach locally unstable
-liquid stationary points from the generated start and keep that refusal, and row 723
-also fails from it. Supplied starts recover two dew branches for 558 and 722; for 722
-the higher tested dew, about 369.966334 K, is on the water-rich branch, so a
-pentanol-rich start is not a general answer. Automatic basin selection needs a
-separately designed tangent-plane search (ADR 0012).
+Gross 2002 water/1-pentanol dew rows 558, 722 and 723 still fail from the generated
+start (local instability for 558 and 722, infeasibility for 723). Supplied starts reach
+two dew branches for 558 and 722; for 722 the higher, about 369.966334 K, is water-rich,
+so no single liquid start is a general answer. The explicit [cooling onset](#cooling-onset-dew) selects
+the intended branch.
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$
@@ -1079,6 +1078,36 @@ A partial prefix is never target success, a step or budget limit
 is never a topology event, and every attempt is retained by the existing Core
 trace scopes. Reusing only an initial seed is not continuation. The result is
 a declared local branch, not a discovery or global-stability certificate.
+
+### Cooling-onset dew
+
+`cooling_onset(compiled)` (ADR 0012 addendum) returns `(result, reports)` for a neutral,
+nonreacting fixed-pressure dew: one liquid pinned at zero amount, one free vapor, full
+positive supports and generated starts; other declarations are refused. The dew is the
+first liquid to appear on cooling the vapor at fixed $P$ and $y=z$, the temperature where
+the minimum liquid trial distance $\min\mathrm{tpd}/RT$ against the one-phase vapor reaches
+zero from above. Equal chemical potentials alone also admit lower metastable roots, and
+the trial distance at one temperature does not order their zero temperatures (row 558
+from 375 K otherwise returns 369.425 K).
+
+The ordinary declared solve runs once; success, or a failure other than local
+instability or infeasibility, returns unchanged with an empty report list. Otherwise, at
+each sampled $T$ the one-phase vapor reference is solved and the complete liquid trial
+family of `stability_test(...)` is run (at most $m+1$ trials). From the seed temperature,
+heat by a factor 1.01 to the first positive minimum distance (at most 16 samples), then
+cool in fixed steps of $0.005\,T_u$ to the first nonpositive one (at most 64). The
+existing dew solve, started at the bracket midpoint with the lower sample's lowest-distance
+liquid and $y=z$, locates the zero; its temperature must lie in the bracket within
+$10^{-10}T_u$. The trial family is rerun there, and any resolved descent refuses. That is
+at most 81 samples and 243 liquid trials for a binary. Each refusal appends its cause to
+the original failure and returns no state: no upper bound in 16 heating samples, no onset
+in 64 downward samples, an unavailable vapor reference or liquid trial, an incomplete
+trial family, an unsuccessful corrector, a corrector outside the bracket, or competing
+descent at the corrected dew. All reference, trial and corrector work is counted.
+Finite coverage: a narrow negative-distance interval between samples or a missed
+composition minimum is not excluded, and a refusal means unresolved selection, not an
+absent dew. Evidence (#391): rows 558, 722 and 723 from the default start and from 350,
+360, 375, 380 and 400 K reach the supplied-start dews within 1e-10.
 
 ### Critical-equation candidates and phase envelopes
 
