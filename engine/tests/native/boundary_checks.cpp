@@ -125,7 +125,7 @@ void check_s4() {
 }
 
 void check_s5() {
-    // A TP start must satisfy the feed balance before the general driver iterates.
+    // The estimated Rachford-Rice TP start satisfies the feed balance before the general driver iterates.
     epcsaft::HelmholtzModel binary(properties_support::neutral_binary());
     auto flash = equilibrium_support::flash(2);
     flash.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
@@ -141,11 +141,12 @@ void check_s5() {
                      + seeded.amount[1] * seeded.composition[1][i] - 5.0) < 1.0e-12);
         CHECK(std::abs(seeded.composition[i][0] + seeded.composition[i][1] - 1.0) < 1.0e-12);
     }
-    // A nonbracketed K estimate retains the original equal-amount fallback.
+    // A nonbracketed K estimate leaves the amounts unestimated: each starts at the 10 mol feed (#407),
+    // an infeasible start that Ipopt restores.
     flash.feed.values = {9.99, 0.01};
     const auto edge = epcsaft::equilibrium::compile_problem(binary, flash);
     const auto fallback = edge.prepare(epcsaft::equilibrium::boundary_start(edge));
-    CHECK(fallback.amount[0] == 5.0 && fallback.amount[1] == 5.0);
+    CHECK(fallback.amount[0] == 10.0 && fallback.amount[1] == 10.0);
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
