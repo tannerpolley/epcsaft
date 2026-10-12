@@ -68,6 +68,9 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
+    if grep -Eq '^tools/(time-key-solves|tests/test-time-key-solves-gate\.py)$' <<<"$paths"; then
+        python3 tools/tests/test-time-key-solves-gate.py
+    fi
 }
 
 docs_only=true
