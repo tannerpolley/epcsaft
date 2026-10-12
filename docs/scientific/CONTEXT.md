@@ -321,8 +321,8 @@ are separate solvent selections; the packet has no ethanol-methanol pair.
    remains distinct.
 
 New capability must earn its equations, inputs, ownership, evidence and budget.
-The code floor is an aspirational engineering target; soft and hard ceilings
-constrain the current scope. General-platform ambition does not authorize
+The layer line ceilings of [code budgets](code-budgets.md) constrain the
+current scope. General-platform ambition does not authorize
 speculative frameworks or automatic budget growth.
 
 Superseded setup documents, stage briefs and agent execution instructions live

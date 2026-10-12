@@ -31,7 +31,9 @@ graph also needs the environment-provided Ipopt and Eigen development
 packages. The first build needs network access for the two
 checksum-pinned Meson subproject archives (CppAD and HiGHS). The native owner checks additionally
 require `clang-18`, `clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file`,
-and `nm`. `ccache` is optional.
+and `nm`. `ccache` is optional. The line budgets in both check commands also need
+`clang-format-18`, and count Python with the locked `.venv` Ruff, so run setup
+before them.
 
 ## Setup and installation
 

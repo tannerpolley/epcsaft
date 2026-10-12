@@ -6,14 +6,15 @@ cd "$repo_root"
 # The report reads whatever records exist, pass or fail; it never changes this gate's status.
 trap 'python3 tools/report.py || true' EXIT
 
+# Setup first: the budget count formats Python with the locked .venv Ruff.
+/usr/bin/time -f 'engine-build: %e s' bash .codex/environments/setup.sh
+build_dir="$(<build/environment-wheel/meson-build-dir)"
+
 /usr/bin/time -f 'readiness: %e s' bash -e -c '
 python3 engine/scripts/docs/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 '
-
-/usr/bin/time -f 'engine-build: %e s' bash .codex/environments/setup.sh
-build_dir="$(<build/environment-wheel/meson-build-dir)"
 mkdir -p build/test-results
 
 failed=0
