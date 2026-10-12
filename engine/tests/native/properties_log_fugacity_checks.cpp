@@ -44,7 +44,7 @@ void exact_identities() {
     for (const auto& [name, T, P, x] : std::array<Point, 2>{{
              {"compressed-liquid", 180.0, 3.0e6, {0.4, 0.6}}, {"dense-liquid", 150.0, 1.0e5, {0.05, 0.95}}}}) {
         const auto state = gross.state_at_pressure(T, P, x, DensityBranch::Liquid);
-        const auto batch = [&](const std::vector<PressureActionDirection>& directions) {
+        const auto batch = [&, T = T, P = P, x = x](const std::vector<PressureActionDirection>& directions) {
             return gross.pressure_actions(T, P, x, DensityBranch::Liquid,
                 {PropertyObservable::ResidualEnthalpy, LOG_PHI}, directions);
         };
