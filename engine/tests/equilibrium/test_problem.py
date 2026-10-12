@@ -1,4 +1,5 @@
 import math
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -187,6 +188,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     salt = Mixture(Parameters.from_json(parameters_json("held-cameretti-sadowski-2008", 4), components=nacl))
     mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
     reactions = _mea_flash(0.).reactions
+    cases: list[tuple[Mixture, float, Amounts | Molalities, Sequence[equilibrium.Reaction], float, int]]
     cases = [(salt, 373.15, Molalities({"sodium-cation": 1., "chloride-anion": 1.}, solvent=("water",), solvent_mass_kg=1.),
               (), 97924.5272181854, 1)]
     cases += [(mea, 318.15, Amounts({"carbon-dioxide": a * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}),
@@ -195,6 +197,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
         n = len(model.component_ids)
         default, explicit = (equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=T, feed=feed, reactions=chemistry)
                              for _ in range(2))
+        assert isinstance(explicit.phases, tuple)
         explicit.phases[1].support = model.component_ids[:neutral]
         compiled = equilibrium.compile_problem(model, default)
         assert [r.index for r in compiled.rows if r.kind == _core.RowKind.Chemical and r.phase == 1] == list(range(neutral))
@@ -243,6 +246,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
         refused = equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=T, feed=Amounts(values), reactions=() if model is salt else [
             equilibrium.Reaction({"s0": -1., "s1": 1., "s2": 1.}, correlation=law, reference=equilibrium.ReactionReference(
                 equilibrium.ReferenceSourceBasis.RawMoleFractionInfiniteDilution, None))])
+        assert isinstance(refused.phases, tuple)
         refused.phases[1].support = support
         if model is ionic:
             refused.neutral_reference = equilibrium.NeutralReference(
