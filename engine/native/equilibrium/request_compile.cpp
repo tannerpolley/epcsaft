@@ -31,23 +31,6 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
     return result;
 }
 
-std::vector<std::size_t> complete_support(
-    std::size_t components, const std::vector<std::size_t>& support
-) {
-    if (support.empty()) {
-        std::vector<std::size_t> all(components);
-        std::iota(all.begin(), all.end(), 0);
-        return all;
-    }
-    std::vector<std::size_t> result = support;
-    std::sort(result.begin(), result.end());
-    if (std::adjacent_find(result.begin(), result.end()) != result.end()) {
-        throw std::invalid_argument("duplicate support index");
-    }
-    if (result.back() >= components) throw std::invalid_argument("support index out of range");
-    return result;
-}
-
 std::size_t count_rows(const CompiledSystem& compiled, RowKind kind) {
     std::size_t result = 0;
     for (const auto& row : compiled.rows) result += row.kind == kind;
@@ -1090,6 +1073,16 @@ static CompiledSystem compile_with_basis(
                                         + " violates z");
         }
     }
+    // Supports are admitted before any reference calculation; an omitted support keeps its
+    // full declared width for supplied guesses and starts.
+    std::vector<std::size_t> all(components);
+    std::iota(all.begin(), all.end(), 0);
+    for (auto& phase : compiled.problem.phases) {
+        const bool omitted = phase.support.empty() && !phase.support_declared;
+        phase.support = resolve_support(phase, all, z);
+        compiled.declared_supports.push_back(omitted ? all : phase.support);
+        if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
+    }
     compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
@@ -1112,12 +1105,6 @@ static CompiledSystem compile_with_basis(
     compiled.balance = matvec(compiled.B, compiled.n_feed);
     std::vector<bool> covered(components, false);
     const auto participant = reaction_participants(components, request.reactions);
-    for (auto& phase : compiled.problem.phases) {
-        if (phase.support_declared && phase.support.empty())
-            throw std::invalid_argument("empty support in phase " + phase.name);
-        phase.support = complete_support(components, phase.support);
-        compiled.declared_supports.push_back(phase.support);
-    }
     auto inventory = compiled;
     if (!trial_basis) {
         auto& support = inventory.problem.phases.front().support;

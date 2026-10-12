@@ -1,5 +1,6 @@
 #include "equilibrium/stoichiometry.hpp"
 
+#include "core/declared.hpp"
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
 #include "properties/thermochemistry.hpp"
@@ -11,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
@@ -538,6 +540,26 @@ std::vector<bool> reaction_participants(std::size_t components, const std::vecto
         if (reaction.stoichiometry.size() != components) throw std::invalid_argument("stoichiometry size");
         for (std::size_t i = 0; i < components; ++i) result[i] = result[i] || reaction.stoichiometry[i] != 0.0;
     }
+    return result;
+}
+
+std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
+    const std::vector<int>& z) {
+    const bool vapor = phase.kind == PhaseKind::Vapor;
+    auto result = phase.support;
+    if (result.empty() && !phase.support_declared)
+        std::copy_if(candidates.begin(), candidates.end(), std::back_inserter(result),
+            [&](std::size_t i) { return !vapor || z[i] == 0; });
+    if (result.empty()) throw core::DeclarationError("empty support in phase " + phase.name);
+    std::sort(result.begin(), result.end());
+    if (std::adjacent_find(result.begin(), result.end()) != result.end())
+        throw core::DeclarationError("duplicate support index");
+    if (result.back() >= z.size()) throw core::DeclarationError("support index out of range");
+    for (const std::size_t i : result)
+        if (vapor && z[i] != 0)
+            throw core::DeclarationError("vapor phase " + phase.name + " support contains charged component index "
+                + std::to_string(i) + " (z=" + std::to_string(z[i])
+                + "); vapor support must contain only zero-charge components");
     return result;
 }
 

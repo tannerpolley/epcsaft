@@ -392,7 +392,15 @@ not establish all roots or physical nonexistence.
 
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
-pins and free intensives from data. The balance basis $B$ spans the left null space
+pins and free intensives from data. An omitted phase support is every component,
+restricted in a vapor to the zero-charge components; a declared vapor support naming a
+charged component is refused (`DeclarationError`) even when that component is unfed,
+zero-guessed or on a zero-pinned phase. Volatile electrolytes leave the liquid as
+neutral molecular species carried as separate components, and free ions are not a
+vapor state at the Engine's conditions (owner decision, #438). Supports are admitted
+before any reference calculation; an omitted support keeps its full declared width for
+supplied guesses and starts. A compile-time declaration error propagates to the caller
+from every entry, including declared starts and continuation endpoints. The balance basis $B$ spans the left null space
 of the reaction stoichiometry in echelon form (unit pivots, coefficients below
 $\sqrt{\epsilon}$ set to zero), so each row counts one conserved moiety (#172). The pivots
 are the species taking part in the most reactions, ties by declaration index, each accepted
@@ -480,8 +488,7 @@ true-species split (#350). Its predicates use the compiled effective supports, w
 keep zero-feed reaction products and drop absent and unfed nonreacting species, and
 compilation refuses a fed or reacting species on no support: the vapor support
 lies inside the liquid support, so every potentially present species is on the
-liquid support, with charge number zero on every vapor species (compilation admits
-a vapor support holding both charge signs, so this check is needed). The single-liquid speciation below, evaluated on the
+liquid support. The single-liquid speciation below, evaluated on the
 two-phase compiled system's liquid chemical rows and keeping its last successful
 sweep, gives the true-species fractions $z^*$ and total $N^*$. Then
 $K_i=\phi_i^L(T,P,z^*)/\phi_i^V(T,P,y)$ on the vapor support and $K_i=0$ on
@@ -1323,8 +1330,10 @@ discovery; declared initialization remains unchanged.
 Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
 pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
 Caller support/label entries **replace** defaults and limit the tested domain;
-they do not restrict the initial union candidate. Reject empty caller lists,
-empty supports, species outside U, one-sign ionic supports and ionic Vapor.
+they do not restrict the initial union candidate. An omitted caller support
+resolves on U by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
+supports and ionic Vapor. Reject empty caller lists, species outside U and one-sign
+ionic supports.
 
 Before enumerating starts, one shared native support-admission predicate requires
 `DensityTemperature` or `DipolarPerturbation` whenever a requested support

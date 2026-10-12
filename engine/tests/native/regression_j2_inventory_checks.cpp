@@ -707,9 +707,11 @@ void check_propane_inventory_boundary() {
     excluded = problem; excluded.temperature = FreeValue::variable(300); excluded.pressure = FreeValue::fixed(1e6);
     refuse(model, excluded, "free-temperature", "fixed positive T and free P");
     const HelmholtzModel ionic(properties_support::nine_species());
+    // The incipient phase is the liquid: a vapor support holds no ion (ALG-EQUILIBRIUM).
     excluded = equilibrium_support::boundary(); excluded.feed.values = {1, 0, 0, .01, .01, 0, 0, 0, 0};
+    excluded.phases[0].amount = AmountSpec::pinned(0); excluded.phases[1].amount = AmountSpec::free();
     refuse(ionic, excluded, "charged-incipient", "uncharged species");
-    excluded.phases[1].support = {0, 3}; excluded.phases[1].support_declared = true;
+    excluded.phases[0].support = {0, 3}; excluded.phases[0].support_declared = true; excluded.phases[1].kind = PhaseKind::Liquid;
     const auto cause = rejection([&] { equilibrium::compile_problem(ionic, excluded); });
     truth("incipient/refusal/charge-infeasible", "one charge sign cannot form an electroneutral phase", cause.find("support z sign") != std::string::npos,
         fields({field("cause", cause)}), "issue-269");

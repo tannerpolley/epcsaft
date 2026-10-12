@@ -6,9 +6,9 @@
 
 namespace epcsaft::core {
 
-struct MissingDeclaration final : std::invalid_argument {
-    explicit MissingDeclaration(const char* name)
-        : std::invalid_argument(std::string("missing declaration: ") + name) {}
+// A missing or physically inadmissible declaration.
+struct DeclarationError final : std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
 };
 
 template <typename T>
@@ -22,7 +22,7 @@ public:
         return value_.has_value() && *value_ == value;
     }
     const T& require(const char* name) const {
-        if (!value_.has_value()) throw MissingDeclaration(name);
+        if (!value_.has_value()) throw DeclarationError(std::string("missing declaration: ") + name);
         return *value_;
     }
 

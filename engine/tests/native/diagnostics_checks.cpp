@@ -145,7 +145,7 @@ void declaration_guards() {
     CHECK(!missing.declared());
     threw = false;
     try { missing.require("x"); }
-    catch (const epcsaft::core::MissingDeclaration& error) {
+    catch (const epcsaft::core::DeclarationError& error) {
         threw = std::string(error.what()).find("x") != std::string::npos;
     }
     CHECK(threw);
