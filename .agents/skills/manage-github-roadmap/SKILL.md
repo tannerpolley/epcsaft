@@ -51,6 +51,9 @@ status back into them.
   reconciler warns on oversized open bodies.
 - Keep one accountable body editor at a time. Workers may report progress in
   comments without racing to rewrite the accepted plan.
+- Create every issue with `--milestone`, matching its title prefix (`[Equilibrium]`,
+  `[Tooling]`, ...); the reconciler's `MILESTONE_BY_PREFIX` owns the mapping and assigns
+  it to any open issue that has none.
 - Use native parent/sub-issues only for independently executable deliverables.
 - Record prerequisites with native `Blocked by`; preserve the relationship after
   completion. After changing dependencies, apply the reconciler or dispatch the
