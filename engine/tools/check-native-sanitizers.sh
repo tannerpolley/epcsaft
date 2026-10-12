@@ -23,12 +23,14 @@ wheelhouse="$run_root/wheelhouse"
 rm -rf -- "$wheelhouse" "$run_root/venv"
 mkdir -p "$wheelhouse"
 
-# ccache as in check-native.sh.
+# ccache and the build-job count as in check-native.sh; Ninja's default would start a job per CPU.
 export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
+jobs="$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)"
 CC="ccache clang-18" CXX="ccache clang++-18" \
     uv build --python "$workspace_root/.venv/bin/python" \
         --wheel --no-build-isolation --out-dir "$wheelhouse" \
         --config-setting="build-dir=$run_root/build" \
+        --config-setting="compile-args=-j$jobs" \
         --config-setting="setup-args=-Dbuildtype=debug" \
         --config-setting="setup-args=-Db_ndebug=false" \
         --config-setting="setup-args=-Db_lundef=false" \
