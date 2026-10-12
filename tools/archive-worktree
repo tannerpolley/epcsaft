@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Archive the ignored files `git worktree remove` would delete (build/ evidence, run outputs) to
-# build/archive/<name>.tar.zst in this repository's main checkout, without Python environments, wheels, native build
-# trees or caches, then `git worktree remove` the worktree.
+# build/archive/<name>.tar.zst in this repository's main checkout, then `git worktree remove` the worktree.
+# Only content identified by a marker is left out, and each omission is printed: Python environments (pyvenv.cfg or
+# conda-meta/), Meson/ninja build trees (build.ninja or meson-private/), tagged caches (CACHEDIR.TAG) and *.whl files.
 # Usage: tools/archive-worktree <worktree-path> [name]
 set -euo pipefail
 die() { echo "archive-worktree: $*" >&2; exit 1; }
@@ -12,24 +13,29 @@ owner=$(dirname "$(git -C "$wt" rev-parse --path-format=absolute --git-common-di
 main=$(dirname "$(git -C "$(dirname "$0")" rev-parse --path-format=absolute --git-common-dir)")
 [[ $wt != "$owner" ]] || die "$wt is a main checkout, not a worktree"
 
-[[ -z $(git -C "$wt" status --porcelain) ]] || die "$wt has uncommitted changes"
-[[ -z $(git -C "$wt" rev-list -n1 HEAD --not --branches --remotes) ]] \
-  || die "$wt has commits on no local or remote branch"
+# Assignments, not [[ $(...) ]], so a failing git command stops the script.
+changes=$(git -C "$wt" status --porcelain)
+[[ -z $changes ]] || die "$wt has uncommitted changes"
+unshared=$(git -C "$wt" rev-list -n1 HEAD --not --branches --remotes)
+[[ -z $unshared ]] || die "$wt has commits on no local or remote branch"
+# Removal would delete any repository or worktree nested in an ignored path.
+nested=$(find "$wt" -mindepth 2 -name .git -print -quit)
+[[ -z $nested ]] || die "$(dirname "$nested") is a repository or worktree inside $wt; worktree kept"
 
 out=$main/build/archive/$name.tar.zst
 [[ ! -e $out ]] || die "$out already exists"
 mkdir -p "$(dirname "$out")"
 git -C "$wt" ls-files -z --others --ignored --exclude-standard --directory \
-  | tar --zstd -cf "$out" -C "$wt" \
-    --exclude-tag-all=pyvenv.cfg --exclude-tag-all=build.ninja \
-    --exclude='*venv*' --exclude='*-env' --exclude='*.whl' \
-    --exclude=engine-meson --exclude=native-quality --exclude=native-sanitizers \
-    --exclude=subprojects --exclude=compile_commands.json --exclude=__pycache__ \
-    --exclude='.*_cache' --exclude=.serena --exclude='*.egg-info' \
-    --null -T -
+  | tar --zstd -cvf "$out" -C "$wt" \
+    --exclude-tag-all=pyvenv.cfg --exclude-tag-all=conda-meta \
+    --exclude-tag-all=build.ninja --exclude-tag-all=meson-private --exclude-caches-all --exclude='*.whl' \
+    --null -T - >/dev/null 2> >(sed -E 's/^tar: (.*): contains a cache directory tag (.*); directory not dumped$/excluded \1 (\2)/' >&2) \
+  || { rm -f "$out"; die "tar failed; worktree kept"; }
+git -C "$wt" ls-files --others --ignored --exclude-standard -- '*.whl' | sed 's/^/excluded /'
 # Read back every member against the worktree: proves the tarball is complete and readable.
 tar --zstd -df "$out" -C "$wt" || die "$out does not match $wt; worktree kept"
-files=$(tar --zstd -tvf "$out" | grep -c '^-' || true)
-if [[ $files -gt 0 ]]; then echo "$out: $files files, $(du -h "$out" | cut -f1)"; else rm "$out"; echo "nothing to archive"; fi
+# Any non-directory member (regular file or symlink) is retained content.
+members=$(tar --zstd -tf "$out" | grep -vc '/$' || true)
+if [[ $members -gt 0 ]]; then echo "$out: $members files, $(du -h "$out" | cut -f1)"; else rm "$out"; echo "nothing to archive"; fi
 git -C "$owner" worktree remove "$wt"
 echo "removed $wt"
