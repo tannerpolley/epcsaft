@@ -197,6 +197,7 @@ namespace {
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     double solvent_mass = 0.0;
+    std::size_t solvent_index = 0;
     std::array<std::vector<double>, REFERENCE_MOLALITIES.size()> composition;
     std::array<State, REFERENCE_MOLALITIES.size()> state;
     std::vector<std::optional<State>> pure_state;
@@ -236,6 +237,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         trace.parameter_jets = parameter_jets;
         trace.pressure = pressure;
         trace.solvent_mass = solvent_mass;
+        trace.solvent_index = *declaration.solvent_index;
         // A known liquid solvent density is tried first as a locally unique anchor; any failure
         // falls back to the cold scan and its branch admission.
         std::optional<double> anchor = solvent_anchor;
@@ -439,6 +441,11 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
                 if (stoichiometry[component] == 0.0) continue;
                 const auto& source = !trace.pure_state.empty() && trace.pure_state[component]
                     ? *trace.pure_state[component] : state;
+                if (const auto cause = &source == &state ? properties::vapor_side(state) : std::nullopt) {
+                    result.status = NeutralReferenceStatus::DensityUnavailable;
+                    result.message = "neutral reference solvent species " + std::to_string(trace.solvent_index) + ": " + *cause;
+                    return result;
+                }
                 const double component_log_density = &source == &state ? log_density : std::log(source.molar_density / 1.0);
                 const double chemical = require_component_property(source.residual_chemical_potential_over_rt[component]);
                 if (!std::isfinite(chemical)) {
@@ -770,6 +777,7 @@ InfiniteDilutionReference infinite_dilution_reference(
             ion_indices, stoichiometry, REFERENCE_MOLALITIES[index]);
         auto state = index == 0 ? properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, first_rung_density)
             : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
+        if (const auto cause = properties::vapor_side(state)) throw std::runtime_error(*cause);
         const auto current = ion_log_fugacity(state, ion_indices);
         // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
         const double error = std::max(std::abs(current[0] - previous[0]), std::abs(current[1] - previous[1]));
@@ -809,6 +817,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         std::vector<double> pure(solvent_fractions.size(), 0.0);
         pure[solvent] = 1.0;
         result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, pure_solvent_density);
+        if (const auto cause = properties::vapor_side(*result.pure_solvent_state)) throw std::runtime_error(*cause);
         if (result.pure_solvent_state->log_fugacity_coefficient)
             result.pure_solvent_log_fugacity = (*result.pure_solvent_state->log_fugacity_coefficient)[solvent];
     }
@@ -835,6 +844,7 @@ ElectrolyteActivity electrolyte_activity(
     );
     ElectrolyteActivity result;
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
+    if (const auto cause = properties::vapor_side(result.state)) throw std::runtime_error(*cause);
     const auto& state = result.state;
     const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient

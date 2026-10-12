@@ -535,6 +535,10 @@ ElectrolyteActivity electrolyte_activity(
 
 namespace properties {
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
+// ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
+// liquid-side; explicit labels and roots without a sample are kept. vapor_side refuses a liquid reference (#423).
+DensityBranch density_side(DensityBranch branch, double density, std::optional<double> sample);
+std::optional<std::string> vapor_side(const State& state);
 // Anchored closure, regularity-checked; a failed anchor is traced and retried once cold on the same branch.
 State close_density(const HelmholtzModel& model, double temperature, double pressure,
                     const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
