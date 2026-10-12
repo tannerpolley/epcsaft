@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import subprocess
 import sys
 import tomllib
 from pathlib import Path, PurePosixPath
@@ -557,6 +558,9 @@ def validate_repository(root: Path = ROOT) -> list[str]:
 
 def main() -> int:
     errors = validate_repository()
+    index = subprocess.run([sys.executable, ROOT / "tools" / "parameter_index.py"], capture_output=True, text=True)
+    if index.returncode or index.stdout != (ROOT / "docs" / "parameter-index.md").read_text():
+        errors.append(f"data/docs/parameter-index.md is stale: rerun data/tools/parameter_index.py {index.stderr}".strip())
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
