@@ -11,6 +11,14 @@ if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
     base_ref="HEAD"
 fi
 base="$base_ref ($(git rev-parse --short "$base_ref"))"
+# Runs one step and prints its elapsed time, keeping the step's exit status.
+timed() {
+    local name="$1" start="$EPOCHREALTIME" status=0
+    shift
+    "$@" || status=$?
+    awk -v n="$name" -v s="$start" -v e="$EPOCHREALTIME" 'BEGIN { printf "[%s: %.1f s]\n", n, e - s }'
+    return "$status"
+}
 echo "check-affected base: $base"
 mapfile -t changed < <(
     {
@@ -29,16 +37,15 @@ notebooks=()
 for path in "${changed[@]}"; do
     [[ "$path" == analyses/*/notebook.qmd ]] && notebooks+=("$path")
 done
-((${#notebooks[@]} == 0)) || python3 tools/check-notebook-numbers.py "${notebooks[@]}"
+((${#notebooks[@]} == 0)) || timed notebook-numbers python3 tools/check-notebook-numbers.py "${notebooks[@]}"
 
 paths="$(printf '%s\n' "${changed[@]}")"
-python3 tools/diffstat.py --budgets
-python3 tools/project-map.py
+timed project-map python3 tools/project-map.py
 if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
-    python3 engine/scripts/docs/sync_equation_registry.py --check
+    timed equation-registry python3 engine/scripts/docs/sync_equation_registry.py --check
 fi
 if grep -Eq '^(analyses/|docs/|engine/|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
-    python3 tools/check-analysis-layout.py
+    timed analysis-layout python3 tools/check-analysis-layout.py
 fi
 
 declarations_affected=false
@@ -50,9 +57,9 @@ check_declarations() {
     if [[ "$declarations_affected" == true ]]; then
         if grep -Eq "$analysis_checkers" <<<"$paths"; then
             # Runs the full declaration check, then the checkers' known-failure examples.
-            .venv/bin/python tools/tests/test-analysis-checks.py
+            timed declarations .venv/bin/python tools/tests/test-analysis-checks.py
         else
-            .venv/bin/python tools/check-analysis-declarations.py
+            timed declarations .venv/bin/python tools/check-analysis-declarations.py
         fi
     fi
 }
@@ -110,23 +117,24 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
 fi
 
 if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
-    bash tools/check-all.sh
+    timed check-all bash tools/check-all.sh
     check_declarations
     check_tools
     if ((${#slow_tests[@]})); then
-        bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
     echo "affected checks passed (base $base)"
     exit 0
 fi
 
 if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
-    bash .codex/environments/setup.sh
+    timed setup bash .codex/environments/setup.sh
 fi
+timed budgets python3 tools/diffstat.py --budgets
 
 check_declarations
 if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
-    .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)"
+    timed engine-architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)"
 fi
 
 if grep -q '^engine/' <<<"$paths"; then
@@ -135,19 +143,23 @@ if grep -q '^engine/' <<<"$paths"; then
     if ((${#test_paths[@]})); then
         mkdir -p build/test-results
         xml=build/test-results/pytest.xml s=0
-        (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml="../$xml.tmp") || s=$?
+        timed pytest env -C engine ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml="../$xml.tmp" || s=$?
         mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
         ((s == 0)) || exit "$s"
     fi
     if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
-        bash engine/tools/run-native-tests.sh
+        timed native-default bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
-            bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+            timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
         fi
     fi
-    grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
-    grep -Eq '^engine/(src/|tests/.*\.py$|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
+    if grep -Eq '^engine/(src/|tests/)' <<<"$paths"; then
+        timed ruff env -C engine ../.venv/bin/ruff check --select E4,E7,E9,F src tests
+    fi
+    if grep -Eq '^engine/(src/|tests/.*\.py$|pyproject\.toml$)' <<<"$paths"; then
+        timed mypy env -C engine ../.venv/bin/mypy
+    fi
 fi
 
 check_tools
@@ -155,7 +167,7 @@ check_tools
 grep -q '^analyses/' <<<"$paths" && bash -n tools/run-slice.sh
 
 if grep -q '^data/' <<<"$paths"; then
-    .venv/bin/python data/tools/validate_packets.py
+    timed packets .venv/bin/python data/tools/validate_packets.py
 fi
 
 echo "affected checks passed (base $base)"
