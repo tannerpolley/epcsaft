@@ -40,7 +40,6 @@ done
 ((${#notebooks[@]} == 0)) || timed notebook-numbers python3 tools/check-notebook-numbers.py "${notebooks[@]}"
 
 paths="$(printf '%s\n' "${changed[@]}")"
-timed budgets python3 tools/diffstat.py --budgets
 timed project-map python3 tools/project-map.py
 if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
     timed equation-registry python3 engine/scripts/docs/sync_equation_registry.py --check
@@ -131,6 +130,7 @@ fi
 if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
     timed setup bash .codex/environments/setup.sh
 fi
+timed budgets python3 tools/diffstat.py --budgets
 
 check_declarations
 if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
