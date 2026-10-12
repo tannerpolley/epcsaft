@@ -123,13 +123,18 @@ print(trace.stop, len(trace.states), [(c.temperature[0], c.pressure[0]) for c in
 - LLE: `Discover()` finds neutral splits without guesses. With ions, declare
   two liquid phases with `composition_guess` vectors (one entry per component).
 - Envelope mode needs `envelope_straddle > 0` and `2 * envelope_straddle <=
-  envelope_max_log_step`, and T and P guesses through `Free(guess)`. The target
-  problem does not set where a mixture trace stops: it closes at the start
-  pressure on the other branch.
-- Continuation steps are fractions of the start-to-target path. A rejected step
-  halves and never grows again, so `initial_step` is the largest step; more than
-  `max_retries_per_step` halvings stops with `budget_exhausted`, and
-  `cause_stop` and `cause_message` give the last rejected step's reason.
+  envelope_max_log_step`, and T and P guesses through `Free(guess)`. It uses
+  neither `initial_step` nor the target problem: a mixture trace closes at the
+  start pressure on the other branch. Each step, in log units, starts at
+  `envelope_max_log_step`, halves on rejection and resets after an accepted
+  step. `trace.path_values[k]` is the target of `trace.conditions[k]` (ln T,
+  ln P or ln K of `component`); the traced coordinate can switch along the way.
+- Ordinary continuation (no `envelope`) steps are fractions of the
+  start-to-target path. A rejected step halves and never grows again, so
+  `initial_step` is the largest step.
+- In both modes, more than `max_retries_per_step` consecutive rejections stops
+  with `budget_exhausted`; `cause_stop` and `cause_message` give the last
+  rejected step's reason.
 
 The installed package transports the same native records with the same meanings
 and SI molar units; Python performs no thermodynamic arithmetic. Thermal
@@ -143,16 +148,18 @@ record: replace the whole field. Bound record elements stay live, so
 do change that input record.
 
 ```python
-from epcsaft import IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ThermochemistryRecord
+from epcsaft import IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, Parameters, ThermochemistryRecord
 from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
 
-cp = IdealCorrelation(IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), source_pressure=1.0e5)
-record = ThermochemistryRecord(1.0e5, [[IdealInterval(250.0, 450.0, True, True, cp)], ...])
+parameters = Parameters.from_json("data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+                                  components=["water", "isobutanol"])
+cp = IdealCorrelation(IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), source_pressure=1.0e5)  # cp = 80 J/(mol K)
+record = ThermochemistryRecord(1.0e5, [[IdealInterval(250.0, 450.0, True, True, cp)]] * 2)  # one list per component
 model = Mixture(parameters, thermochemistry=record)           # omit the record for residual-only States
 state = model.state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
-state.total_enthalpy, state.ideal_entropy                     # None when the record does not cover T
-ln_k = ReactionLogPolynomial(a, b, c, d, Tref, Tmin, Tmax, EOS_STANDARD_STATE_ID)
-Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)             # exactly one of K, affinity or ln K(T)
+print(state.total_enthalpy, state.ideal_entropy)              # None when the record does not cover T
+ln_k = ReactionLogPolynomial(2.0, -1000.0, 0.0, 0.0, 298.15, 273.15, 373.15, EOS_STANDARD_STATE_ID)  # a, b, c, d, T_ref, T_min, T_max
+reaction = Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)  # exactly one of K, affinity or ln K(T)
 ```
 
 Reaction sets come from the caller. `ReactionLogPolynomial` is
@@ -175,31 +182,53 @@ direction holds K, Pa, absolute feed mol (component width) and one increment per
 active parameter (active width). A free T or P is an output: its entry is zero.
 
 ```python
-from epcsaft import ActiveParameter, DensityActionDirection, ParameterActionDirection, ParameterFamily
-from epcsaft.equilibrium import (SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
-                                 SolvedStateObservableKind as Kind, compile_problem, solved_state_actions)
+import math
+from epcsaft import (GAS_CONSTANT_J_PER_MOL_K, ActiveParameter, DensityActionDirection, Mixture, ParameterActionDirection,
+                     ParameterFamily, Parameters, PropertyObservable)
+from epcsaft.equilibrium import (MoleFractions, Phase, Problem, SolvedStateActionDirection, SolvedStateActionRequest,
+                                 SolvedStateObservable, SolvedStateObservableKind as Kind, compile_problem,
+                                 solve_equilibrium, solved_state_actions)
 
+parameters = Parameters.from_json("data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+                                  components=["water", "isobutanol"])  # sites: isobutanol a, b, water a, b
 pair = ActiveParameter(ParameterFamily.AssociationEnergyOverK, (1, 4))  # both slots of site pair (0, 1)
-model = Mixture(parameters, thermochemistry=record, active_parameters=[pair])
+model = Mixture(parameters, active_parameters=[pair])
+T, rho, x = 298.15, 12000.0, (0.3, 0.7)                        # K, mol/m^3, mole fractions
 move = DensityActionDirection(1.0, 0.0, (0.0, 0.0), [ParameterActionDirection(pair.family, pair.indices, 0.03)])
-batch = model.density_actions(T, rho, x=x, observables=observables, directions=[move])
-batch.results[0].action, batch.results[0].status, batch.diagnostics  # None beside a typed status when unavailable
+batch = model.density_actions(T, rho, x=x, observables=[PropertyObservable.ResidualEnthalpy], directions=[move])
+result = batch.results[0]                                     # J/mol; action along move, None beside a typed status
+print(result.value, result.action, result.status)
 
+problem = Problem(phases=[Phase("L1", kind="liquid", composition_guess=(0.46, 0.54)),
+                          Phase("L2", kind="liquid", composition_guess=(0.99, 0.01))],
+                  T=T, P=1.0e5, feed=MoleFractions({"water": 0.7, "isobutanol": 0.3}))
 central = solve_equilibrium(model, problem)
 compiled = compile_problem(model, problem)                    # one compile; no solve is repeated
-warm = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [0.0])
+warm = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [0.0])  # +1 K; T, P, feed mol, active parameters
 request = SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseLogActivity, 0, 1)], [warm])
 row = solved_state_actions(compiled, central, request).results[0]
-fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
+print(central.mole_fractions, row.value, row.action)         # ln a of isobutanol in L1; d ln a/dT in 1/K
+# Caller-side conversion of the native activity, not an Engine calculation: ln a_i is on the EOS density
+# basis, ln(x_i rho / (1 mol/m^3)) + mu_i^res/RT, so f_i = a_i R T (1 mol/m^3) in Pa.
+fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]
+print(fugacity)
 ```
 
 `solve_equilibrium` has no time limit; `solve_equilibrium_starts` tries declared
 starts in order under shared work limits and stops at the first that succeeds with its requested tolerance met:
 
 ```python
+from epcsaft import Mixture, Parameters, equilibrium
+
+model = Mixture(Parameters.from_json("data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+                                     components=["water", "isobutanol"]))
+problem = equilibrium.Problem(phases=[equilibrium.Phase("L1", kind="liquid", composition_guess=(0.46, 0.54)),
+                                      equilibrium.Phase("L2", kind="liquid", composition_guess=(0.99, 0.01))], T=298.15, P=1.0e5,
+                              feed=equilibrium.MoleFractions({"water": 0.7, "isobutanol": 0.3}))
 limits = equilibrium.EquilibriumWorkLimits(seconds=60.0, attempt_seconds=20.0)
 tried = equilibrium.solve_equilibrium_starts(model, problem, [equilibrium.EquilibriumStart()], limits)
 result = None if tried.selected is None else tried.results[tried.selected]  # tried.causes says why not
+print(tried.selected, tried.causes, result.mole_fractions, tried.iterations)
 ```
 
 A default `EquilibriumStart` runs the cold start of `solve_equilibrium`. If the limits are not exhausted, it
@@ -219,9 +248,21 @@ constructs the immutable record consumed by the installed
 `epcsaft_equilibrium_phase_component_amount` external function:
 
 ```python
-record = equilibrium.asl_record(model, problem, continuation, feed_offset,
-                               feed_matrix, anchor_controls, identity_component, minimum_gap)
+from epcsaft import Mixture, Parameters, equilibrium as eq
+
+model = Mixture(Parameters.from_json("data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+                                     components=["water", "isobutanol"]))
+both = ("water", "isobutanol")                                # declared supports; an Amounts feed in mol
+problem = eq.Problem(phases=[eq.Phase("L1", kind="liquid", support=both, composition_guess=(0.46, 0.54)),
+                             eq.Phase("L2", kind="liquid", support=both, composition_guess=(0.99, 0.01))],
+                     T=298.15, P=1.0e5, feed=eq.Amounts({"water": 0.7, "isobutanol": 0.3}))
+continuation = eq.Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1)
+feed_offset, feed_matrix = [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]  # one control per component
+anchor_controls, identity_component, minimum_gap = [0.7, 0.3], 1, 0.1  # isobutanol: x_L1 - x_L2 > 0.1
+record = eq.asl_record(model, problem, continuation, feed_offset,
+                       feed_matrix, anchor_controls, identity_component, minimum_gap)
 # Pyomo ExternalFunction: (*controls, record, "0" or "1", str(component_index))
+print(len(record))                                            # characters in the encoded record
 ```
 
 Controls and returned amounts are mol on the caller's declared batch basis.

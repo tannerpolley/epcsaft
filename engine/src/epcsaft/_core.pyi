@@ -157,7 +157,8 @@ class ThermochemistryRecord:
 
 class ReactionLogPolynomial:
     """ln K(T) = a + b/T + c ln(T/reference_temperature) + d T, T in K, valid on [temperature_min, temperature_max].
-    solve_equilibrium accepts standard_state_id == EOS_STANDARD_STATE_ID only."""
+    Without Reaction(reference=...), solve_equilibrium requires standard_state_id == EOS_STANDARD_STATE_ID; with
+    a ReactionReference and the problem's neutral_reference, a source-basis correlation is converted natively."""
     a: float
     b: float
     c: float
@@ -319,9 +320,11 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float  # Pa
-    # Per component, component_ids order; ln(fugacity coefficient) at the state's T and P.
+    # Per component, component_ids order. mu_i^res(T, rho)/(RT), residual against the ideal gas at the same T and rho;
     # None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
     residual_chemical_potential_over_rt: list[Optional[float]]
+    # ln(fugacity coefficient) at the state's T and P: mu_i^res/(RT) - ln Z. The list is None unless Z is positive and
+    # finite; an entry is None where residual_chemical_potential_over_rt is.
     log_fugacity_coefficient: Optional[list[Optional[float]]]
     component_property_status: list[PropertyActionStatus]
     log_fugacity_parameter_derivative: list[Optional[float]]
@@ -735,11 +738,13 @@ class ContinuationStop:
     critical_endpoint: ContinuationStop
 
 class ContinuationOptions:
-    """Steps are path fractions of the start-to-target path. A rejected step halves and a step never grows,
-    so initial_step is the largest step; more than max_retries_per_step halvings stops with budget_exhausted
-    (the last rejected step's reason is in cause_stop and cause_message), a step below minimum_step with step_too_small.
-    Envelope mode (Problem.envelope set) needs envelope_straddle > 0 and 2 * envelope_straddle <=
-    envelope_max_log_step, and T and P guesses through Free(guess)."""
+    """Ordinary path: steps are fractions of the start-to-target path; a rejected step halves and a step never
+    grows, so initial_step is the largest step. Envelope mode (Problem.envelope set) ignores initial_step and
+    the target problem: each step starts at envelope_max_log_step (log-coordinate units), halves on rejection and
+    resets after an accepted step; it needs envelope_straddle > 0, 2 * envelope_straddle <= envelope_max_log_step
+    and T and P guesses through Free(guess). Both modes stop with budget_exhausted after more than
+    max_retries_per_step consecutive rejections (reason in cause_stop and cause_message) and with step_too_small
+    when the halved step falls below minimum_step."""
     initial_step: float
     minimum_step: float
     max_steps: int
@@ -764,7 +769,7 @@ class ContinuationResult:
     success: bool
     message: str
     stop: ContinuationStop
-    path_values: list[float]  # path fraction of each entry of states
+    path_values: list[float]  # per state: path fraction, or in envelope mode the conditions[k] target (ln T, ln P or ln K)
     parameter_values: list[list[float]]
     states: list[EquilibriumResult]
     reached_path: float
@@ -1115,7 +1120,9 @@ class FitResult:
     status: str
     message: str
     usable: bool
-    physical: list[float]  # fitted value of each coordinate target, in declaration order
+    # Native chart order: one value per target of each non-reaction coordinate (declaration order), then each held
+    # Born diameter, then each reaction coordinate. Entry k < len(chart.active) is the value of chart.active[k].
+    physical: list[float]
     parameters: Parameters
     predictions: list[float]  # per observation, in the observation's unit
     residuals: list[float]
