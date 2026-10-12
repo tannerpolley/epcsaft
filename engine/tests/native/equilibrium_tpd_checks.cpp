@@ -332,7 +332,7 @@ void check_tangent_plane_admission() {
     }
     CHECK(physical_trials > 0);
     for (const auto& support : std::vector<std::vector<std::size_t>>{{}, {0, 1}, {0, 1, 2}}) {
-        auto invalid = phase; invalid.support = support;
+        auto invalid = phase; invalid.support = support; invalid.support_declared = true;
         if (support.size() == 3) invalid.kind = PhaseKind::Vapor;
         StabilityOptions options; options.trials = std::vector<PhaseSpec>{invalid};
         bool rejected = false;

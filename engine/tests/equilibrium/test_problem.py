@@ -1,18 +1,23 @@
 import math
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters, _core, equilibrium
+from epcsaft import DeclarationError, Mixture, ParameterError, Parameters, _core, equilibrium
 from epcsaft.equilibrium import (
     Amounts,
     Free,
+    Molalities,
     Phase,
     Problem,
     problem_from_mapping,
     solve_equilibrium,
 )
 
+from tests.equilibrium.test_declared_starts import _mea_flash
+from tests.equilibrium.test_trace_reliability import _MEA
+from tests.native_inputs import aqueous_electrolyte
 from tests.packets import parameters_json
 
 
@@ -171,6 +176,83 @@ def test_supplied_charged_family_refuses_before_trial_work() -> None:
     assert all(e.name != "hessian_calls" for e in captured.events)
     options.trials = [neutral]
     assert "tpd_over_rt" in equilibrium.stability_test(compiled, central, options).trials[0].quantities
+
+
+def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
+    """#438: the default bubble_point vapor holds only zero-charge components. NaCl 1 mol/kg at 373.15 K (Held 2008
+    packet 4) and packet-3 MEA at 318.15 K equal the explicit neutral vapor and the pressures retained from it on
+    the unchanged Engine (numerical verification, not validation); the ions stay in the balanced liquid. Full-width
+    guesses and starts map onto the neutral vapor, an omitted vapor trial resolves to it, and an explicit charged
+    vapor is refused before the reference calculation that would otherwise fail at 400 K."""
+    nacl = ("water", "sodium-cation", "chloride-anion")
+    salt = Mixture(Parameters.from_json(parameters_json("held-cameretti-sadowski-2008", 4), components=nacl))
+    mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    reactions = _mea_flash(0.).reactions
+    cases: list[tuple[Mixture, float, Amounts | Molalities, Sequence[equilibrium.Reaction], float, int]]
+    cases = [(salt, 373.15, Molalities({"sodium-cation": 1., "chloride-anion": 1.}, solvent=("water",), solvent_mass_kg=1.),
+              (), 97924.5272181854, 1)]
+    cases += [(mea, 318.15, Amounts({"carbon-dioxide": a * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}),
+               reactions, p, 3) for a, p in ((.1, 7286.707555004345), (.3, 7427.553577760993), (.5, 7522.2862426425445))]
+    for model, T, feed, chemistry, pressure, neutral in cases:
+        n = len(model.component_ids)
+        default, explicit = (equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=T, feed=feed, reactions=chemistry)
+                             for _ in range(2))
+        assert isinstance(explicit.phases, tuple)
+        explicit.phases[1].support = model.component_ids[:neutral]
+        compiled = equilibrium.compile_problem(model, default)
+        assert [r.index for r in compiled.rows if r.kind == _core.RowKind.Chemical and r.phase == 1] == list(range(neutral))
+        result, reference = solve_equilibrium(model, default), solve_equilibrium(model, explicit)
+        assert result.success and reference.success, result.message
+        assert abs(result.pressure[0] - pressure) <= 1e-10 * pressure
+        for key in ("pressure", "amounts", "mole_fractions", "molar_densities"):
+            for x, y in zip(getattr(result, key), getattr(reference, key), strict=True):
+                assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
+        assert result.amounts[1] == 0. and result.mole_fractions[n + neutral:] == [0.] * (n - neutral)
+        x = dict(zip(model.component_ids, (result.amounts[0] * v for v in result.mole_fractions[:n]), strict=True))
+        balances = [(x["sodium-cation"], 1.), (x["chloride-anion"], 1.)] if model is salt else [
+            (x["carbon-dioxide"] + x["carbamate-anion"] + x["bicarbonate-anion"] + x["carbonate-anion"],
+             feed.values["carbon-dioxide"]),
+            (x["monoethanolamine"] + x["protonated-monoethanolamine"] + x["carbamate-anion"], 9.7292821),
+            (x["protonated-monoethanolamine"] + x["hydronium-cation"], x["carbamate-anion"] + x["bicarbonate-anion"]
+             + 2. * x["carbonate-anion"] + x["hydroxide-anion"])]
+        for amount, target in balances:
+            assert abs(amount - target) <= 1e-10 * target
+    guess, vapor = ([*head, *[0.] * (n - neutral)] for head in ([.3, .3, .4], reference.mole_fractions[n:n + neutral]))
+    start = equilibrium.EquilibriumStart(compositions=[result.mole_fractions[:n], vapor])
+    narrow = equilibrium.EquilibriumStart(compositions=[result.mole_fractions[:n], vapor[:neutral]])
+    pairs = ((solve_equilibrium(mea, _mea_flash(5918.5286, Phase("V", kind="vapor", composition_guess=guess))),
+              solve_equilibrium(mea, _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3],
+                                                                 composition_guess=guess[:neutral])))),
+             *(equilibrium.solve_equilibrium_starts(mea, problem, [seed], equilibrium.EquilibriumWorkLimits()).results
+               for problem, seed in ((default, start), (explicit, narrow))))
+    for full, reduced in (pairs[0], (pairs[1][0], pairs[2][0])):
+        assert full is not None and reduced is not None and full.success
+        assert [full.iterations, full.evaluations] == [reduced.iterations, reduced.evaluations]
+        for x, y in zip([*full.pressure, *full.amounts], [*reduced.pressure, *reduced.amounts], strict=True):
+            assert abs(x - y) <= 1e-10 * max(abs(x), abs(y))
+    options = equilibrium.StabilityOptions()
+    options.trials = [_core.PhaseSpec()]
+    options.trials[0].kind = _core.PhaseKind.Vapor
+    salt_default = equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=373.15, feed=cases[0][2])
+    salt_result = solve_equilibrium(salt, salt_default)
+    report = equilibrium.stability_test(equilibrium.compile_problem(salt, salt_default), salt_result, options)
+    assert report.trials[0].phase.support == [0]
+    law = equilibrium.ReactionLogPolynomial(math.log(1e-8), 0., 0., 0., 298.15, 250., 350., "analytic-source")
+    ionic = Mixture(aqueous_electrolyte())
+    for T, support, error, message in ((373.15, ("water", "sodium-cation"), DeclarationError, "charged component index 1"),
+                                       (400., ("s0", "s1"), DeclarationError, "charged component index 1"),
+                                       (400., ("s0",), ParameterError, "reference_unavailable")):
+        model, values = (salt, {"water": 1.}) if T == 373.15 else (ionic, {"s0": 1., "s1": 1e-6, "s2": 1e-6})
+        refused = equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=T, feed=Amounts(values), reactions=() if model is salt else [
+            equilibrium.Reaction({"s0": -1., "s1": 1., "s2": 1.}, correlation=law, reference=equilibrium.ReactionReference(
+                equilibrium.ReferenceSourceBasis.RawMoleFractionInfiniteDilution, None))])
+        assert isinstance(refused.phases, tuple)
+        refused.phases[1].support = support
+        if model is ionic:
+            refused.neutral_reference = equilibrium.NeutralReference(
+                solvent="s0", solute_molality_ratios={"s1": 1., "s2": 1.}, standard_molality_mol_per_kg=1.)
+        with pytest.raises(error, match=message):
+            equilibrium.compile_problem(model, refused)
 
 
 def test_mid_dome_flash_returns_the_split() -> None:

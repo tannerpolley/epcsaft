@@ -113,7 +113,13 @@ void check_c1() {
                         solver_status = error.what();
                     }
                     const int phases = equilibrium_support::pinned_phases(phase_set, equilibrium_support::AmountPattern::AllFree) == 0 ? (phase_set == equilibrium_support::PhaseSet::OneLiquid || phase_set == equilibrium_support::PhaseSet::OneVapor ? 1 : phase_set == equilibrium_support::PhaseSet::Two || phase_set == equilibrium_support::PhaseSet::TwoVaporLiquid ? 2 : 3) : 1;
-                    const bool structurally_square = f == k && phases - k <= rank;
+                    // A vapor holds only zero-charge components (ALG-EQUILIBRIUM): ions in a lone vapor have no
+                    // support, and beside a zero-pinned liquid a free vapor leaves the ion balances nullity 2.
+                    const bool electrolyte = chemistry == equilibrium_support::Chemistry::Electrolyte;
+                    const bool ions_without_phase = electrolyte && phase_set == equilibrium_support::PhaseSet::OneVapor;
+                    const bool ions_on_zero_liquid = electrolyte && phase_set == equilibrium_support::PhaseSet::TwoVaporLiquid
+                        && amount_pattern == equilibrium_support::AmountPattern::LastPinned;
+                    const bool structurally_square = f == k && phases - k <= rank && !ions_without_phase;
                     const auto case_id = std::string(phase_set_name(phase_set)) + "/"
                         + amount_pattern_name(amount_pattern) + "/"
                         + intensive_pattern_name(intensive_pattern) + "/"
@@ -140,14 +146,16 @@ void check_c1() {
                             recording_support::field("generic_nullity", generic_nullity),
                             recording_support::field("solve_outcome", solver_status),
                         }), "Relationship", "rank-count",
-                        "accepted iff structural rows are square", "absolute", 0.0, 0.0,
+                        "accepted iff structural rows are square and ions have a phase", "absolute", 0.0, 0.0,
                         accepted == structurally_square, "c1-structural", case_id.c_str(),
                         "accepted", "phase_set,amount,intensive,chemistry", "accepted=structural",
                         "case");
                     CHECK((f - k) == 0 || !accepted);
                     CHECK(accepted == structurally_square);
                     CHECK(!(accepted && k == phases) || generic_nullity > 0);
-                    CHECK(!(accepted && k < phases) || generic_nullity == 0);
+                    CHECK(!(accepted && k < phases) || generic_nullity == (ions_on_zero_liquid ? 2U : 0U));
+                    CHECK(!(accepted && ions_on_zero_liquid)
+                          || (row_count == 12 && unknown_count == 12 && jacobian_rank == 10));
                 }
             }
         }
@@ -319,18 +327,23 @@ void check_c8() {
         "Relationship", "charge-balance", "single electrolyte phase has no charge row",
         "reference_or_one", 0.0, 0.0, compiled.charge_row_count == 0,
         "c8-charge", "single", "N_q", "T,P,\\mathbf{x},topology", "N_q=0", "topology");
+    // The omitted vapor support is water alone, so the free liquid carries every ion without a charge row.
     recording_support::compare(
-        "boundary-charge-row", "charge_row_count", "count", static_cast<double>(boundary.charge_row_count), 1.0,
+        "boundary-charge-row", "charge_row_count", "count", static_cast<double>(boundary.charge_row_count), 0.0,
         recording_support::fields({recording_support::field("T", second.temperature.value),
                                    recording_support::field("P", second.pressure.value),
                                    recording_support::field("x", second.feed.values),
                                    recording_support::field("phase_count", second.phases.size()),
-                                   recording_support::field("vapor_amount", second.phases[1].amount.fraction)}),
-        "Relationship", "charge-balance", "boundary electrolyte topology adds one charge row",
-        "reference_or_one", 0.0, 0.0, boundary.charge_row_count == 1,
-        "c8-boundary-charge", "boundary", "N_q", "T,P,\\mathbf{x},topology", "N_q=1", "topology");
+                                   recording_support::field("vapor_amount", second.phases[1].amount.fraction),
+                                   recording_support::field("primal_size", boundary.primal_size),
+                                   recording_support::field("unknowns", boundary.unknown_count())}),
+        "Relationship", "charge-balance", "boundary electrolyte topology with a water vapor adds no charge row",
+        "reference_or_one", 0.0, 0.0, boundary.charge_row_count == 0,
+        "c8-boundary-charge", "boundary", "N_q", "T,P,\\mathbf{x},topology", "N_q=0", "topology");
     CHECK(compiled.charge_row_count == 0);
-    CHECK(boundary.charge_row_count == 1);
+    CHECK(boundary.charge_row_count == 0);
+    CHECK(boundary.problem.phases[1].support == std::vector<std::size_t>{0});
+    CHECK(boundary.primal_size == 8 && boundary.unknown_count() == 11);
 }
 void check_c2() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
@@ -903,7 +916,7 @@ void check_e2_charge() {
     };
     record_rows("e2-4/one-free", epcsaft::equilibrium::compile_problem(model, base), 0, {});
     auto free_plus_zero = base;
-    free_plus_zero.phases.push_back(equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0)));
+    free_plus_zero.phases.push_back(equilibrium_support::phase("L2", PhaseKind::Liquid, AmountSpec::pinned(0.0)));
     free_plus_zero.phases[1].support = {0, 1, 2};
     free_plus_zero.pressure = FreeValue::variable(1.0e5);
     record_rows("e2-4/free-plus-incipient", epcsaft::equilibrium::compile_problem(model, free_plus_zero), 1, {1});

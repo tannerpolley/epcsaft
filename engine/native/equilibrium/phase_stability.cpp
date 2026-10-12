@@ -129,17 +129,14 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
     if (phases.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
     for (auto phase : phases) {
-        if (phase.support.empty()) throw std::invalid_argument("empty stability support");
-        std::sort(phase.support.begin(), phase.support.end());
-        if (std::adjacent_find(phase.support.begin(), phase.support.end()) != phase.support.end())
-            throw std::invalid_argument("duplicate stability support species");
+        phase.support = resolve_support(phase, united, z);
         bool positive = false, negative = false;
         for (auto i : phase.support) {
             if (std::find(united.begin(), united.end(), i) == united.end())
                 throw std::invalid_argument("stability support outside fed/reaction union");
             positive |= z[i] > 0; negative |= z[i] < 0;
         }
-        if (positive != negative || (positive && phase.kind == PhaseKind::Vapor))
+        if (positive != negative)
             throw std::invalid_argument("inadmissible ionic stability support/label");
         const auto& form = c.model->parameters().permittivity_form;
         if (positive && !form.is(PermittivityForm::DensityTemperature)

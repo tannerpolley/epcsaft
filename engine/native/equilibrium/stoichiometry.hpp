@@ -56,6 +56,12 @@ bool conserves_total_moles(const std::vector<std::vector<double>>& basis);
 // it forms ALG-STABILITY's U.
 std::vector<bool> reaction_participants(std::size_t components, const std::vector<ReactionSpec>& reactions);
 
+// ALG-EQUILIBRIUM phase support: an omitted support is the candidates, zero-charge only in a vapor;
+// a declared support is sorted and refused (core::DeclarationError) if empty, repeated, out of range,
+// or, in a vapor, holding a charged component.
+std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
+    const std::vector<int>& z);
+
 std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector
