@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Equilibrium acceptance corpora on two wheels; one table (docs/agents/workflow.md "Gates").
+
+Runs, in a throwaway environment per wheel, the Cameretti 2005 bubble states (default start), the
+Gross 2002 declarations (default start), the 70-case neutral methane/ethane sweep, the #243 42-row
+matrix and the 4,374-row replay, then compares B with A. Cases a gate already runs (the #390 and
+#407 pins, e4-d, the Gross pins in equilibrium/Automatic*) are omitted. Work counts, timings,
+messages and diagnostic residuals are reported by the scripts, not compared here; every other value
+must agree within 1e-10 relative (absolute floor 1e-12), and text must be equal. The replay uses
+replay_compare.py's quantity limits and the matrix physical_comparison.py's. Exits 1 on any
+difference or failed job. Tracked results/ are never written.
+"""
+import argparse
+import csv
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import threading
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
+SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
+REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
+            'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
+            'wall_seconds', 'parallel_solve_seconds'}
+
+
+def wheel_file(path):
+    path = Path(path).resolve()
+    return next(path.glob('*.whl')) if path.is_dir() else path
+
+
+def values(text):
+    """A CSV cell or JSON value as a flat list of floats, or None for text."""
+    try:
+        value = json.loads(text) if isinstance(text, str) else text
+    except ValueError:
+        return None
+    flat = value if isinstance(value, list) else [value]
+    if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in flat):
+        return [float(v) for v in flat]
+    return None
+
+
+def differences(a_rows, b_rows):
+    """Rows of B that differ from A outside the comparison above."""
+    found = [dict(row=i, reason='row missing') for i in range(min(len(a_rows), len(b_rows)), max(len(a_rows), len(b_rows)))]
+    for i, (a, b) in enumerate(zip(a_rows, b_rows)):
+        for key in sorted((set(a) | set(b)) - REPORTED):
+            x, y = a.get(key), b.get(key)
+            if x == y:
+                continue
+            u, v = values(x), values(y)
+            if u is None or v is None or len(u) != len(v) or not all(
+                    math.isclose(p, q, rel_tol=1e-10, abs_tol=1e-12) for p, q in zip(u, v)):
+                found.append(dict(row=i, key=key, a=x, b=y))
+    return found
+
+
+def table(path):
+    return list(csv.DictReader(path.open())) if path.stat().st_size else []
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('wheel_a', help='wheel file, or a directory holding one (e.g. build/wheels/main-current)')
+    parser.add_argument('wheel_b')
+    parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
+    args = parser.parse_args()
+    out = args.out.resolve()
+    if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):
+        parser.error('--out must be outside the tracked tree (use build/)')
+    out.mkdir(parents=True, exist_ok=False)
+    began = time.perf_counter()
+    env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
+           'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
+    wheels = {'A': wheel_file(args.wheel_a), 'B': wheel_file(args.wheel_b)}
+    for label, wheel in wheels.items():
+        venv = out / label / 'venv'
+        subprocess.run(['uv', 'venv', '-q', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
+        subprocess.run(['uv', 'pip', 'install', '-q', '--python', str(venv / 'bin/python'), str(wheel),
+                        'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
+        subprocess.run([str(venv / 'bin/python'), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)],
+                       check=True, env=env, stdout=subprocess.DEVNULL)
+
+    # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
+    parallel = threading.Lock()
+
+    def run(label, name, *command):
+        with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
+            code = subprocess.run([str(out / label / 'venv/bin/python'), *map(str, command)], cwd=ROOT, env=env,
+                                  stdout=log, stderr=subprocess.STDOUT).returncode
+        return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
+
+    reference = out / 'A/matrix-reference'
+    jobs = []
+    for label in wheels:
+        d = out / label
+        jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
+                 (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
+                 (label, 'neutral', TPD / 'neutral.py', d / 'neutral.json')]
+        jobs += [(label, f'replay-{s}', TPD / 'baseline.py', '--section', s, '--output', d / 'replay') for s in SECTIONS]
+    with ThreadPoolExecutor(len(jobs) + 1) as pool:
+        matrix = pool.submit(run, 'A', 'matrix-reference', TPD / 'physical_comparison.py', reference)
+        futures = [pool.submit(run, *job) for job in jobs]
+        failures = [f.result() for f in [matrix, *futures]]
+        if matrix.result() is None:
+            failures += pool.map(lambda label: run(label, 'matrix', TPD / 'physical_comparison.py', out / label / 'matrix',
+                                                   '--reference', reference / 'original-states.json'), wheels)
+    failures = [f for f in failures if f]
+    for venv in (out / label / 'venv' for label in wheels):
+        shutil.rmtree(venv)
+
+    rows, found = [], {}
+
+    def corpus(name, count, compare):
+        try:
+            counts = [count(out / label) for label in wheels]
+            found[name] = compare()
+            rows.append((name, *counts, str(len(found[name]))))
+        except (OSError, ValueError, KeyError, StopIteration) as error:
+            rows.append((name, '-', '-', f'unreadable: {error}'))
+
+    def cameretti(d):
+        summary = table(d / 'cameretti/default-start-summary.csv')
+        states = sum(int(r['states']) for r in summary)
+        return f"{states - sum(int(r['default_failures']) for r in summary):,}/{states:,}"
+
+    camerettis = ('default-start-summary', 'default-start-failures', 'table-5', 'figure-lines', 'figure-points',
+                  'activity-298K', 'water', 'table-5-kcl-misprint')
+    corpus('Cameretti 2005 default start', cameretti, lambda: [dict(file=f, **x) for f in camerettis for x in differences(
+        table(out / f'A/cameretti/{f}.csv'), table(out / f'B/cameretti/{f}.csv'))])
+    gross = lambda d: table(d / 'gross/default-start-comparisons.csv')
+    corpus('Gross 2002 default start', lambda d: f"{sum(r['success'] == 'True' for r in gross(d))}/{len(gross(d))}",
+           lambda: differences(gross(out / 'A'), gross(out / 'B')))
+    neutral = lambda d: json.loads((d / 'neutral.json').read_text())['rows']
+    corpus('neutral methane/ethane sweep', lambda d: f"{sum(r['success'] for r in neutral(d))}/{len(neutral(d))}",
+           lambda: differences(neutral(out / 'A'), neutral(out / 'B')))
+    summary = lambda d: json.loads((d / 'matrix/summary.json').read_text())
+    corpus('#243 matrix', lambda d: f"{summary(d)['passes']}/{summary(d)['total']}",
+           lambda: [r for r in (table(out / 'B/matrix/comparisons.csv'))
+                    if r['passes'] != next(a['passes'] for a in table(out / 'A/matrix/comparisons.csv')
+                                           if (a['case'], a['lane'], a['N']) == (r['case'], r['lane'], r['N']))])
+
+    def replay():
+        if subprocess.run([sys.executable, TPD / 'replay_compare.py', out / 'A/replay', out / 'B/replay',
+                           out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
+            raise ValueError('replay_compare.py failed')
+        return [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
+    corpus('replay rows (4 sections)', lambda d: f"{sum(len(table(d / f'replay/{s}.csv')) for s in SECTIONS):,}", replay)
+
+    (out / 'differences.json').write_text(json.dumps(found, indent=2, default=str) + '\n')
+    widths = [max(len(str(r[i])) for r in [('corpus', 'A', 'B', 'differences'), *rows]) for i in range(4)]
+    for r in [('corpus', 'A', 'B', 'differences'), *rows]:
+        print('  '.join(str(c).ljust(w) for c, w in zip(r, widths)))
+    for failure in failures:
+        print('FAILED', failure)
+    print(f'wheels A={wheels["A"]} B={wheels["B"]}; details {out}/differences.json; {time.perf_counter() - began:.0f} s')
+    return 1 if failures or any(found.get(r[0]) for r in rows) or any(r[1] == '-' for r in rows) else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

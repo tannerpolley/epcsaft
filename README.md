@@ -67,7 +67,9 @@ record its SHA-256.
 
 ## Checks
 
-Run the affected-area gate during normal development:
+Which checks a delivery runs, and when, is listed only in
+[`docs/agents/workflow.md` "Gates"](docs/agents/workflow.md#gates); this section
+describes the commands. Run the affected-area gate during normal development:
 
 ```bash
 bash tools/check-affected.sh [base]
@@ -95,8 +97,8 @@ changes; request them with
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
 Python. New studies can be small C++ drivers that write
-CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
-cover the Python interface too, before review.
+CSV rows; plots read the CSV. `check-all.sh` and `check-affected.sh` cover the
+Python interface too.
 
 ```bash
 tools/native-run equilibrium_checks --list
@@ -119,17 +121,13 @@ tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only 
 tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
 ```
 
-Native C++ changes use the explicit owner commands:
-
-```bash
-bash engine/tools/check-native.sh
-bash engine/tools/check-native-sanitizers.sh
-```
-
-The first command builds the native extension with Clang and runs the full
-clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
-its compact numerical tests. Run slow Engine tests or an analysis reproduction
-only when the changed scientific claim requires that evidence.
+`engine/tools/check-native.sh` builds the native extension with Clang and runs the
+full clang-tidy sweep. `engine/tools/check-native-sanitizers.sh` builds a separate
+debug ASan/UBSan wheel and runs its compact numerical tests.
+`tools/check-equilibrium-corpora <wheel-A> <wheel-B>` runs the Equilibrium
+acceptance corpora on both wheels and prints one table (`--help`). Run slow Engine
+tests or an analysis reproduction only when the changed scientific claim requires
+that evidence.
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
 Builds and Engine calculations run directly, with no thread, slot or memory limits.
