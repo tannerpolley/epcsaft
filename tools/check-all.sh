@@ -14,6 +14,7 @@ build_dir="$(<build/environment-wheel/meson-build-dir)"
 python3 engine/scripts/docs/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
+python3 tools/tests/test-time-key-solves-gate.py
 '
 mkdir -p build/test-results
 

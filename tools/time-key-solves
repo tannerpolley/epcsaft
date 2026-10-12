@@ -114,8 +114,8 @@ def worker():
                 rows.append(row)
                 if not result.success or result.requested_tolerance_met is not True:
                     raise RuntimeError(f'{point}: {result.message}; residuals={result.residuals}')
-                if any(not math.isfinite(value) for key in PHYSICAL for value in row[key]):
-                    raise RuntimeError(f'{point}: nonfinite physical state')
+                if not all(row[key] and all(map(math.isfinite, row[key])) for key in PHYSICAL):
+                    raise RuntimeError(f'{point}: empty or nonfinite physical state')
                 previous = result
             reply = dict(seconds=elapsed, rows=rows, nice=os.getpriority(os.PRIO_PROCESS, 0),
                          affinity=sorted(os.sched_getaffinity(0)), engine=str(epcsaft.__file__))
@@ -152,7 +152,7 @@ def physical_difference(a, b):
 
 
 def gate(work_rows, state_rows, expect_change=False):
-    """Print every work-count change and the worst state row; return the failures.
+    """Print every work-count change, missing state and the worst state row; return the failures.
 
     Rows are retained work.csv and states.csv rows (numbers or their CSV text).
     """
@@ -170,8 +170,27 @@ def gate(work_rows, state_rows, expect_change=False):
     for row in state_rows:
         values.setdefault((row['case'], row['sample'], row['point'], row['quantity']), {'A': [], 'B': []})[
             row['wheel']].append(float(row['value']))
+    # Equivalence needs states: every case and sample solved by both wheels at the same points,
+    # each point with every physical quantity, and no quantity whose entry counts differ.
+    points, missing = {}, []
+    for row in work_rows:
+        points.setdefault((row['case'], row['sample']), {'A': [], 'B': []})[row['wheel']].append(row['point'])
+    for case in CASES:
+        for sample in {'warmup'} | {sample for _, sample in points}:
+            seen = points.get((case, sample), {'A': [], 'B': []})
+            if not seen['A'] or seen['A'] != seen['B']:
+                missing.append(f"MISSING STATE {case} {sample}: points A {seen['A']} B {seen['B']}")
+            missing.extend(f'MISSING STATE {case} {sample} {point} {quantity}'
+                           for point in seen['A'] for quantity in PHYSICAL if (case, sample, point, quantity) not in values)
+    missing.extend(f"MISSING STATE {key}: A {len(pair['A'])} B {len(pair['B'])} entries"
+                   for key, pair in values.items() if len(pair['A']) != len(pair['B']))
+    for line in missing:
+        print(line, flush=True)
+    failures.extend(missing)
     worst = (0.0, None)
     for key, pair in values.items():
+        if len(pair['A']) != len(pair['B']):
+            continue
         for index, difference in enumerate(scaled_differences(pair['A'], pair['B'])):
             if difference > worst[0]:
                 worst = (difference, (*key, index, pair['A'][index], pair['B'][index]))
