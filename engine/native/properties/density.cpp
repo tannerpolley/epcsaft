@@ -616,6 +616,16 @@ bool properties::regular_density(double density, double slope, const std::option
             <= policy::DENSITY_ANCHOR_REGULARITY.value;
 }
 
+DensityBranch properties::density_side(DensityBranch branch, double density, std::optional<double> sample) {
+    if (branch != DensityBranch::Unspecified || !sample) return branch;
+    return density < *sample ? DensityBranch::Vapor : DensityBranch::Liquid;
+}
+
+std::optional<std::string> properties::vapor_side(const State& state) {
+    if (density_side(state.density_branch, state.molar_density, state.negative_slope_density) != DensityBranch::Vapor) return std::nullopt;
+    return "liquid branch absent: the sole stable root " + core::optional_number(state.molar_density)
+        + " mol/m3 lies below the negative-slope sample " + core::optional_number(state.negative_slope_density) + " mol/m3";
+}
 
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,

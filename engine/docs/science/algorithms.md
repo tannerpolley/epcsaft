@@ -349,7 +349,14 @@ therefore remains bounded by the declared scan and supported shape; no
 global stability or complete root enumeration is claimed.
 
 An unspecified request with multiple resolved stable roots is ambiguous.
-A genuine sole root remains unlabelled. An anchored request uses the same
+A genuine sole root remains unlabelled. Its side is read from the stored
+negative-slope sample of the same scan (single-loop case, #423): below the sample
+it is vapor-side, above it liquid-side, and with no sample it stays unlabelled; no
+evaluation, density cutoff or tolerance is added. Liquid references (the
+neutral trace, the ionic ladder's first rung, its pure solvent and the finite
+electrolyte-activity state) refuse a consumed root on the established vapor side;
+pure-species overrides retain their own branch admission, and unused dilution
+states do not cause refusal. Fit observations keep the unlabelled root and its count. An anchored request uses the same
 partition and counting method within its existing local window and keeps the
 requested branch only after local uniqueness is established. It returns the sole
 stable root already refined by that local scan, with its own convergence record,

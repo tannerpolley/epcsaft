@@ -869,4 +869,45 @@ void core_c2_parameter_coordinates() {
         "relative_error", "Sg,S H S", "T,V,n", "source=S*native");
 }
 
+// #423: a sole cold root below the stored negative-slope sample is vapor-side and is no liquid reference.
+void liquid_reference_branch_evidence() {
+    const auto refused = [](const std::string& message) { return message.find("below the negative-slope sample") != std::string::npos; };
+    const epcsaft::HelmholtzModel neutral(properties_support::neutral_binary());
+    const auto ethane = [&](double T) {
+        return epcsaft::reaction_reference(neutral, T, 100.0, {1, {1.0, 0.0}, 1.0, {}}, {1.0, -1.0}, {});
+    };
+    const auto gas = ethane(300.0);  // sole root 0.040091082 mol/m3, sample 7087.881992 mol/m3
+    CHECK(gas.status == epcsaft::NeutralReferenceStatus::DensityUnavailable
+          && gas.message.find("solvent species 1") != std::string::npos && refused(gas.message));
+    CHECK(ethane(310.0).status == epcsaft::NeutralReferenceStatus::Available);  // no sample: sole root kept
+    const auto pure = epcsaft::reaction_reference(neutral, 300.0, 100.0,
+        {0, {0.0, 1.0}, 1.0, {epcsaft::SpeciesReference::PureLiquid, epcsaft::SpeciesReference::PureLiquid}}, {1.0, -1.0}, {});
+    CHECK(pure.message == "pure reference species 1: liquid branch absent: the single stable root lies across the mechanical loop");
+    // Delivered-review case: 2A <=> B, identical ethane EOS species, both referenced to pure gas.
+    auto identical_ethane = properties_support::parameters(2);
+    identical_ethane.segment_count = {1.6069, 1.6069};
+    identical_ethane.sigma_constant = {3.5206, 3.5206};
+    identical_ethane.dispersion_energy_over_k = {191.42, 191.42};
+    identical_ethane.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    const auto pure_gas = epcsaft::reaction_reference(epcsaft::HelmholtzModel(identical_ethane), 300.0, 100.0,
+        {0, {0.0, 1.0}, 1.0, {epcsaft::SpeciesReference::PureGas, epcsaft::SpeciesReference::PureGas}}, {-2.0, 1.0},
+        {std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution});
+    CHECK(pure_gas.status == epcsaft::NeutralReferenceStatus::Available && pure_gas.terminal_contraction
+          && close(*pure_gas.terminal_contraction, 3.2166161799675423, 1e-10));
+    const epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
+    const auto message = [](const auto& call) {
+        try { call(); } catch (const std::runtime_error& error) { return std::string(error.what()); }
+        return std::string();
+    };
+    // 650 K, 100 Pa: sole root 0.018503460 mol/m3 below sample 17653.65 mol/m3 gave gamma = 1.000000196209869.
+    CHECK(refused(message([&] { epcsaft::infinite_dilution_reference(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}); })));
+    CHECK(refused(message([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, {}); })));
+    // 630 K keeps its two-root liquid reference (main values).
+    const auto reference = epcsaft::infinite_dilution_reference(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1});
+    const auto activity = epcsaft::electrolyte_activity(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, reference);
+    CHECK(close(reference.first_rung_state.molar_density, 34616.634815530364, 1e-10));
+    CHECK(close(reference.pure_solvent_state->molar_density, 34616.636583442916, 1e-10));
+    CHECK(close(activity.mean_ionic_molality_scale, 0.9996968293218973, 1e-10));
+}
+
 }  // namespace properties_checks

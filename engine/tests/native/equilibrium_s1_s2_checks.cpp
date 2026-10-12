@@ -326,6 +326,7 @@ void check_s2() {
 
     // Identical EOS species provide a finite nonideal counterproof: the density
     // term and residual chemical potential do not separate into an ideal -1/P law.
+    // 1e7 Pa keeps the ethane-like solvent on the liquid side (#423).
     auto identical_parameters = properties_support::parameters(2);
     identical_parameters.segment_count = {1.6069, 1.6069};
     identical_parameters.sigma_constant = {3.5206, 3.5206};
@@ -335,7 +336,7 @@ void check_s2() {
     const auto identical_declaration = ratios({0.0, 1.0});
     const std::vector<double> identical_nu = {-2.0, 1.0};
     const auto identical_reference = epcsaft::reaction_reference(
-        identical_model, 300.0, 1.0e5, identical_declaration, identical_nu, reference);
+        identical_model, 300.0, 1.0e7, identical_declaration, identical_nu, reference);
     CHECK(identical_reference.status == epcsaft::NeutralReferenceStatus::Available
           && identical_reference.terminal_contraction_pressure_derivative.has_value()
           && identical_reference.terminal_contraction_pressure_second_derivative.has_value());
@@ -343,7 +344,7 @@ void check_s2() {
     const double identical_solvent_moles = 1.0 / identical_parameters.molar_mass_kg_per_mol[0];
     const double identical_total = identical_solvent_moles + identical_molality;
     const auto identical_terminal = identical_model.state_at_pressure(
-        300.0, 1.0e5,
+        300.0, 1.0e7,
         {identical_solvent_moles / identical_total, identical_molality / identical_total},
         epcsaft::DensityBranch::Liquid);
     const double identical_cp = -1.0 / (
