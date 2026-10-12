@@ -6,6 +6,18 @@ workspace_root="$(dirname "$engine_root")"
 cd "$engine_root"
 export PATH="$workspace_root/.venv/bin:$PATH"
 
+# --changed [base] checks only the native .cpp files changed since base (default: the merge base with
+# origin/main), for review rounds; with no argument every native translation unit is checked.
+files=('engine/(native|tests/native)/.*\.cpp$')
+if [[ "${1:-}" == --changed ]]; then
+    base="${2:-$(git merge-base origin/main HEAD)}"
+    mapfile -t files < <({
+        git diff --name-only --diff-filter=d "$base" -- 'native/*.cpp' 'tests/native/*.cpp'
+        git ls-files --full-name --others --exclude-standard -- 'native/*.cpp' 'tests/native/*.cpp'
+    } | sort -u | sed 's/\./\\./g; s/^/\//; s/$/$/')
+    ((${#files[@]})) || { echo "no native .cpp file changed since $base"; exit 0; }
+fi
+
 for required_command in meson cmake ninja clang-18 clang++-18 clang-tidy-18 run-clang-tidy-18; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
@@ -28,7 +40,10 @@ if [[ -f "$build_root/meson-private/coredata.dat" ]]; then
 elif [[ -d "$build_root" ]]; then
     rm -rf -- "$build_root"
 fi
-CC=clang-18 CXX=clang++-18 meson setup \
+# ccache as tools/locked-ninja sets it up; debug info names the build directory, so a new worktree
+# reuses another's objects only when ccache leaves the directory out of its hash.
+export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
+CC="ccache clang-18" CXX="ccache clang++-18" meson setup \
     "${setup_args[@]}" \
     --buildtype=debug \
     "$build_root" \
@@ -43,4 +58,4 @@ run-clang-tidy-18 \
     -extra-arg="-idirafter$(gcc -print-file-name=include)" \
     -j "$jobs" \
     -quiet \
-    'engine/(native|tests/native)/.*\.cpp$'
+    "${files[@]}"

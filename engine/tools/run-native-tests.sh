@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Meson otherwise fills fresh heap with a random byte, which doubles native test time (#428).
+export MALLOC_PERTURB_="${MALLOC_PERTURB_:-0}"
 
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
@@ -16,7 +18,10 @@ fi
 mapfile -t programs < <(.venv/bin/meson introspect "$build_dir" --tests | .venv/bin/python -c '
 import fnmatch, json, os, sys
 tests = json.load(sys.stdin)
+if missing := [p for p in sys.argv[1:] if not fnmatch.filter([t["name"] for t in tests], p)]:
+    sys.exit("no Meson test matches: " + " ".join(missing))
 print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmatch(t["name"], p) for p in sys.argv[1:])}), sep="\n")' "${tests[@]}")
+((${#programs[@]})) || exit 2
 .venv/bin/meson compile -C "$build_dir" -j "$(cat build/environment-wheel/build-jobs 2>/dev/null || echo 2)" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"

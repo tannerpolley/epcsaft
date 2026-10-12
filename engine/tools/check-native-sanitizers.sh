@@ -23,7 +23,9 @@ wheelhouse="$run_root/wheelhouse"
 rm -rf -- "$wheelhouse" "$run_root/venv"
 mkdir -p "$wheelhouse"
 
-CC=clang-18 CXX=clang++-18 \
+# ccache as in check-native.sh.
+export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
+CC="ccache clang-18" CXX="ccache clang++-18" \
     uv build --python "$workspace_root/.venv/bin/python" \
         --wheel --no-build-isolation --out-dir "$wheelhouse" \
         --config-setting="build-dir=$run_root/build" \

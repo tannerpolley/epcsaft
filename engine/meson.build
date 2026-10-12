@@ -23,8 +23,8 @@ release_link_args = get_option('buildtype') == 'release' \
   : []
 
 threads_dep = dependency('threads')
-ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '>=3.11.9')
-eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4')
+ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '>=3.11.9', include_type: 'system')
+eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4', include_type: 'system')
 ceres_dep = dependency(
   'Ceres',
   method: 'cmake',
