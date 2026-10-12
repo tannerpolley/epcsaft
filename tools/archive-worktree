@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Archive a slice worktree's build/ evidence to <main checkout>/build/archive/<name>.tar.zst,
+# without Python environments, wheels or native build trees, then `git worktree remove` it.
+# Usage: tools/archive-worktree <worktree-path> [name]
+set -euo pipefail
+die() { echo "archive-worktree: $*" >&2; exit 1; }
+[[ $# -ge 1 && $# -le 2 ]] || die "usage: tools/archive-worktree <worktree-path> [name]"
+wt=$(realpath "$1")
+name=${2:-$(basename "$wt")}
+main=$(dirname "$(realpath "$(git -C "$wt" rev-parse --git-common-dir)")")
+[[ $wt != "$main" ]] || die "$wt is the main checkout"
+
+[[ -z $(git -C "$wt" status --porcelain) ]] || die "$wt has uncommitted changes"
+[[ -z $(git -C "$wt" rev-list -n1 HEAD --not --branches --remotes) ]] \
+  || die "$wt has commits on no local or remote branch"
+
+if [[ -d $wt/build ]]; then
+  out=$main/build/archive/$name.tar.zst
+  [[ ! -e $out ]] || die "$out already exists"
+  mkdir -p "$(dirname "$out")"
+  tar --zstd -cf "$out" -C "$wt" \
+    --exclude-tag-all=pyvenv.cfg --exclude-tag-all=build.ninja \
+    --exclude='*venv*' --exclude='*-env' --exclude='*.whl' \
+    --exclude=engine-meson --exclude=native-quality --exclude=native-sanitizers \
+    build
+  # Read back every member against the worktree: proves the tarball is complete and readable.
+  tar --zstd -df "$out" -C "$wt" || die "$out does not match $wt/build; worktree kept"
+  files=$(tar --zstd -tvf "$out" | grep -c '^-' || true)
+  [[ $files -gt 0 ]] || echo "archive-worktree: $wt/build has no retained files" >&2
+  echo "$out: $files files, $(du -h "$out" | cut -f1)"
+fi
+git -C "$main" worktree remove "$wt"
+echo "removed $wt"
