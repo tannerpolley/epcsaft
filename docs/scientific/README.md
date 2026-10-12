@@ -24,8 +24,8 @@ instructions. Keep a record only while it supports a scientific result,
 derivation, accepted decision or diagnosis. Update current scientific owners in
 place and remove duplicate progress summaries; Git preserves edit history.
 
-[Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
-ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
+[Code budgets](code-budgets.md) define how runtime lines are counted and how
+each ceiling is raised or lowered; their single numeric owner is `ARCHITECTURE.yaml`.
 
 The [modular-model proposal](proposals/modular-models/README.md) retains a
 source-linked design for selecting complete thermodynamic formulations with
