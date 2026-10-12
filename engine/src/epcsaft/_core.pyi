@@ -156,6 +156,9 @@ class ThermochemistryRecord:
                  component_intervals: Sequence[Sequence[IdealInterval]]) -> None: ...
 
 class ReactionLogPolynomial:
+    """ln K(T) = a + b/T + c ln(T/reference_temperature) + d T, T in K, valid on [temperature_min, temperature_max].
+    Without Reaction(reference=...), solve_equilibrium requires standard_state_id == EOS_STANDARD_STATE_ID; with
+    a ReactionReference and the problem's neutral_reference, a source-basis correlation is converted natively."""
     a: float
     b: float
     c: float
@@ -306,6 +309,8 @@ class PropertyActionBatch:
     density_convergence: Optional[Convergence]
 
 class State:
+    """One homogeneous state in SI molar units at the given T (K) and x (component_ids order).
+    The contribution names through residual_helmholtz are A_res/(nRT), dimensionless."""
     hard_chain: float
     dispersion: float
     association: float
@@ -314,12 +319,16 @@ class State:
     bulk_relative_permittivity: float
     residual_helmholtz: float
     compressibility_factor: float
-    pressure: float
+    pressure: float  # Pa
+    # Per component, component_ids order. mu_i^res(T, rho)/(RT), residual against the ideal gas at the same T and rho;
     # None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
     residual_chemical_potential_over_rt: list[Optional[float]]
+    # ln(fugacity coefficient) at the state's T and P: mu_i^res/(RT) - ln Z. The list is None unless Z is positive and
+    # finite; an entry is None where residual_chemical_potential_over_rt is.
     log_fugacity_coefficient: Optional[list[Optional[float]]]
     component_property_status: list[PropertyActionStatus]
     log_fugacity_parameter_derivative: list[Optional[float]]
+    # Residual (minus ideal gas at the same T and rho): J/mol for energies, J/(mol K) for entropy and heat capacities.
     residual_entropy: float
     residual_internal_energy: float
     residual_enthalpy: float
@@ -335,9 +344,9 @@ class State:
     total_entropy: Optional[float]
     total_isobaric_heat_capacity: Optional[float]
     total_isochoric_heat_capacity: Optional[float]
-    molar_density: float
-    pressure_density_derivative: float
-    site_fractions: list[float]
+    molar_density: float  # mol/m^3; times the mixture molar mass (kg/mol) for kg/m^3
+    pressure_density_derivative: float  # (dP/drho)_T,x in Pa m^3/mol
+    site_fractions: list[float]  # unbonded site fractions, Parameters.site_ids order
     density_convergence: Optional[Convergence]
     thermochemistry_status: ThermochemistryStatus
     density_branch: DensityBranch
@@ -670,17 +679,20 @@ class CompiledSystem:
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
+    """Solved phases in declared order (with Discover(): discovery.declaration.phases). Units: K, Pa, mol, mol/m^3.
+    Per-phase-per-component lists are phase-major: entry p*n + i is phase p, component i of component_ids
+    (n components). State lists are empty when success is False."""
     discovery: Optional[DiscoveryRecord]
     neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
     success: bool
     message: str
     solver_status: str
-    temperature: list[float]
-    pressure: list[float]
-    amounts: list[float]
-    mole_fractions: list[float]
-    molar_densities: list[float]
-    packing_fractions: list[float]
+    temperature: list[float]  # [T] in K
+    pressure: list[float]  # [P] in Pa
+    amounts: list[float]  # phase amounts in mol on the feed's basis (1 mol total for MoleFractions), per phase
+    mole_fractions: list[float]  # phase-major, n per phase
+    molar_densities: list[float]  # mol/m^3, per phase
+    packing_fractions: list[float]  # per phase
     multipliers: list[float]
     constraint_multipliers: list[float]
     residuals: list[float]
@@ -726,6 +738,14 @@ class ContinuationStop:
     critical_endpoint: ContinuationStop
 
 class ContinuationOptions:
+    """Ordinary path: steps are fractions of the start-to-target path; a rejected step halves and a step never
+    grows, so initial_step is the largest step. Envelope mode (Problem.envelope set) ignores initial_step and
+    the target problem: an ordinary step is at most envelope_max_log_step (log-coordinate units), halves on
+    rejection and the cap returns after an accepted step; a rejected critical-point crossing, closing step or
+    terminal failure ends the trace at once with the states accepted so far. It needs envelope_straddle > 0,
+    2 * envelope_straddle <= envelope_max_log_step and T and P guesses through Free(guess). Both modes stop with
+    budget_exhausted after more than max_retries_per_step consecutive rejections of retryable steps (reason in
+    cause_stop and cause_message) and with step_too_small when the halved step falls below minimum_step."""
     initial_step: float
     minimum_step: float
     max_steps: int
@@ -750,7 +770,7 @@ class ContinuationResult:
     success: bool
     message: str
     stop: ContinuationStop
-    path_values: list[float]
+    path_values: list[float]  # per state: path fraction, or in envelope mode the conditions[k] target (ln T, ln P or ln K)
     parameter_values: list[list[float]]
     states: list[EquilibriumResult]
     reached_path: float
@@ -881,6 +901,7 @@ def solve_equilibrium(
 ) -> EquilibriumResult: ...
 
 class InfiniteDilutionReference:
+    """Ion reference fugacities at infinite dilution in the declared solvent (T in K, P in Pa)."""
     parameter_derivative: list[tuple[Optional[float], Optional[float]]]
     parameter_convergence_error: list[float]
     log_fugacity: tuple[float, float]
@@ -889,11 +910,12 @@ class InfiniteDilutionReference:
     pure_solvent_log_fugacity: Optional[float]
 
 class ElectrolyteActivity:
-    single_ion: tuple[float, float]
+    """Activity of one salt at molality m (mol per kg solvent), unsymmetric (infinite-dilution) convention."""
+    single_ion: tuple[float, float]  # mole-fraction-scale coefficients of (cation, anion), the ions= order
     mean_ionic_mole_fraction_scale: float
-    mean_ionic_log_molality_scale: float
-    mean_ionic_molality_scale: float
-    osmotic_coefficient: Optional[Union[float, Stop]]
+    mean_ionic_log_molality_scale: float  # ln of mean_ionic_molality_scale
+    mean_ionic_molality_scale: float  # gamma_pm on the molality scale
+    osmotic_coefficient: Optional[Union[float, Stop]]  # practical (molality) osmotic coefficient
 
 def infinite_dilution_reference(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int]) -> InfiniteDilutionReference: ...
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...
@@ -1099,9 +1121,11 @@ class FitResult:
     status: str
     message: str
     usable: bool
+    # Native chart order: one value per target of each non-reaction coordinate (declaration order), then each held
+    # Born diameter, then each reaction coordinate. Entry k < len(chart.active) is the value of chart.active[k].
     physical: list[float]
     parameters: Parameters
-    predictions: list[float]
+    predictions: list[float]  # per observation, in the observation's unit
     residuals: list[float]
     weighted_residuals: list[float]
     physical_jacobian: list[float]

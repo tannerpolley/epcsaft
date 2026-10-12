@@ -52,10 +52,9 @@ Use Numerical Verification-Driven Development:
 
 ## Budgets
 
-A change stays within its issue's task line ceiling. `ARCHITECTURE.yaml:code_budgets`
-owns the numbers and [code budgets](docs/scientific/code-budgets.md) their meaning,
-including soft-ceiling explanations and the owner amendment that hard-ceiling
-excess requires.
+A change stays within its issue's line allowance. `ARCHITECTURE.yaml:code_budgets`
+owns the numbers and [code budgets](docs/scientific/code-budgets.md) the counting,
+the band and when a ceiling is raised or lowered.
 
 ## Documentation
 

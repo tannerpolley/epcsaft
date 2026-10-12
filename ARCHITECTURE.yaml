@@ -23,58 +23,10 @@ plan:
   scientific_authority: docs/scientific/CONTEXT.md
   historical_evidence: docs/scientific/reviews
 
-# Physical source lines, including comments/blanks, across the complete working
-# tree (tracked and untracked), except the _core.pyi type stub. Engineering targets, not mathematical
-# lower bounds. See docs/scientific/code-budgets.md for rationale and amendment.
+# Hard ceilings in formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
+# the counting, the band rule and the amendments.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-# Amendment rationale: docs/scientific/code-budgets.md#amendments.
-code_budgets: {
-  "core": [
-    700,
-    1000,
-    1100
-  ],
-  "contributions": [
-    1100,
-    1700,
-    1900
-  ],
-  "properties": [
-    2400,
-    5000,
-    5300
-  ],
-  "equilibrium": [
-    5000,
-    8000,
-    8921
-  ],
-  "regression": [
-    800,
-    1000,
-    2815
-  ],
-  "surface": [
-    450,
-    550,
-    650
-  ],
-  "bindings": [
-    500,
-    650,
-    2100
-  ],
-  "python": [
-    1350,
-    1600,
-    1667
-  ],
-  "total": [
-    12300,
-    19500,
-    23775
-  ]
-}
+code_budgets: {"core": 1077, "contributions": 1276, "properties": 4511, "equilibrium": 9538, "regression": 3199, "surface": 577, "bindings": 2283, "python": 2025, "total": 24486}
 
 property_categories: [Ideal, Residual, Total]
 

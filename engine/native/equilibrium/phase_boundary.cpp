@@ -603,10 +603,7 @@ bool same_intensive(const FreeValue& a, const FreeValue& b, bool endpoint) {
 // seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
 // support_declared and topology_declared flags) are not compared.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
-    const auto &u = a.source_reference, &v = b.source_reference;
-    if (u.has_value() != v.has_value() || (u && (u->solvent_index != v->solvent_index
-        || u->solute_molality_ratios != v->solute_molality_ratios || u->standard_molality_mol_per_kg != v->standard_molality_mol_per_kg)))
-        return "source reference declaration differs";
+    if (!(a.source_reference == b.source_reference)) return "source reference declaration differs";
     if (a.enthalpy_j.has_value() != b.enthalpy_j.has_value()
         || a.entropy_j_per_k.has_value() != b.entropy_j_per_k.has_value()) return "caloric condition kind differs";
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";

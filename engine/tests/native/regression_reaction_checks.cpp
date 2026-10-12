@@ -596,6 +596,18 @@ void check_reaction_rejections() {
     reference.observations[1].problem.source_reference = source.source_reference;
     reference.observations[1].problem.reactions[0].correlation->reference_temperature = 300.0;
     reject(reference, "tied declarations or starts disagree");
+    // #433: rows that differ only in species_reference are different states; each keeps its own solve.
+    FitRequest shared = reference;
+    shared.observations = {solved(ObservationKind::PhaseMoleFraction, referenced_formula(std::nullopt), 0, {1})};
+    shared.observations.push_back(shared.observations[0]);
+    shared.observations[1].problem.source_reference->species_reference = {SpeciesReference::PureGas,
+        SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
+    shared.coordinates.coordinates = {reaction_coordinate("H2O=Na++Cl-")};
+    FitResult failures; ObservationEvaluation rows;
+    CHECK(ObservationEvaluator(shared, failures, {0, 1}).evaluate(shared.coordinates.start(shared.parameters, shared.observations), false, rows));
+    agree("reaction-rejections/species-reference", "x_Na", "1", rows.predictions[1],
+          *predict(HelmholtzModel(shared.parameters), shared.observations[1]).value, 0.0, 1.0e-10,
+          "T=298.15 K, water pure-gas reference", "a row differing only in species_reference keeps its own solve", "issue-433");
 }
 
 // #211: the source constant is measured directly; no EOS reference transfer enters it.
