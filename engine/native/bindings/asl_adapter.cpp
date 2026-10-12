@@ -304,9 +304,10 @@ struct EquilibriumContext final {
 };
 
 struct PreparedEquilibrium final {
-    // ponytail: one immutable model per process; qualify multiple contexts before extending.
+    // One state per distinct record content, prepared once; the ceiling bounds the number of prepared records per process.
+    static constexpr std::size_t max_records = 16;
     std::mutex mutex;
-    std::unique_ptr<EquilibriumContext> context;
+    std::vector<std::unique_ptr<EquilibriumContext>> contexts;
 };
 
 PreparedEquilibrium& prepared_equilibrium() {
@@ -523,10 +524,16 @@ double equilibrium_amount(arglist* arguments) {
             if (!std::isfinite(feed[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
             if (feed[i] < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        const char* record = string_argument(arguments, n);
-        if (!prepared.context) prepared.context = prepare_equilibrium(record, observable);
-        auto& context = *prepared.context;
-        if (context.record != record) reject("immutable equilibrium record changed");
+        const std::string_view record = string_argument(arguments, n);
+        EquilibriumContext* selected = nullptr;
+        for (const auto& item : prepared.contexts) if (item->record == record) selected = item.get();
+        if (selected == nullptr) {
+            if (prepared.contexts.size() == PreparedEquilibrium::max_records) reject("equilibrium record limit reached");
+            selected = prepared.contexts.emplace_back(prepare_equilibrium(record.data(), observable)).get();
+            std::fprintf(stderr, "epcsaft_equilibrium prepared record %zu of at most %zu\n", prepared.contexts.size(),
+                         PreparedEquilibrium::max_records);
+        }
+        auto& context = *selected;
         if (feed.size() != context.map.anchor.size() || c >= context.map.offset.size()) reject("control/observable dimension mismatch");
         if (context.order < 0 || context.feed != feed) select_feed(context, feed, observable);
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
@@ -563,7 +570,7 @@ double equilibrium_amount(arglist* arguments) {
     for (int i = 0; arguments != nullptr && arguments->ra != nullptr && i < arguments->nr; ++i)
         std::fprintf(stderr, "%s%.17g", i != 0 ? "," : "", arguments->ra[i]);
     std::fputc('\n', stderr);
-    if (prepared.context) prepared.context->order = -1;
+    for (const auto& item : prepared.contexts) item->order = -1;
     invalidate(arguments);
     if (arguments != nullptr) {
         if (arguments->hes != nullptr) callback_error.insert(0, "\"");
