@@ -125,16 +125,20 @@ print(trace.stop, len(trace.states), [(c.temperature[0], c.pressure[0]) for c in
 - Envelope mode needs `envelope_straddle > 0` and `2 * envelope_straddle <=
   envelope_max_log_step`, and T and P guesses through `Free(guess)`. It uses
   neither `initial_step` nor the target problem: a mixture trace closes at the
-  start pressure on the other branch. Each step, in log units, starts at
-  `envelope_max_log_step`, halves on rejection and resets after an accepted
-  step. `trace.path_values[k]` is the target of `trace.conditions[k]` (ln T,
+  start pressure on the other branch. Each ordinary step, in log units, is at
+  most `envelope_max_log_step` (the predictor can take less); a rejected
+  ordinary step halves, and the cap returns after an accepted step. A rejected
+  critical-point crossing, closing step or terminal failure ends the trace at
+  once, keeping the states accepted so far and that rejection's stop and
+  message. `trace.path_values[k]` is the target of `trace.conditions[k]` (ln T,
   ln P or ln K of `component`); the traced coordinate can switch along the way.
 - Ordinary continuation (no `envelope`) steps are fractions of the
   start-to-target path. A rejected step halves and never grows again, so
   `initial_step` is the largest step.
-- In both modes, more than `max_retries_per_step` consecutive rejections stops
-  with `budget_exhausted`; `cause_stop` and `cause_message` give the last
-  rejected step's reason.
+- In both modes, more than `max_retries_per_step` consecutive rejections of
+  retryable steps stops with `budget_exhausted`, and a halved step below
+  `minimum_step` stops with `step_too_small`; `cause_stop` and `cause_message`
+  give the last rejected step's reason.
 
 The installed package transports the same native records with the same meanings
 and SI molar units; Python performs no thermodynamic arithmetic. Thermal

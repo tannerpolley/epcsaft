@@ -740,11 +740,12 @@ class ContinuationStop:
 class ContinuationOptions:
     """Ordinary path: steps are fractions of the start-to-target path; a rejected step halves and a step never
     grows, so initial_step is the largest step. Envelope mode (Problem.envelope set) ignores initial_step and
-    the target problem: each step starts at envelope_max_log_step (log-coordinate units), halves on rejection and
-    resets after an accepted step; it needs envelope_straddle > 0, 2 * envelope_straddle <= envelope_max_log_step
-    and T and P guesses through Free(guess). Both modes stop with budget_exhausted after more than
-    max_retries_per_step consecutive rejections (reason in cause_stop and cause_message) and with step_too_small
-    when the halved step falls below minimum_step."""
+    the target problem: an ordinary step is at most envelope_max_log_step (log-coordinate units), halves on
+    rejection and the cap returns after an accepted step; a rejected critical-point crossing, closing step or
+    terminal failure ends the trace at once with the states accepted so far. It needs envelope_straddle > 0,
+    2 * envelope_straddle <= envelope_max_log_step and T and P guesses through Free(guess). Both modes stop with
+    budget_exhausted after more than max_retries_per_step consecutive rejections of retryable steps (reason in
+    cause_stop and cause_message) and with step_too_small when the halved step falls below minimum_step."""
     initial_step: float
     minimum_step: float
     max_steps: int

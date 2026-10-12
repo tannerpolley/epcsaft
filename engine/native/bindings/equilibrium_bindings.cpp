@@ -298,7 +298,7 @@ void register_equilibrium(py::module_& module) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }
-    py::class_<ContinuationOptions>(module, "ContinuationOptions", "Ordinary path: path-fraction steps only halve, so initial_step is the largest. Envelope: steps start at envelope_max_log_step and reset after each accepted step.")
+    py::class_<ContinuationOptions>(module, "ContinuationOptions", "Ordinary path: path-fraction steps only halve, so initial_step is the largest. Envelope: steps are capped at envelope_max_log_step; a rejected crossing or closing step ends the trace.")
         .def(py::init<>())
         .def(py::init([](double initial_step, double minimum_step, std::size_t max_steps, std::size_t max_retries_per_step,
                          double envelope_max_log_step, double envelope_straddle) {
