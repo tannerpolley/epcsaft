@@ -207,7 +207,7 @@ void register_equilibrium(py::module_& module) {
                            const std::vector<double>& multipliers) {
             return system.hessian(point, multipliers); },
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
-    py::class_<EquilibriumResult>(module, "EquilibriumResult")
+    py::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         .def_readonly("discovery", &EquilibriumResult::discovery)
         .def_readonly("success", &EquilibriumResult::success)
@@ -298,7 +298,7 @@ void register_equilibrium(py::module_& module) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }
-    py::class_<ContinuationOptions>(module, "ContinuationOptions")
+    py::class_<ContinuationOptions>(module, "ContinuationOptions", "Ordinary path: path-fraction steps only halve, so initial_step is the largest. Envelope: steps are capped at envelope_max_log_step; a rejected crossing or closing step ends the trace.")
         .def(py::init<>())
         .def(py::init([](double initial_step, double minimum_step, std::size_t max_steps, std::size_t max_retries_per_step,
                          double envelope_max_log_step, double envelope_straddle) {
