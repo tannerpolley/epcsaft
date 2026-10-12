@@ -1543,15 +1543,51 @@ are different observables with different chains.
 For the P4 native caloric action surface, each of Ideal, Residual and Total
 `h`, `u`, `s`, `cp`, and `cv` admits mixed directional orders one through three
 in `(T,rho,x;theta)` or `(T,P,x;theta)` on one accepted density branch.
-Composition directions preserve normalization, charge balance and exact support;
-known fixed parameter slots project to zero, while unknown slots are input
-errors. The [accepted P4 design](https://github.com/tannerpolley/ePC-SAFT/issues/19)
+Composition directions preserve normalization and charge balance; known fixed
+parameter slots project to zero, while unknown slots are input errors. The
+[accepted P4 design](https://github.com/tannerpolley/ePC-SAFT/issues/19)
 specifies the qualification cases and numerical limits.
+
+A direction entering a zero-fraction neutral component follows the exact
+infinite-dilution limit (owner decision 2026-09-26, #73), with three exceptions
+that report their cause and no action. The Ideal and Total entropy are singular
+through `x ln x` (`support_change`). In a model with the dipolar term every result
+keeps `support_change`: with every dipole absent the term's A2-only branch omits
+A3 beyond second composition order (full EOS 4.1). Any direction entering a
+charged component is `ionic_insertion` for every result, including the entropy,
+when a neutral insertion accompanies it.
+
+Polarization mixes each direction with the relative-`T`, relative-`V` and
+unit-amount labels. Each direction, after the density lift on the pressure chart,
+is therefore divided by the power of two nearest the largest of `|dT|/T`,
+`|drho|/rho`, `|dx_i|` and `|dtheta|/max(|theta|,1)`, and each multilinear result
+is multiplied back exactly. Unscaled, a one-pascal pressure direction in the
+methane/ethane liquid at 180 K and 3 MPa (`dV/V ~ 3e-9`) misses
+`sum_i x_i d ln(phi_i)/dP = 1/(rho R T) - 1/P` by 2.6e-9 relative; scaled, the
+identity holds to rounding.
 
 | Caloric family | Value energy order | First action | Second action | Third action |
 |---|---:|---:|---:|---:|
 | `h`, `u`, `s` | 1 | 2 | 3 | 4 |
 | `cp`, `cv` | 2 | 3 | 4 | 5 |
+| `ln(phi_i)` | 1 | 2 | 3 | 4 |
+
+Component `ln(phi_i)` (EqID: `log_fugacity_coefficient`, #73) is a residual
+pressure-chart request that returns one result per component, tagged by its
+index; a density-chart request is an input error. Its jet is `d(A_res/RT)/dn_i`
+at fixed `T`, total `V` and other amounts, the polarized path over the requested
+directions plus the unit amount direction `e_i` at the unit-mole central state,
+taken through the same implicit density chain as the caloric family. From it the
+jet subtracts `ln Z` with `Z = P/(R T rho)` at the prescribed pressure, as
+`state_at_pressure` does: the exact finite jet logarithm of the linear `P` and `T`
+paths and the total density actions. The density form `ln(1 - V phi_V)` misses
+the exact identities in a dense liquid: in methane/ethane at 150 K, 0.1 MPa and
+`x_CH4 = 0.05` (`Z = 4.1e-3`), `sum_i x_i D ln(phi_i)` misses by 7.5e-8 relative
+along `(T,P)` and 8.1e-4 along `(T,P,P)`. The prescribed-pressure form stays within
+5.1e-11. Without charged species the ion rows are `ionic_insertion` with no value,
+as in the state. With two or three directions the batch also carries the mixed
+density action `d^k rho`. Equilibrium solved-state requests do not admit this
+observable.
 
 Use the same residual-potential/mass-action tape and a single factorization of
 the accepted unweighted site Jacobian for the batch. Obtain each implicit site

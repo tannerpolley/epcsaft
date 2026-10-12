@@ -220,17 +220,29 @@ PropertyActionReference property_action_reference(
             return m.density_actions(t, q, y, observables, request);
         else return m.pressure_actions(t, q, y, branch, observables, request);
     };
+    constexpr bool pressure_chart = !std::is_same_v<Direction, DensityActionDirection>;
+    // One row per result (ln(phi_i) has one per component), then the pressure chart's density action.
+    const auto rows = [&](const PropertyActionBatch& actions, std::size_t order) {
+        std::vector<double> out;
+        for (const auto& item : actions.results) {
+            CHECK(item.status == PropertyActionStatus::Available && item.action);
+            out.push_back(*item.action);
+        }
+        if constexpr (pressure_chart) {
+            CHECK(actions.density_status == PropertyActionStatus::Available
+                && (order == 1 ? actions.density_action.size() == 1 : actions.density_mixed_action.has_value()));
+            out.push_back(order == 1 ? actions.density_action[0] : *actions.density_mixed_action);
+        }
+        return out;
+    };
     PropertyActionReference result;
-    result.scale.assign(observables.size(), 0.0);
     // Omit only zero sub-directions; retain the entire multilinear coordinate split.
     std::vector<Direction> terms;
     const auto expand = [&](const auto& self, std::size_t j) -> void {
         if (j == directions.size()) {
-            const auto actions = batch(model, T, mechanical, x, terms);
-            for (std::size_t i = 0; i < observables.size(); ++i) {
-                CHECK(actions.results[i].status == PropertyActionStatus::Available && actions.results[i].action);
-                result.scale[i] += std::abs(*actions.results[i].action);
-            }
+            const auto actions = rows(batch(model, T, mechanical, x, terms), terms.size());
+            result.scale.resize(actions.size(), 0.0);
+            for (std::size_t i = 0; i < actions.size(); ++i) result.scale[i] += std::abs(actions[i]);
             return;
         }
         for (int part = 0; part < 4; ++part) {
@@ -289,15 +301,13 @@ PropertyActionReference property_action_reference(
             CHECK(conditioning.rank == state.site_fractions.size()
                 && conditioning.pivot_ratio > policy::ASSOCIATION_JACOBIAN_CONDITION.value);
         }
+        if (!lower.empty()) return rows(batch(shifted, t, q, y, lower), lower.size());
         std::vector<double> values;
-        if (lower.empty()) for (const auto obs : observables) values.push_back(p4_state_value(state, obs));
-        else {
-            const auto actions = batch(shifted, t, q, y, lower);
-            for (const auto& action : actions.results) {
-                CHECK(action.status == PropertyActionStatus::Available && action.action);
-                values.push_back(*action.action);
-            }
+        for (const auto obs : observables) {
+            if (obs != PropertyObservable::LogFugacityCoefficient) values.push_back(p4_state_value(state, obs));
+            else for (const auto& value : *state.log_fugacity_coefficient) values.push_back(value.value());
         }
+        if constexpr (pressure_chart) values.push_back(state.molar_density);
         return values;
     };
     // Higher-action subtraction at 0.0025 is density-root rounding dominated;
@@ -309,14 +319,14 @@ PropertyActionReference property_action_reference(
         const auto plus = values(h), minus = values(-h);
         std::vector<double> stencil;
         rounding.clear();
-        for (std::size_t i = 0; i < observables.size(); ++i) {
+        for (std::size_t i = 0; i < plus.size(); ++i) {
             stencil.push_back((plus[i] - minus[i]) / (2.0 * h));
             rounding.push_back(32.0 * std::numeric_limits<double>::epsilon() * (std::abs(plus[i]) + std::abs(minus[i])) / (2.0 * h));
         }
         rungs.push_back(stencil);
     }
     result.coarse = rungs[0]; result.middle = rungs[1]; result.fine = rungs[2];
-    for (std::size_t i = 0; i < observables.size(); ++i) {
+    for (std::size_t i = 0; i < rungs[2].size(); ++i) {
         const double refined = (4.0 * rungs[2][i] - rungs[1][i]) / 3.0;
         const double coarser = (4.0 * rungs[1][i] - rungs[0][i]) / 3.0;
         result.value.push_back(refined);

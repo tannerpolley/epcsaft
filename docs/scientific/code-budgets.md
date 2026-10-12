@@ -80,6 +80,7 @@ former per-slice tables and the retired floor and soft ceilings. Entries before
 [the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31);
 their approval assertions were not reverified in the #221 reconciliation.
 
+- 2026-10-12, #73 slice 1 (owner): Properties **4,511 → 4,628**, the count 4,582 plus its band 46, for the component ln(phi_i) pressure actions (+111 Properties, +3 Bindings). The owner raised the slice allowance from +108 to +114 for the dipolar-term and absent-ion status guards; the #73 total is then +316 of about +317. Total unchanged.
 - 2026-10-12, #433 (rule 2, consolidation): Equilibrium **9,542 → 9,538**, parameter Regression **3,211 → 3,199**, total **24,499 → 24,486** (the sum of the layer ceilings, below count plus band), the counts plus their bands after one source-reference equality replaced three comparisons.
 - 2026-10-12, #436 (owner): re-baseline to formatter-normalized lines, each ceiling the count plus its band; floor and soft ceilings deleted. Core 1,077, Contributions 1,276, Properties 4,511, Equilibrium 9,542, parameter Regression 3,211, Surface 577, Bindings 2,283, Python 2,025, total 24,499.
 - 2026-10-10, #391 (owner): Equilibrium **8,843 → 8,917**, the measured count with the explicit cooling-onset dew operation (+95 Equilibrium, +1 Bindings, +2 Python). Round 2 (owner, small bump): **8,917 → 8,921** for the vapor-side reference admission (+4 Equilibrium). Total, floor and soft targets are unchanged.

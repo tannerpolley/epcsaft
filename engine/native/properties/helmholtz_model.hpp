@@ -74,7 +74,8 @@ enum class PropertyObservable {
     TotalIsobaricHeatCapacity,
     TotalIsochoricHeatCapacity,
     MolarVolumeTemperatureDerivative,
-    MolarVolumePressureDerivative
+    MolarVolumePressureDerivative,
+    LogFugacityCoefficient  // pressure chart only; one result per component, tagged by `component`
 };
 // The first CALORIC_PROPERTY_COUNT members are three families (ideal 0, residual 1, total 2) of
 // five kinds (enthalpy 0, internal energy 1, entropy 2, Cp 3, Cv 4), in that order.
@@ -102,6 +103,7 @@ struct PressureActionDirection final {
 };
 struct PropertyActionResult final {
     PropertyObservable observable;
+    std::optional<std::size_t> component;
     std::optional<double> value, action;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     std::size_t energy_order = 0;
@@ -125,6 +127,7 @@ struct PropertyActionBatch final {
     // #86 pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
     std::optional<double> molar_density;
     std::vector<double> density_action;
+    std::optional<double> density_mixed_action;  // d^k rho over all k >= 2 directions, when observables are requested
     PropertyActionStatus density_status = PropertyActionStatus::CentralPropertyUnavailable;
     std::string density_message;
     std::optional<core::Convergence> density_convergence;
@@ -411,7 +414,7 @@ private:
     detail::PredicateSignature predicate_signature(
         double temperature, const std::vector<double>& composition, bool ideal = false
     ) const;
-    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
+    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,

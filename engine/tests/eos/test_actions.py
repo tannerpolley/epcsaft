@@ -118,14 +118,17 @@ def test_public_action_availability_and_pure_identity() -> None:
     path = parameters_json("gross-2001-methane-ethane", 3)
     observable = PropertyObservable.ResidualEnthalpy
     mixture = Mixture(Parameters.from_json(path, components=("methane", "ethane")))
-    support = mixture.density_actions(
-        300.0, 5000.0, x=(1.0, 0.0), observables=(observable,),
-        directions=(DensityActionDirection(0.0, 0.0, (-0.01, 0.01)),),
-    ).results[0]
-    assert support.value is not None
-    assert math.isfinite(support.value)
-    assert support.action is None
-    assert support.status == PropertyActionStatus.SupportChange
+    def inserted(eps: float) -> Any:
+        return mixture.density_actions(
+            300.0, 5000.0, x=(1.0 - eps, eps), observables=(observable,),
+            directions=(DensityActionDirection(0.0, 0.0, (-0.01, 0.01)),),
+        ).results[0]
+
+    # A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
+    support = inserted(0.0)
+    assert support.status == PropertyActionStatus.Available
+    assert support.value is not None and math.isfinite(support.value)
+    assert math.isclose(support.action, 2 * inserted(1e-7).action - inserted(2e-7).action, rel_tol=1e-9)
 
     partial = mixture.density_actions(
         300.0, 5000.0, x=(0.4, 0.6),

@@ -222,6 +222,7 @@ class PropertyObservable:
     TotalEntropy: PropertyObservable
     TotalIsobaricHeatCapacity: PropertyObservable
     TotalIsochoricHeatCapacity: PropertyObservable
+    LogFugacityCoefficient: PropertyObservable
 
 class PropertyActionStatus:
     Available: PropertyActionStatus
@@ -264,6 +265,7 @@ class PressureActionDirection:
 
 class PropertyActionResult:
     observable: PropertyObservable
+    component: Optional[int]
     value: Optional[float]
     action: Optional[float]
     status: PropertyActionStatus
@@ -304,6 +306,7 @@ class PropertyActionBatch:
     diagnostics: PropertyActionDiagnostics
     molar_density: Optional[float]
     density_action: list[float]
+    density_mixed_action: Optional[float]
     density_status: PropertyActionStatus
     density_message: str
     density_convergence: Optional[Convergence]

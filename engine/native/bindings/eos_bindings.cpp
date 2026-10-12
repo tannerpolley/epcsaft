@@ -148,7 +148,8 @@ void register_eos(py::module_& module) {
         .value("TotalInternalEnergy", epcsaft::PropertyObservable::TotalInternalEnergy)
         .value("TotalEntropy", epcsaft::PropertyObservable::TotalEntropy)
         .value("TotalIsobaricHeatCapacity", epcsaft::PropertyObservable::TotalIsobaricHeatCapacity)
-        .value("TotalIsochoricHeatCapacity", epcsaft::PropertyObservable::TotalIsochoricHeatCapacity);
+        .value("TotalIsochoricHeatCapacity", epcsaft::PropertyObservable::TotalIsochoricHeatCapacity)
+        .value("LogFugacityCoefficient", epcsaft::PropertyObservable::LogFugacityCoefficient);
     py::enum_<epcsaft::PropertyActionStatus>(module, "PropertyActionStatus")
         .value("Available", epcsaft::PropertyActionStatus::Available)
         .value("MissingThermochemistry", epcsaft::PropertyActionStatus::MissingThermochemistry)
@@ -187,6 +188,7 @@ void register_eos(py::module_& module) {
         .def_readonly("parameter", &epcsaft::PressureActionDirection::parameter);
     py::class_<epcsaft::PropertyActionResult>(module, "PropertyActionResult")
         .def_readonly("observable", &epcsaft::PropertyActionResult::observable)
+        .def_readonly("component", &epcsaft::PropertyActionResult::component)
         .def_readonly("value", &epcsaft::PropertyActionResult::value)
         .def_readonly("action", &epcsaft::PropertyActionResult::action)
         .def_readonly("status", &epcsaft::PropertyActionResult::status)
@@ -219,6 +221,7 @@ void register_eos(py::module_& module) {
         .def_readonly("diagnostics", &epcsaft::PropertyActionBatch::diagnostics)
         .def_readonly("molar_density", &epcsaft::PropertyActionBatch::molar_density)
         .def_readonly("density_action", &epcsaft::PropertyActionBatch::density_action)
+        .def_readonly("density_mixed_action", &epcsaft::PropertyActionBatch::density_mixed_action)
         .def_readonly("density_message", &epcsaft::PropertyActionBatch::density_message)
         .def_readonly("density_convergence", &epcsaft::PropertyActionBatch::density_convergence)
         .def_readonly("density_status", &epcsaft::PropertyActionBatch::density_status);

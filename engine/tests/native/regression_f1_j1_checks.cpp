@@ -664,10 +664,17 @@ void check_d86() {
     const auto message = rejection([&] { (void)model.density_actions(T, 1000.0, {1.0}, {}, {{0.0, 0.0, {0.0}, {}}}); });
     truth("d86/density_chart_rejected", "a density-chart request without observables is rejected by name",
           message.find("observables") != std::string::npos, field("message", message), "d86");
-    const auto support = binary.pressure_actions(Tb, Pb, {1.0, 0.0}, DensityBranch::Liquid, {}, {{0.0, 0.0, {-0.01, 0.01}, {}}});
-    truth("d86/support_change", "a direction into an absent species is typed support_change with no action",
-          support.density_status == PropertyActionStatus::SupportChange && support.density_action.empty(),
-          field("status", static_cast<int>(support.density_status)), "d86");
+    // A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
+    const auto inserted = [&](double eps) {
+        return binary.pressure_actions(Tb, Pb, {1.0 - eps, eps}, DensityBranch::Liquid, {}, {{0.0, 0.0, {-0.01, 0.01}, {}}});
+    };
+    const auto support = inserted(0.0);
+    const double limit = 2.0 * inserted(1.0e-7).density_action.at(0) - inserted(2.0e-7).density_action.at(0);
+    truth("d86/support_change", "a density action into an absent neutral species is its infinite-dilution limit",
+          support.density_status == PropertyActionStatus::Available && support.density_action.size() == 1
+              && std::abs(support.density_action[0] - limit) <= 1.0e-9 * std::abs(limit),
+          fields({field("status", static_cast<int>(support.density_status)), field("limit", limit),
+                  field("drho", support.density_action.empty() ? 0.0 : support.density_action[0])}), "d86");
     // Unfalsified arms of the density status: AssociationResidual and the ill-conditioned/singular site causes
     // share the caloric gates but the P4 stress fixture throws in state() before a pressure-chart request forms;
     // PressureSingular is unreachable here because the root search admits only positive pressure slopes.

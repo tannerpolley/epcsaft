@@ -891,10 +891,15 @@ inline void volume_partial_values() {
     PressureActionDirection zero_direction{0,0,{0,0},{}};
     const auto center=model.pressure_actions(260,3e6,{1,0},DensityBranch::Liquid,os,{zero_direction});
     auto insertion=zero_direction;insertion.composition={-1,1};
-    const auto refused=model.pressure_actions(260,3e6,{1,0},DensityBranch::Liquid,os,{insertion});
+    // A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
+    const auto at=[&](double eps){return model.pressure_actions(260,3e6,{1-eps,eps},DensityBranch::Liquid,os,{insertion});};
+    const auto refused=at(0),one=at(1e-7),two=at(2e-7);
     for(std::size_t k=0;k<os.size();++k) {
         CHECK(center.results[k].value && refused.results[k].value);
-        CHECK(refused.results[k].status==PropertyActionStatus::SupportChange && !refused.results[k].action);
+        CHECK(refused.results[k].status==PropertyActionStatus::Available && refused.results[k].action);
+        const double limit=2*one.results[k].action.value()-two.results[k].action.value();
+        // Identical components: the limit is zero; the floor is 1e-10 of the quantity itself.
+        CHECK(std::abs(*refused.results[k].action-limit)<=std::max(1e-9*std::abs(limit),1e-10*std::abs(*center.results[k].value)));
         Quantity q{k==0?"vT":"vP",k==0?"m^3/(mol K)":"m^3/(mol Pa)",k==0?1e-12:1e-18,{}};
         compare("reference-calorics/dependencies/retained-"+q.name,q,*refused.results[k].value,*center.results[k].value,
             "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
