@@ -1,6 +1,6 @@
 # `time-key-solves`: native work and paired solve time
 
-`tools/time-key-solves wheel-A.whl wheel-B.whl --pairs N --out <new dir>`
+`tools/time-key-solves wheel-A.whl wheel-B.whl [--pairs N] [--expect-change] --out <new dir>`
 compares deterministic native work before reporting wall time. Each wheel is
 installed with `uv` into a throwaway environment under `build/time-key-solves/`;
 the checkout's `.venv` supplies only the Python version and is never modified.
@@ -32,16 +32,26 @@ work, not every equation-of-state evaluation), Hessian calls and achieved
 raw/classified residuals per solve and sample. `states.csv`: returned T (K),
 P (Pa), phase amounts (mol), mole fractions and molar densities (mol/m³).
 `starts.csv`: the common accepted coordinates. `pairs.csv`: block times, load
-averages and state differences. `summary.json`: wheel and input hashes and the
+averages and scaled state differences. `summary.json`: wheel and input hashes and the
 comparison summary. Analyses retain `summary.json` only.
 
-**Comparison.** State differences use `abs(A-B)/max(abs(A),abs(B))` in the
-declared phase order (two zeros differ by zero); array-length or point-order
-differences stop the comparison. Every work-count difference is marked,
-including between repeated samples. For identical wheels the tool succeeds only
-when work is identical, the largest state difference is exactly zero, and the
-absolute median timing change is within the largest observed deviation from
-that median in each case (a spread check, not a confidence interval).
+**Comparison and exit.** Zero exit is the no-slowdown gate. The tool exits
+nonzero when any iteration, evaluation or Hessian-call count of ionic LLE
+(case-6/figure-2-point-7) or the MEA flash (case-7/flash-5918.5286-Pa), cold or
+accepted start, differs between A and B or between repeated samples, printing
+each `WORK CHANGE` with both wheels' counts. `--expect-change` prints the same
+lines and does not fail on them, for a slice that intends a work change; the
+other two cases' work changes are always printed only. It also exits nonzero
+when any returned state value differs by more than 1e-10 of that quantity's
+largest magnitude in the same returned state (both wheels), in the declared
+phase order: 1e-10 relative at the quantity's scale, with that scale as the
+absolute floor for near-zero entries such as trace mole fractions. The worst
+row is printed as `WORST STATE ROW`; `--expect-change` does not waive it.
+Array-length or point-order differences stop the comparison. Paired wall times,
+the median change and `zero_within_spread` (the absolute median within the
+largest deviation from it) are information only. `summary.json` records
+`gate_failures`; `tools/refresh-main-wheel` records a merged change in its
+README instead of stopping.
 
 The harness self-check (an A=A run on the then-current main wheel) was retained
 in `analyses/2026-key-solve-timing/` until #341 moved this manual here; it

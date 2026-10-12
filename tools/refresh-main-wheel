@@ -27,7 +27,9 @@ fi
 out=""
 if [[ -n "$previous" ]]; then
     out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
-    tools/time-key-solves "$previous" "$wheel" --pairs 1 --out "$out"
+    # Merged main is the record, so its work or state changes are reported, not refused; a crash still stops.
+    tools/time-key-solves "$previous" "$wheel" --pairs 1 --out "$out" \
+        || grep -q '"gate_failures"' "$out/summary.json"
     # The previous wheel stays with the comparison that used it.
     mv "$current" "$out/previous-main-current"
 fi
@@ -45,7 +47,7 @@ a = summary["wheels"]["A"]
 print(f"Key-solve work (iterations/evaluations/Hessian calls) from time-key-solves --pairs 1 against sha256 {a['sha256']}:")
 for case, row in summary["cases"].items():
     note = "identical" if row["work_identical"] else f"WORK DIFFERENCE from {'/'.join(map(str, row['work_A'].values()))}"
-    print(f"- {case}: {'/'.join(map(str, row['work_B'].values()))} ({note}; max relative state difference {row['max_relative_state_difference']:.3g})")
+    print(f"- {case}: {'/'.join(map(str, row['work_B'].values()))} ({note}; max scaled state difference {row['max_state_difference']:.3g})")
 print(f"Evidence: {out}/")
 PY
 cat "$current/README"

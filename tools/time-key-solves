@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ORDINARY = ('case-6/figure-2-point-7', 'case-7/flash-5918.5286-Pa')
 COUNTS = ('iterations', 'evaluations', 'hessian_calls')
 PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
+STATE_TOLERANCE = 1e-10
 CASES = tuple(f'{case}/{mode}' for case in ORDINARY for mode in ('cold', 'accepted')) + (
     'khudaida/sequential-8', 'mea-nominally-unloaded/353.15-K')
 
@@ -133,16 +134,52 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
+def scaled_differences(a, b):
+    """abs(A-B) over the quantity's largest magnitude in this state: 1e-10 relative at its scale,
+    with that scale as the absolute floor for near-zero entries (CODING_STANDARDS.md)."""
+    scale = max(map(abs, (*a, *b)), default=0.0)
+    return [abs(x - y) / scale if scale else 0.0 for x, y in zip(a, b, strict=True)]
+
+
 def physical_difference(a, b):
     maximum = 0.0
     for left, right in zip(a['rows'], b['rows'], strict=True):
         if left['point'] != right['point']:
             raise RuntimeError('physical-state point order differs')
         for key in PHYSICAL:
-            for x, y in zip(left[key], right[key], strict=True):
-                scale = max(abs(x), abs(y))
-                maximum = max(maximum, abs(x - y) / scale if scale else 0.0)
+            maximum = max([maximum, *scaled_differences(left[key], right[key])])
     return maximum
+
+
+def gate(work_rows, state_rows, expect_change=False):
+    """Print every work-count change and the worst state row; return the failures.
+
+    Rows are retained work.csv and states.csv rows (numbers or their CSV text).
+    """
+    counts, failures = {}, []
+    for row in work_rows:
+        counts.setdefault((row['case'], row['point']), {'A': set(), 'B': set()})[row['wheel']].add(
+            tuple(int(row[k]) for k in COUNTS))
+    for (case, point), seen in counts.items():
+        if len(seen['A'] | seen['B']) > 1:
+            line = f"WORK CHANGE {point}: A {sorted(seen['A'])} B {sorted(seen['B'])} ({'/'.join(COUNTS)})"
+            print(line, flush=True)
+            if case.rsplit('/', 1)[0] in ORDINARY and not expect_change:
+                failures.append(line)
+    values = {}
+    for row in state_rows:
+        values.setdefault((row['case'], row['sample'], row['point'], row['quantity']), {'A': [], 'B': []})[
+            row['wheel']].append(float(row['value']))
+    worst = (0.0, None)
+    for key, pair in values.items():
+        for index, difference in enumerate(scaled_differences(pair['A'], pair['B'])):
+            if difference > worst[0]:
+                worst = (difference, (*key, index, pair['A'][index], pair['B'][index]))
+    line = f'WORST STATE ROW {worst[0]:.3g} (case, sample, point, quantity, index, A, B): {worst[1]}'
+    print(line, flush=True)
+    if worst[0] > STATE_TOLERANCE:
+        failures.append(line)
+    return failures
 
 
 def work(result):
@@ -153,13 +190,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
         'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
-        'Relative state difference uses max(abs(A),abs(B)), with two zeros equal. '
+        'Exit is nonzero when a case-6 or case-7 work count changes (unless --expect-change) or a state '
+        'differs beyond 1e-10 of its quantity scale; wall times are information only. '
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
     parser.add_argument('wheel_A', type=Path)
     parser.add_argument('wheel_B', type=Path)
     parser.add_argument('--pairs', type=int, default=1, help='counterbalanced pairs per case; more only for timing claims (default: 1)')
     parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
                         help='new or empty result directory (default: timestamped under build/time-key-solves)')
+    parser.add_argument('--expect-change', action='store_true',
+                        help='report case-6/case-7 work-count changes without failing; states still gate')
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
@@ -183,7 +223,7 @@ def main():
                    cpu=cpu, nice=10, threads=1, host=platform.node(), pairs=args.pairs, warmups=1,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
                    change_percent='100*(B_seconds/A_seconds-1)',
-                   state_difference='abs(A-B)/max(abs(A),abs(B)); two zeros equal; declared phase order',
+                   state_difference='abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order',
                    evaluation_meaning='native Engine evaluations, including exact polish; not every EOS evaluation',
                    limits='shared-host timing; declared local states only; no physical validation or global stability')
 
@@ -235,7 +275,7 @@ def main():
             equal = all(tuple(left[k] for k in COUNTS) == tuple(right[k] for k in COUNTS)
                         for left, right in zip(a['rows'], b['rows'], strict=True))
             comparisons[case] = dict(work_A=work(a), work_B=work(b), work_identical=equal,
-                                     max_relative_state_difference=physical_difference(a, b))
+                                     max_state_difference=physical_difference(a, b))
             print(f'{case}: {tuple(work(a).values())} vs {tuple(work(b).values())} '
                   f'{"IDENTICAL" if equal else "WORK DIFFERENCE"}', flush=True)
             if case == CASES[-2]:
@@ -258,10 +298,10 @@ def main():
                             print(f'WORK DIFFERENCE: {case} wheel {label} sample {pair}-{order}', flush=True)
                     a, b = results['A'], results['B']
                     difference = physical_difference(a, b)
-                    comparisons[case]['max_relative_state_difference'] = max(comparisons[case]['max_relative_state_difference'], difference)
+                    comparisons[case]['max_state_difference'] = max(comparisons[case]['max_state_difference'], difference)
                     pair_rows.append(dict(case=case, pair=pair, order=order, A_seconds=a['seconds'], B_seconds=b['seconds'],
                                           change_percent=100 * (b['seconds'] / a['seconds'] - 1),
-                                          load_1=load[0], load_5=load[1], load_15=load[2], max_relative_state_difference=difference))
+                                          load_1=load[0], load_5=load[1], load_15=load[2], max_state_difference=difference))
                 print(f'pair {pair}/{args.pairs} {case}: AB/BA complete; load={load}', flush=True)
         same_wheel = summary['wheels']['A']['sha256'] == summary['wheels']['B']['sha256']
         for case, comparison in comparisons.items():
@@ -276,10 +316,9 @@ def main():
                               median_B_seconds=statistics.median(row['B_seconds'] for row in rows))
             comparison['zero_within_spread'] = abs(median) <= max(abs(value - median) for value in changes)
             print(f'{case}: median {median:+.3f}%, range [{min(changes):+.3f}, {max(changes):+.3f}]%, '
-                  f"MAD {comparison['mad_percent']:.3f}%; state Δ={comparison['max_relative_state_difference']:.3g}", flush=True)
-        summary.update(cases=comparisons, identical_wheels=same_wheel,
-                       self_check_passed=(all(c['work_identical'] and c['max_relative_state_difference'] == 0
-                                              and c['zero_within_spread'] for c in comparisons.values()) if same_wheel else None))
+                  f"MAD {comparison['mad_percent']:.3f}%; state Δ={comparison['max_state_difference']:.3g}", flush=True)
+        summary.update(cases=comparisons, identical_wheels=same_wheel, expect_change=args.expect_change,
+                       gate_failures=gate(work_rows, state_rows, args.expect_change))
     except Exception as error:
         summary['error'] = f'{type(error).__name__}: {error}'
         raise
@@ -309,7 +348,9 @@ def main():
                 'mea-nominally-unloaded/request.json', 'mea-nominally-unloaded/parameters.json', 'mea-zero-inventory/ideal-calorics.json')))}
         (out / 'summary.json').write_text(json.dumps(summary, indent=2, allow_nan=False) + '\n')
     print(f'Retained {out}; runtime {summary["runtime_seconds"]:.3f} s', flush=True)
-    return 1 if summary['self_check_passed'] is False else 0
+    for line in summary['gate_failures']:
+        print(f'GATE FAILED: {line}', flush=True)
+    return 1 if summary['gate_failures'] else 0
 
 
 if __name__ == '__main__':
