@@ -227,7 +227,7 @@ void register_eos(py::module_& module) {
         .value("Available", epcsaft::ThermochemistryStatus::Available)
         .value("OutsideInterval", epcsaft::ThermochemistryStatus::OutsideInterval)
         .value("Nonfinite", epcsaft::ThermochemistryStatus::Nonfinite);
-    py::class_<epcsaft::State>(module, "State")
+    py::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
         .def_readonly("hard_chain", &epcsaft::State::hard_chain)
         .def_readonly("dispersion", &epcsaft::State::dispersion)
         .def_readonly("association", &epcsaft::State::association)
@@ -353,7 +353,7 @@ void register_eos(py::module_& module) {
         .def_readonly("parameter_derivative", &epcsaft::InfiniteDilutionReference::parameter_derivative)
         .def_readonly("parameter_convergence_error", &epcsaft::InfiniteDilutionReference::parameter_convergence_error)
         .def_readonly("pure_solvent_log_fugacity", &epcsaft::InfiniteDilutionReference::pure_solvent_log_fugacity);
-    py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity")
+    py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
         .def_readonly("single_ion", &epcsaft::ElectrolyteActivity::single_ion)
         .def_readonly("mean_ionic_mole_fraction_scale", &epcsaft::ElectrolyteActivity::mean_ionic_mole_fraction_scale)
         .def_readonly("mean_ionic_log_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_log_molality_scale)
