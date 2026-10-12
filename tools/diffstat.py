@@ -4,12 +4,14 @@
     tools/diffstat.py --budgets        # current full runtime tree; a ceiling above or below its band fails
 """
 from __future__ import annotations
-import io, sys
+import io, re, shutil, sys
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
 CPP_STYLE = TOOLS / "line-count.clang-format"
 RUFF = TOOLS.parent / ".venv/bin/ruff"
+# A disabled formatter keeps the packed layout, so a disable directive is refused, not counted.
+FORMATTER_DISABLE = re.compile(r"clang-format\s+(off|on)\b|#\s*(fmt|yapf)\s*:\s*(off|on|skip|disable|enable)\b")
 
 
 def band(count: int) -> int:
@@ -19,14 +21,18 @@ def band(count: int) -> int:
 def budget_state(count: int, ceiling: int) -> str:
     if count > ceiling:
         return f"FAIL over the ceiling by {count - ceiling}"
-    if ceiling - count > 2 * band(count):
-        return f"FAIL headroom exceeds two bands: lower the ceiling to {count + band(count)}"
+    if ceiling - count > band(count):
+        return f"FAIL headroom exceeds the band: lower the ceiling to {count + band(count)}"
     return "ok"
 
 
 def formatted_lines(path: Path) -> int:
     """Physical lines of the file as the pinned formatter would lay it out; the file is not changed."""
     import subprocess
+    source = path.read_bytes()
+    for number, line in enumerate(source.decode("utf-8").splitlines(), 1):
+        if FORMATTER_DISABLE.search(line):
+            raise ValueError(f"{path}:{number}: formatter-disable directive bypasses line counting")
     if path.suffix in {".py", ".pyx", ".pxd"}:
         if not RUFF.is_file():
             raise ValueError(f"missing {RUFF}: run bash .codex/environments/setup.sh")
@@ -35,8 +41,10 @@ def formatted_lines(path: Path) -> int:
                    "--config=format.skip-magic-trailing-comma=true", "--config=lint.isort.split-on-trailing-comma=false",
                    f"--stdin-filename={path.name}", "-"]
     else:
+        if not shutil.which("clang-format-18"):
+            raise ValueError("missing clang-format-18: install it (README Prerequisites)")
         command = ["clang-format-18", f"--style=file:{CPP_STYLE}", f"--assume-filename={path.name}"]
-    done = subprocess.run(command, input=path.read_bytes(), capture_output=True, check=False)
+    done = subprocess.run(command, input=source, capture_output=True, check=False)
     if done.returncode:
         raise ValueError(f"cannot format {path} for counting: {done.stderr.decode(errors='replace').strip()}")
     return len(done.stdout.decode("utf-8").splitlines())
@@ -97,7 +105,8 @@ def code_budgets(root=None) -> int:
 
 
 def budget_self_check() -> None:
-    """One executable check of both band boundaries, formatter-normalized and untracked-tree accounting."""
+    """One executable check of both band boundaries, formatter-normalized and untracked-tree accounting,
+    and the refusal of formatter-disable directives."""
     import contextlib
     import tempfile
     import json
@@ -112,10 +121,18 @@ def budget_self_check() -> None:
         source = root / "engine/native/core/untracked.cpp"
         with contextlib.redirect_stdout(io.StringIO()):
             # Packed statements count as the formatter lays them out: two per line here, two lines each.
-            for statements, fails in ((99, True), (100, False), (102, False), (103, True)):
+            for statements, fails in ((100, True), (101, False), (102, False), (103, True)):
                 source.write_text("int a; int b;\n" * (statements // 2) + "int c;\n" * (statements % 2))
                 if code_budgets(root) != int(fails):
                     raise AssertionError(f"budget band/accounting failure at {statements} statements")
+            source.write_text("// clang-format off\nint a; int b;\n")
+            try:
+                code_budgets(root)
+            except ValueError as error:
+                if "untracked.cpp:1: formatter-disable" not in str(error):
+                    raise
+            else:
+                raise AssertionError("a formatter-disable directive escaped the count")
             source.unlink()
             source = root / "engine/native/unknown/new.cpp"
             source.parent.mkdir()

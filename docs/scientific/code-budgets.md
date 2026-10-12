@@ -5,7 +5,7 @@ duplication and unnecessary machinery. The single numeric table is
 `ARCHITECTURE.yaml:code_budgets`. Run `python3 tools/diffstat.py --budgets` to
 display each count, ceiling and band. Both normal local check commands enforce
 it. `check-affected.sh` provides the documentation-only route without a wheel
-build; `check-all.sh` always builds and installs after readiness checks.
+build; `check-all.sh` always builds and installs, before readiness checks.
 Numerical evidence is a separate acceptance condition.
 
 ## Counting and scope
@@ -33,9 +33,14 @@ looser: a layer ceiling bounds that layer, and the total independently bounds
 the whole.
 
 Formatted lines are a reproducible size proxy, not a measure of scientific
-complexity. Packing statements onto one line gains nothing, because the
-formatter splits them again. Removing useful comments, hiding code in
-generated strings, relocating runtime code, or splitting/renaming files to
+complexity. The formatter splits statements packed onto one line, and the
+counter refuses a runtime file holding a formatter-disable directive
+(`clang-format off`/`on`, `# fmt: off`/`on`/`skip`, `# yapf: disable`/`enable`),
+naming its file and line. Packing still gains lines where the formatter keeps
+the packed form: comma-joined C++ declarations such as `int a = 1, b = 2;`, and
+a C++ braced list, which shares lines without a trailing comma and takes one
+line per element with it. Removing useful comments, hiding code in generated
+strings, relocating runtime code, or splitting/renaming files to
 evade a budget is unacceptable. Spare lines never justify a second
 thermodynamic or solver owner.
 
@@ -47,10 +52,10 @@ The band of a layer, or of the total, is 1% of its current count, rounded up.
    Refactor or reduce, or raise the ceiling with owner approval to exactly the
    count plus the band, recording the raise below in the same change. No
    override flag or automatic upward ratchet exists.
-2. **Lower after consolidation.** When a ceiling sits more than two bands above
+2. **Lower after consolidation.** When a ceiling sits more than one band above
    the count, readiness fails with the ceiling to lower to (count plus band).
-   Lower it in the same change; lowering needs no approval. A ceiling up to two
-   bands above the count needs no table change.
+   Lower it in the same change; lowering needs no approval. A ceiling up to one
+   band above the count needs no table change.
 3. **Approve once per issue.** The owner approves a line allowance per layer
    when authorizing an issue, and the issue body records it. A merge whose
    raises stay within that allowance needs no second approval. Growth beyond
