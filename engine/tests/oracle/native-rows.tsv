@@ -104,91 +104,100 @@ properties_checks P4	direct/action/1/1	native	17.15210747636935
 properties_checks P4	direct/action/2/1	native	0.13060671843521893
 properties_checks P4	direct/action/3/1	native	0.10000000000000003
 properties_checks P4	direct/action/4/1	native	0.10000000000000003
-properties_checks P4	direct/action/5/1	native	-2791.243810529799
-properties_checks P4	direct/action/6/1	native	272.7847723568329
-properties_checks P4	direct/action/7/1	native	1.5850207383683244
-properties_checks P4	direct/action/8/1	native	-0.8490399119671581
-properties_checks P4	direct/action/9/1	native	-0.6905311386442644
-properties_checks P4	direct/action/10/1	native	-2772.4288105297987
-properties_checks P4	direct/action/11/1	native	289.9368798332022
-properties_checks P4	direct/action/12/1	native	1.7156274568035432
-properties_checks P4	direct/action/13/1	native	-0.749039911967158
-properties_checks P4	direct/action/14/1	native	-0.5905311386442644
+properties_checks P4	direct/action/5/1	native	-2791.2438105298497
+properties_checks P4	direct/action/6/1	native	272.7847723568343
+properties_checks P4	direct/action/7/1	native	1.5850207383683288
+properties_checks P4	direct/action/8/1	native	-0.8490399119672859
+properties_checks P4	direct/action/9/1	native	-0.6905311386447388
+properties_checks P4	direct/action/10/1	native	-2772.4288105298497
+properties_checks P4	direct/action/11/1	native	289.93687983320365
+properties_checks P4	direct/action/12/1	native	1.7156274568035477
+properties_checks P4	direct/action/13/1	native	-0.7490399119672859
+properties_checks P4	direct/action/14/1	native	-0.5905311386447387
 properties_checks P4	direct/action/0/2	native	-0.020000000000000004
 properties_checks P4	direct/action/1/2	native	-0.020000000000000004
 properties_checks P4	direct/action/2/2	native	0.0021592060462282655
 properties_checks P4	direct/action/3/2	native	0
 properties_checks P4	direct/action/4/2	native	0
-properties_checks P4	direct/action/5/2	native	-135.18321246325695
-properties_checks P4	direct/action/6/2	native	-12.928945188671774
-properties_checks P4	direct/action/7/2	native	0.030772881629640515
-properties_checks P4	direct/action/8/2	native	-0.0893205191124642
-properties_checks P4	direct/action/9/2	native	-0.06094368647317565
-properties_checks P4	direct/action/10/2	native	-135.20321246325696
-properties_checks P4	direct/action/11/2	native	-12.948945188671773
-properties_checks P4	direct/action/12/2	native	0.03293208767586878
-properties_checks P4	direct/action/13/2	native	-0.0893205191124642
-properties_checks P4	direct/action/14/2	native	-0.06094368647317565
+properties_checks P4	direct/action/5/2	native	-135.1832124628775
+properties_checks P4	direct/action/6/2	native	-12.9289451885917
+properties_checks P4	direct/action/7/2	native	0.030772881629896155
+properties_checks P4	direct/action/8/2	native	-0.08932051908701194
+properties_checks P4	direct/action/9/2	native	-0.06094368644845151
+properties_checks P4	direct/action/10/2	native	-135.2032124628775
+properties_checks P4	direct/action/11/2	native	-12.948945188591699
+properties_checks P4	direct/action/12/2	native	0.03293208767612442
+properties_checks P4	direct/action/13/2	native	-0.08932051908701194
+properties_checks P4	direct/action/14/2	native	-0.06094368644845151
 properties_checks P4	direct/action/0/3	native	0
 properties_checks P4	direct/action/1/3	native	0
-properties_checks P4	direct/action/2/3	native	-1.1820789272798642e-05
+properties_checks P4	direct/action/2/3	native	-1.182078927279864e-05
 properties_checks P4	direct/action/3/3	native	0
 properties_checks P4	direct/action/4/3	native	0
-properties_checks P4	direct/action/5/3	native	-1.3755674165741254
-properties_checks P4	direct/action/6/3	native	-0.1164559709737795
-properties_checks P4	direct/action/7/3	native	0.0005450113990394909
-properties_checks P4	direct/action/8/3	native	-0.001742067411733279
-properties_checks P4	direct/action/9/3	native	-0.001402506993383981
-properties_checks P4	direct/action/10/3	native	-1.3755674165741254
-properties_checks P4	direct/action/11/3	native	-0.1164559709737795
-properties_checks P4	direct/action/12/3	native	0.0005331906097666922
-properties_checks P4	direct/action/13/3	native	-0.001742067411733279
-properties_checks P4	direct/action/14/3	native	-0.001402506993383981
+properties_checks P4	direct/action/5/3	native	-1.3755674171998846
+properties_checks P4	direct/action/6/3	native	-0.11645597111215822
+properties_checks P4	direct/action/7/3	native	0.0005450113985972767
+properties_checks P4	direct/action/8/3	native	-0.0017420675746216466
+properties_checks P4	direct/action/9/3	native	-0.001402507150270546
+properties_checks P4	direct/action/10/3	native	-1.3755674171998846
+properties_checks P4	direct/action/11/3	native	-0.11645597111215822
+properties_checks P4	direct/action/12/3	native	0.000533190609324478
+properties_checks P4	direct/action/13/3	native	-0.0017420675746216466
+properties_checks P4	direct/action/14/3	native	-0.001402507150270546
 properties_checks P4	pressure/action/0/1	native	18.814999999999998
 properties_checks P4	pressure/action/1/1	native	17.15210747636935
 properties_checks P4	pressure/action/2/1	native	0.012717871835152071
 properties_checks P4	pressure/action/3/1	native	0.10000000000000003
 properties_checks P4	pressure/action/4/1	native	0.10000000000000003
-properties_checks P4	pressure/action/5/1	native	-66.15929676574245
-properties_checks P4	pressure/action/6/1	native	245.83941715617755
-properties_checks P4	pressure/action/7/1	native	0.6328971746852328
-properties_checks P4	pressure/action/8/1	native	-0.3580837449753913
-properties_checks P4	pressure/action/9/1	native	-0.19636348068765888
-properties_checks P4	pressure/action/10/1	native	-47.344296765742456
-properties_checks P4	pressure/action/11/1	native	262.9915246325469
-properties_checks P4	pressure/action/12/1	native	0.6456150465203848
-properties_checks P4	pressure/action/13/1	native	-0.25808374497539127
-properties_checks P4	pressure/action/14/1	native	-0.09636348068765885
+properties_checks P4	pressure/action/5/1	native	-66.15929676570698
+properties_checks P4	pressure/action/6/1	native	245.8394171562411
+properties_checks P4	pressure/action/7/1	native	0.6328971746854357
+properties_checks P4	pressure/action/8/1	native	-0.3580837449704448
+properties_checks P4	pressure/action/9/1	native	-0.19636348068315812
+properties_checks P4	pressure/action/10/1	native	-47.344296765706986
+properties_checks P4	pressure/action/11/1	native	262.99152463261044
+properties_checks P4	pressure/action/12/1	native	0.6456150465205878
+properties_checks P4	pressure/action/13/1	native	-0.2580837449704448
+properties_checks P4	pressure/action/14/1	native	-0.09636348068315809
+properties_checks P4	pressure/action/15/1	native	-0.030996987987421717
+properties_checks P4	pressure/action/16/1	native	0.019138423771913507
+properties_checks P4	pressure/action/17/1	native	606.7624809514264
 properties_checks P4	pressure/action/0/2	native	-0.020000000000000004
 properties_checks P4	pressure/action/1/2	native	-0.020000000000000004
-properties_checks P4	pressure/action/2/2	native	0.0030022777897119306
+properties_checks P4	pressure/action/2/2	native	0.0030022777897107085
 properties_checks P4	pressure/action/3/2	native	0
 properties_checks P4	pressure/action/4/2	native	0
-properties_checks P4	pressure/action/5/2	native	-1.0874754384747405
-properties_checks P4	pressure/action/6/2	native	-1.0757656652796137
-properties_checks P4	pressure/action/7/2	native	-0.0021042850512842173
-properties_checks P4	pressure/action/8/2	native	-0.002180252990885265
-properties_checks P4	pressure/action/9/2	native	-0.0012670135449790376
-properties_checks P4	pressure/action/10/2	native	-1.1074754384747436
-properties_checks P4	pressure/action/11/2	native	-1.0957656652796137
-properties_checks P4	pressure/action/12/2	native	0.0008979927384277133
-properties_checks P4	pressure/action/13/2	native	-0.002180252990885265
-properties_checks P4	pressure/action/14/2	native	-0.0012670135449790376
+properties_checks P4	pressure/action/5/2	native	-1.0874754388666616
+properties_checks P4	pressure/action/6/2	native	-1.0757656656699996
+properties_checks P4	pressure/action/7/2	native	-0.0021042850525398657
+properties_checks P4	pressure/action/8/2	native	-0.002180253022095474
+properties_checks P4	pressure/action/9/2	native	-0.0012670135731907188
+properties_checks P4	pressure/action/10/2	native	-1.1074754388666648
+properties_checks P4	pressure/action/11/2	native	-1.0957656656699997
+properties_checks P4	pressure/action/12/2	native	0.0008979927371708437
+properties_checks P4	pressure/action/13/2	native	-0.002180253022095474
+properties_checks P4	pressure/action/14/2	native	-0.0012670135731907188
+properties_checks P4	pressure/action/15/2	native	0.0005359609325534556
+properties_checks P4	pressure/action/16/2	native	0.0001195358539171535
+properties_checks P4	pressure/action/17/2	native	-8.640577844937061
 properties_checks P4	pressure/action/0/3	native	0
 properties_checks P4	pressure/action/1/3	native	0
-properties_checks P4	pressure/action/2/3	native	-1.6391025495032964e-05
+properties_checks P4	pressure/action/2/3	native	-1.6391025501639763e-05
 properties_checks P4	pressure/action/3/3	native	0
 properties_checks P4	pressure/action/4/3	native	0
-properties_checks P4	pressure/action/5/3	native	0.008954264249942945
-properties_checks P4	pressure/action/6/3	native	0.00838493486276625
-properties_checks P4	pressure/action/7/3	native	2.3238231844354557e-05
-properties_checks P4	pressure/action/8/3	native	-4.9013823971487354e-05
-properties_checks P4	pressure/action/9/3	native	-4.6025295897654056e-05
-properties_checks P4	pressure/action/10/3	native	0.008954264249942945
-properties_checks P4	pressure/action/11/3	native	0.00838493486276625
-properties_checks P4	pressure/action/12/3	native	6.847206349321565e-06
-properties_checks P4	pressure/action/13/3	native	-4.9013823971487354e-05
-properties_checks P4	pressure/action/14/3	native	-4.6025295897654056e-05
+properties_checks P4	pressure/action/5/3	native	0.008954266059463256
+properties_checks P4	pressure/action/6/3	native	0.008384936690106946
+properties_checks P4	pressure/action/7/3	native	2.323823762975685e-05
+properties_checks P4	pressure/action/8/3	native	-4.901350812996379e-05
+properties_checks P4	pressure/action/9/3	native	-4.6024992859124646e-05
+properties_checks P4	pressure/action/10/3	native	0.008954266059463256
+properties_checks P4	pressure/action/11/3	native	0.008384936690106946
+properties_checks P4	pressure/action/12/3	native	6.847212128117058e-06
+properties_checks P4	pressure/action/13/3	native	-4.901350812996379e-05
+properties_checks P4	pressure/action/14/3	native	-4.6024992859124646e-05
+properties_checks P4	pressure/action/15/3	native	-1.0022101846869456e-05
+properties_checks P4	pressure/action/16/3	native	1.0299420853123478e-08
+properties_checks P4	pressure/action/17/3	native	0.0728375656902012
 equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.5986938768538325e-08
 equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.589016149082071e-08
 equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.84445255186
@@ -236,24 +245,24 @@ equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107
 equilibrium_checks E5-3	e5-3/isomerisation/A1	1/K^k	-0.0014784580498870947
 equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.434880528181904e-06
 equilibrium_checks E5-3	e5-3/isomerisation/A3	1/K^k	-2.730497465383311e-09
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A1	J/mol	-685.205410448503
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A1	J/(mol K)	-0.021019333940699318
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A1	J/mol	-682.205410448503
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A1	J/(mol K)	-0.021019333940699318
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A1	J/mol	-685.2054104485026
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A1	J/(mol K)	-0.021019333940594617
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A1	J/mol	-682.2054104485026
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A1	J/(mol K)	-0.021019333940594617
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[0]/A1	1	0.002973716891726513
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[1]/A1	1	0.1915131802333905
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[2]/A1	1	0.16880083071077645
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A2	J/mol	-0.05265955380684267
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A2	J/(mol K)	-0.00016679800848109054
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A2	J/mol	-0.05265955380684267
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A2	J/(mol K)	-0.00016679800848109054
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A2	J/mol	-0.05265955380685294
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A2	J/(mol K)	-0.00016679800848335514
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A2	J/mol	-0.05265955380685294
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A2	J/(mol K)	-0.00016679800848335514
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[0]/A2	1	4.150438354912131e-05
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[1]/A2	1	0.004620878288484879
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[2]/A2	1	0.004618979529938084
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A3	J/mol	-0.0006882688101497402
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A3	J/(mol K)	1.524318481014829e-07
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A3	J/mol	-0.0006882688101497402
-equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	1.524318481014829e-07
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A3	J/mol	-0.0006882688101501776
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/ResidualIsobaricHeatCapacity/A3	J/(mol K)	1.5243184793074672e-07
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalEnthalpy/A3	J/mol	-0.0006882688101501776
+equilibrium_checks E5-5	e5-5/electrolyte/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	1.5243184793074672e-07
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[0]/A3	1	-5.30047261708888e-08
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[1]/A3	1	-0.00017990782716792236
 equilibrium_checks E5-5	e5-5/electrolyte/phase[0].log_activity[2]/A3	1	-0.00017983095358350173
@@ -262,47 +271,47 @@ equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A1	J/mo
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A1	J/(mol K)	0
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A1	J/(mol K)	-0.03905144680598896
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A2	J/mol	0
-equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A2	J/mol	0.39051446805989193
+equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A2	J/mol	0.3905144680598899
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A2	J/(mol K)	0
-equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A2	J/(mol K)	-0.004462857561084003
+equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A2	J/(mol K)	-0.004462857561084008
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A3	J/mol	0
-equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.022314287805419827
+equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.02231428780542061
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A3	J/(mol K)	0
-equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.0003327286640915521
+equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.0003327286640914964
 equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	-1.6209256159527285e-14
 equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-4.170578474043361e-17
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	-3.7534973332329757e-16
 equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944493e-06
 equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173916778e-06
-regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000009
-regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999997048
-regression_checks R2-J2	r4/recovery/final_cost	1	3.627957601131124e-27
-regression_checks R2-J2	r4/recovery/initial_cost	1	0.08983832360291029
-regression_checks R2-J2	r4/recovery/prediction/0	native	1009056.6044860388
-regression_checks R2-J2	r4/recovery/prediction/1	native	1385321.05601615
-regression_checks R2-J2	r4/recovery/prediction/2	native	1836959.1712054694
-regression_checks R2-J2	r4/recovery/prediction/3	native	0.955171272667374
-regression_checks R2-J2	r4/recovery/prediction/4	native	460.2037161263548
-regression_checks R2-J2	r4/recovery/covariance/0	1	2.370883642100894
-regression_checks R2-J2	r4/recovery/physical_covariance/0	1	237.0883642100894
-regression_checks R2-J2	r4/recovery/covariance/1	1	1.868485500268872
-regression_checks R2-J2	r4/recovery/physical_covariance/1	1	1.8684855002688723
-regression_checks R2-J2	r4/recovery/covariance/2	1	1.868485500268872
-regression_checks R2-J2	r4/recovery/physical_covariance/2	1	1.8684855002688723
-regression_checks R2-J2	r4/recovery/covariance/3	1	3.5046189570274713
-regression_checks R2-J2	r4/recovery/physical_covariance/3	1	0.035046189570274715
-regression_checks R2-J2	r4/recovery/variance_factor	1	2.4186384007540826e-27
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/0	1	-0.33852334273378326
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/1	1	0.43073029944229513
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/2	1	-0.31024963485359214
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/3	1	0.4033375294270856
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/4	1	-0.2837628554229454
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/5	1	0.37785170847957117
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/6	1	-0.6602182186967267
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.01403445648942941
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387151473
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.03049545370593361
+regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000013
+regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999983836
+regression_checks R2-J2	r4/recovery/final_cost	1	5.073518735955496e-27
+regression_checks R2-J2	r4/recovery/initial_cost	1	0.08983832360307083
+regression_checks R2-J2	r4/recovery/prediction/0	native	1009056.604486088
+regression_checks R2-J2	r4/recovery/prediction/1	native	1385321.0560162007
+regression_checks R2-J2	r4/recovery/prediction/2	native	1836959.1712055423
+regression_checks R2-J2	r4/recovery/prediction/3	native	0.9551712726673737
+regression_checks R2-J2	r4/recovery/prediction/4	native	460.2037161263532
+regression_checks R2-J2	r4/recovery/covariance/0	1	2.3708836421009263
+regression_checks R2-J2	r4/recovery/physical_covariance/0	1	237.08836421009264
+regression_checks R2-J2	r4/recovery/covariance/1	1	1.868485500268876
+regression_checks R2-J2	r4/recovery/physical_covariance/1	1	1.868485500268876
+regression_checks R2-J2	r4/recovery/covariance/2	1	1.868485500268876
+regression_checks R2-J2	r4/recovery/physical_covariance/2	1	1.868485500268876
+regression_checks R2-J2	r4/recovery/covariance/3	1	3.504618957027439
+regression_checks R2-J2	r4/recovery/physical_covariance/3	1	0.03504618957027439
+regression_checks R2-J2	r4/recovery/variance_factor	1	3.382345823970331e-27
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/0	1	-0.33852334273378215
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/1	1	0.4307302994422968
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/2	1	-0.3102496348535911
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/3	1	0.40333752942708734
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/4	1	-0.2837628554229446
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/5	1	0.37785170847957344
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/6	1	-0.6602182186967204
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.014034456489427494
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387152656
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.030495453705934334
 regression_checks D86	d86/density_value	mol/m^3	17541.25129083692
 regression_checks D86	d86/parameter/epsilon/fine	native	45.09136058811155
 regression_checks D86	d86/parameter/m/fine	native	-8782.89059816916
@@ -324,7 +333,7 @@ surface_example	state/root/1	mixed	99999.99999911699
 surface_example	state/root/2	mixed	58178.655742728624
 surface_example	state/root/3	mixed	8.5344058209368967e-15
 surface_example	state/root/4	mixed	2
-surface_example	bubble/pressure	Pa	30936.816033816522
+surface_example	bubble/pressure	Pa	30936.816033816627
 surface_example	flash/amounts/0	mol	0.45701296529333596
 surface_example	flash/amounts/1	mol	0.54298703470666398
 surface_example	flash/mole_fractions/0	1	0.49278463704329489
@@ -343,7 +352,7 @@ surface_example	solved/thermal/1	1	-0.0077792789010149178
 surface_example	solved/radial/1	1	0
 surface_example	solved/thermal/2	1	-0.016319143831975191
 surface_example	solved/radial/2	1	0
-surface_example	solved/thermal/3	J/mol	-126.939497865185
+surface_example	solved/thermal/3	J/mol	-126.93949786518476
 surface_example	solved/radial/3	J/mol	0
 surface_example	solved/thermal/4	mol/m^3	-481.75993780547759
 surface_example	solved/radial/4	mol/m^3	0
