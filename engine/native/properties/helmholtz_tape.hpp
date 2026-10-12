@@ -53,8 +53,9 @@ enum class ParameterFamily {
     BornDiameter, DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient,
     BornCDielectric, IonicRegionRelativePermittivity,
     KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
+    DielectricVolume, DielectricTemperature,  // Schreckenberg d_V (m3/mol) and d_T (K) of a neutral solvent
 };
-constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::KijReciprocalTemperatureSlope) + 1;
+constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::DielectricTemperature) + 1;
 
 // The one family -> (pointer, size) storage view, for double and AD alike.
 template <class ParameterSet>
@@ -78,6 +79,8 @@ auto family_values(ParameterSet& parameters, ParameterFamily family, std::size_t
     case ParameterFamily::AssociationEnergyOverK: return view(parameters.association_energy_over_k);
     case ParameterFamily::AssociationVolume: return view(parameters.association_volume);
     case ParameterFamily::KijReciprocalTemperatureSlope: return view(parameters.k_ij_reciprocal_temperature_slope);
+    case ParameterFamily::DielectricVolume: return view(parameters.dielectric_volume_m3_per_mol);
+    case ParameterFamily::DielectricTemperature: return view(parameters.dielectric_temperature_k);
     }
     throw std::invalid_argument("invalid parameter family");
 }

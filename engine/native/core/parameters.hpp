@@ -63,8 +63,6 @@ struct FixedParameters {
     std::vector<double> permittivity_term_coefficient;
     std::vector<int> permittivity_term_power;
     std::vector<double> permittivity_reference_temperature_k;
-    std::vector<double> dielectric_volume_m3_per_mol;
-    std::vector<double> dielectric_temperature_k;
     std::vector<double> dipole_scaling_debye2;
     std::vector<double> polarizability_scaling_angstrom3;
     std::vector<double> correlation_integral_parameter;
@@ -93,6 +91,8 @@ struct ParameterRecord final : FixedParameters {
     std::vector<Scalar> l_ij;
     std::vector<Scalar> association_energy_over_k;
     std::vector<Scalar> association_volume;
+    std::vector<Scalar> dielectric_volume_m3_per_mol;
+    std::vector<Scalar> dielectric_temperature_k;
 
     std::size_t component_count() const { return segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }

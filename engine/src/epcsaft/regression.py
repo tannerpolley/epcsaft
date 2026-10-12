@@ -31,6 +31,8 @@ _FAMILIES = {
     "association_energy_over_k": _core.ParameterFamily.AssociationEnergyOverK,
     "association_volume": _core.ParameterFamily.AssociationVolume,
     "k_ij_reciprocal_temperature_slope": _core.ParameterFamily.KijReciprocalTemperatureSlope,
+    "dielectric_volume": _core.ParameterFamily.DielectricVolume,  # m3/mol; an L/mol coordinate takes coefficient 1e-3
+    "dielectric_temperature": _core.ParameterFamily.DielectricTemperature,
 }
 _PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}

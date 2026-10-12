@@ -119,7 +119,11 @@ physical source interval remains a separate admission operation.
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
-slots in the existing affine chart. Their values use `ParameterRecord<Scalar>`
+slots in the existing affine chart. `DielectricVolume` (m^3/mol) and
+`DielectricTemperature` (K) own one neutral-component slot each and are admitted
+only under the density-temperature permittivity (EqID:
+`density_correlated_bulk_permittivity`); an L/mol coordinate takes target
+coefficient 1e-3 (#441). Their values use `ParameterRecord<Scalar>`
 with the other active families. Charges, masses, formulation choices and Born
 correction/solvation factors remain fixed. No cross-family factor tie is added.
 
@@ -1907,7 +1911,7 @@ are not interchangeable (EqID: `reference_species_calorics`).
 The existing value and lower-slope admission remains: first thermal and EOS
 slopes use the value criterion at their physical scales; the second thermal
 slope uses 0.01 J/(mol K); the mixed T/EOS slope retains its declared
-$T\max(|\theta|,1)$ scaled criterion. Higher consumed columns use ALG-REFERENCE's
+$Ts_\theta$ scaled criterion (EqID: `standard_state_transfer_parameter_derivative`). Higher consumed columns use ALG-REFERENCE's
 three terminal molalities and both scaled consecutive changes. For frozen heat
 capacities, complete both changes through the anchored Gibbs/volume quotient;
 individual column admission is not a bound on an ill-conditioned quotient.
