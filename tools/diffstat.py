@@ -30,13 +30,15 @@ def formatted_lines(path: Path) -> int:
     """Physical lines of the file as the pinned formatter would lay it out; the file is not changed."""
     import subprocess
     source = path.read_bytes()
-    for number, line in enumerate(source.decode("utf-8").splitlines(), 1):
+    # Newline only: splitlines() also breaks at form feeds and would split a directive the formatter honors.
+    for number, line in enumerate(source.decode("utf-8").split("\n"), 1):
         if FORMATTER_DISABLE.search(line):
             raise ValueError(f"{path}:{number}: formatter-disable directive bypasses line counting")
     if path.suffix in {".py", ".pyx", ".pxd"}:
         if not RUFF.is_file():
             raise ValueError(f"missing {RUFF}: run bash .codex/environments/setup.sh")
-        # A trailing comma does not choose the layout, as in clang-format; 120 columns in both languages.
+        # A magic trailing comma does not choose the Python layout (clang-format still honours one in a braced
+        # list; code-budgets.md); 120 columns in both languages.
         command = [str(RUFF), "format", "--isolated", "--line-length=120", "--target-version=py313",
                    "--config=format.skip-magic-trailing-comma=true", "--config=lint.isort.split-on-trailing-comma=false",
                    f"--stdin-filename={path.name}", "-"]
@@ -111,6 +113,9 @@ def budget_self_check() -> None:
     import tempfile
     import json
     layers = ["contributions", "properties", "equilibrium", "regression", "surface", "bindings"]
+    for count, ceiling, fails in ((1000, 1000, False), (1000, 1010, False), (1000, 1011, True), (1001, 1000, True)):
+        if (budget_state(count, ceiling) != "ok") != fails:  # exactly one band of headroom passes
+            raise AssertionError(f"band edge wrong at count {count}, ceiling {ceiling}")
     with tempfile.TemporaryDirectory(prefix="epcsaft-budget-") as temporary:
         root = Path(temporary)
         (root / "engine/native/core").mkdir(parents=True)
@@ -134,6 +139,16 @@ def budget_self_check() -> None:
             else:
                 raise AssertionError("a formatter-disable directive escaped the count")
             source.unlink()
+            packed = root / "engine/src/epcsaft/packed.py"
+            packed.write_text("x = 1; y = 2  # fmt:\fskip\n")
+            try:
+                code_budgets(root)
+            except ValueError as error:
+                if "packed.py:1: formatter-disable" not in str(error):
+                    raise
+            else:
+                raise AssertionError("a form-feed formatter directive escaped the count")
+            packed.write_text("x = 1; y = 2\n")
             source = root / "engine/native/unknown/new.cpp"
             source.parent.mkdir()
             source.write_text("int hidden;\n")
