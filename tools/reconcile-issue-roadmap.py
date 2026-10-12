@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Reconcile derived GitHub issue status labels from native dependencies, and give every open
-issue a milestone from its title prefix."""
+"""Reconcile derived GitHub issue status labels from native dependencies, clear work:claimed and
+work:review from closed issues, and give every open issue a milestone from its title prefix."""
 
 from __future__ import annotations
 
@@ -159,6 +159,12 @@ def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
             print(f"#{issue['number']}: no milestone -> {milestone}")
             if apply:
                 gh("issue", "edit", str(issue["number"]), "-R", repo, "--milestone", milestone)
+        stale = {label["name"] for label in issue["labels"]} & {"work:claimed", "work:review"}
+        if issue["state"] == "closed" and stale:
+            changes += 1
+            print(f"#{issue['number']}: closed; remove {sorted(stale)}")
+            if apply:
+                gh("issue", "edit", str(issue["number"]), "-R", repo, "--remove-label", ",".join(sorted(stale)))
         relationship = blocked_by.get(issue["number"], {"nodes": [], "totalCount": 0})
         if relationship["totalCount"] != len(relationship["nodes"]):
             wanted = "status:needs-attention" if issue["state"] == "open" else None
