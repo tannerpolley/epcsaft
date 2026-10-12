@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Reconcile derived GitHub issue status labels from native dependencies, clear work:claimed and
-work:review from closed issues, and give every open issue a milestone from its title prefix."""
+work:review from closed issues, strip area prefixes from titles, and give every open issue a milestone."""
 
 from __future__ import annotations
 
@@ -104,24 +104,10 @@ def ensure_labels(repo: str) -> None:
 
 BODY_LIMIT = 8000  # characters: current state in about one screen
 
-# Title prefix ("[Equilibrium/Properties] ..." reads "Equilibrium") -> milestone for an open issue
-# created without one. Any other title joins the #220 platform milestone.
+# Titles carry no "[Area] " prefix; the milestone holds the area (owner, 2026-10-12, #456).
+# An open issue created without a milestone joins the #220 platform milestone for triage.
 PLATFORM = "12 - General Platform Completion and Release"
-MILESTONE_BY_PREFIX = {
-    "Equilibrium": "04 - Equilibrium",
-    **dict.fromkeys(("Core", "Contributions", "Properties", "Surface"), "03 - Properties"),
-    "Regression": "07 - Regression and Parameterization",
-    "Applications": "10 - Application Qualification",
-    **dict.fromkeys(("Evidence", "Analysis"), "11 - Comparative Evidence"),
-    "IDAES": "Extension - IDAES Adapter",
-    "Performance": "Performance - Single-driver equilibrium and EOS efficiency",
-    **dict.fromkeys(("Tooling", "Tests", "Checks", "Docs", "Process"), "Tooling - Research Infrastructure"),
-}
-
-
-def milestone_for(title: str) -> str:
-    prefix = re.match(r"\[([^\]/]+)", title)
-    return MILESTONE_BY_PREFIX.get(prefix[1].strip() if prefix else "", PLATFORM)
+PREFIX = re.compile(r"^(\[[^\]]*\]\s*)+")
 
 
 def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
@@ -153,12 +139,17 @@ def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
     for issue in issues:
         if issue["state"] == "open" and len(issue.get("body") or "") > BODY_LIMIT:
             print(f"#{issue['number']}: body is {len(issue['body'])} characters; compact it to current state")
-        if issue["state"] == "open" and not issue["milestone"]:
-            milestone = milestone_for(issue["title"])
+        title = PREFIX.sub("", issue["title"])
+        if title != issue["title"]:
             changes += 1
-            print(f"#{issue['number']}: no milestone -> {milestone}")
+            print(f"#{issue['number']}: title -> {title}")
             if apply:
-                gh("issue", "edit", str(issue["number"]), "-R", repo, "--milestone", milestone)
+                gh("issue", "edit", str(issue["number"]), "-R", repo, "--title", title)
+        if issue["state"] == "open" and not issue["milestone"]:
+            changes += 1
+            print(f"#{issue['number']}: no milestone -> {PLATFORM}")
+            if apply:
+                gh("issue", "edit", str(issue["number"]), "-R", repo, "--milestone", PLATFORM)
         stale = {label["name"] for label in issue["labels"]} & {"work:claimed", "work:review"}
         if issue["state"] == "closed" and stale:
             changes += 1
