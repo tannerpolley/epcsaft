@@ -11,10 +11,11 @@ export PATH="$workspace_root/.venv/bin:$PATH"
 files=('engine/(native|tests/native)/.*\.cpp$')
 if [[ "${1:-}" == --changed ]]; then
     base="${2:-$(git merge-base origin/main HEAD)}"
-    mapfile -t files < <({
-        git diff --name-only --diff-filter=d "$base" -- 'native/*.cpp' 'tests/native/*.cpp'
-        git ls-files --full-name --others --exclude-standard -- 'native/*.cpp' 'tests/native/*.cpp'
-    } | sort -u | sed 's/\./\\./g; s/^/\//; s/$/$/')
+    git rev-parse --verify --quiet "$base^{commit}" >/dev/null || { echo "--changed: unknown base $base" >&2; exit 2; }
+    # A command substitution (not mapfile < <(...)) so a failed git listing stops the script under set -e.
+    changed="$(git diff --name-only --diff-filter=d "$base" -- 'native/*.cpp' 'tests/native/*.cpp')"
+    untracked="$(git ls-files --full-name --others --exclude-standard -- 'native/*.cpp' 'tests/native/*.cpp')"
+    mapfile -t files < <(printf '%s\n%s\n' "$changed" "$untracked" | sed '/^$/d' | sort -u | sed 's/\./\\./g; s/^/\//; s/$/$/')
     ((${#files[@]})) || { echo "no native .cpp file changed since $base"; exit 0; }
 fi
 
@@ -32,6 +33,7 @@ fi
 build_root="$workspace_root/build/native-quality"
 # The checkout's build-job count (or EPCSAFT_BUILD_JOBS) sets the compile and clang-tidy parallelism.
 jobs="${EPCSAFT_BUILD_JOBS:-$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)}"
+[[ "$jobs" =~ ^[1-9][0-9]*$ ]] || { echo "build-job count must be a positive integer (got $jobs)" >&2; exit 2; }
 extension_suffix="$($workspace_root/.venv/bin/python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')"
 # The tree is always the Clang debug build, so a warm tree reconfigures instead of rebuilding.
 setup_args=()
