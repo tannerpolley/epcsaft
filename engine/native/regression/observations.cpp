@@ -29,11 +29,6 @@ SolvedStateObservable observable(Kind kind, std::size_t phase, std::size_t compo
     return result;
 }
 
-template<class X, class Fields>
-bool optional_equal(const std::optional<X>& x, const std::optional<X>& y, const Fields& fields) {
-    return x.has_value() == y.has_value() && (!x || fields(*x) == fields(*y));
-}
-
 double mean_molar_mass(const Parameters& parameters, const double* composition, bool& missing) {
     double result = 0.0;
     for (std::size_t i = 0; i < parameters.component_count(); ++i) {
@@ -126,14 +121,11 @@ bool same_state(const Observation& left, const Observation& right) {
         return std::tie(v.name, v.kind, v.support, v.support_declared, v.amount.kind, v.amount.fraction,
                         v.composition_guess, v.packing_guess);
     };
-    const auto source = [](const auto& v) {
-        return std::tie(v.solvent_index, v.solute_molality_ratios, v.standard_molality_mol_per_kg);
-    };
     if (intensive(a.temperature) != intensive(b.temperature) || intensive(a.pressure) != intensive(b.pressure)
         || feed(a.feed) != feed(b.feed) || a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol
         || a.topology_declared != b.topology_declared || a.row_tolerance != b.row_tolerance
         || a.phases.size() != b.phases.size() || a.reactions.size() != b.reactions.size()
-        || !optional_equal(a.source_reference, b.source_reference, source)) return false;
+        || !(a.source_reference == b.source_reference)) return false;
     for (std::size_t i = 0; i < a.phases.size(); ++i)
         if (phase(a.phases[i]) != phase(b.phases[i])) return false;
     for (std::size_t i = 0; i < a.reactions.size(); ++i)
@@ -196,8 +188,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
         require(compiled.problem.reactions.size() == final.problem.reactions.size(), "endpoint reaction count");
         for (std::size_t r = 0; r < compiled.problem.reactions.size(); ++r)
             require(same_reaction(compiled.problem.reactions[r], final.problem.reactions[r]), "endpoint reaction declaration");
-        const auto source = [](const auto& v) { return std::tie(v.solvent_index, v.solute_molality_ratios, v.standard_molality_mol_per_kg); };
-        require(optional_equal(compiled.problem.source_reference, final.problem.source_reference, source), "endpoint source reference");
+        require(compiled.problem.source_reference == final.problem.source_reference, "endpoint source reference");
         for (std::size_t i = 0; i < components; ++i)
             require(std::abs(final.n_feed[i] - compiled.n_feed[i] - observation.feed_amount * observation.composition[i])
                 <= policy::ADDITION_MATERIAL_BALANCE.value * std::max({1.0, std::abs(final.n_feed[i]), std::abs(compiled.n_feed[i])}),

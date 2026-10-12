@@ -11,6 +11,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -228,6 +229,10 @@ struct NeutralReferenceDeclaration final {
     double standard_molality_mol_per_kg = 0.0;
     std::vector<SpeciesReference> species_reference;  // empty retains the existing solvent reference
 };
+inline bool operator==(const NeutralReferenceDeclaration& a, const NeutralReferenceDeclaration& b) {
+    return std::tie(a.solvent_index, a.solute_molality_ratios, a.standard_molality_mol_per_kg, a.species_reference)
+        == std::tie(b.solvent_index, b.solute_molality_ratios, b.standard_molality_mol_per_kg, b.species_reference);
+}
 
 enum class ReferenceSourceBasis {
     CommonMolalityInfiniteDilution,
