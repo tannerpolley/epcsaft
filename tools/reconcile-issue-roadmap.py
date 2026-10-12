@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Reconcile derived GitHub issue status labels from native dependencies."""
+"""Reconcile derived GitHub issue status labels from native dependencies, and give every open
+issue a milestone from its title prefix."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from typing import Any
 
@@ -102,6 +104,25 @@ def ensure_labels(repo: str) -> None:
 
 BODY_LIMIT = 8000  # characters: current state in about one screen
 
+# Title prefix ("[Equilibrium/Properties] ..." reads "Equilibrium") -> milestone for an open issue
+# created without one. Any other title joins the #220 platform milestone.
+PLATFORM = "12 - General Platform Completion and Release"
+MILESTONE_BY_PREFIX = {
+    "Equilibrium": "04 - Equilibrium",
+    **dict.fromkeys(("Core", "Contributions", "Properties", "Surface"), "03 - Properties"),
+    "Regression": "07 - Regression and Parameterization",
+    "Applications": "10 - Application Qualification",
+    **dict.fromkeys(("Evidence", "Analysis"), "11 - Comparative Evidence"),
+    "IDAES": "Extension - IDAES Adapter",
+    "Performance": "Performance - Single-driver equilibrium and EOS efficiency",
+    **dict.fromkeys(("Tooling", "Tests", "Checks", "Docs", "Process"), "Tooling - Research Infrastructure"),
+}
+
+
+def milestone_for(title: str) -> str:
+    prefix = re.match(r"\[([^\]/]+)", title)
+    return MILESTONE_BY_PREFIX.get(prefix[1].strip() if prefix else "", PLATFORM)
+
 
 def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
     if apply:
@@ -132,6 +153,12 @@ def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
     for issue in issues:
         if issue["state"] == "open" and len(issue.get("body") or "") > BODY_LIMIT:
             print(f"#{issue['number']}: body is {len(issue['body'])} characters; compact it to current state")
+        if issue["state"] == "open" and not issue["milestone"]:
+            milestone = milestone_for(issue["title"])
+            changes += 1
+            print(f"#{issue['number']}: no milestone -> {milestone}")
+            if apply:
+                gh("issue", "edit", str(issue["number"]), "-R", repo, "--milestone", milestone)
         relationship = blocked_by.get(issue["number"], {"nodes": [], "totalCount": 0})
         if relationship["totalCount"] != len(relationship["nodes"]):
             wanted = "status:needs-attention" if issue["state"] == "open" else None
@@ -167,7 +194,7 @@ def reconcile(repo: str, *, apply: bool, only: set[int]) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True, help="OWNER/REPO")
-    parser.add_argument("--apply", action="store_true", help="Apply label changes")
+    parser.add_argument("--apply", action="store_true", help="Apply label and milestone changes")
     parser.add_argument("--issue", type=int, action="append", default=[])
     args = parser.parse_args()
     reconcile(args.repo, apply=args.apply, only=set(args.issue))
