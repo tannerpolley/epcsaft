@@ -30,8 +30,8 @@ if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
 fi
 
 build_root="$workspace_root/build/native-quality"
-# The checkout's build-job count sets the compile and clang-tidy parallelism.
-jobs="$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)"
+# The checkout's build-job count (or EPCSAFT_BUILD_JOBS) sets the compile and clang-tidy parallelism.
+jobs="${EPCSAFT_BUILD_JOBS:-$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)}"
 extension_suffix="$($workspace_root/.venv/bin/python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')"
 # The tree is always the Clang debug build, so a warm tree reconfigures instead of rebuilding.
 setup_args=()
