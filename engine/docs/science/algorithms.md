@@ -1788,8 +1788,9 @@ The same single-insertion owner supplies raw C_T, C_TT, C_theta,
 C_Ttheta and C_TP at the three literal terminal compositions, reusing each
 resolved liquid State. Each requested column retains independent availability.
 The existing lower-slope admission remains unchanged: T times each C_T change,
-max(|theta|,1) times each C_theta change, T max(|theta|,1) times each C_Ttheta
-change, and T P_source times each C_TP change must be at most 5e-5;
+s_theta times each C_theta change, T s_theta times each C_Ttheta change (s_theta
+from `standard_state_transfer_parameter_derivative`), and T P_source times each
+C_TP change must be at most 5e-5;
 R T^2 times each C_TT change must be at most 0.01 J/(mol K).
 Each column returns the sqrt(m) Richardson limit (10 f(1e-14) - f(1e-12))/9 and
 is admitted on its change from the (1e-10, 1e-12) limit, as for the contraction;
@@ -1812,7 +1813,8 @@ density; the returned EOS pressure still records the density-root residual.
 This avoids amplifying the closure residual in parameter differences of nearly
 invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
 Each terminal reference column is admitted independently by the maximum scaled
-two-ion change, max(|theta|,1) times the column difference, at the existing
+two-ion change, s_theta (`standard_state_transfer_parameter_derivative`) times
+the column difference, at the existing
 reference tolerance. The terminal pair is compared first; a witness checks a
 failed pair without changing the returned terminal column. An unavailable
 column preserves the value, molality and terminal value error. Activity and
