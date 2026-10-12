@@ -87,6 +87,16 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                             const auto& y = *prior_problem->source_reference;
                             check(x.solvent_index == y.solvent_index && (reaction.reference->source_basis != ReferenceSourceBasis::CommonMolalityInfiniteDilution
                                   || x.standard_molality_mol_per_kg == y.standard_molality_mol_per_kg), "tied source bases disagree");
+                            // ln K_c = ln K_b - sum_i nu_i (L_i^c - L_i^b): every reacting species needs one convention.
+                            const auto convention = [](const NeutralReferenceDeclaration& d, std::size_t i) {
+                                return d.species_reference.empty() ? (d.solvent_index == i ? SpeciesReference::PureLiquid
+                                    : SpeciesReference::InfiniteDilution) : d.species_reference.at(i);
+                            };
+                            constexpr std::array names = {"infinite dilution", "pure liquid", "pure gas"};
+                            for (std::size_t i = 0; i < reaction.stoichiometry.size(); ++i)
+                                if (reaction.stoichiometry[i] != 0.0 && convention(x, i) != convention(y, i))
+                                    check(false, ("tied species references disagree: component " + std::to_string(i) + " "
+                                        + names.at(std::size_t(convention(y, i))) + " vs " + names.at(std::size_t(convention(x, i)))).c_str());
                         }
                     } else {
                         prior = &reaction;

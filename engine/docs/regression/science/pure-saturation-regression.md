@@ -165,8 +165,10 @@ A reaction coordinate is a named scalar ln K (coefficient a) or a stored
 the same affine map and inclusive bounds. Name tying requires identical
 stoichiometry, constant representation and starts, correlation coefficients,
 Tref, interval and standard-state identity, and source basis/pressure. Referenced
-matches also share the solvent and common-molality standard; their dilution-path
-ratios may differ. The derivative is EqID:
+matches also share the solvent, the common-molality standard and the effective
+species reference of every reacting species, since no conversion between
+conventions is declared (EqID: `neutral_reaction_reference_transfer`); their
+dilution-path ratios may differ. The derivative is EqID:
 `reaction_constant_coordinate_derivative` evaluated at the solved temperature.
 Source/reference declarations are preserved in every trial. Scalar constants
 are rewritten as exp(ln K); correlations keep their native stored coefficients.
