@@ -1,0 +1,12 @@
+# The one layout tools/diffstat.py counts C++ runtime lines in (clang-format-18).
+# Only the count uses it; source files are not reformatted.
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+SortIncludes: Never
+ReflowComments: false
