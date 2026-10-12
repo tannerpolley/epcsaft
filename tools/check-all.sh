@@ -48,4 +48,4 @@ if ((failed)); then
     exit 1
 fi
 echo "fast checks passed"
-echo "slow Engine evidence, analysis reproductions, clang-tidy, and sanitizers run only by explicit owner command"
+echo "other gates and when they run: docs/agents/workflow.md \"Gates\""

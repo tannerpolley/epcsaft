@@ -72,7 +72,7 @@ are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting me
 - **Leading a slice** (readiness, review tiers, merging main, acceptance): `docs/agents/workflow.md`.
 - **Roadmap work:** `.agents/skills/manage-github-roadmap/SKILL.md`.
 - **Review standards:** `CODING_STANDARDS.md`.
-- **Checks and the no-slowdown gate:** `README.md` "Checks".
+- **Gates and the no-slowdown gate:** `docs/agents/workflow.md` "Gates"; commands and environment: `README.md` "Checks".
 - **Code budgets:** `docs/scientific/code-budgets.md`.
 - **Application work:** `downstream/README.md`.
 - **Skill configuration** (domain docs, issue tracker, triage labels): `docs/agents/`.

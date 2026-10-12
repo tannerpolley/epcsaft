@@ -3,12 +3,15 @@
 
 Runs, in a throwaway environment per wheel, the Cameretti 2005 bubble states (default start), the
 Gross 2002 declarations (default start), the 70-case neutral methane/ethane sweep, the #243 42-row
-matrix and the 4,374-row replay, then compares B with A. Cases a gate already runs (the #390 and
+matrix and the four-section replay, then compares B with A. Cases a gate already runs (the #390 and
 #407 pins, e4-d, the Gross pins in equilibrium/Automatic*) are omitted. Work counts, timings,
 messages and diagnostic residuals are reported by the scripts, not compared here; every other value
-must agree within 1e-10 relative (absolute floor 1e-12), and text must be equal. The replay uses
-replay_compare.py's quantity limits and the matrix physical_comparison.py's. Exits 1 on any
-difference or failed job. Tracked results/ are never written.
+must be finite on both sides and agree within 1e-10 relative (absolute floor 1e-12), with equal text
+and JSON kinds. Each corpus must hold its declared inventory on both sides (INVENTORY), and every
+successful result must meet its own criterion: residual within the retained convergence criterion
+(Gross: calculation.json row_tolerance), and every #243 matrix row passing its quantity limits. The
+replay uses replay_compare.py's checks and quantity limits. Exits 1 on any problem or failed job.
+Tracked results/ are never written.
 """
 import argparse
 import csv
@@ -30,6 +33,11 @@ SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
             'wall_seconds', 'parallel_solve_seconds'}
+MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df', 'inventory'}  # gated by `passes`
+# Declared inventories at the #391 delivery: Cameretti bubble states, Gross 2002 declarations, neutral cases,
+# matrix rows and replay cases per section. A corpus change updates them here.
+INVENTORY = dict(cameretti=1800, gross=724, neutral=70, matrix=42,
+                 replay=dict(declared=263, continuation=86, fitting=3, asl=31))
 
 
 def wheel_file(path):
@@ -39,25 +47,36 @@ def wheel_file(path):
 
 def values(text):
     """A CSV cell or JSON value as a flat list of floats, or None for text."""
-    try:
-        value = json.loads(text) if isinstance(text, str) else text
-    except ValueError:
-        return None
-    flat = value if isinstance(value, list) else [value]
+    if isinstance(text, str):
+        try:
+            return [float(text)]
+        except ValueError:
+            pass
+        try:
+            text = json.loads(text)
+        except ValueError:
+            return None
+    flat = text if isinstance(text, list) else [text]
     if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in flat):
         return [float(v) for v in flat]
     return None
 
 
-def differences(a_rows, b_rows):
+def differences(a_rows, b_rows, reported=REPORTED):
     """Rows of B that differ from A outside the comparison above."""
     found = [dict(row=i, reason='row missing') for i in range(min(len(a_rows), len(b_rows)), max(len(a_rows), len(b_rows)))]
     for i, (a, b) in enumerate(zip(a_rows, b_rows)):
-        for key in sorted((set(a) | set(b)) - REPORTED):
+        for key in sorted((set(a) | set(b)) - reported):
             x, y = a.get(key), b.get(key)
+            u, v = values(x), values(y)
+            if not all(math.isfinite(w) for w in (u or []) + (v or [])):
+                found.append(dict(row=i, key=key, a=x, b=y, reason='non-finite'))
+                continue
+            if type(x) is not type(y):
+                found.append(dict(row=i, key=key, a=x, b=y, reason='kind changed'))
+                continue
             if x == y:
                 continue
-            u, v = values(x), values(y)
             if u is None or v is None or len(u) != len(v) or not all(
                     math.isclose(p, q, rel_tol=1e-10, abs_tol=1e-12) for p, q in zip(u, v)):
                 found.append(dict(row=i, key=key, a=x, b=y))
@@ -66,6 +85,22 @@ def differences(a_rows, b_rows):
 
 def table(path):
     return list(csv.DictReader(path.open())) if path.stat().st_size else []
+
+
+def held(name, count, expected):
+    """A corpus that lacks its declared inventory."""
+    return [] if count == expected else [dict(corpus=name, reason=f'{count} entries, declared {expected}')]
+
+
+def unmet(name, rows, success, residual, criterion):
+    """Successful rows whose residual is not finite and within the criterion."""
+    def met(row):
+        try:
+            return float(row[residual]) <= float(criterion(row))
+        except (KeyError, TypeError, ValueError):
+            return False
+    return [dict(corpus=name, row=i, reason=f'{residual} {r.get(residual)} not within its criterion')
+            for i, r in enumerate(rows) if r[success] in (True, 'True') and not met(r)]
 
 
 def main():
@@ -133,32 +168,73 @@ def main():
         states = sum(int(r['states']) for r in summary)
         return f"{states - sum(int(r['default_failures']) for r in summary):,}/{states:,}"
 
+    def cameretti_problems():
+        found = []
+        for label in wheels:
+            d = out / label / 'cameretti'
+            found += held(f'{label} Cameretti', sum(int(r['states']) for r in table(d / 'default-start-summary.csv')),
+                          INVENTORY['cameretti'])
+            found += [dict(corpus=f'{label} Cameretti', file=f, reason='no rows') for f in camerettis
+                      if f != 'default-start-failures' and not table(d / f'{f}.csv')]
+            found += unmet(f'{label} Cameretti declared start', table(d / 'default-start-failures.csv'),
+                           'declared_success', 'declared_residual', lambda r: r['declared_criterion'])
+        return found + [dict(file=f, **x) for f in camerettis for x in differences(
+            table(out / f'A/cameretti/{f}.csv'), table(out / f'B/cameretti/{f}.csv'))]
+
     camerettis = ('default-start-summary', 'default-start-failures', 'table-5', 'figure-lines', 'figure-points',
                   'activity-298K', 'water', 'table-5-kcl-misprint')
-    corpus('Cameretti 2005 default start', cameretti, lambda: [dict(file=f, **x) for f in camerettis for x in differences(
-        table(out / f'A/cameretti/{f}.csv'), table(out / f'B/cameretti/{f}.csv'))])
+    corpus('Cameretti 2005 default start', cameretti, cameretti_problems)
+
     gross = lambda d: table(d / 'gross/default-start-comparisons.csv')
+
+    def gross_problems():
+        found = []
+        for label in wheels:
+            tolerance = json.loads((out / label / 'gross/calculation.json').read_text())['row_tolerance']
+            found += held(f'{label} Gross', len(gross(out / label)), INVENTORY['gross'])
+            found += unmet(f'{label} Gross', gross(out / label), 'success', 'residual', lambda r: tolerance)
+        return found + differences(gross(out / 'A'), gross(out / 'B'))
     corpus('Gross 2002 default start', lambda d: f"{sum(r['success'] == 'True' for r in gross(d))}/{len(gross(d))}",
-           lambda: differences(gross(out / 'A'), gross(out / 'B')))
+           gross_problems)
+
     neutral = lambda d: json.loads((d / 'neutral.json').read_text())['rows']
     corpus('neutral methane/ethane sweep', lambda d: f"{sum(r['success'] for r in neutral(d))}/{len(neutral(d))}",
-           lambda: differences(neutral(out / 'A'), neutral(out / 'B')))
-    summary = lambda d: json.loads((d / 'matrix/summary.json').read_text())
-    corpus('#243 matrix', lambda d: f"{summary(d)['passes']}/{summary(d)['total']}",
-           lambda: [r for r in (table(out / 'B/matrix/comparisons.csv'))
-                    if r['passes'] != next(a['passes'] for a in table(out / 'A/matrix/comparisons.csv')
-                                           if (a['case'], a['lane'], a['N']) == (r['case'], r['lane'], r['N']))])
+           lambda: [x for label in wheels for x in held(f'{label} neutral', len(neutral(out / label)), INVENTORY['neutral'])
+                    + unmet(f'{label} neutral', neutral(out / label), 'success', 'residual', lambda r: r['criterion'])]
+           + differences(neutral(out / 'A'), neutral(out / 'B')))
+
+    matrix = lambda d: table(d / 'matrix/comparisons.csv')
+
+    def matrix_problems():
+        found = []
+        keys = {label: [(r['case'], r['lane'], r['N']) for r in matrix(out / label)] for label in wheels}
+        for label in wheels:
+            found += held(f'{label} matrix', len(set(keys[label])), INVENTORY['matrix'])
+            found += [dict(corpus=f'{label} matrix', key=k, reason='duplicate') for k in set(keys[label])
+                      if keys[label].count(k) > 1]
+            found += [dict(corpus=f'{label} matrix', key=k, reason='fails its #243 limits')
+                      for k, r in zip(keys[label], matrix(out / label)) if r['passes'] != 'True']
+        if keys['A'] != keys['B']:
+            found.append(dict(corpus='matrix', reason='case/lane/feed inventories differ'))
+        return found + differences(matrix(out / 'A'), matrix(out / 'B'), MATRIX_REPORTED)
+    corpus('#243 matrix', lambda d: f"{sum(r['passes'] == 'True' for r in matrix(d))}/{len(matrix(d))}", matrix_problems)
 
     def replay():
         if subprocess.run([sys.executable, TPD / 'replay_compare.py', out / 'A/replay', out / 'B/replay',
                            out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
             raise ValueError('replay_compare.py failed')
-        return [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
+        found = [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
+        for label in wheels:
+            for s in SECTIONS:
+                found += held(f'{label} replay {s}', len({r['case'] for r in table(out / label / f'replay/{s}.csv')}),
+                              INVENTORY['replay'][s])
+        return found
     corpus('replay rows (4 sections)', lambda d: f"{sum(len(table(d / f'replay/{s}.csv')) for s in SECTIONS):,}", replay)
 
     (out / 'differences.json').write_text(json.dumps(found, indent=2, default=str) + '\n')
-    widths = [max(len(str(r[i])) for r in [('corpus', 'A', 'B', 'differences'), *rows]) for i in range(4)]
-    for r in [('corpus', 'A', 'B', 'differences'), *rows]:
+    header = ('corpus', 'A', 'B', 'problems')
+    widths = [max(len(str(r[i])) for r in [header, *rows]) for i in range(4)]
+    for r in [header, *rows]:
         print('  '.join(str(c).ljust(w) for c, w in zip(r, widths)))
     for failure in failures:
         print('FAILED', failure)

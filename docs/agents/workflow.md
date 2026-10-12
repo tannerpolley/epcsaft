@@ -48,6 +48,7 @@ build/wheels/<name>`.
 | Every delivery state | `bash tools/check-affected.sh origin/main` and `bash tools/check-all.sh` |
 | Native C++ change, final delivery state only | `bash engine/tools/check-native.sh` (clang-tidy) and `bash engine/tools/check-native-sanitizers.sh`; earlier rounds may lint changed files only with `check-native.sh --changed` once #428 adds it |
 | Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main wheel> <slice wheel> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
+| Before handoff of a change to native equilibrium or regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
 | Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main wheel> <slice wheel> --pairs 1 --out build/<dir>` and an A=A control (the main wheel against a copy of itself): work counts must not rise |
 
 Work counts are the key-solve gate; `--pairs` above 1 is only for a timing
