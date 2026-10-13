@@ -206,7 +206,7 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
         || problem.phases[0].kind == problem.phases[1].kind
         || compiled.model->parameters().component_count() < 2) return seed;
     const std::size_t vapor = problem.phases[0].kind == PhaseKind::Vapor ? 0 : 1;
-    if (!problem.phases[vapor].is_incipient()) return seed;
+    if (!problem.phases[vapor].is_zero_pinned()) return seed;
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> x(2, std::vector<double>(components, 0.0));
     for (std::size_t phase = 0; phase < 2; ++phase) {

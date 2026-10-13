@@ -58,7 +58,7 @@ struct PhaseSpec final {
     std::optional<double> packing_guess;
 
     bool is_pinned() const noexcept { return amount.kind == AmountKind::Pinned; }
-    bool is_incipient() const noexcept { return is_pinned() && amount.fraction == 0.0; }
+    bool is_zero_pinned() const noexcept { return is_pinned() && amount.fraction == 0.0; }
     bool is_free() const noexcept { return amount.kind == AmountKind::Free; }
 };
 

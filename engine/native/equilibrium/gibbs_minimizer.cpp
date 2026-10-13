@@ -93,7 +93,7 @@ Curvature reduced_curvature_at(
 std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
     const auto& phases = compiled.problem.phases;
     if (compiled.has_ions || compiled.has_reaction || phases.size() != 2 || phases[0].kind == phases[1].kind
-        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_incipient(); })) return {};
+        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); })) return {};
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
@@ -1152,7 +1152,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
     const auto& problem = compiled.problem;
     EquilibriumProblem present = problem;
     present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(),
-        [](const PhaseSpec& phase) { return phase.is_incipient(); }), present.phases.end());
+        [](const PhaseSpec& phase) { return phase.is_zero_pinned(); }), present.phases.end());
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
         || present.phases.size() == problem.phases.size()) return std::nullopt;
     present.pressure = FreeValue::fixed(compiled.seed_pressure());
@@ -1165,8 +1165,8 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
         std::size_t index = 0;
         for (auto& phase : seeded.problem.phases) {
             const bool guessed = phase.composition_guess.size() == phase.support.size();
-            if (phase.is_incipient() && guessed) continue;
-            const std::size_t source = phase.is_incipient() ? 0 : index++;
+            if (phase.is_zero_pinned() && guessed) continue;
+            const std::size_t source = phase.is_zero_pinned() ? 0 : index++;
             phase.composition_guess.clear();
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
