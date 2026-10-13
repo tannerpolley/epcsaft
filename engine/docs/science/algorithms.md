@@ -1593,8 +1593,9 @@ paths and the total density actions. In the dense methane/ethane liquid at
 150 K, 0.1 MPa and `x_CH4 = 0.05` (`Z = 4.1e-3`), the density form
 `ln(1 - V phi_V)` misses the `(T,P)` identity for `sum_i x_i D ln(phi_i)` by 8.3e-10
 relative, against its 1e-10 criterion. With the prescribed-pressure form, every
-identity there and at 180 K, 3 MPa holds within 4.5e-14, except the third-order
-`(T,P,P)` sum in the dense liquid: 5.2e-10 against its 1e-9 criterion. Without
+`T` and `P` sum identity there and at 180 K, 3 MPa holds within 4.5e-14, except
+the third-order `(T,P,P)` sum in the dense liquid: 5.2e-10 against its 1e-9
+criterion; Gibbs-Duhem holds within 1.4e-12 of its term scale. Without
 charged species the ion rows are `ionic_insertion` with no value,
 as in the state. With two or three directions the batch also carries the mixed
 density action `d^k rho`. Equilibrium solved-state requests do not admit this
