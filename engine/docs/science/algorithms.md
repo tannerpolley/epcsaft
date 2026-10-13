@@ -1589,11 +1589,13 @@ directions plus the unit amount direction `e_i` at the unit-mole central state,
 taken through the same implicit density chain as the caloric family. From it the
 jet subtracts `ln Z` with `Z = P/(R T rho)` at the prescribed pressure, as
 `state_at_pressure` does: the exact finite jet logarithm of the linear `P` and `T`
-paths and the total density actions. The density form `ln(1 - V phi_V)` misses
-the exact identities in a dense liquid: in methane/ethane at 150 K, 0.1 MPa and
-`x_CH4 = 0.05` (`Z = 4.1e-3`), `sum_i x_i D ln(phi_i)` misses by 7.5e-8 relative
-along `(T,P)` and 8.1e-4 along `(T,P,P)`. The prescribed-pressure form stays within
-5.1e-11. Without charged species the ion rows are `ionic_insertion` with no value,
+paths and the total density actions. In the dense methane/ethane liquid at
+150 K, 0.1 MPa and `x_CH4 = 0.05` (`Z = 4.1e-3`), the density form
+`ln(1 - V phi_V)` misses the `(T,P)` identity for `sum_i x_i D ln(phi_i)` by 8.3e-10
+relative, against its 1e-10 criterion. With the prescribed-pressure form, every
+identity there and at 180 K, 3 MPa holds within 4.5e-14, except the third-order
+`(T,P,P)` sum in the dense liquid: 5.2e-10 against its 1e-9 criterion. Without
+charged species the ion rows are `ionic_insertion` with no value,
 as in the state. With two or three directions the batch also carries the mixed
 density action `d^k rho`. Equilibrium solved-state requests do not admit this
 observable.
