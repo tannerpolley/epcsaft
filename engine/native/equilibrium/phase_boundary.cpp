@@ -746,6 +746,18 @@ std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
 
 }  // namespace
 
+DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind) {
+    const auto branch = kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
+    auto root = solve_density(model, T, P, x, branch, std::nullopt);
+    const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
+    const bool liquid = side == DensityBranch::Liquid;
+    if (side != DensityBranch::Unspecified && side != branch)
+        throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch absent: the sole stable root "
+            + core::optional_number(root.molar_density) + " mol/m3 lies " + (liquid ? "above" : "below")
+            + " the negative-slope sample " + core::optional_number(root.negative_slope_density) + " mol/m3");
+    return root;
+}
+
 // Corrected-phase branch identity: the corrected density and the anchored locally unique
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
@@ -770,7 +782,7 @@ BranchCheck check_density_branches(
         DensityRoot root;
         try {
             if (initial) {
-                root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, std::nullopt);
+                root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
                 anchor = root.molar_density;
                 if (limits) limits->check();
             }

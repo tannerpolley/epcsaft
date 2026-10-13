@@ -789,6 +789,7 @@ void check_e2_reaction() {
     const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     const double g_b = -R * 300.0 * std::log(2.0);
     auto supplied = equilibrium_support::flash(3);
+    supplied.phases[0].kind = epcsaft::equilibrium::PhaseKind::Vapor;  // vapor-side sole root at 300 K, 1e5 Pa (#423)
     supplied.reactions = forward.reactions;
     supplied.standard_gibbs_j_per_mol = {0.0, g_b, 0.0};
     auto gauge = supplied;
