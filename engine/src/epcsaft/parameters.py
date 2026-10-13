@@ -336,13 +336,8 @@ class Parameters:
                 self_volume = resolve_inputs(volume_inputs, "volume")
                 if self_energy != self_volume:
                     raise _core.ParameterError(f"association inputs disagree for {source.get('rule_id')}")
-                entries.append(_core.ParameterEntry())
-                rule = entries[-1]
-                rule.identity = cast(str, source.get("rule_id"))
-                rule.field = "association_combining_rule"
-                rule.index = [*edge_index, *self_energy[0], *self_energy[1]]
-                rule.magnitude = 0.0
-                rule.unit = "dimensionless"
+                entries.append(_entry(source.get("rule_id"), "association_combining_rule", [*edge_index, *self_energy[0], *self_energy[1]],
+                                      {"magnitude": 0.0, "unit": "dimensionless"}, "association combining rule"))
             else:
                 raise _core.ParameterError(f"unknown association edge source {kind}")
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from typing import Protocol, cast
 
 from .. import _core
@@ -25,64 +25,43 @@ class Pinned:
     value: float
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Phase:
-    __slots__ = ("name", "support", "amount", "kind", "composition_guess", "packing_guess")
     name: str
-    support: tuple[str, ...] | None
-    amount: Free | Pinned
-    kind: str | None
-    composition_guess: tuple[float, ...] | dict[str, float]
-    packing_guess: float | None
+    _: KW_ONLY
+    support: Sequence[str] | None = None
+    amount: Free | Pinned = field(default_factory=Free)
+    kind: str | None = None
+    composition_guess: Sequence[float] | Mapping[str, float] = ()  # a mapping is ordered at compile time
+    packing_guess: float | None = None
 
-    def __init__(
-        self,
-        name: str,
-        *,
-        support: Sequence[str] | None = None,
-        amount: Free | Pinned | None = None,
-        kind: str | None = None,
-        composition_guess: Sequence[float] | Mapping[str, float] | None = None,
-        packing_guess: float | None = None,
-    ) -> None:
-        self.name = name
-        self.support = None if support is None else tuple(support)
-        self.amount = Free() if amount is None else amount
-        self.kind = kind
-        guess = () if composition_guess is None else composition_guess  # a mapping is ordered at compile time
+    def __post_init__(self) -> None:  # None selects each default
+        self.support = None if self.support is None else tuple(self.support)
+        self.amount = Free() if self.amount is None else self.amount
+        guess = () if self.composition_guess is None else self.composition_guess
         self.composition_guess = dict(guess) if isinstance(guess, Mapping) else tuple(guess)
-        self.packing_guess = packing_guess
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
 class Discover:
-    __slots__ = ("trials", "declaration_budget", "trial_budget")
+    trials: Sequence[Phase] | None = None
+    declaration_budget: int | None = None
+    trial_budget: int | None = None
 
-    def __init__(self, *, trials: Sequence[Phase] | None = None,
-                 declaration_budget: int | None = None, trial_budget: int | None = None) -> None:
-        self.trials = None if trials is None else tuple(trials)
-        self.declaration_budget = declaration_budget
-        self.trial_budget = trial_budget
+    def __post_init__(self) -> None:
+        self.trials = None if self.trials is None else tuple(self.trials)
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Feed:
-    __slots__ = ("basis", "values", "solvent", "solvent_mass_kg")
     basis: _core.FeedKind
     values: Mapping[str, float]
-    solvent: tuple[str, ...]
+    _: KW_ONLY
     solvent_mass_kg: float | None
+    solvent: Sequence[str] = ()
 
-    def __init__(
-        self,
-        basis: _core.FeedKind,
-        values: Mapping[str, float],
-        *,
-        solvent_mass_kg: float | None,
-        solvent: Sequence[str] | None = None,
-    ) -> None:
-        solvent = () if solvent is None else solvent
-        self.basis = basis
-        self.values = values
-        self.solvent = tuple(solvent)
-        self.solvent_mass_kg = solvent_mass_kg
+    def __post_init__(self) -> None:
+        self.solvent = () if self.solvent is None else tuple(self.solvent)
 
 
 class MoleFractions(Feed):
@@ -137,35 +116,21 @@ class NeutralReference:
         return item
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Reaction:
-    __slots__ = ("name", "stoichiometry", "equilibrium_constant", "affinity_j_per_mol", "correlation", "reference")
-    name: str
+    """Exactly one target; source-basis correlations also require an explicit reference."""
     stoichiometry: Mapping[str, float]
-    equilibrium_constant: float | None
-    affinity_j_per_mol: float | None
-    correlation: _core.ReactionLogPolynomial | None
-    reference: _core.ReactionReference | None
+    _: KW_ONLY
+    equilibrium_constant: float | None = None
+    name: str = ""
+    affinity_j_per_mol: float | None = None
+    correlation: _core.ReactionLogPolynomial | None = None
+    reference: _core.ReactionReference | None = None
 
-    def __init__(
-        self,
-        stoichiometry: Mapping[str, float],
-        *,
-        equilibrium_constant: float | None = None,
-        name: str | None = None,
-        affinity_j_per_mol: float | None = None,
-        correlation: _core.ReactionLogPolynomial | None = None,
-        reference: _core.ReactionReference | None = None,
-    ) -> None:
-        """Exactly one target; source-basis correlations also require an explicit reference."""
-        if sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation)) != 1:
+    def __post_init__(self) -> None:
+        if sum(item is not None for item in (self.equilibrium_constant, self.affinity_j_per_mol, self.correlation)) != 1:
             raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
-        name = "" if name is None else name
-        self.name = name
-        self.stoichiometry = stoichiometry
-        self.equilibrium_constant = equilibrium_constant
-        self.affinity_j_per_mol = affinity_j_per_mol
-        self.correlation = correlation
-        self.reference = reference
+        self.name = "" if self.name is None else self.name
 
 
 def _index(component_ids: tuple[str, ...], name: str) -> int:
@@ -181,63 +146,33 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
     return [values.get(component_id, 0.0) for component_id in component_ids]
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
 class Problem:
-    __slots__ = (
-        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "critical", "envelope",
-    )
-    phases: tuple[Phase, ...] | Discover
+    phases: Sequence[Phase] | Discover = ()
     T: float | Free
     P: float | Free
     feed: Feed
-    reactions: tuple[Reaction, ...]
-    standard_gibbs_j_per_mol: tuple[float, ...]
-    topology_declared: bool
-    row_tolerance: float | None
-    neutral_reference: NeutralReference | None
-    enthalpy_j: float | None
-    entropy_j_per_k: float | None
-    critical: _core.CriticalDeclaration | None
-    envelope: _core.EnvelopeCondition | None
+    reactions: Sequence[Reaction] = ()
+    standard_gibbs_j_per_mol: Sequence[float] = ()
+    topology_declared: bool | None = True
+    row_tolerance: float | None = None
+    enthalpy_j: float | None = None
+    entropy_j_per_k: float | None = None
+    neutral_reference: NeutralReference | None = None
+    critical: _core.CriticalDeclaration | None = None
+    envelope: _core.EnvelopeCondition | None = None
 
-    def __init__(
-        self,
-        *,
-        phases: Sequence[Phase] | Discover | None = None,
-        T: float | Free,
-        P: float | Free,
-        feed: Feed,
-        reactions: Sequence[Reaction] | None = None,
-        standard_gibbs_j_per_mol: Sequence[float] | None = None,
-        topology_declared: bool | None = None,
-        row_tolerance: float | None = None,
-        enthalpy_j: float | None = None,
-        entropy_j_per_k: float | None = None,
-        neutral_reference: NeutralReference | None = None,
-        critical: _core.CriticalDeclaration | None = None,
-        envelope: _core.EnvelopeCondition | None = None,
-    ) -> None:
-        self.critical = critical
-        self.envelope = envelope
-        self.row_tolerance = row_tolerance
-        self.enthalpy_j = enthalpy_j
-        self.entropy_j_per_k = entropy_j_per_k
-        self.neutral_reference = neutral_reference
-        phases = () if phases is None else phases
-        reactions = () if reactions is None else reactions
-        standard_gibbs_j_per_mol = () if standard_gibbs_j_per_mol is None else standard_gibbs_j_per_mol
-        topology_declared = True if topology_declared is None else topology_declared
-        self.phases = phases if isinstance(phases, Discover) else tuple(phases)
-        self.T = T
-        self.P = P
-        self.feed = feed
-        self.reactions = tuple(reactions)
-        self.standard_gibbs_j_per_mol = tuple(standard_gibbs_j_per_mol)
-        self.topology_declared = topology_declared and not isinstance(phases, Discover)
+    def __post_init__(self) -> None:  # None selects each default
+        discover = isinstance(self.phases, Discover)
+        if not isinstance(self.phases, Discover):
+            self.phases = tuple(() if self.phases is None else self.phases)
+        self.reactions = tuple(() if self.reactions is None else self.reactions)
+        self.standard_gibbs_j_per_mol = tuple(() if self.standard_gibbs_j_per_mol is None else self.standard_gibbs_j_per_mol)
+        self.topology_declared = (True if self.topology_declared is None else self.topology_declared) and not discover
 
     def _native(self, model: _Species) -> _core.EquilibriumProblem:
         native = _core.EquilibriumProblem()
-        native.topology_declared = self.topology_declared
+        native.topology_declared = bool(self.topology_declared)
         native.feed.kind = self.feed.basis
         native.feed.values = _vector(self.feed.values, model.component_ids)
         native.feed.solvent = [_index(model.component_ids, name) for name in self.feed.solvent]
@@ -265,7 +200,7 @@ class Problem:
             item.amount = _amount_spec(phase.amount)
             guess = phase.composition_guess
             order = tuple(model.component_ids[i] for i in item.support) or model.component_ids
-            item.composition_guess = _vector(guess, order) if isinstance(guess, dict) else list(guess)
+            item.composition_guess = _vector(guess, order) if isinstance(guess, Mapping) else list(guess)
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
         if isinstance(self.phases, Discover):

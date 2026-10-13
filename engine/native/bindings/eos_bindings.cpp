@@ -1,6 +1,8 @@
 #include "properties/helmholtz_model.hpp"
 #include "surface/parameter_builder.hpp"
 
+#include "fields.hpp"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -20,14 +22,10 @@ void register_thermal_inputs(py::module_& module) {
     py::class_<IdealPolynomial>(module, "IdealPolynomial")
         .def(py::init<std::vector<double>, double, double, double>(), py::arg("coefficients"), py::arg("reference_temperature"),
             py::arg("reference_enthalpy"), py::arg("reference_entropy"))
-        .def_readwrite("coefficients", &IdealPolynomial::coefficients)
-        .def_readwrite("reference_temperature", &IdealPolynomial::reference_temperature)
-        .def_readwrite("reference_enthalpy", &IdealPolynomial::reference_enthalpy)
-        .def_readwrite("reference_entropy", &IdealPolynomial::reference_entropy);
+        EPCSAFT_READWRITE(IdealPolynomial, coefficients, reference_temperature, reference_enthalpy, reference_entropy);
     py::class_<IdealShomate>(module, "IdealShomate")
         .def(py::init<std::array<double, 8>, double>(), py::arg("coefficients"), py::arg("formation_enthalpy"))
-        .def_readwrite("coefficients", &IdealShomate::coefficients)
-        .def_readwrite("formation_enthalpy", &IdealShomate::formation_enthalpy);
+        EPCSAFT_READWRITE(IdealShomate, coefficients, formation_enthalpy);
     py::class_<IdealNASA7>(module, "IdealNASA7")
         .def(py::init<std::array<double, 7>>(),
              py::arg("coefficients"))
@@ -39,60 +37,32 @@ void register_thermal_inputs(py::module_& module) {
     py::class_<IdealDIPPR107>(module, "IdealDIPPR107")
         .def(py::init<std::array<double, 5>, double, double, double>(), py::arg("coefficients"), py::arg("reference_temperature"),
             py::arg("reference_enthalpy"), py::arg("reference_entropy"))
-        .def_readwrite("coefficients", &IdealDIPPR107::coefficients)
-        .def_readwrite("reference_temperature", &IdealDIPPR107::reference_temperature)
-        .def_readwrite("reference_enthalpy", &IdealDIPPR107::reference_enthalpy)
-        .def_readwrite("reference_entropy", &IdealDIPPR107::reference_entropy);
+        EPCSAFT_READWRITE(IdealDIPPR107, coefficients, reference_temperature, reference_enthalpy, reference_entropy);
     py::class_<IdealCorrelation>(module, "IdealCorrelation")
         .def(py::init<decltype(IdealCorrelation::form), double>(), py::arg("form"), py::arg("source_pressure"))
-        .def_readwrite("form", &IdealCorrelation::form)
-        .def_readwrite("source_pressure", &IdealCorrelation::source_pressure);
+        EPCSAFT_READWRITE(IdealCorrelation, form, source_pressure);
     py::class_<IdealInterval>(module, "IdealInterval")
         .def(py::init<double, double, bool, bool, IdealCorrelation>(), py::arg("lower"), py::arg("upper"), py::arg("lower_inclusive"),
             py::arg("upper_inclusive"), py::arg("correlation"))
-        .def_readwrite("lower", &IdealInterval::lower)
-        .def_readwrite("upper", &IdealInterval::upper)
-        .def_readwrite("lower_inclusive", &IdealInterval::lower_inclusive)
-        .def_readwrite("upper_inclusive", &IdealInterval::upper_inclusive)
-        .def_readwrite("correlation", &IdealInterval::correlation);
+        EPCSAFT_READWRITE(IdealInterval, lower, upper, lower_inclusive, upper_inclusive, correlation);
     py::class_<ThermochemistryRecord>(module, "ThermochemistryRecord")
         .def(py::init<double, std::vector<std::vector<IdealInterval>>>(), py::arg("standard_pressure"), py::arg("component_intervals"))
-        .def_readwrite("standard_pressure", &ThermochemistryRecord::standard_pressure)
-        .def_readwrite("component_intervals", &ThermochemistryRecord::component_intervals);
+        EPCSAFT_READWRITE(ThermochemistryRecord, standard_pressure, component_intervals);
     py::class_<ReactionLogPolynomial>(module, "ReactionLogPolynomial")
         .def(py::init<double, double, double, double, double, double, double, std::string>(), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
             py::arg("reference_temperature"), py::arg("temperature_min"),
             py::arg("temperature_max"), py::arg("standard_state_id"))
-        .def_readwrite("a", &ReactionLogPolynomial::a)
-        .def_readwrite("b", &ReactionLogPolynomial::b)
-        .def_readwrite("c", &ReactionLogPolynomial::c)
-        .def_readwrite("d", &ReactionLogPolynomial::d)
-        .def_readwrite("reference_temperature", &ReactionLogPolynomial::reference_temperature)
-        .def_readwrite("temperature_min", &ReactionLogPolynomial::temperature_min)
-        .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
-        .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
+        EPCSAFT_READWRITE(ReactionLogPolynomial, a, b, c, d, reference_temperature, temperature_min, temperature_max,
+            standard_state_id);
     py::enum_<ParameterFamily>(module, "ParameterFamily")
-        .value("BornCDielectric", ParameterFamily::BornCDielectric)
-        .value("IonicRegionRelativePermittivity", ParameterFamily::IonicRegionRelativePermittivity)
-        .value("BornDiameter", ParameterFamily::BornDiameter)
-        .value("DebyeHuckelDiameter", ParameterFamily::DebyeHuckelDiameter)
-        .value("PackingDiameter", ParameterFamily::PackingDiameter)
-        .value("IonSuppressionCoefficient", ParameterFamily::IonSuppressionCoefficient)
-        .value("SegmentCount", ParameterFamily::SegmentCount)
-        .value("SigmaConstant", ParameterFamily::SigmaConstant)
-        .value("DispersionEnergyOverK", ParameterFamily::DispersionEnergyOverK)
-        .value("Kij", ParameterFamily::Kij)
-        .value("Lij", ParameterFamily::Lij)
-        .value("AssociationEnergyOverK", ParameterFamily::AssociationEnergyOverK)
-        .value("AssociationVolume", ParameterFamily::AssociationVolume)
-        .value("KijReciprocalTemperatureSlope", ParameterFamily::KijReciprocalTemperatureSlope)
-        .value("DielectricVolume", ParameterFamily::DielectricVolume)
-        .value("DielectricTemperature", ParameterFamily::DielectricTemperature);
+        EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
+            DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
+            DispersionEnergyOverK, Kij, Lij, AssociationEnergyOverK, AssociationVolume, KijReciprocalTemperatureSlope,
+            DielectricVolume, DielectricTemperature);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     py::class_<ActiveParameter>(module, "ActiveParameter")
         .def(py::init<ParameterFamily, std::vector<std::size_t>>(), py::arg("family"), py::arg("indices"))
-        .def_readwrite("family", &ActiveParameter::family)
-        .def_readwrite("indices", &ActiveParameter::indices);
+        EPCSAFT_READWRITE(ActiveParameter, family, indices);
 }
 
 }  // namespace
@@ -101,23 +71,12 @@ void register_eos(py::module_& module) {
     register_thermal_inputs(module);
     py::class_<epcsaft::ParameterEntry>(module, "ParameterEntry")
         .def(py::init<>())
-        .def_readwrite("identity", &epcsaft::ParameterEntry::identity)
-        .def_readwrite("field", &epcsaft::ParameterEntry::field)
-        .def_readwrite("index", &epcsaft::ParameterEntry::index)
-        .def_readwrite("magnitude", &epcsaft::ParameterEntry::magnitude)
-        .def_readwrite("unit", &epcsaft::ParameterEntry::unit);
+        EPCSAFT_READWRITE(epcsaft::ParameterEntry, identity, field, index, magnitude, unit);
     py::class_<epcsaft::ParameterDocument>(module, "ParameterDocument")
         .def(py::init<>())
-        .def_readwrite("component_ids", &epcsaft::ParameterDocument::component_ids)
-        .def_readwrite("site_component", &epcsaft::ParameterDocument::site_component)
-        .def_readwrite("site_multiplicity", &epcsaft::ParameterDocument::site_multiplicity)
-        .def_readwrite("base_choice", &epcsaft::ParameterDocument::base_choice)
-        .def_readwrite("association_choice", &epcsaft::ParameterDocument::association_choice)
-        .def_readwrite("electrolyte_choice", &epcsaft::ParameterDocument::electrolyte_choice)
-        .def_readwrite("ionic_dispersion_choice", &epcsaft::ParameterDocument::ionic_dispersion_choice)
-        .def_readwrite("permittivity_choice", &epcsaft::ParameterDocument::permittivity_choice)
-        .def_readwrite("polar_choice", &epcsaft::ParameterDocument::polar_choice)
-        .def_readwrite("entries", &epcsaft::ParameterDocument::entries);
+        EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_component, site_multiplicity, base_choice,
+            association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice,
+            entries);
     module.def("build_parameters", &epcsaft::build_parameters);
 
     py::class_<epcsaft::Parameters>(module, "Parameters")
@@ -125,187 +84,73 @@ void register_eos(py::module_& module) {
         .def_property_readonly("site_count", &epcsaft::Parameters::site_count)
         .def_readonly("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order");
     py::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
-        .value("Value", epcsaft::DerivativeOrder::Value)
-        .value("Gradient", epcsaft::DerivativeOrder::Gradient)
-        .value("PressureSlope", epcsaft::DerivativeOrder::PressureSlope)
-        .value("Hessian", epcsaft::DerivativeOrder::Hessian);
+        EPCSAFT_VALUES(epcsaft::DerivativeOrder, Value, Gradient, PressureSlope, Hessian);
     py::enum_<epcsaft::NeutralProperty>(module, "NeutralProperty")
-        .value("ResidualHelmholtz", epcsaft::NeutralProperty::ResidualHelmholtz)
-        .value("Pressure", epcsaft::NeutralProperty::Pressure);
+        EPCSAFT_VALUES(epcsaft::NeutralProperty, ResidualHelmholtz, Pressure);
     py::class_<epcsaft::NeutralPropertyDerivatives>(module, "NeutralPropertyDerivatives")
-        .def_readonly("value", &epcsaft::NeutralPropertyDerivatives::value)
-        .def_readonly("gradient", &epcsaft::NeutralPropertyDerivatives::gradient)
-        .def_readonly("hessian", &epcsaft::NeutralPropertyDerivatives::hessian);
+        EPCSAFT_READONLY(epcsaft::NeutralPropertyDerivatives, value, gradient, hessian);
     py::enum_<epcsaft::PropertyObservable>(module, "PropertyObservable")
-        .value("IdealEnthalpy", epcsaft::PropertyObservable::IdealEnthalpy)
-        .value("IdealInternalEnergy", epcsaft::PropertyObservable::IdealInternalEnergy)
-        .value("IdealEntropy", epcsaft::PropertyObservable::IdealEntropy)
-        .value("IdealIsobaricHeatCapacity", epcsaft::PropertyObservable::IdealIsobaricHeatCapacity)
-        .value("IdealIsochoricHeatCapacity", epcsaft::PropertyObservable::IdealIsochoricHeatCapacity)
-        .value("ResidualEnthalpy", epcsaft::PropertyObservable::ResidualEnthalpy)
-        .value("ResidualInternalEnergy", epcsaft::PropertyObservable::ResidualInternalEnergy)
-        .value("ResidualEntropy", epcsaft::PropertyObservable::ResidualEntropy)
-        .value("ResidualIsobaricHeatCapacity", epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity)
-        .value("ResidualIsochoricHeatCapacity", epcsaft::PropertyObservable::ResidualIsochoricHeatCapacity)
-        .value("TotalEnthalpy", epcsaft::PropertyObservable::TotalEnthalpy)
-        .value("TotalInternalEnergy", epcsaft::PropertyObservable::TotalInternalEnergy)
-        .value("TotalEntropy", epcsaft::PropertyObservable::TotalEntropy)
-        .value("TotalIsobaricHeatCapacity", epcsaft::PropertyObservable::TotalIsobaricHeatCapacity)
-        .value("TotalIsochoricHeatCapacity", epcsaft::PropertyObservable::TotalIsochoricHeatCapacity)
-        .value("LogFugacityCoefficient", epcsaft::PropertyObservable::LogFugacityCoefficient);
+        EPCSAFT_VALUES(epcsaft::PropertyObservable, IdealEnthalpy, IdealInternalEnergy, IdealEntropy,
+            IdealIsobaricHeatCapacity, IdealIsochoricHeatCapacity, ResidualEnthalpy, ResidualInternalEnergy,
+            ResidualEntropy, ResidualIsobaricHeatCapacity, ResidualIsochoricHeatCapacity, TotalEnthalpy,
+            TotalInternalEnergy, TotalEntropy, TotalIsobaricHeatCapacity, TotalIsochoricHeatCapacity,
+            LogFugacityCoefficient);
     py::enum_<epcsaft::PropertyActionStatus>(module, "PropertyActionStatus")
-        .value("Available", epcsaft::PropertyActionStatus::Available)
-        .value("MissingThermochemistry", epcsaft::PropertyActionStatus::MissingThermochemistry)
-        .value("OutsideInterval", epcsaft::PropertyActionStatus::OutsideInterval)
-        .value("ThermalBoundary", epcsaft::PropertyActionStatus::ThermalBoundary)
-        .value("SupportChange", epcsaft::PropertyActionStatus::SupportChange)
-        .value("IonicInsertion", epcsaft::PropertyActionStatus::IonicInsertion)
-        .value("AssociationSingular", epcsaft::PropertyActionStatus::AssociationSingular)
-        .value("AssociationIllConditioned", epcsaft::PropertyActionStatus::AssociationIllConditioned)
-        .value("AssociationResidual", epcsaft::PropertyActionStatus::AssociationResidual)
-        .value("DensityUnavailable", epcsaft::PropertyActionStatus::DensityUnavailable)
-        .value("PressureSingular", epcsaft::PropertyActionStatus::PressureSingular)
-        .value("CentralPropertyUnavailable", epcsaft::PropertyActionStatus::CentralPropertyUnavailable)
-        .value("Nonfinite", epcsaft::PropertyActionStatus::Nonfinite);
+        EPCSAFT_VALUES(epcsaft::PropertyActionStatus, Available, MissingThermochemistry, OutsideInterval,
+            ThermalBoundary, SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
+            AssociationResidual, DensityUnavailable, PressureSingular, CentralPropertyUnavailable, Nonfinite);
     // A native family/slot coordinate increment in its ALG-PARAMETERS unit.
     py::class_<epcsaft::ParameterActionDirection>(module, "ParameterActionDirection")
         .def(py::init<epcsaft::ParameterFamily, std::vector<std::size_t>, double>(), py::arg("family"), py::arg("indices"), py::arg("value"))
-        .def_readonly("family", &epcsaft::ParameterActionDirection::family)
-        .def_readonly("indices", &epcsaft::ParameterActionDirection::indices)
-        .def_readonly("value", &epcsaft::ParameterActionDirection::value);
+        EPCSAFT_READONLY(epcsaft::ParameterActionDirection, family, indices, value);
     py::class_<epcsaft::DensityActionDirection>(module, "DensityActionDirection")
         .def(py::init<double, double, std::vector<double>, std::vector<epcsaft::ParameterActionDirection>>(), py::arg("temperature") = 0.0, py::arg("molar_density") = 0.0,
             py::arg("composition") = std::vector<double>{},
             py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
-        .def_readonly("temperature", &epcsaft::DensityActionDirection::temperature)
-        .def_readonly("molar_density", &epcsaft::DensityActionDirection::molar_density)
-        .def_readonly("composition", &epcsaft::DensityActionDirection::composition)
-        .def_readonly("parameter", &epcsaft::DensityActionDirection::parameter);
+        EPCSAFT_READONLY(epcsaft::DensityActionDirection, temperature, molar_density, composition, parameter);
     py::class_<epcsaft::PressureActionDirection>(module, "PressureActionDirection")
         .def(py::init<double, double, std::vector<double>, std::vector<epcsaft::ParameterActionDirection>>(), py::arg("temperature") = 0.0, py::arg("pressure") = 0.0,
             py::arg("composition") = std::vector<double>{},
             py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
-        .def_readonly("temperature", &epcsaft::PressureActionDirection::temperature)
-        .def_readonly("pressure", &epcsaft::PressureActionDirection::pressure)
-        .def_readonly("composition", &epcsaft::PressureActionDirection::composition)
-        .def_readonly("parameter", &epcsaft::PressureActionDirection::parameter);
+        EPCSAFT_READONLY(epcsaft::PressureActionDirection, temperature, pressure, composition, parameter);
     py::class_<epcsaft::PropertyActionResult>(module, "PropertyActionResult")
-        .def_readonly("observable", &epcsaft::PropertyActionResult::observable)
-        .def_readonly("component", &epcsaft::PropertyActionResult::component)
-        .def_readonly("value", &epcsaft::PropertyActionResult::value)
-        .def_readonly("action", &epcsaft::PropertyActionResult::action)
-        .def_readonly("status", &epcsaft::PropertyActionResult::status)
-        .def_readonly("energy_order", &epcsaft::PropertyActionResult::energy_order);
+        EPCSAFT_READONLY(epcsaft::PropertyActionResult, observable, component, value, action, status, energy_order);
     py::enum_<epcsaft::DensityBranch>(module, "DensityBranch")
-        .value("Unspecified", epcsaft::DensityBranch::Unspecified)
-        .value("Vapor", epcsaft::DensityBranch::Vapor)
-        .value("Liquid", epcsaft::DensityBranch::Liquid);
+        EPCSAFT_VALUES(epcsaft::DensityBranch, Unspecified, Vapor, Liquid);
     using Diagnostics = epcsaft::PropertyActionDiagnostics;
     py::class_<Diagnostics>(module, "PropertyActionDiagnostics")
-        .def_readonly("site_rank", &Diagnostics::site_rank)
-        .def_readonly("site_factorizations", &Diagnostics::site_factorizations)
-        .def_readonly("site_solves", &Diagnostics::site_solves)
-        .def_readonly("site_pivot_ratio", &Diagnostics::site_pivot_ratio)
-        .def_readonly("association_residual", &Diagnostics::association_residual)
-        .def_readonly("pressure_density_derivative", &Diagnostics::pressure_density_derivative)
-        .def_readonly("pressure_residual", &Diagnostics::pressure_residual)
-        .def_readonly("stability_determinant", &Diagnostics::stability_determinant)
-        .def_readonly("pressure_factorizations", &Diagnostics::pressure_factorizations)
-        .def_readonly("pressure_solves", &Diagnostics::pressure_solves)
-        .def_readonly("thermal_evaluations", &Diagnostics::thermal_evaluations)
-        .def_readonly("recordings", &Diagnostics::recordings)
-        .def_readonly("directional_paths", &Diagnostics::directional_paths)
-        .def_readonly("forward_sweeps", &Diagnostics::forward_sweeps)
-        .def_readonly("branch", &Diagnostics::branch)
-        .def_readonly("stable_root_count", &Diagnostics::stable_root_count);
+        EPCSAFT_READONLY(Diagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio,
+            association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
+            pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
+            forward_sweeps, branch, stable_root_count);
     py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
-        .def_readonly("results", &epcsaft::PropertyActionBatch::results)
-        .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order)
-        .def_readonly("diagnostics", &epcsaft::PropertyActionBatch::diagnostics)
-        .def_readonly("molar_density", &epcsaft::PropertyActionBatch::molar_density)
-        .def_readonly("density_action", &epcsaft::PropertyActionBatch::density_action)
-        .def_readonly("density_mixed_action", &epcsaft::PropertyActionBatch::density_mixed_action)
-        .def_readonly("density_message", &epcsaft::PropertyActionBatch::density_message)
-        .def_readonly("density_convergence", &epcsaft::PropertyActionBatch::density_convergence)
-        .def_readonly("density_status", &epcsaft::PropertyActionBatch::density_status);
+        EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
+            density_action, density_mixed_action, density_message, density_convergence, density_status);
     py::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
-        .value("MissingRecord", epcsaft::ThermochemistryStatus::MissingRecord)
-        .value("Available", epcsaft::ThermochemistryStatus::Available)
-        .value("OutsideInterval", epcsaft::ThermochemistryStatus::OutsideInterval)
-        .value("Nonfinite", epcsaft::ThermochemistryStatus::Nonfinite);
+        EPCSAFT_VALUES(epcsaft::ThermochemistryStatus, MissingRecord, Available, OutsideInterval, Nonfinite);
     py::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
-        .def_readonly("hard_chain", &epcsaft::State::hard_chain)
-        .def_readonly("dispersion", &epcsaft::State::dispersion)
-        .def_readonly("association", &epcsaft::State::association)
-        .def_readonly("debye_huckel", &epcsaft::State::debye_huckel)
-        .def_readonly("born", &epcsaft::State::born)
-        .def_readonly("bulk_relative_permittivity", &epcsaft::State::bulk_relative_permittivity)
-        .def_readonly("residual_helmholtz", &epcsaft::State::residual_helmholtz)
-        .def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)
-        .def_readonly("pressure", &epcsaft::State::pressure)
-        // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
-        .def_readonly("residual_chemical_potential_over_rt", &epcsaft::State::residual_chemical_potential_over_rt)
-        .def_readonly("component_property_status", &epcsaft::State::component_property_status)
-        .def_readonly("log_fugacity_coefficient", &epcsaft::State::log_fugacity_coefficient)
-        .def_readonly("log_fugacity_parameter_derivative", &epcsaft::State::log_fugacity_parameter_derivative)
-        .def_readonly("residual_entropy", &epcsaft::State::residual_entropy)
-        .def_readonly("residual_internal_energy", &epcsaft::State::residual_internal_energy)
-        .def_readonly("residual_enthalpy", &epcsaft::State::residual_enthalpy)
-        .def_readonly("residual_isochoric_heat_capacity", &epcsaft::State::residual_isochoric_heat_capacity)
-        .def_readonly("residual_isobaric_heat_capacity", &epcsaft::State::residual_isobaric_heat_capacity)
-        .def_readonly("ideal_enthalpy", &epcsaft::State::ideal_enthalpy)
-        .def_readonly("ideal_internal_energy", &epcsaft::State::ideal_internal_energy)
-        .def_readonly("ideal_entropy", &epcsaft::State::ideal_entropy)
-        .def_readonly("ideal_isobaric_heat_capacity", &epcsaft::State::ideal_isobaric_heat_capacity)
-        .def_readonly("ideal_isochoric_heat_capacity", &epcsaft::State::ideal_isochoric_heat_capacity)
-        .def_readonly("total_enthalpy", &epcsaft::State::total_enthalpy)
-        .def_readonly("total_internal_energy", &epcsaft::State::total_internal_energy)
-        .def_readonly("total_entropy", &epcsaft::State::total_entropy)
-        .def_readonly("total_isobaric_heat_capacity", &epcsaft::State::total_isobaric_heat_capacity)
-        .def_readonly("total_isochoric_heat_capacity", &epcsaft::State::total_isochoric_heat_capacity)
-        .def_readonly("molar_density", &epcsaft::State::molar_density)
-        .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
-        .def_readonly("site_fractions", &epcsaft::State::site_fractions)
-        .def_readonly("density_convergence", &epcsaft::State::density_convergence)
-        .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
-        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
-        .def_readonly("density_branch", &epcsaft::State::density_branch)
-        .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
+        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born,
+            bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
+            // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
+            residual_chemical_potential_over_rt, component_property_status,
+            log_fugacity_coefficient, log_fugacity_parameter_derivative, residual_entropy, residual_internal_energy,
+            residual_enthalpy, residual_isochoric_heat_capacity, residual_isobaric_heat_capacity, ideal_enthalpy,
+            ideal_internal_energy, ideal_entropy, ideal_isobaric_heat_capacity, ideal_isochoric_heat_capacity,
+            total_enthalpy, total_internal_energy, total_entropy, total_isobaric_heat_capacity,
+            total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions,
+            density_convergence, thermochemistry_status,
+            // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
+            density_branch, stable_root_count);
     py::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
-        .def_readonly("molar_density", &epcsaft::DensityDiagnosticPoint::molar_density)
-        .def_readonly("packing_fraction", &epcsaft::DensityDiagnosticPoint::packing_fraction)
-        .def_readonly("pressure", &epcsaft::DensityDiagnosticPoint::pressure)
-        .def_readonly("pressure_density_derivative", &epcsaft::DensityDiagnosticPoint::pressure_density_derivative)
-        .def_readonly("lower", &epcsaft::DensityDiagnosticPoint::lower)
-        .def_readonly("upper", &epcsaft::DensityDiagnosticPoint::upper)
-        .def_readonly("residual", &epcsaft::DensityDiagnosticPoint::residual)
-        .def_readonly("mechanical_sign", &epcsaft::DensityDiagnosticPoint::mechanical_sign)
-        .def_readonly("linked", &epcsaft::DensityDiagnosticPoint::linked)
-        .def_readonly("declared", &epcsaft::DensityDiagnosticPoint::declared)
-        .def_readonly("cause", &epcsaft::DensityDiagnosticPoint::cause)
-        .def_readonly("stop", &epcsaft::DensityDiagnosticPoint::stop);
+        EPCSAFT_READONLY(epcsaft::DensityDiagnosticPoint, molar_density, packing_fraction, pressure,
+            pressure_density_derivative, lower, upper, residual, mechanical_sign, linked, declared, cause, stop);
     py::class_<epcsaft::DensityDiagnosticBracket>(module, "DensityDiagnosticBracket")
-        .def_readonly("lower", &epcsaft::DensityDiagnosticBracket::lower)
-        .def_readonly("upper", &epcsaft::DensityDiagnosticBracket::upper)
-        .def_readonly("lower_residual", &epcsaft::DensityDiagnosticBracket::lower_residual)
-        .def_readonly("upper_residual", &epcsaft::DensityDiagnosticBracket::upper_residual);
+        EPCSAFT_READONLY(epcsaft::DensityDiagnosticBracket, lower, upper, lower_residual, upper_residual);
     py::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
-        .def_readonly("samples", &epcsaft::DensityDiagnostics::samples)
-        .def_readonly("pressure_roots", &epcsaft::DensityDiagnostics::pressure_roots)
-        .def_readonly("spinodals", &epcsaft::DensityDiagnostics::spinodals)
-        .def_readonly("declared_brackets", &epcsaft::DensityDiagnostics::declared_brackets)
-        .def_readonly("unresolved", &epcsaft::DensityDiagnostics::unresolved)
-        .def_readonly("evaluation_order", &epcsaft::DensityDiagnostics::evaluation_order)
-        .def_readonly("finite_domain", &epcsaft::DensityDiagnostics::finite_domain)
-        .def_readonly("geometric_cap", &epcsaft::DensityDiagnostics::geometric_cap)
-        .def_readonly("declared_crossings", &epcsaft::DensityDiagnostics::declared_crossings)
-        .def_readonly("evaluations", &epcsaft::DensityDiagnostics::evaluations)
-        .def_readonly("stop", &epcsaft::DensityDiagnostics::stop);
+        EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
+            evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop);
     py::class_<epcsaft::SweepCounters>(module, "SweepCounters")
-        .def_readonly("forward", &epcsaft::SweepCounters::forward)
-        .def_readonly("reverse", &epcsaft::SweepCounters::reverse)
-        .def_readonly("hessian_calls", &epcsaft::SweepCounters::hessian_calls)
-        .def_readonly("recordings", &epcsaft::SweepCounters::recordings);
+        EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings);
     py::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
         .def(py::init<epcsaft::Parameters, std::vector<epcsaft::ActiveParameter>,
                       std::optional<epcsaft::ThermochemistryRecord>>(),
@@ -353,18 +198,11 @@ void register_eos(py::module_& module) {
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
     py::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
-        .def_readonly("log_fugacity", &epcsaft::InfiniteDilutionReference::log_fugacity)
-        .def_readonly("molality", &epcsaft::InfiniteDilutionReference::molality)
-        .def_readonly("convergence_error", &epcsaft::InfiniteDilutionReference::convergence_error)
-        .def_readonly("parameter_derivative", &epcsaft::InfiniteDilutionReference::parameter_derivative)
-        .def_readonly("parameter_convergence_error", &epcsaft::InfiniteDilutionReference::parameter_convergence_error)
-        .def_readonly("pure_solvent_log_fugacity", &epcsaft::InfiniteDilutionReference::pure_solvent_log_fugacity);
+        EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
+            parameter_derivative, parameter_convergence_error, pure_solvent_log_fugacity);
     py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
-        .def_readonly("single_ion", &epcsaft::ElectrolyteActivity::single_ion)
-        .def_readonly("mean_ionic_mole_fraction_scale", &epcsaft::ElectrolyteActivity::mean_ionic_mole_fraction_scale)
-        .def_readonly("mean_ionic_log_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_log_molality_scale)
-        .def_readonly("mean_ionic_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_molality_scale)
-        .def_readonly("osmotic_coefficient", &epcsaft::ElectrolyteActivity::osmotic_coefficient);
+        EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
+            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient);
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
         return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);

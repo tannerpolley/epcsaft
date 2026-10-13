@@ -351,13 +351,9 @@ Prediction predict(
         State state;
         try {
             state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
-        } catch (const core::ConvergenceFailure& failure) {
-            result.status = ObservationStatus::DensityUnavailable;
-            result.convergence = failure.record;
-            result.message = failure.what();
-            return result;
         } catch (const std::runtime_error& failure) {
             result.status = ObservationStatus::DensityUnavailable;
+            if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
             result.message = failure.what();
             return result;
         }
@@ -407,13 +403,9 @@ Prediction predict(
     try {
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, observation.problem);
         solved = equilibrium::solve_compiled(*result.compiled, start);
-    } catch (const core::ConvergenceFailure& failure) {
-        result.status = ObservationStatus::CentralSolveUnavailable;
-        result.convergence = failure.record;
-        result.message = failure.what();
-        return result;
     } catch (const std::runtime_error& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;
+        if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
         result.message = failure.what();
         return result;
     }

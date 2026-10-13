@@ -2,6 +2,8 @@
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 
+#include "fields.hpp"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -33,14 +35,9 @@ void register_diagnostics(py::module_& module) {
         stops.value(core::stop_name(stop), stop);
     }
     py::enum_<policy::Category>(module, "Category")
-        .value("ThermodynamicConstraint", policy::Category::ThermodynamicConstraint)
-        .value("AlgorithmTolerance", policy::Category::AlgorithmTolerance);
+        EPCSAFT_VALUES(policy::Category, ThermodynamicConstraint, AlgorithmTolerance);
     py::class_<policy::Tolerance>(module, "Tolerance")
-        .def_readonly("name", &policy::Tolerance::name)
-        .def_readonly("value", &policy::Tolerance::value)
-        .def_readonly("category", &policy::Tolerance::category)
-        .def_readonly("source", &policy::Tolerance::source)
-        .def_readonly("factor", &policy::Tolerance::factor)
+        EPCSAFT_READONLY(policy::Tolerance, name, value, category, source, factor)
         .def_property_readonly("upstream", tolerance_reference);
     module.def("tolerances", [] {
         py::list entries;
@@ -48,18 +45,12 @@ void register_diagnostics(py::module_& module) {
         return entries;
     }, "Every named numerical policy entry (read-only); values change only in numerical_policy.hpp.");
     py::class_<core::Convergence>(module, "Convergence")
-        .def_readonly("residual", &epcsaft::core::Convergence::residual)
         .def_property_readonly("criterion", [](const core::Convergence& record) -> py::object {
             if (record.criterion == nullptr) return py::none();
             // A value copy outlives the record that may own a caller-valued criterion.
             return py::cast(*record.criterion);
         })
-        .def_readonly("floor", &core::Convergence::floor)
-        .def_readonly("amplification", &core::Convergence::amplification)
-        .def_readonly("contraction", &core::Convergence::contraction)
-        .def_readonly("iterations", &core::Convergence::iterations)
-        .def_readonly("evaluations", &core::Convergence::evaluations)
-        .def_readonly("stop", &core::Convergence::stop)
+        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop)
         .def_property_readonly("residual_over_criterion", [](const core::Convergence& record) -> py::object {
             if (record.criterion == nullptr) return py::none();
             return py::float_(record.residual / record.criterion->value);
@@ -76,21 +67,11 @@ void register_diagnostics(py::module_& module) {
             return core::describe(record);
         });
     py::class_<core::Event>(module, "Event")
-        .def_readonly("name", &core::Event::name)
-        .def_readonly("span", &core::Event::span)
-        .def_readonly("iteration", &core::Event::iteration)
-        .def_readonly("values", &core::Event::values)
-        .def_readonly("reason", &core::Event::reason);
+        EPCSAFT_READONLY(core::Event, name, span, iteration, values, reason);
     py::class_<core::Span>(module, "Span")
-        .def_readonly("name", &core::Span::name)
-        .def_readonly("parent", &core::Span::parent)
-        .def_readonly("convergence", &core::Span::convergence)
-        .def_readonly("wall_us", &core::Span::wall_us);
+        EPCSAFT_READONLY(core::Span, name, parent, convergence, wall_us);
     py::class_<core::Trace>(module, "Trace")
-        .def_readonly("spans", &core::Trace::spans)
-        .def_readonly("events", &core::Trace::events)
-        .def_readonly("current", &core::Trace::current)
-        .def_readonly("incomplete", &core::Trace::incomplete);
+        EPCSAFT_READONLY(core::Trace, spans, events, current, incomplete);
     py::class_<CaptureWrapper>(module, "Capture")
         .def(py::init<bool>(),
              py::arg("diagnostics") = false)

@@ -8,7 +8,7 @@ from epcsaft import (
     Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
     regression,
 )
-from epcsaft.equilibrium import Amounts, Discover, Phase, Problem, asl_record, solve_equilibrium
+from epcsaft.equilibrium import Amounts, Continuation, Discover, Phase, Problem, asl_record, solve_equilibrium
 
 from tests.native_inputs import ETHANE, ROWS, bubble, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
 
@@ -208,7 +208,7 @@ def test_asl_record_rejects_fitted_parameters_early() -> None:
     start = neutral_binary()
     fitted = Mixture(Parameters(start._native, start.component_ids, start.site_ids))  # as regression.fitted_parameters builds it
     with pytest.raises(ValueError, match="parameters loaded from a parameter document; fitted parameters have none"):
-        asl_record(fitted, bubble(180.0), None, [], [], [], 0, 0.0)
+        asl_record(fitted, bubble(180.0), Continuation(initial_step=0.1, minimum_step=0.1, max_steps=1, max_retries_per_step=0), [], [], [], 0, 0.0)
 
 
 def test_native_held_electrolyte_recovery_checks_and_columns() -> None:

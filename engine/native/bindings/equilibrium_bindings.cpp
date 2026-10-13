@@ -2,6 +2,8 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium_record.hpp"
 
+#include "fields.hpp"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -11,28 +13,6 @@ namespace py = pybind11;
 namespace epcsaft::equilibrium {
 
 void register_equilibrium(py::module_& module) {
-    module.def("equilibrium_asl_record", [](py::object model, py::object problem, py::object continuation,
-            std::vector<double> offset, std::vector<std::vector<double>> matrix, std::vector<double> anchor,
-            std::size_t identity_component, double minimum_gap) {
-        const py::object document = model.attr("parameters").attr("_document");
-        if (document.is_none())  // fitted parameters carry no source document to export (#29)
-            throw std::invalid_argument("ASL record requires parameters loaded from a parameter document; fitted parameters have none");
-        const py::object native_owner = model.attr("_model");
-        const auto& native = native_owner.cast<const HelmholtzModel&>();
-        if (!native.active_parameters().empty() || native.thermochemistry())
-            throw std::invalid_argument("ASL record requires inactive parameters and explicit problem reaction references");
-        const auto p = problem.attr("_native")(model).cast<EquilibriumProblem>();
-        AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
-        map.validate(p, native.parameters());
-        compile_problem(native, p);
-        ContinuationOptions options;
-        options.initial_step = continuation.attr("initial_step").cast<double>();
-        options.minimum_step = continuation.attr("minimum_step").cast<double>();
-        options.max_steps = continuation.attr("max_steps").cast<std::size_t>();
-        options.max_retries_per_step = continuation.attr("max_retries_per_step").cast<std::size_t>();
-        return asl_record(document.cast<ParameterDocument>(), p, options, map);
-    }, py::arg("model"), py::arg("problem"), py::arg("continuation"), py::arg("feed_offset"),
-       py::arg("feed_matrix"), py::arg("anchor_controls"), py::arg("identity_component"), py::arg("minimum_gap"));
     module.def("property_asl_record", [](py::object model) {
         const py::object native_owner = model.attr("_model"), document = model.attr("parameters").attr("_document");
         const auto& native = native_owner.cast<const HelmholtzModel&>();
@@ -42,166 +22,86 @@ void register_equilibrium(py::module_& module) {
     }, py::arg("model"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     py::enum_<PhaseKind>(module, "PhaseKind")
-        .value("Liquid", PhaseKind::Liquid)
-        .value("Vapor", PhaseKind::Vapor);
+        EPCSAFT_VALUES(PhaseKind, Liquid, Vapor);
     py::enum_<AmountKind>(module, "AmountKind")
-        .value("Free", AmountKind::Free)
-        .value("Pinned", AmountKind::Pinned);
+        EPCSAFT_VALUES(AmountKind, Free, Pinned);
     py::enum_<FeedKind>(module, "FeedKind")
-        .value("MoleFractions", FeedKind::MoleFractions)
-        .value("Amounts", FeedKind::Amounts)
-        .value("MassFractions", FeedKind::MassFractions)
-        .value("Molalities", FeedKind::Molalities);
+        EPCSAFT_VALUES(FeedKind, MoleFractions, Amounts, MassFractions, Molalities);
     py::class_<AmountSpec>(module, "AmountSpec")
         .def(py::init<>())
-        .def_readwrite("kind", &AmountSpec::kind)
-        .def_readwrite("fraction", &AmountSpec::fraction)
+        EPCSAFT_READWRITE(AmountSpec, kind, fraction)
         .def_static("free", &AmountSpec::free)
         .def_static("pinned", &AmountSpec::pinned);
     py::class_<FreeValue>(module, "FreeValue")
         .def(py::init<>())
-        .def_readwrite("free", &FreeValue::free)
-        .def_readwrite("value", &FreeValue::value)
+        EPCSAFT_READWRITE(FreeValue, free, value)
         .def_static("fixed", &FreeValue::fixed)
         .def_static("variable", [](std::optional<double> guess) {
             return guess.has_value() ? FreeValue::variable(*guess) : FreeValue::variable();
         }, py::arg("guess") = py::none());
     py::class_<PhaseSpec>(module, "PhaseSpec")
         .def(py::init<>())
-        .def_readwrite("name", &PhaseSpec::name)
-        .def_readwrite("kind", &PhaseSpec::kind)
-        .def_readwrite("support", &PhaseSpec::support)
-        .def_readwrite("support_declared", &PhaseSpec::support_declared)
-        .def_readwrite("amount", &PhaseSpec::amount)
-        .def_readwrite("composition_guess", &PhaseSpec::composition_guess)
-        .def_readwrite("packing_guess", &PhaseSpec::packing_guess);
+        EPCSAFT_READWRITE(PhaseSpec, name, kind, support, support_declared, amount, composition_guess, packing_guess);
     py::class_<FeedSpec>(module, "FeedSpec")
         .def(py::init<>())
-        .def_readwrite("kind", &FeedSpec::kind)
-        .def_readwrite("values", &FeedSpec::values)
-        .def_readwrite("solvent", &FeedSpec::solvent)
-        .def_readwrite("solvent_mass_kg", &FeedSpec::solvent_mass_kg);
+        EPCSAFT_READWRITE(FeedSpec, kind, values, solvent, solvent_mass_kg);
     py::enum_<SpeciesReference>(module, "SpeciesReference")
-        .value("InfiniteDilution", SpeciesReference::InfiniteDilution)
-        .value("PureLiquid", SpeciesReference::PureLiquid)
-        .value("PureGas", SpeciesReference::PureGas);
+        EPCSAFT_VALUES(SpeciesReference, InfiniteDilution, PureLiquid, PureGas);
     py::class_<NeutralReferenceDeclaration>(module, "NeutralReferenceDeclaration")
         .def(py::init<>())
-        .def_readwrite("solvent_index", &NeutralReferenceDeclaration::solvent_index)
-        .def_readwrite("solute_molality_ratios", &NeutralReferenceDeclaration::solute_molality_ratios)
-        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg)
-        .def_readwrite("species_reference", &NeutralReferenceDeclaration::species_reference);
+        EPCSAFT_READWRITE(NeutralReferenceDeclaration, solvent_index, solute_molality_ratios,
+            standard_molality_mol_per_kg, species_reference);
     py::enum_<ReferenceSourceBasis>(module, "ReferenceSourceBasis")
-        .value("CommonMolalityInfiniteDilution", ReferenceSourceBasis::CommonMolalityInfiniteDilution)
-        .value("RawMoleFractionInfiniteDilution", ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
+        EPCSAFT_VALUES(ReferenceSourceBasis, CommonMolalityInfiniteDilution, RawMoleFractionInfiniteDilution);
     py::enum_<NeutralReferenceStatus>(module, "NeutralReferenceStatus")
-        .value("Available", NeutralReferenceStatus::Available)
-        .value("InvalidDeclaration", NeutralReferenceStatus::InvalidDeclaration)
-        .value("NonNeutralDeclaration", NeutralReferenceStatus::NonNeutralDeclaration)
-        .value("UnsupportedSourceBasis", NeutralReferenceStatus::UnsupportedSourceBasis)
-        .value("FreeTemperature", NeutralReferenceStatus::FreeTemperature)
-        .value("FreePressure", NeutralReferenceStatus::FreePressure)
-        .value("DensityUnavailable", NeutralReferenceStatus::DensityUnavailable)
-        .value("BranchChange", NeutralReferenceStatus::BranchChange)
-        .value("Nonfinite", NeutralReferenceStatus::Nonfinite)
-        .value("TerminalChangeExceeded", NeutralReferenceStatus::TerminalChangeExceeded);
+        EPCSAFT_VALUES(NeutralReferenceStatus, Available, InvalidDeclaration, NonNeutralDeclaration,
+            UnsupportedSourceBasis, FreeTemperature, FreePressure, DensityUnavailable, BranchChange, Nonfinite,
+            TerminalChangeExceeded);
     py::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
-        .def_readonly("reaction_index", &NeutralReferenceReactionDiagnostic::reaction_index)
-        .def_readonly("terminal_contraction", &NeutralReferenceReactionDiagnostic::terminal_contraction)
-        .def_readonly("observed_terminal_change", &NeutralReferenceReactionDiagnostic::observed_terminal_change)
-        .def_readonly("terminal_contraction_pressure_derivative",
-                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_derivative)
-        .def_readonly("terminal_contraction_pressure_second_derivative",
-                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_second_derivative)
-        .def_readonly("reference_pressure_pa", &NeutralReferenceReactionDiagnostic::reference_pressure_pa)
-        .def_readonly("status", &NeutralReferenceReactionDiagnostic::status)
-        .def_readonly("message", &NeutralReferenceReactionDiagnostic::message);
+        EPCSAFT_READONLY(NeutralReferenceReactionDiagnostic, reaction_index, terminal_contraction,
+            observed_terminal_change, terminal_contraction_pressure_derivative,
+            terminal_contraction_pressure_second_derivative, reference_pressure_pa, status, message);
     py::class_<ReactionReference>(module, "ReactionReference")
         .def(py::init([](ReferenceSourceBasis basis, std::optional<double> pressure) {
             return ReactionReference{pressure, basis};
         }), py::arg("source_basis"), py::arg("reference_pressure_pa") = py::none())
-        .def_readwrite("source_basis", &ReactionReference::source_basis)
-        .def_readwrite("reference_pressure_pa", &ReactionReference::reference_pressure_pa);
+        EPCSAFT_READWRITE(ReactionReference, source_basis, reference_pressure_pa);
     py::class_<ReactionSpec>(module, "ReactionSpec")
         .def(py::init<>())
-        .def_readwrite("name", &ReactionSpec::name)
-        .def_readwrite("stoichiometry", &ReactionSpec::stoichiometry)
-        .def_readwrite("equilibrium_constant", &ReactionSpec::equilibrium_constant)
-        .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol)
-        .def_readwrite("correlation", &ReactionSpec::correlation)
-        .def_readwrite("reference", &ReactionSpec::reference);
+        EPCSAFT_READWRITE(ReactionSpec, name, stoichiometry, equilibrium_constant, affinity_j_per_mol, correlation,
+            reference);
     py::class_<StabilityOptions>(module, "StabilityOptions")
         .def(py::init<>())
-        .def_readwrite("evaluate_supplied_trials", &StabilityOptions::evaluate_supplied_trials)
-        .def_readwrite("trials", &StabilityOptions::trials)
-        .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
-        .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
-        .def_readwrite("standard_uncertainty_over_rt", &StabilityOptions::standard_uncertainty_over_rt);
+        EPCSAFT_READWRITE(StabilityOptions, evaluate_supplied_trials, trials, declaration_budget, trial_budget,
+            standard_uncertainty_over_rt);
     py::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(py::init<>())
-        .def_readwrite("density_guess_mol_per_m3", &CriticalDeclaration::density_guess_mol_per_m3)
-        .def_readwrite("mode_guess", &CriticalDeclaration::mode_guess);
+        EPCSAFT_READWRITE(CriticalDeclaration, density_guess_mol_per_m3, mode_guess);
     py::enum_<EnvelopeCoordinate>(module, "EnvelopeCoordinate")
-        .value("LogTemperature", EnvelopeCoordinate::LogTemperature)
-        .value("LogPressure", EnvelopeCoordinate::LogPressure)
-        .value("LogK", EnvelopeCoordinate::LogK);
+        EPCSAFT_VALUES(EnvelopeCoordinate, LogTemperature, LogPressure, LogK);
     py::class_<EnvelopeCondition>(module, "EnvelopeCondition")
         .def(py::init<>())
-        .def_readwrite("kind", &EnvelopeCondition::kind)
-        .def_readwrite("component", &EnvelopeCondition::component)
-        .def_readwrite("target", &EnvelopeCondition::target);
+        EPCSAFT_READWRITE(EnvelopeCondition, kind, component, target);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
-        .def_readwrite("phases", &EquilibriumProblem::phases)
-        .def_readwrite("temperature", &EquilibriumProblem::temperature)
-        .def_readwrite("pressure", &EquilibriumProblem::pressure)
-        .def_readwrite("feed", &EquilibriumProblem::feed)
-        .def_readwrite("reactions", &EquilibriumProblem::reactions)
+        EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_readwrite("neutral_reference", &EquilibriumProblem::source_reference)
-        .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
-        .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
-        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
-        .def_readwrite("enthalpy_j", &EquilibriumProblem::enthalpy_j)
-        .def_readwrite("entropy_j_per_k", &EquilibriumProblem::entropy_j_per_k)
-        .def_readwrite("critical", &EquilibriumProblem::critical)
-        .def_readwrite("envelope", &EquilibriumProblem::envelope)
-        .def_readwrite("discovery", &EquilibriumProblem::discovery);
+        EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, row_tolerance, enthalpy_j,
+            entropy_j_per_k, critical, envelope, discovery);
     py::enum_<RowKind>(module, "RowKind")
-        .value("Chemical", RowKind::Chemical)
-        .value("Pressure", RowKind::Pressure)
-        .value("Moiety", RowKind::Moiety)
-        .value("Electro", RowKind::Electro)
-        .value("Normalization", RowKind::Normalization)
-        .value("Enthalpy", RowKind::Enthalpy)
-        .value("Entropy", RowKind::Entropy)
-        .value("CriticalMode", RowKind::CriticalMode)
-        .value("CriticalNormalization", RowKind::CriticalNormalization)
-        .value("CriticalCubic", RowKind::CriticalCubic)
-        .value("EnvelopeCondition", RowKind::EnvelopeCondition);
+        EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
+            CriticalNormalization, CriticalCubic, EnvelopeCondition);
     py::class_<Row>(module, "Row")
-        .def_readonly("kind", &Row::kind)
-        .def_readonly("phase", &Row::phase)
-        .def_readonly("index", &Row::index)
+        EPCSAFT_READONLY(Row, kind, phase, index)
         .def_property_readonly("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     py::class_<PointEvaluation>(module, "PointEvaluation")
         .def_readonly("values", &PointEvaluation::values)
         .def_readonly("jacobian", &PointEvaluation::jacobian)
-        .def_readonly("objective", &PointEvaluation::objective)
-        .def_readonly("floor", &PointEvaluation::floor);
+        EPCSAFT_READONLY(PointEvaluation, objective, floor);
     py::class_<CompiledSystem>(module, "CompiledSystem")
         .def_property_readonly("rows", [](const CompiledSystem& system) { return system.rows; })
-        .def_readonly("pinned_count", &CompiledSystem::pinned_count)
-        .def_readonly("free_intensive_count", &CompiledSystem::free_intensive_count)
-        .def_readonly("rank", &CompiledSystem::rank)
-        .def_readonly("charge_row_count", &CompiledSystem::charge_row_count)
-        .def_readonly("primal_size", &CompiledSystem::primal_size)
-        .def_readonly("generic_nullity", &CompiledSystem::generic_nullity)
-        .def_readonly("feed_total", &CompiledSystem::feed_total)
-        .def_readonly("has_ions", &CompiledSystem::has_ions)
-        .def_readonly("has_reaction", &CompiledSystem::has_reaction)
-        .def_readonly("conserves_total_moles", &CompiledSystem::conserves_total_moles)
-        .def_readonly("jacobian_rank", &CompiledSystem::jacobian_rank)
-        .def_readonly("removed_species", &CompiledSystem::removed_species)
+        EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+            generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("generic_point", &CompiledSystem::generic_point)
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); })
@@ -216,89 +116,35 @@ void register_equilibrium(py::module_& module) {
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
-        .def_readonly("discovery", &EquilibriumResult::discovery)
-        .def_readonly("success", &EquilibriumResult::success)
-        .def_readonly("message", &EquilibriumResult::message)
-        .def_readonly("solver_status", &EquilibriumResult::solver_status)
-        .def_readonly("temperature", &EquilibriumResult::temperature)
-        .def_readonly("pressure", &EquilibriumResult::pressure)
-        .def_readonly("amounts", &EquilibriumResult::amounts)
-        .def_readonly("mole_fractions", &EquilibriumResult::mole_fractions)
-        .def_readonly("molar_densities", &EquilibriumResult::molar_densities)
-        .def_readonly("packing_fractions", &EquilibriumResult::packing_fractions)
-        // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
-        .def_readonly("multipliers", &EquilibriumResult::multipliers)
-        // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
-        // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
-        .def_readonly("constraint_multipliers", &EquilibriumResult::constraint_multipliers)
-        .def_readonly("residuals", &EquilibriumResult::residuals)
-        .def_readonly("classified_residuals", &EquilibriumResult::classified_residuals)
+        EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
+            mole_fractions, molar_densities, packing_fractions,
+            // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
+            multipliers,
+            // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
+            // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
+            constraint_multipliers, residuals, classified_residuals)
         .def_readonly("sensitivity", &EquilibriumResult::sensitivity)
-        .def_readonly("coordinates", &EquilibriumResult::coordinates)
-        .def_readonly("phase_count", &EquilibriumResult::phase_count)
-        .def_readonly("iterations", &EquilibriumResult::iterations)
-        .def_readonly("evaluations", &EquilibriumResult::evaluations)
-        .def_readonly("hessian_calls", &EquilibriumResult::hessian_calls)
-        .def_readonly("objective", &EquilibriumResult::objective)
-        .def_readonly("reduced_hessian_minimum", &EquilibriumResult::reduced_hessian_minimum)
-        .def_readonly("convergence", &EquilibriumResult::convergence)
-        .def_readonly("rows", &EquilibriumResult::rows)
-        .def_readonly("unknown_count", &EquilibriumResult::unknown_count)
-        .def_readonly("jacobian_rank", &EquilibriumResult::jacobian_rank)
-        .def_readonly("generic_nullity", &EquilibriumResult::generic_nullity)
-        .def_readonly("requested_tolerance_met", &EquilibriumResult::requested_tolerance_met)
-        .def_readonly("topology_event", &EquilibriumResult::topology_event)
-        .def_readonly("topology_phase", &EquilibriumResult::topology_phase)
-        .def_readonly("topology_pair", &EquilibriumResult::topology_pair)
-        .def_readonly("critical", &EquilibriumResult::critical);
+        EPCSAFT_READONLY(EquilibriumResult, coordinates, phase_count, iterations, evaluations, hessian_calls, objective,
+            reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank, generic_nullity,
+            requested_tolerance_met, topology_event, topology_phase, topology_pair, critical);
     py::class_<CriticalRecord>(module, "CriticalRecord")
-        .def_readonly("eigenvalues", &CriticalRecord::eigenvalues)
-        .def_readonly("mode", &CriticalRecord::mode)
-        .def_readonly("cubic", &CriticalRecord::cubic)
-        .def_readonly("zero_band", &CriticalRecord::zero_band)
-        .def_readonly("condition_estimate", &CriticalRecord::condition_estimate)
-        .def_readonly("backward_error", &CriticalRecord::backward_error)
-        .def_readonly("rank", &CriticalRecord::rank);
+        EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     py::class_<StabilityTrial>(module, "StabilityTrial")
-        .def_readonly("phase", &StabilityTrial::phase)
-        .def_readonly("seed", &StabilityTrial::seed)
-        .def_readonly("evidence", &StabilityTrial::evidence)
-        .def_readonly("message", &StabilityTrial::message)
-        .def_readonly("optimizer", &StabilityTrial::optimizer)
-        .def_readonly("raw_coordinates", &StabilityTrial::raw_coordinates)
-        .def_readonly("raw_residuals", &StabilityTrial::raw_residuals)
-        .def_readonly("composition", &StabilityTrial::composition)
-        .def_readonly("split_coordinates", &StabilityTrial::split_coordinates)
-        .def_readonly("basis", &StabilityTrial::basis)
-        .def_readonly("row_transformation", &StabilityTrial::row_transformation)
-        .def_readonly("quantities", &StabilityTrial::quantities)
-        .def_readonly("split_checks", &StabilityTrial::split_checks)
-        .def_readonly("donor", &StabilityTrial::donor)
-        .def_readonly("resolved_descent", &StabilityTrial::resolved_descent);
+        EPCSAFT_READONLY(StabilityTrial, phase, seed, evidence, message, optimizer, raw_coordinates, raw_residuals,
+            composition, split_coordinates, basis, row_transformation, quantities, split_checks, donor,
+            resolved_descent);
     py::class_<StabilityReport>(module, "StabilityReport")
-        .def_readonly("completed", &StabilityReport::completed)
-        .def_readonly("message", &StabilityReport::message)
-        .def_readonly("trials", &StabilityReport::trials)
-        .def_readonly("candidate_coordinates", &StabilityReport::candidate_coordinates)
-        .def_readonly("standard_over_rt", &StabilityReport::standard_over_rt)
-        .def_readonly("plane_over_rt", &StabilityReport::plane_over_rt)
-        .def_readonly("present_phases", &StabilityReport::present_phases)
-        .def_readonly("work", &StabilityReport::work);
+        EPCSAFT_READONLY(StabilityReport, completed, message, trials, candidate_coordinates, standard_over_rt,
+            plane_over_rt, present_phases, work);
     py::class_<DiscoveryRecord, std::shared_ptr<DiscoveryRecord>>(module, "DiscoveryRecord")
-        .def_readonly("declaration", &DiscoveryRecord::declaration)
-        .def_readonly("candidate", &DiscoveryRecord::candidate)
-        .def_readonly("rounds", &DiscoveryRecord::rounds)
-        .def_readonly("declarations", &DiscoveryRecord::declarations)
-        .def_readonly("declaration_roles", &DiscoveryRecord::declaration_roles)
-        .def_readonly("declaration_attempt_coordinates", &DiscoveryRecord::declaration_attempt_coordinates)
-        .def_readonly("work", &DiscoveryRecord::work);
+        EPCSAFT_READONLY(DiscoveryRecord, declaration, candidate, rounds, declarations, declaration_roles,
+            declaration_attempt_coordinates, work);
     module.def("cooling_onset", &cooling_onset, py::arg("compiled"));
     module.def("stability_test", &stability_test, py::arg("compiled"), py::arg("central"),
         py::arg("options") = StabilityOptions{});
     py::enum_<TopologyEvent>(module, "TopologyEvent")
         .value("None_", TopologyEvent::None)
-        .value("PhaseDisappeared", TopologyEvent::PhaseDisappeared)
-        .value("PhasesCoalesced", TopologyEvent::PhasesCoalesced);
+        EPCSAFT_VALUES(TopologyEvent, PhaseDisappeared, PhasesCoalesced);
     auto continuation_stops = py::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
          value <= static_cast<int>(ContinuationStop::critical_endpoint); ++value) {
@@ -312,40 +158,15 @@ void register_equilibrium(py::module_& module) {
             return ContinuationOptions{initial_step, minimum_step, max_steps, max_retries_per_step, envelope_max_log_step, envelope_straddle};
         }), py::kw_only(), py::arg("initial_step"), py::arg("minimum_step"), py::arg("max_steps"), py::arg("max_retries_per_step"),
             py::arg("envelope_max_log_step") = 0.0, py::arg("envelope_straddle") = 0.0)
-        .def_readwrite("initial_step", &ContinuationOptions::initial_step)
-        .def_readwrite("minimum_step", &ContinuationOptions::minimum_step)
-        .def_readwrite("max_steps", &ContinuationOptions::max_steps)
-        .def_readwrite("max_retries_per_step", &ContinuationOptions::max_retries_per_step)
-        .def_readwrite("envelope_max_log_step", &ContinuationOptions::envelope_max_log_step)
-        .def_readwrite("envelope_straddle", &ContinuationOptions::envelope_straddle);
+        EPCSAFT_READWRITE(ContinuationOptions, initial_step, minimum_step, max_steps, max_retries_per_step,
+            envelope_max_log_step, envelope_straddle);
     py::class_<ContinuationRequest>(module, "ContinuationRequest")
         .def(py::init<>())
-        .def_readwrite("start_problem", &ContinuationRequest::start_problem)
-        .def_readwrite("target_problem", &ContinuationRequest::target_problem)
-        .def_readwrite("start_result", &ContinuationRequest::start_result)
-        .def_readwrite("options", &ContinuationRequest::options)
-        .def_readwrite("parameter_targets", &ContinuationRequest::parameter_targets);
+        EPCSAFT_READWRITE(ContinuationRequest, start_problem, target_problem, start_result, options, parameter_targets);
     py::class_<ContinuationResult>(module, "ContinuationResult")
-        .def_readonly("success", &ContinuationResult::success)
-        .def_readonly("message", &ContinuationResult::message)
-        .def_readonly("stop", &ContinuationResult::stop)
-        .def_readonly("path_values", &ContinuationResult::path_values)
-        .def_readonly("parameter_values", &ContinuationResult::parameter_values)
-        .def_readonly("states", &ContinuationResult::states)
-        .def_readonly("reached_path", &ContinuationResult::reached_path)
-        .def_readonly("attempted_path", &ContinuationResult::attempted_path)
-        .def_readonly("event_phase", &ContinuationResult::event_phase)
-        .def_readonly("event_pair", &ContinuationResult::event_pair)
-        .def_readonly("attempts", &ContinuationResult::attempts)
-        .def_readonly("accepted_steps", &ContinuationResult::accepted_steps)
-        .def_readonly("retries", &ContinuationResult::retries)
-        .def_readonly("last_result", &ContinuationResult::last_result)
-        .def_readonly("cause_stop", &ContinuationResult::cause_stop)
-        .def_readonly("cause_convergence", &ContinuationResult::cause_convergence)
-        .def_readonly("cause_message", &ContinuationResult::cause_message)
-        .def_readonly("conditions", &ContinuationResult::conditions)
-        .def_readonly("critical_points", &ContinuationResult::critical_points)
-        .def_readonly("critical_seeds", &ContinuationResult::critical_seeds);
+        EPCSAFT_READONLY(ContinuationResult, success, message, stop, path_values, parameter_values, states,
+            reached_path, attempted_path, event_phase, event_pair, attempts, accepted_steps, retries, last_result,
+            cause_stop, cause_convergence, cause_message, conditions, critical_points, critical_seeds);
     py::class_<EquilibriumStart>(module, "EquilibriumStart")
         .def(py::init([](std::vector<double> coordinates, std::vector<double> amounts, std::vector<std::vector<double>> compositions,
                          std::vector<std::optional<double>> packing_fractions, std::optional<double> temperature,
@@ -355,131 +176,57 @@ void register_equilibrium(py::module_& module) {
         }), py::kw_only(), py::arg("coordinates") = std::vector<double>{}, py::arg("amounts") = std::vector<double>{},
             py::arg("compositions") = std::vector<std::vector<double>>{}, py::arg("packing_fractions") = std::vector<std::optional<double>>{},
             py::arg("temperature") = py::none(), py::arg("pressure") = py::none(), py::arg("previous") = py::none())
-        .def_readwrite("coordinates", &EquilibriumStart::coordinates)
-        .def_readwrite("amounts", &EquilibriumStart::amounts)
-        .def_readwrite("compositions", &EquilibriumStart::compositions)
-        .def_readwrite("packing_fractions", &EquilibriumStart::packing_fractions)
-        .def_readwrite("temperature", &EquilibriumStart::temperature)
-        .def_readwrite("pressure", &EquilibriumStart::pressure)
-        .def_readwrite("previous", &EquilibriumStart::previous);
+        EPCSAFT_READWRITE(EquilibriumStart, coordinates, amounts, compositions, packing_fractions, temperature,
+            pressure, previous);
     py::class_<EquilibriumWorkLimits>(module, "EquilibriumWorkLimits")
         .def(py::init([](std::optional<std::size_t> attempts, std::optional<std::size_t> iterations,
                          std::optional<std::size_t> attempt_iterations, std::optional<double> seconds, std::optional<double> attempt_seconds) {
             return EquilibriumWorkLimits{attempts, iterations, attempt_iterations, seconds, attempt_seconds};
         }), py::kw_only(), py::arg("attempts") = py::none(), py::arg("iterations") = py::none(),
             py::arg("attempt_iterations") = py::none(), py::arg("seconds") = py::none(), py::arg("attempt_seconds") = py::none())
-        .def_readwrite("attempts", &EquilibriumWorkLimits::attempts)
-        .def_readwrite("iterations", &EquilibriumWorkLimits::iterations)
-        .def_readwrite("attempt_iterations", &EquilibriumWorkLimits::attempt_iterations)
-        .def_readwrite("seconds", &EquilibriumWorkLimits::seconds)
-        .def_readwrite("attempt_seconds", &EquilibriumWorkLimits::attempt_seconds);
+        EPCSAFT_READWRITE(EquilibriumWorkLimits, attempts, iterations, attempt_iterations, seconds, attempt_seconds);
     py::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult")
-        .def_readonly("selected", &EquilibriumStartsResult::selected)
-        .def_readonly("results", &EquilibriumStartsResult::results)
-        .def_readonly("causes", &EquilibriumStartsResult::causes)
-        .def_readonly("attempt_seconds", &EquilibriumStartsResult::attempt_seconds)
-        .def_readonly("iterations", &EquilibriumStartsResult::iterations)
-        .def_readonly("seconds", &EquilibriumStartsResult::seconds)
-        .def_readonly("overrun_seconds", &EquilibriumStartsResult::overrun_seconds)
-        .def_readonly("budget_exhausted", &EquilibriumStartsResult::budget_exhausted);
+        EPCSAFT_READONLY(EquilibriumStartsResult, selected, results, causes, attempt_seconds, iterations, seconds,
+            overrun_seconds, budget_exhausted);
     module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
     // Solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
-        .value("Temperature", SolvedStateObservableKind::Temperature)
-        .value("Pressure", SolvedStateObservableKind::Pressure)
-        .value("PhaseAmount", SolvedStateObservableKind::PhaseAmount)
-        .value("PhaseComponentAmount", SolvedStateObservableKind::PhaseComponentAmount)
-        .value("PhaseMoleFraction", SolvedStateObservableKind::PhaseMoleFraction)
-        .value("PhaseVolume", SolvedStateObservableKind::PhaseVolume)
-        .value("PhaseMolarDensity", SolvedStateObservableKind::PhaseMolarDensity)
-        .value("PhasePackingFraction", SolvedStateObservableKind::PhasePackingFraction)
-        .value("PhasePressure", SolvedStateObservableKind::PhasePressure)
-        .value("PhaseResidualChemicalPotentialOverRt",
-               SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt)
-        .value("PhaseProperty", SolvedStateObservableKind::PhaseProperty)
-        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity)
-        .value("PhaseGibbsMolarVolume", SolvedStateObservableKind::PhaseGibbsMolarVolume)
-        .value("SystemEnthalpy", SolvedStateObservableKind::SystemEnthalpy)
-        .value("EquilibriumIsobaricHeatCapacity", SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
+        EPCSAFT_VALUES(SolvedStateObservableKind, Temperature, Pressure, PhaseAmount, PhaseComponentAmount,
+            PhaseMoleFraction, PhaseVolume, PhaseMolarDensity, PhasePackingFraction, PhasePressure,
+            PhaseResidualChemicalPotentialOverRt, PhaseProperty, PhaseLogActivity, PhaseGibbsMolarVolume, SystemEnthalpy,
+            EquilibriumIsobaricHeatCapacity);
     py::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(py::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), py::arg("kind"), py::arg("phase") = 0, py::arg("component") = 0,
             py::arg("property") = PropertyObservable::IdealEnthalpy)
-        .def_readonly("kind", &SolvedStateObservable::kind)
-        .def_readonly("phase", &SolvedStateObservable::phase)
-        .def_readonly("component", &SolvedStateObservable::component)
-        .def_readonly("property", &SolvedStateObservable::property);
+        EPCSAFT_READONLY(SolvedStateObservable, kind, phase, component, property);
     py::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
-        .def(py::init([](double t, double p, std::vector<double> feed, std::vector<double> theta,
-                         std::vector<std::array<double, 4>> coefficients, double h, double s) {
-                 SolvedStateActionDirection result{t, p, std::move(feed), std::move(theta)};
-                 result.reaction_coefficients = std::move(coefficients);
-                 result.enthalpy_j = h;
-                 result.entropy_j_per_k = s;
-                 return result;
-             }),
+        .def(py::init<double, double, std::vector<double>, std::vector<double>, std::vector<std::array<double, 4>>, double, double>(),
              py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
              py::arg("active_parameters"),
              py::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{},
              py::arg("enthalpy_j") = 0.0, py::arg("entropy_j_per_k") = 0.0)
-        .def_readonly("temperature_k", &SolvedStateActionDirection::temperature_k)
-        .def_readonly("pressure_pa", &SolvedStateActionDirection::pressure_pa)
-        .def_readonly("feed_amounts_mol", &SolvedStateActionDirection::feed_amounts_mol)
-        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters)
-        .def_readonly("reaction_coefficients", &SolvedStateActionDirection::reaction_coefficients)
-        .def_readonly("enthalpy_j", &SolvedStateActionDirection::enthalpy_j)
-        .def_readonly("entropy_j_per_k", &SolvedStateActionDirection::entropy_j_per_k);
+        EPCSAFT_READONLY(SolvedStateActionDirection, temperature_k, pressure_pa, feed_amounts_mol, active_parameters,
+            reaction_coefficients, enthalpy_j, entropy_j_per_k);
     py::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
         .def(py::init<std::vector<SolvedStateObservable>, std::vector<SolvedStateActionDirection>>(), py::arg("observables"), py::arg("directions"))
-        .def_readonly("observables", &SolvedStateActionRequest::observables)
-        .def_readonly("directions", &SolvedStateActionRequest::directions);
+        EPCSAFT_READONLY(SolvedStateActionRequest, observables, directions);
     py::enum_<SolvedStateActionStatus>(module, "SolvedStateActionStatus")
-        .value("Available", SolvedStateActionStatus::Available)
-        .value("CentralSolveUnavailable", SolvedStateActionStatus::CentralSolveUnavailable)
-        .value("DefiningEquationsNotSatisfied", SolvedStateActionStatus::DefiningEquationsNotSatisfied)
-        .value("PhaseBoundaryNotDifferentiable", SolvedStateActionStatus::PhaseBoundaryNotDifferentiable)
-        .value("NonuniqueCoalescedPhases", SolvedStateActionStatus::NonuniqueCoalescedPhases)
-        .value("RankDeficient", SolvedStateActionStatus::RankDeficient)
-        .value("NonfiniteJacobian", SolvedStateActionStatus::NonfiniteJacobian)
-        .value("LinearSolveResidual", SolvedStateActionStatus::LinearSolveResidual)
-        .value("SupportChange", SolvedStateActionStatus::SupportChange)
-        .value("IonicInsertion", SolvedStateActionStatus::IonicInsertion)
-        .value("EnergyOrderUnavailable", SolvedStateActionStatus::EnergyOrderUnavailable)
-        .value("DensityUnavailable", SolvedStateActionStatus::DensityUnavailable)
-        .value("PressureSingular", SolvedStateActionStatus::PressureSingular)
-        .value("AssociationSingular", SolvedStateActionStatus::AssociationSingular)
-        .value("AssociationIllConditioned", SolvedStateActionStatus::AssociationIllConditioned)
-        .value("AssociationResidual", SolvedStateActionStatus::AssociationResidual)
-        .value("MissingThermochemistry", SolvedStateActionStatus::MissingThermochemistry)
-        .value("ReferenceUnavailable", SolvedStateActionStatus::ReferenceUnavailable)
-        .value("OutsideInterval", SolvedStateActionStatus::OutsideInterval)
-        .value("ThermalBoundary", SolvedStateActionStatus::ThermalBoundary)
-        .value("CentralPropertyUnavailable", SolvedStateActionStatus::CentralPropertyUnavailable)
-        .value("Nonfinite", SolvedStateActionStatus::Nonfinite)
-        .value("IllConditioned", SolvedStateActionStatus::IllConditioned);
+        EPCSAFT_VALUES(SolvedStateActionStatus, Available, CentralSolveUnavailable, DefiningEquationsNotSatisfied,
+            PhaseBoundaryNotDifferentiable, NonuniqueCoalescedPhases, RankDeficient, NonfiniteJacobian,
+            LinearSolveResidual, SupportChange, IonicInsertion, EnergyOrderUnavailable, DensityUnavailable,
+            PressureSingular, AssociationSingular, AssociationIllConditioned, AssociationResidual,
+            MissingThermochemistry, ReferenceUnavailable, OutsideInterval, ThermalBoundary, CentralPropertyUnavailable,
+            Nonfinite, IllConditioned);
     py::class_<SolvedStateActionResult>(module, "SolvedStateActionResult")
-        .def_readonly("observable", &SolvedStateActionResult::observable)
-        .def_readonly("unit", &SolvedStateActionResult::unit)
-        .def_readonly("order", &SolvedStateActionResult::order)
-        .def_readonly("value", &SolvedStateActionResult::value)
-        .def_readonly("action", &SolvedStateActionResult::action)
-        .def_readonly("status", &SolvedStateActionResult::status)
-        .def_readonly("property_diagnostics", &SolvedStateActionResult::property_diagnostics)
-        .def_readonly("diagnostic_message", &SolvedStateActionResult::diagnostic_message);
+        EPCSAFT_READONLY(SolvedStateActionResult, observable, unit, order, value, action, status, property_diagnostics,
+            diagnostic_message);
     py::class_<SolvedStateActionDiagnostics>(module, "SolvedStateActionDiagnostics")
-        .def_readonly("equation_count", &SolvedStateActionDiagnostics::equation_count)
-        .def_readonly("state_dimension", &SolvedStateActionDiagnostics::state_dimension)
-        .def_readonly("maximum_energy_order", &SolvedStateActionDiagnostics::maximum_energy_order)
-        .def_readonly("state_factorizations", &SolvedStateActionDiagnostics::state_factorizations)
-        .def_readonly("linear_solves", &SolvedStateActionDiagnostics::linear_solves)
-        .def_readonly("rank", &SolvedStateActionDiagnostics::rank)
-        .def_readonly("condition_estimate", &SolvedStateActionDiagnostics::condition_estimate)
-        .def_readonly("maximum_linear_residual", &SolvedStateActionDiagnostics::maximum_linear_residual)
-        .def_readonly("central_residual", &SolvedStateActionDiagnostics::central_residual)
-        .def_readonly("central_floor", &SolvedStateActionDiagnostics::central_floor);
+        EPCSAFT_READONLY(SolvedStateActionDiagnostics, equation_count, state_dimension, maximum_energy_order,
+            state_factorizations, linear_solves, rank, condition_estimate, maximum_linear_residual, central_residual,
+            central_floor);
     py::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch")
-        .def_readonly("results", &SolvedStateActionBatch::results)
-        .def_readonly("diagnostics", &SolvedStateActionBatch::diagnostics);
+        EPCSAFT_READONLY(SolvedStateActionBatch, results, diagnostics);
     module.def("solved_state_actions", &solved_state_actions,
                py::arg("compiled"), py::arg("central"), py::arg("request"),
                "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"
@@ -487,26 +234,28 @@ void register_equilibrium(py::module_& module) {
                "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
     module.def("solved_state_first_actions", &solved_state_first_actions);
     py::class_<InventoryBound>(module, "InventoryBound")
-        .def_readonly("species", &InventoryBound::species)
-        .def_readonly("status", &InventoryBound::status)
-        .def_readonly("termination", &InventoryBound::termination)
-        .def_readonly("maximum", &InventoryBound::maximum)
-        .def_readonly("feed_normalized_amount", &InventoryBound::feed_normalized_amount)
-        .def_readonly("log_fraction", &InventoryBound::log_fraction)
-        .def_readonly("balance_residual", &InventoryBound::balance_residual)
-        .def_readonly("normalization_residual", &InventoryBound::normalization_residual)
-        .def_readonly("lower_bound_residual", &InventoryBound::lower_bound_residual)
-        .def_readonly("witness", &InventoryBound::witness)
-        .def_readonly("amounts_mol", &InventoryBound::amounts_mol)
-        .def_readonly("finite_witness", &InventoryBound::finite_witness)
-        .def_readonly("limiting", &InventoryBound::limiting)
-        .def_readonly("supported", &InventoryBound::supported)
-        .def_readonly("floor", &InventoryBound::floor)
-        .def_readonly("lp_error", &InventoryBound::lp_error)
-        .def_readonly("finite_residual", &InventoryBound::finite_residual)
-        .def_readonly("feasibility_termination", &InventoryBound::feasibility_termination);
+        EPCSAFT_READONLY(InventoryBound, species, status, termination, maximum, feed_normalized_amount, log_fraction,
+            balance_residual, normalization_residual, lower_bound_residual, witness, amounts_mol, finite_witness,
+            limiting, supported, floor, lp_error, finite_residual, feasibility_termination);
     module.def("inventory_bounds", &inventory_bounds, py::arg("compiled"), py::arg("species"),
         py::arg("fraction"), py::arg("floor"));
+    module.def("equilibrium_asl_record", [](py::object model, py::object problem, const ContinuationOptions& continuation,
+            std::vector<double> offset, std::vector<std::vector<double>> matrix, std::vector<double> anchor,
+            std::size_t identity_component, double minimum_gap) {
+        const py::object document = model.attr("parameters").attr("_document");
+        if (document.is_none())  // fitted parameters carry no source document to export (#29)
+            throw std::invalid_argument("ASL record requires parameters loaded from a parameter document; fitted parameters have none");
+        const py::object native_owner = model.attr("_model");
+        const auto& native = native_owner.cast<const HelmholtzModel&>();
+        if (!native.active_parameters().empty() || native.thermochemistry())
+            throw std::invalid_argument("ASL record requires inactive parameters and explicit problem reaction references");
+        const auto p = problem.attr("_native")(model).cast<EquilibriumProblem>();
+        AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
+        map.validate(p, native.parameters());
+        compile_problem(native, p);
+        return asl_record(document.cast<ParameterDocument>(), p, continuation, map);
+    }, py::arg("model"), py::arg("problem"), py::arg("continuation"), py::arg("feed_offset"),
+       py::arg("feed_matrix"), py::arg("anchor_controls"), py::arg("identity_component"), py::arg("minimum_gap"));
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),
