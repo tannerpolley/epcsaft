@@ -1364,8 +1364,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; }));
     const auto point = action_point(*this, temperature, 1.0 / molar_density, mole_fractions);
     // Linear polarization mixes each direction with the relative-T, relative-V and 1 mol labels.
-    // Actions are multilinear, so scale every direction to those label sizes and rescale the results;
-    // a lifted pressure direction (dV/V ~ 1e-9 per Pa in a liquid) otherwise loses ~9 digits.
+    // Actions are multilinear, so scale every direction to those label sizes, on the pressure chart before and
+    // after its density lift (dV/V ~ 1e-9 per Pa in a liquid), and rescale the results.
     std::vector<double> scales(directions.size(), 1.0);
     const auto normalize = [&](ActionDirection& d) {
         double s = std::max(std::abs(d.temperature) / temperature, std::abs(d.molar_density) / molar_density);
@@ -1431,8 +1431,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const bool temperature_action = std::any_of(all.begin(), all.end(),
         [](const auto& direction) { return direction.temperature != 0.0; });
     auto diagnostics = result.diagnostics;
+    for (std::size_t i = 0; i < directions.size(); ++i) scales[i] = normalize(all[i]);
     if (!pressure_chain || association_status != PropertyActionStatus::Available) {
-        for (std::size_t i = 0; i < directions.size(); ++i) scales[i] = normalize(all[i]);
         std::vector<std::size_t> ids(directions.size());
         for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = i;
         context.planning = true;
@@ -1464,10 +1464,9 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         std::vector<ActionDirection> lifted;
         lifted.reserve(directions.size());
         for (std::size_t i = 0; i < directions.size(); ++i) {
-            const double density = density_solve(pressure_directions[i] - pressure_of({base_ids[i]}));
-            lifted.push_back({directions[i].temperature, density,
-                directions[i].composition, all[i].parameter});
-            scales[i] = normalize(lifted.back());
+            const double density = density_solve(pressure_directions[i] / scales[i] - pressure_of({base_ids[i]}));
+            lifted.push_back({all[i].temperature, density, all[i].composition, all[i].parameter});
+            scales[i] *= normalize(lifted.back());
             all.push_back(lifted.back());
             lifted_ids.push_back(all.size() - 1);
         }

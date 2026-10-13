@@ -1565,10 +1565,12 @@ charged component is `ionic_insertion` for every result, including the entropy,
 when a neutral insertion accompanies it.
 
 Polarization mixes each direction with the relative-`T`, relative-`V` and
-unit-amount labels. Each direction, after the density lift on the pressure chart,
-is therefore divided by the power of two nearest the largest of `|dT|/T`,
-`|drho|/rho`, `|dx_i|` and `|dtheta|/max(|theta|,1)`, and each multilinear result
-is multiplied back exactly. Unscaled, a one-pascal pressure direction in the
+unit-amount labels. Each direction is therefore divided by the power of two
+nearest the largest of `|dT|/T`, `|drho|/rho`, `|dx_i|` and
+`|dtheta|/max(|theta|,1)`, and each multilinear result is multiplied back exactly.
+On the pressure chart the direction is scaled before its density lift, with its
+pressure increment, and the lifted direction again, so an action equals the action
+of the already-scaled request times the product of the scales. Unscaled, a one-pascal pressure direction in the
 methane/ethane liquid at 180 K and 3 MPa (`dV/V ~ 3e-9`) misses
 `sum_i x_i d ln(phi_i)/dP = 1/(rho R T) - 1/P` by 2.6e-9 relative; scaled, the
 identity holds to rounding.

@@ -11,9 +11,9 @@ using namespace epcsaft;
 constexpr auto LOG_PHI = PropertyObservable::LogFugacityCoefficient;
 constexpr double NOT_AVAILABLE = std::numeric_limits<double>::quiet_NaN();
 
-void verdict_row(const std::string& id, const char* quantity, double model, double reference,
+void verdict_row(const std::string& id, const std::string& quantity, const char* unit, double model, double reference,
                  double atol, double rtol, const std::string& inputs, const char* method, const char* claim) {
-    recording_support::compare(("log-fugacity/" + id).c_str(), quantity, "1", model, reference, inputs,
+    recording_support::compare(("log-fugacity/" + id).c_str(), quantity.c_str(), unit, model, reference, inputs,
         "Relationship", method, claim, "symmetric_close", atol, rtol,
         recording_support::scalar_verdict(model, reference, "symmetric_close", atol, rtol), "log-fugacity");
 }
@@ -55,7 +55,7 @@ void exact_identities() {
         const auto first_t = batch({t}), first_p = batch({p}), second_p = batch({p, p});
         for (std::size_t i = 0; i < x.size(); ++i) {
             const auto& item = first_t.results[1 + i];
-            verdict_row(std::string(name) + "/value/" + std::to_string(i), "ln_phi",
+            verdict_row(std::string(name) + "/value/" + std::to_string(i), "ln_phi_" + std::to_string(i), "1",
                 item.component == i ? item.value.value_or(NOT_AVAILABLE) : NOT_AVAILABLE,
                 (*state.log_fugacity_coefficient)[i].value(), 1.0e-12, 1.0e-10, inputs, "state-at-pressure",
                 "the component-tagged action value is the fixed-pressure ln(phi_i)");
@@ -64,22 +64,25 @@ void exact_identities() {
         const double h_t = first_t.results[0].value.value_or(NOT_AVAILABLE);
         const double h_p = first_p.results[0].action.value_or(NOT_AVAILABLE);
         const double h_pp = second_p.results[0].action.value_or(NOT_AVAILABLE);
-        const std::array<std::tuple<const char*, PropertyActionBatch, double, double>, 6> sums = {{
-            {"T", first_t, -h_t / (R * T * T), 1.0e-10},
-            {"P", first_p, 1.0 / (rho * R * T) - 1.0 / P, 1.0e-10},
-            {"PP", second_p, 1.0 / (P * P) - rho_p / (rho * rho * R * T), 1.0e-10},
-            {"TP", batch({t, p}), -h_p / (R * T * T), 1.0e-10},
+        // Unit directions dT = 1 K and dP = 1 Pa, so each sum carries 1/K and 1/Pa per direction.
+        const std::array<std::tuple<const char*, PropertyActionBatch, double, double, const char*>, 6> sums = {{
+            {"T", first_t, -h_t / (R * T * T), 1.0e-10, "1/K"},
+            {"P", first_p, 1.0 / (rho * R * T) - 1.0 / P, 1.0e-10, "1/Pa"},
+            {"PP", second_p, 1.0 / (P * P) - rho_p / (rho * rho * R * T), 1.0e-10, "1/Pa^2"},
+            {"TP", batch({t, p}), -h_p / (R * T * T), 1.0e-10, "1/(K Pa)"},
             {"PPP", batch({p, p, p}), -rho_pp / (rho * rho * R * T) + 2.0 * rho_p * rho_p / (rho * rho * rho * R * T)
-                - 2.0 / (P * P * P), 1.0e-10},
-            {"TPP", batch({t, p, p}), -h_pp / (R * T * T), 1.0e-9}}};
-        for (const auto& [id, actions, reference, rtol] : sums)
-            verdict_row(std::string(name) + "/sum/" + id, "sum_x_dln_phi", weighted(actions, x, 1).first, reference,
-                0.0, rtol, inputs, "exact-identity", "sum_i x_i D ln(phi_i) equals the D action of g_res/RT");
+                - 2.0 / (P * P * P), 1.0e-10, "1/Pa^3"},
+            {"TPP", batch({t, p, p}), -h_pp / (R * T * T), 1.0e-9, "1/(K Pa^2)"}}};
+        for (const auto& [id, actions, reference, rtol, unit] : sums)
+            verdict_row(std::string(name) + "/sum/" + id, std::string("sum_x_D") + id + "_ln_phi", unit,
+                weighted(actions, x, 1).first, reference, 0.0, rtol, inputs, "exact-identity",
+                "sum_i x_i D ln(phi_i) equals the D action of g_res/RT");
         using Directions = std::vector<PressureActionDirection>;
-        for (const auto& [id, directions] : std::array<std::pair<const char*, Directions>, 4>{{
-                 {"c", {c}}, {"Tc", {t, c}}, {"Pc", {p, c}}, {"TPc", {t, p, c}}}}) {
+        for (const auto& [id, directions, unit] : std::array<std::tuple<const char*, Directions, const char*>, 4>{{
+                 {"c", {c}, "1"}, {"Tc", {t, c}, "1/K"}, {"Pc", {p, c}, "1/Pa"}, {"TPc", {t, p, c}, "1/(K Pa)"}}}) {
             const auto [sum, scale] = weighted(batch(directions), x, 1);
-            verdict_row(std::string(name) + "/gibbs-duhem/" + id, "sum_x_dln_phi", sum, 0.0, 1.0e-10 * scale, 0.0,
+            verdict_row(std::string(name) + "/gibbs-duhem/" + id, std::string("sum_x_D") + id + "_ln_phi", unit,
+                sum, 0.0, 1.0e-10 * scale, 0.0,
                 recording_support::fields({inputs, recording_support::field("term_scale", scale)}), "Gibbs-Duhem",
                 "at fixed T and P, sum_i x_i D ln(phi_i) vanishes to the rounding of its terms");
         }
@@ -92,6 +95,7 @@ void neutral_infinite_dilution_limit() {
     const HelmholtzModel model(properties_support::neutral_ternary());  // methane, ethane, propane
     const PressureActionDirection d{0.0, 0.0, {0.02, -0.01, -0.01}, {}}, t{1.0, 0.0, {0.0, 0.0, 0.0}, {}};
     constexpr double T = 250.0, P = 2.0e6, eps = 1.0e-7;
+    // Outputs: density action, h_res, ln(phi_i) values, then the h_res and ln(phi_i) actions.
     const auto outputs = [&](double trace, const std::vector<PressureActionDirection>& directions) {
         const auto batch = model.pressure_actions(T, P, {trace, 0.5 - trace / 2.0, 0.5 - trace / 2.0},
             DensityBranch::Liquid, {PropertyObservable::ResidualEnthalpy, LOG_PHI}, directions);
@@ -104,12 +108,17 @@ void neutral_infinite_dilution_limit() {
         return result;
     };
     using Directions = std::vector<PressureActionDirection>;
-    for (const auto& [id, directions] : std::array<std::pair<const char*, Directions>, 3>{{
-             {"d", {d}}, {"dd", {d, d}}, {"Td", {t, d}}}}) {
+    // d is a composition direction (dimensionless) and t is dT = 1 K, so Td actions carry 1/K.
+    for (const auto& [id, directions, per] : std::array<std::tuple<const char*, Directions, std::string>, 3>{{
+             {"d", {d}, ""}, {"dd", {d, d}, ""}, {"Td", {t, d}, "/K"}}}) {
         const auto exact = outputs(0.0, directions), one = outputs(eps, directions), two = outputs(2.0 * eps, directions);
+        const std::array<std::pair<std::string, std::string>, 9> labels = {{
+            {"density_action", "mol/m^3" + per}, {"residual_enthalpy", "J/mol"}, {"ln_phi_0", "1"}, {"ln_phi_1", "1"},
+            {"ln_phi_2", "1"}, {"residual_enthalpy_action", "J/mol" + per}, {"ln_phi_0_action", per.empty() ? "1" : "1/K"},
+            {"ln_phi_1_action", per.empty() ? "1" : "1/K"}, {"ln_phi_2_action", per.empty() ? "1" : "1/K"}}};
         for (std::size_t k = 0; k < exact.size(); ++k)
-            verdict_row(std::string("neutral-limit/") + id + "/" + std::to_string(k), "limit", exact[k],
-                2.0 * one[k] - two[k], 1.0e-12, 1.0e-9,
+            verdict_row(std::string("neutral-limit/") + id + "/" + std::to_string(k), labels.at(k).first,
+                labels.at(k).second.c_str(), exact[k], 2.0 * one[k] - two[k], 1.0e-12, 1.0e-9,
                 recording_support::fields({recording_support::field("T_K", T), recording_support::field("P_Pa", P),
                     recording_support::field("eps", eps), recording_support::field("output", k)}),
                 "infinite-dilution-extrapolation", "x_CH4 = 0 outputs equal their trace-methane limit");
