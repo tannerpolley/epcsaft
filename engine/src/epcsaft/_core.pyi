@@ -101,6 +101,8 @@ class Parameters:
     def component_count(self) -> int: ...
     @property
     def site_count(self) -> int: ...
+    @property
+    def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
 
@@ -720,6 +722,7 @@ class EquilibriumResult:
     topology_phase: Optional[int]
     topology_pair: Optional[tuple[int, int]]
     critical: Optional[CriticalRecord]
+    def phase_mole_fractions(self, phase: int) -> list[float]: ...  # one declared phase, component_ids order
 
 class TopologyEvent:
     None_: TopologyEvent

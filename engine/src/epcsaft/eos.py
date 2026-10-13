@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast
 
 from . import _core
+from .equilibrium.problem import _vector
 from .parameters import Parameters
 from .reference import Reference
 
@@ -78,7 +79,7 @@ class Mixture:
         *,
         rho: float | None = None,
         P: float | None = None,
-        x: Sequence[float] | None = None,
+        x: Sequence[float] | Mapping[str, float] | None = None,
         phase: str | None = None,
         anchor: State | None = None,
     ) -> State:
@@ -152,9 +153,9 @@ class Mixture:
     def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:
         return self._model.molar_density_upper_bound(T, self._composition(x))
 
-    def _composition(self, x: Sequence[float] | None) -> Sequence[float]:
-        if x is not None:
-            return x
+    def _composition(self, x: Sequence[float] | Mapping[str, float] | None) -> Sequence[float]:
+        if x is not None:  # names absent from a mapping are zero, as in feeds
+            return _vector(x, self.component_ids) if isinstance(x, Mapping) else x
         if len(self.component_ids) != 1:
             raise ParameterError("a mixture requires its composition x")
         return (1.0,)

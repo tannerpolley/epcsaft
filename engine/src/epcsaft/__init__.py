@@ -1,9 +1,4 @@
-import hashlib
-import json
-import subprocess
-from importlib import metadata
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 from . import _core
 from .eos import (
@@ -45,10 +40,33 @@ tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
 
 
+def _repr(record: type, *fields: str) -> None:
+    record.__repr__ = lambda self: f"{record.__name__}({', '.join(f'{n}={getattr(self, n)!r}' for n in fields)})"  # type: ignore
+
+
+def _phase_mole_fractions(self: _core.EquilibriumResult, phase: int) -> list[float]:
+    index = range(self.phase_count)[phase]  # IndexError outside the declared phases
+    n = len(self.mole_fractions) // self.phase_count
+    return self.mole_fractions[index * n : (index + 1) * n]
+
+
+_repr(_core.State, "pressure", "molar_density", "compressibility_factor", "density_branch", "residual_helmholtz")
+_repr(_core.EquilibriumResult, "success", "temperature", "pressure", "amounts", "mole_fractions")
+_repr(_core.ContinuationResult, "success", "stop", "reached_path", "accepted_steps", "message")
+_repr(_core.FitResult, "status", "usable", "final_cost", "iterations", "physical")
+_repr(_core.ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion")
+setattr(_core.EquilibriumResult, "phase_mole_fractions", _phase_mole_fractions)
+
+
 def provenance() -> tuple[Path, str] | tuple[str, bool]:
     """Identify the running Engine: a wheel install's file path and SHA-256 (its direct_url.json), or
     for the editable install the commit and whether engine/ is clean, with no uncommitted or untracked
     files (the import rebuilt the extension from that tree)."""
+    import hashlib
+    import json
+    import subprocess
+    from importlib import metadata
+    from urllib.parse import unquote, urlparse
     url = json.loads(metadata.distribution("epcsaft").read_text("direct_url.json") or "{}")
     if url.get("dir_info", {}).get("editable"):
         git = ["git", "-C", str(Path(__file__).resolve().parents[2])]

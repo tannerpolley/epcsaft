@@ -63,9 +63,13 @@ gdb --args build/engine-debug/surface_example
 Run from the repository root. Units are SI molar: T in K, P in Pa, density in
 mol/m^3, energies in J/mol, molality in mol per kg of solvent. Positional
 vectors (`x=`, `composition_guess=`, result lists) follow `component_ids`, which
-is the `components=` order; feeds take component names. A result list with one
+is the `components=` order; feeds, `x=` and `composition_guess=` also take a
+name mapping (unlisted names are zero, unknown names are refused).
+`Parameters.molar_masses` holds kg/mol in that order (0 where the document
+declares none, as for most ions). A result list with one
 entry per phase and component is phase-major: entry `p*n + i` is phase `p`
-(declared order) and component `i`. [`data/docs/parameter-index.md`](../data/docs/parameter-index.md)
+(declared order) and component `i`; `result.phase_mole_fractions(p)` returns
+that phase's slice. [`data/docs/parameter-index.md`](../data/docs/parameter-index.md)
 lists which parameter packets hold a component and what each set is for.
 
 ```python
@@ -75,14 +79,14 @@ from epcsaft import equilibrium as eq, regression as rg
 pk = "data/packets/{}/parameters/parameters.json".format
 
 water = epcsaft.Pure(epcsaft.Parameters.from_json(pk("held-cameretti-sadowski-2008/4"), components=["water"]))
-print(water.state(298.15, P=1.0e5, phase="liquid").molar_density)  # mol/m^3; times M (kg/mol) for kg/m^3
+print(water.state(298.15, P=1.0e5, phase="liquid").molar_density * water.parameters.molar_masses[0])  # kg/m^3
 sat = eq.solve_equilibrium(water, water.saturation(373.15))        # phases (L, V) at fixed T, free P
 print(sat.pressure[0], sat.molar_densities)                        # Pa; mol/m^3 per phase
 
 gs = epcsaft.Parameters.from_json(pk("gross-2001-methane-ethane/3"), components=["methane", "ethane"])
 mix, feed = epcsaft.Mixture(gs), eq.MoleFractions({"methane": 0.3, "ethane": 0.7})
 bub = eq.solve_equilibrium(mix, eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=200.0, feed=feed))
-print(bub.pressure[0], bub.mole_fractions)                         # [x_CH4, x_C2H6, y_CH4, y_C2H6]
+print(bub.pressure[0], bub.phase_mole_fractions(1))                # Pa; [y_CH4, y_C2H6]
 
 brine = epcsaft.Mixture(epcsaft.Parameters.from_json(pk("held-cameretti-sadowski-2008/4"),
                                                      components=["water", "sodium-cation", "chloride-anion"]))
@@ -105,7 +109,7 @@ truth, obs = epcsaft.Mixture(epcsaft.Parameters.from_mapping(doc, components=["m
 for T, x in [(190.0, 0.2), (200.0, 0.4), (220.0, 0.3)]:            # K, liquid methane mole fraction
     bubble = eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=T, feed=eq.MoleFractions({"methane": x, "ethane": 1 - x}))
     measured = eq.solve_equilibrium(truth, bubble).pressure[0]      # put a measured bubble pressure (Pa) here
-    obs.append(rg.observation(gs, "pressure", bubble, observed=measured, form="log_ratio", mass_basis=False))
+    obs.append(rg.observation(gs, "pressure", bubble, observed=measured, form="log_ratio"))
 kij = rg.coordinate(gs, [("k_ij", ("methane", "ethane"), 1.0)], origin=0.0, scale=0.01)
 fit = rg.fit(gs, [kij], obs, controls=rg.FitControls(maximum_iterations=50, maximum_elapsed_time_seconds=60.0))
 print(fit.status, fit.physical)                                    # fitted k_ij; rg.fitted_parameters(gs, fit)

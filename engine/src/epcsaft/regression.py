@@ -58,7 +58,7 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
     try:
         return ids.index(name)
     except ValueError as error:
-        raise ParameterError(f"unknown {what} {name}") from error
+        raise ParameterError(f"unknown {what} {name}; expected one of {', '.join(map(str, ids))}") from error
 
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
@@ -141,7 +141,7 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
     return _finish(result, observed, form, scale, mass_basis)
 
 
-def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool,
+def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool = False,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
@@ -149,7 +149,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     phase_fraction (mole basis), amount_ratio (phase-component amounts), or
     equilibrium_isobaric_heat_capacity (J/(mol-feed K), driven T/P)."""
     if kind not in _KINDS:
-        raise ParameterError(f"unknown observation kind {kind}")
+        raise ParameterError(f"unknown observation kind {kind}; expected one of {', '.join(_KINDS)}")
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
@@ -232,7 +232,7 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
              "osmotic_coefficient": ObservationKind.OsmoticCoefficient, "solvation_gibbs_energy": ObservationKind.SolvationGibbsEnergy,
              "transfer_gibbs_energy": ObservationKind.TransferGibbsEnergy, "bulk_relative_permittivity": ObservationKind.BulkRelativePermittivity}
     if kind not in kinds:
-        raise ParameterError(f"unknown electrolyte observation {kind}")
+        raise ParameterError(f"unknown electrolyte observation {kind}; expected one of {', '.join(kinds)}")
     result = _pressure_closed(parameters, kinds[kind], T, P, x, "liquid", observed, form, scale, False)
     result.ion_indices = (_index(parameters.component_ids, ions[0], "ion"), _index(parameters.component_ids, ions[1], "ion"))
     result.stoichiometry, result.molality = stoichiometry, molality

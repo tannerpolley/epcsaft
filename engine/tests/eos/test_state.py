@@ -218,6 +218,18 @@ def test_mapping_fails_closed_by_name() -> None:
         Mixture(parameters).state(300.0, P=1e5, x=(0.5, 0.5), phase="gas")
 
 
+def test_named_composition_and_molar_masses_follow_component_ids() -> None:
+    # Without components=, document order (ethane, methane) sets component_ids; x=(0.3, 0.7) would mean 30 % ethane.
+    parameters = Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3))
+    model = Mixture(parameters)
+    assert parameters.component_ids == ("ethane", "methane")
+    assert parameters.molar_masses == (0.03007, 0.016043)  # kg/mol, the packet's declared values
+    named = model.state(200.0, P=2e6, x={"methane": 0.3, "ethane": 0.7}, phase="liquid")
+    assert named.molar_density == model.state(200.0, P=2e6, x=(0.7, 0.3), phase="liquid").molar_density
+    with pytest.raises(ParameterError, match="propane; expected one of ethane, methane"):
+        model.state(200.0, P=2e6, x={"propane": 1.0}, phase="liquid")
+
+
 
 def test_declared_model_preserves_association_equations(evidence: Any) -> None:
     # Fixed-density equation control, outside the source's reported 1-bar states.

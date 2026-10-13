@@ -31,7 +31,7 @@ class Phase:
     support: tuple[str, ...] | None
     amount: Free | Pinned
     kind: str | None
-    composition_guess: tuple[float, ...]
+    composition_guess: tuple[float, ...] | dict[str, float]
     packing_guess: float | None
 
     def __init__(
@@ -41,15 +41,15 @@ class Phase:
         support: Sequence[str] | None = None,
         amount: Free | Pinned | None = None,
         kind: str | None = None,
-        composition_guess: Sequence[float] | None = None,
+        composition_guess: Sequence[float] | Mapping[str, float] | None = None,
         packing_guess: float | None = None,
     ) -> None:
-        composition_guess = () if composition_guess is None else composition_guess
         self.name = name
         self.support = None if support is None else tuple(support)
         self.amount = Free() if amount is None else amount
         self.kind = kind
-        self.composition_guess = tuple(composition_guess)
+        guess = () if composition_guess is None else composition_guess  # a mapping is ordered at compile time
+        self.composition_guess = dict(guess) if isinstance(guess, Mapping) else tuple(guess)
         self.packing_guess = packing_guess
 
 
@@ -178,7 +178,7 @@ def _index(component_ids: tuple[str, ...], name: str) -> int:
 def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list[float]:
     unknown = next((name for name in values if name not in component_ids), None)
     if unknown is not None:
-        raise _core.ParameterError(f"unknown species {unknown}")
+        raise _core.ParameterError(f"unknown species {unknown}; expected one of {', '.join(component_ids)}")
     return [values.get(component_id, 0.0) for component_id in component_ids]
 
 
@@ -264,7 +264,8 @@ class Problem:
             names = () if phase.support is None else phase.support
             item.support = [_index(model.component_ids, name) for name in names]
             item.amount = _amount_spec(phase.amount)
-            item.composition_guess = list(phase.composition_guess)
+            guess = phase.composition_guess
+            item.composition_guess = _vector(guess, model.component_ids) if isinstance(guess, dict) else list(guess)
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
         if isinstance(self.phases, Discover):
@@ -412,7 +413,7 @@ def _feed_from_mapping(value: object) -> Feed:
             solvent=cast(Sequence[str], record.get("solvent", ())),
             solvent_mass_kg=cast(float, record["solvent_mass_kg"]),
         )
-    raise _core.ParameterError(f"unknown feed basis {basis}")
+    raise _core.ParameterError(f"unknown feed basis {basis}; expected mole_fractions/amounts/mass_fractions/molalities")
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:

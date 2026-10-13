@@ -128,7 +128,7 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
         scope.probe("start_rule", 3.0);
         throw std::runtime_error("start_symmetric: phases "
             + compiled.problem.phases[0].name + " and "
-            + compiled.problem.phases[1].name + " require composition guesses");
+            + compiled.problem.phases[1].name + " require composition guesses or phases=Discover()");
     }
     const double temperature = compiled.seed_temperature();
     const double pressure = compiled.seed_pressure();
@@ -563,8 +563,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (compiled.model->parameters().component_count() == 1
             && compiled.problem.phases.size() > 1
             && (!root.stable_root_count.has_value() || *root.stable_root_count < 2)) {
-            throw std::runtime_error(!std::isnan(start->pressure) ? "boundary seed has no coexisting density roots"
-                : "boundary seed has no coexisting density roots and no positive mechanical-loop witness pressure");
+            throw std::runtime_error(std::string("boundary seed has no coexisting density roots")
+                + (std::isnan(start->pressure) ? " and no positive mechanical-loop witness pressure" : "")
+                + " at T = " + core::optional_number(t) + " K; T may exceed the model critical temperature");
         }
         if (limits) limits->check();
         validate_density_seed(root);
@@ -1011,7 +1012,8 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     if (!(options.envelope_max_log_step > 0.0) || !(straddle_band > 0.0)
         || !(straddle_band + straddle_band <= options.envelope_max_log_step)  // the straddle jump fits one step
         || !(options.minimum_step > 0.0) || options.max_steps == 0)
-        throw std::invalid_argument("invalid envelope options");
+        throw std::invalid_argument("invalid envelope options: need envelope_straddle > 0, 2 envelope_straddle <= "
+            "envelope_max_log_step, minimum_step > 0 and max_steps > 0");
     EquilibriumProblem base = request.start_problem;
     const CompiledSystem start = compile_problem(model, base);
     if (!start.feasible) return finish(std::move(result), ContinuationStop::invalid_path, "envelope cell is not full rank");
