@@ -145,6 +145,11 @@ std::vector<double> neutral_reference_composition(
     return composition;
 }
 
+// Reference-column scale of active coordinate a: max(1, |theta|); d_V (m3/mol) uses a 1 L/mol floor.
+double parameter_scale(const HelmholtzModel& model, const std::vector<double>& values, std::size_t a) {
+    return std::max(model.active_parameters()[a].family == ParameterFamily::DielectricVolume ? 1.0e-3 : 1.0, std::abs(values[a]));
+}
+
 }  // namespace
 
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
@@ -154,7 +159,7 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
     const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
     ResidualEnergyAction result;
     const double pressure_scale = state.pressure_density_derivative * state.molar_density;
-    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
+    const double theta_scale = parameter ? parameter_scale(model, model.active_parameter_values(), *parameter) : 1.0;
     const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
     double contraction = 0.0;
     for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
@@ -392,7 +397,7 @@ std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivativ
     return change;
 }
 
-// Scale is T^a P^b max(1, |theta|). Columns that enter ln K and its first slopes admit at
+// Scale is T^a P^b times parameter_scale. Columns that enter ln K and its first slopes admit at
 // REFERENCE_CONVERGENCE_TOLERANCE; d2C/dT2 and the temperature-bearing higher columns (reference
 // order >= 2) enter the reaction heat capacity and its derivatives, so they admit at
 // REFERENCE_HEAT_CAPACITY_TOLERANCE / R. Pure-pressure higher columns are volume and compressibility
@@ -489,7 +494,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         }
         const auto values = model.active_parameter_values();
         for (std::size_t a = 0; trace.parameter_jets && a < values.size(); ++a) {
-            const double scale = std::max(std::abs(values[a]), 1.0);
+            const double scale = parameter_scale(model, values, a);
             result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a, scale, tolerance));
             if (trace.temperature_order > 0)
                 result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance));
@@ -723,7 +728,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                         } else {
                             column = reference_column(model, temperature, trace, stoichiometries[row], a, b, parameter,
                                 std::pow(temperature, int(a)) * std::pow(pressure, int(b))
-                                    * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0),
+                                    * (c ? parameter_scale(model, values, coordinate) : 1.0),
                                 policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K);
                         }
                         if (!column.value) column.message = "reaction " + std::to_string(row) + " C_"
@@ -797,7 +802,7 @@ InfiniteDilutionReference infinite_dilution_reference(
             for (std::size_t i = 0; i < 2; ++i) column[i] = state.log_fugacity_parameter_derivative.empty() ? NAN
                 : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
             if (index && (!witness || failed_column(result.parameter_convergence_error[a])))
-                result.parameter_convergence_error[a] = std::max(1.0, std::abs(values[a]))
+                result.parameter_convergence_error[a] = parameter_scale(model, values, a)
                     * std::max(std::abs(column[0] - previous_columns[a][0]), std::abs(column[1] - previous_columns[a][1]));
             if (!witness) previous_columns[a] = column;
         }

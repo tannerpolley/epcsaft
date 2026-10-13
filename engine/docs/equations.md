@@ -1694,7 +1694,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and terminal composition of the neutral reaction reference
 - Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the returned reference limit; the displayed partials are rung calculations. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
-- Change note: Order one only. A slope is the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg rungs, admitted when max(abs(theta), 1) times its change from the 1e-10/1e-12 limit is at most 5e-5 (EqID: `reference_limit_terminal_pair`). The scale max(abs(theta), 1) is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the limit is linear in the rungs, so the admitted slope is the exact derivative of the returned contraction. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions consume the additional mixed derivatives in `reference_mixed_temperature_pressure_derivatives`.
+- Change note: Order one only. A slope is the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg rungs, admitted when the parameter scale s_theta times its change from the 1e-10/1e-12 limit is at most 5e-5 (EqID: `reference_limit_terminal_pair`). s_theta = max(abs(theta), 1) in native units is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). A dielectric volume d_V, near 4e-4 m3/mol, takes s_theta = max(abs(d_V), 1e-3 m3/mol), its 1 L/mol coordinate unit (#441). Every reference parameter column, the ion reference of `reference_molality_sequence` included, uses this s_theta. It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the limit is linear in the rungs, so the admitted slope is the exact derivative of the returned contraction. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions consume the additional mixed derivatives in `reference_mixed_temperature_pressure_derivatives`.
 
 $$
 p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
@@ -1709,7 +1709,7 @@ $$
 - Status: Exact derivation
 - Source: Mixed implicit differentiation of the isobaric reference contraction and pressure closure along one active EOS coordinate, at fixed temperature, reference pressure and terminal composition
 - Description: Mixed derivative $\partial^2C/\partial T\partial\theta$ of the returned reference limit (displayed partials are rung calculations), with $\psi=A^{res}/(RT)$ at $N=1$ mol. It supplies the EOS-coordinate derivative of referenced reaction enthalpy; $C$ is independent of the solved equilibrium state.
-- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The shared single-insertion Taylor calculation in `reference_single_insertion_taylor` supplies the raw mixed partial after base pressure closure. Return the sqrt(m) Richardson limit of the rungs and admit when $T\max(|\theta|,1)$ times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/\max(|\theta|,1)$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. Higher consumed derivatives and caloric composition follow `reference_mixed_temperature_pressure_derivatives` and `reference_species_calorics`.
+- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The shared single-insertion Taylor calculation in `reference_single_insertion_taylor` supplies the raw mixed partial after base pressure closure. Return the sqrt(m) Richardson limit of the rungs and admit when $Ts_\theta$ (`standard_state_transfer_parameter_derivative`) times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/s_\theta$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. Higher consumed derivatives and caloric composition follow `reference_mixed_temperature_pressure_derivatives` and `reference_species_calorics`.
 
 $$
 \mathbf w=\mathbf e_T+V_T\mathbf e_V,\quad
@@ -1809,7 +1809,7 @@ $$
 $$
 C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
 C_{ab,\theta}=\partial_T^a\partial_{P_{src}}^b\partial_\theta C,\quad a+b\le3,\\
-E_{abc}=RT^aP_{src}^b\max(|\theta|,1)^c|\delta C_{ab,\theta^c}|\le0.01\ \mathrm{J\,mol^{-1}\,K^{-1}},\quad c\in\{0,1\},\quad a+b+c\ge2,\\
+E_{abc}=RT^aP_{src}^bs_\theta^c|\delta C_{ab,\theta^c}|\le0.01\ \mathrm{J\,mol^{-1}\,K^{-1}},\quad c\in\{0,1\},\quad a+b+c\ge2,\\
 C_T=\frac{h^{res}+RT}{RT^2},\qquad C_P=-\frac{v}{RT}\quad\text{(identical neutral species, }C=-\Lambda\text{)}.
 $$
 
@@ -1832,7 +1832,7 @@ $$
 - Status: Implementation convention
 - Source: EOS convergence sequence for the [Figiel2025] infinite-dilution reference
 - Description: Finite molality ladder and terminal estimate of infinite-dilution log fugacity, accepted only under the declared convergence checks.
-- Change note: A terminal estimate is not mathematical equality with the infinite-dilution limit; retain observed error diagnostics and reference-path failure.
+- Change note: A terminal estimate is not mathematical equality with the infinite-dilution limit; retain observed error diagnostics and reference-path failure. A parameter column is admitted when s_theta (`standard_state_transfer_parameter_derivative`) times its terminal change is at most 5e-5.
 
 $$
 \mathcal M_{\mathrm{ref}}=\{10^{-6},10^{-8},10^{-10},10^{-12}\}\,\mathrm{mol\,kg^{-1}},\qquad \widehat{\ln\phi_i^\infty}=\ln\phi_i(m=10^{-12}\,\mathrm{mol\,kg^{-1}}).

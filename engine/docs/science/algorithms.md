@@ -119,7 +119,11 @@ physical source interval remains a separate admission operation.
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
-slots in the existing affine chart. Their values use `ParameterRecord<Scalar>`
+slots in the existing affine chart. `DielectricVolume` (m^3/mol) and
+`DielectricTemperature` (K) own one neutral-component slot each and are admitted
+only under the density-temperature permittivity (EqID:
+`density_correlated_bulk_permittivity`); an L/mol coordinate takes target
+coefficient 1e-3 (#441). Their values use `ParameterRecord<Scalar>`
 with the other active families. Charges, masses, formulation choices and Born
 correction/solvation factors remain fixed. No cross-family factor tie is added.
 
@@ -1790,8 +1794,9 @@ The same single-insertion owner supplies raw C_T, C_TT, C_theta,
 C_Ttheta and C_TP at the three literal terminal compositions, reusing each
 resolved liquid State. Each requested column retains independent availability.
 The existing lower-slope admission remains unchanged: T times each C_T change,
-max(|theta|,1) times each C_theta change, T max(|theta|,1) times each C_Ttheta
-change, and T P_source times each C_TP change must be at most 5e-5;
+s_theta times each C_theta change, T s_theta times each C_Ttheta change (s_theta
+from `standard_state_transfer_parameter_derivative`), and T P_source times each
+C_TP change must be at most 5e-5;
 R T^2 times each C_TT change must be at most 0.01 J/(mol K).
 Each column returns the sqrt(m) Richardson limit (10 f(1e-14) - f(1e-12))/9 and
 is admitted on its change from the (1e-10, 1e-12) limit, as for the contraction;
@@ -1814,7 +1819,8 @@ density; the returned EOS pressure still records the density-root residual.
 This avoids amplifying the closure residual in parameter differences of nearly
 invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
 Each terminal reference column is admitted independently by the maximum scaled
-two-ion change, max(|theta|,1) times the column difference, at the existing
+two-ion change, s_theta (`standard_state_transfer_parameter_derivative`) times
+the column difference, at the existing
 reference tolerance. The terminal pair is compared first; a witness checks a
 failed pair without changing the returned terminal column. An unavailable
 column preserves the value, molality and terminal value error. Activity and
@@ -1913,7 +1919,7 @@ are not interchangeable (EqID: `reference_species_calorics`).
 The existing value and lower-slope admission remains: first thermal and EOS
 slopes use the value criterion at their physical scales; the second thermal
 slope uses 0.01 J/(mol K); the mixed T/EOS slope retains its declared
-$T\max(|\theta|,1)$ scaled criterion. Higher consumed columns use ALG-REFERENCE's
+$Ts_\theta$ scaled criterion (EqID: `standard_state_transfer_parameter_derivative`). Higher consumed columns use ALG-REFERENCE's
 three terminal molalities and both scaled consecutive changes. For frozen heat
 capacities, complete both changes through the anchored Gibbs/volume quotient;
 individual column admission is not a bound on an ill-conditioned quotient.
