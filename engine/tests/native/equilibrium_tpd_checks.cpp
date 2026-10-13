@@ -78,6 +78,33 @@ void check_phase_removal_inventory() {
             tpd_compare(id + "/attempt-inventory", preserved.amount[0] + preserved.amount[1], 1.0, 1e-12, {}, "mol");
         }
     }
+    // #423: a failed attempt whose liquid recipient L1 holds the methane(1e-8)/ethane feed at 300 K and 100 Pa, where
+    // the sole root 0.0401 mol/m3 lies below the 7087.88 mol/m3 negative-slope sample. V2 disappears; the recipient's
+    // reclosure is refused instead of reseeding L1 on that vapor-side root.
+    auto gas = one;
+    gas.pressure = FreeValue::fixed(100.0); gas.feed.values = {1e-8, 1.0 - 1e-8};
+    const auto vapor = solve_equilibrium(model, gas);
+    CHECK(vapor.success);
+    auto contradicted = gas;
+    contradicted.phases = {gas.phases[0], gas.phases[0]};
+    contradicted.phases[0].name = "L1"; contradicted.phases[0].kind = PhaseKind::Liquid; contradicted.phases[1].name = "V2";
+    const auto system = compile_problem(model, contradicted);
+    auto point = system.generic_point();
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        const auto offset = system.phase_offsets()[phase];
+        point[offset] = std::log(1e-8); point[offset + 1] = std::log1p(-1e-8);
+        point[offset + 2] = phase == 0 ? 1.0 - 5e-9 : 5e-9;
+        point[offset + 3] = std::log(vapor.packing_fractions[0]);
+    }
+    const auto event = check_topology(system, point);
+    CHECK(event.event == TopologyEvent::PhaseDisappeared && event.phase == 1 && system.problem.phases[1].name == "V2");
+    std::string cause;
+    try { (void)remove_discovery_phase(system, point); } catch (const std::exception& error) { cause = error.what(); }
+    tpd_compare("removal/contradicted-recipient-refused",
+        cause.find("liquid branch absent: the sole stable root 0.04009108") != std::string::npos
+            && cause.find("below the negative-slope sample 7087.88") != std::string::npos ? 1.0 : 0.0, 1.0, 0.0,
+        recording_support::fields({recording_support::field("dropped", system.problem.phases[1].name),
+            recording_support::field("cause", cause)}));
 }
 
 void check_tangent_plane_curvature() {
@@ -593,44 +620,55 @@ void check_gross_2002_bubble() {
     tpd_compare("gross-2002-bubble/y-butane", result.mole_fractions.at(2), 0.7115607362253475, 1e-10, {}, "1");
 }
 
-// #391: Gross 2002 Fig. 10 water(0.87)/1-pentanol dew at 101,300 Pa, k_ij 0.016, temperature
-// started at 375 K. The ordinary solve fails; the cooling onset reaches the first liquid on
-// cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root. Water 0.8875
-// started at 475 K: the ordinary solve succeeds on the metastable 368.061 K root, whose endpoint
-// liquid trials descend, so the onset search returns the 369.966 K declared-start dew.
-// Gross 2002 row 149 at 100 times its pressure, 1-propanol(0.413)/ethylbenzene, k_ij 0.023, 10,132,000 Pa
-// from 392.05 K: the ordinary dew lies at 227.63 K, where the feed's sole stable density root is not below
-// the scan's negative-slope sample. No vapor-side reference confirms it, so the onset refuses with no state.
-void check_gross_2002_cooling_onset() {
-    using namespace epcsaft; using namespace epcsaft::equilibrium;
-    const auto component = [](ParameterDocument& d, std::size_t i, double M, double m, double eps, double sigma) {
-        d.entries.push_back({"molar mass", "molar_mass", {i}, M, "kg / mol"});
-        d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
-        d.entries.push_back({"segments", "segment_count", {i}, m, "dimensionless"});
-        d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps, "kelvin"});
-        d.entries.push_back({"diameter", "sigma_constant", {i}, sigma, "angstrom"});
-    };
-    ParameterDocument d;
-    d.component_ids = {"water", "1-pentanol"};
-    d.site_component = {0, 0, 1, 1}; d.site_multiplicity = {1, 1, 1, 1};
+void gross_2002_component(epcsaft::ParameterDocument& d, std::size_t i, double M, double m, double eps, double sigma) {
+    d.entries.push_back({"molar mass", "molar_mass", {i}, M, "kg / mol"});
+    d.entries.push_back({"charge", "charge_number", {i}, 0.0, "elementary-charge"});
+    d.entries.push_back({"segments", "segment_count", {i}, m, "dimensionless"});
+    d.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, eps, "kelvin"});
+    d.entries.push_back({"diameter", "sigma_constant", {i}, sigma, "angstrom"});
+}
+
+epcsaft::ParameterDocument gross_2002_associating() {
+    epcsaft::ParameterDocument d;
     d.base_choice = "pc-saft"; d.association_choice = "general-site";
     d.electrolyte_choice = d.permittivity_choice = d.polar_choice = "none";
-    auto e = d;
+    return d;
+}
+
+// Gross 2002 Fig. 10 water/1-pentanol, k_ij 0.016.
+epcsaft::Parameters gross_2002_water_pentanol() {
+    auto d = gross_2002_associating();
+    d.component_ids = {"water", "1-pentanol"};
+    d.site_component = {0, 0, 1, 1}; d.site_multiplicity = {1, 1, 1, 1};
     const std::array<double, 2> M{0.018015, 0.08815}, m{1.0656, 3.6260}, eps{366.51, 247.28}, sigma{3.0007, 3.4508},
         eps_ab{2500.7, 2252.1}, kappa{0.034868, 0.010319};
     for (std::size_t i = 0; i < 2; ++i) {
-        component(d, i, M[i], m[i], eps[i], sigma[i]);
+        gross_2002_component(d, i, M[i], m[i], eps[i], sigma[i]);
         d.entries.push_back({"association energy", "association_energy_over_k", {2 * i, 2 * i + 1}, eps_ab[i], "kelvin"});
         d.entries.push_back({"association volume", "association_volume", {2 * i, 2 * i + 1}, kappa[i], "dimensionless"});
     }
     d.entries.push_back({"k_ij", "k_ij", {0, 1}, 0.016, "dimensionless"});
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {0, 3, 0, 1, 2, 3}, 0.0, "dimensionless"});
     d.entries.push_back({"wolbach-sandler", "association_combining_rule", {1, 2, 0, 1, 2, 3}, 0.0, "dimensionless"});
-    const HelmholtzModel model(build_parameters(d));
+    return epcsaft::build_parameters(d);
+}
+
+// #391: Gross 2002 Fig. 10 water(0.87)/1-pentanol dew at 101,300 Pa, k_ij 0.016, temperature
+// started at 375 K. The ordinary solve fails; the cooling onset reaches the first liquid on
+// cooling, the pentanol-rich declared-start dew, not the lower 369.425 K root. Water 0.8875
+// started at 475 K: the ordinary solve succeeds on the metastable 368.061 K root, whose endpoint
+// liquid trials descend, so the onset search returns the 369.966 K declared-start dew.
+// Gross 2002 row 149 at 100 times its pressure, 1-propanol(0.413)/ethylbenzene, k_ij 0.023, 10,132,000 Pa
+// from 392.05 K: at the ordinary dew's 227.63 K the feed's sole stable density root lies above the scan's
+// negative-slope sample, so its vapor is refused (#423) and the onset returns that refusal with no state.
+void check_gross_2002_cooling_onset() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(gross_2002_water_pentanol());
+    auto e = gross_2002_associating();
     e.component_ids = {"1-propanol", "ethylbenzene"};
     e.site_component = {0, 0}; e.site_multiplicity = {1, 1};
-    component(e, 0, 0.060096, 2.9997, 233.40, 3.2522);
-    component(e, 1, 0.106167, 3.0799, 287.35, 3.7974);
+    gross_2002_component(e, 0, 0.060096, 2.9997, 233.40, 3.2522);
+    gross_2002_component(e, 1, 0.106167, 3.0799, 287.35, 3.7974);
     e.entries.push_back({"association energy", "association_energy_over_k", {0, 1}, 2276.8, "kelvin"});
     e.entries.push_back({"association volume", "association_volume", {0, 1}, 0.015268, "dimensionless"});
     e.entries.push_back({"k_ij", "k_ij", {0, 1}, 0.023, "dimensionless"});
@@ -657,7 +695,63 @@ void check_gross_2002_cooling_onset() {
     tpd_compare("gross-2002-cooling-onset/T-475", metastable.temperature.at(0), 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
     CHECK(!refused.success); CHECK(refused.temperature.empty() && refused.molar_densities.empty());
-    CHECK(refused.message.find("cooling onset refused: vapor reference unavailable: sole density root") != std::string::npos);
+    CHECK(refused.message.find("vapor branch absent: the sole stable root 10325.2153") != std::string::npos);
+}
+
+// #423: a sole cold root lies on the other side of its negative-slope sample from the declared phase.
+// Declared phases are refused; discovery refuses that initial candidate and relabels an added phase to
+// the established side with its Gibbs decrease kept; a finite-split donor on the other side is refused.
+// Water(0.87)/1-pentanol at 150 K, 101,300 Pa with a vapor trial family; Gross 2001 methane/ethane z=1e-8
+// at 300 K, 100 Pa and z=0.5 at 240 K, 3 MPa. Values from main 4363d103 and #423 slice 2.
+void check_density_branch_admission() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+    const HelmholtzModel water_pentanol(gross_2002_water_pentanol()), methane_ethane(properties_support::neutral_binary());
+    const auto problem = [](double T, double P, std::vector<double> z) {
+        auto p = equilibrium_support::flash(2);
+        p.temperature = FreeValue::fixed(T); p.pressure = FreeValue::fixed(P); p.feed.values = std::move(z);
+        return p;
+    };
+    const auto liquid = problem(150.0, 101300.0, {0.87, 0.13}), gas = problem(300.0, 100.0, {1e-8, 1.0 - 1e-8});
+    const auto refused = [](const HelmholtzModel& model, EquilibriumProblem p, PhaseKind kind, const char* cause) {
+        p.phases[0].kind = kind;
+        const auto result = solve_equilibrium(model, p);
+        CHECK(!result.success); CHECK(result.molar_densities.empty()); CHECK(result.message.find(cause) != std::string::npos);
+    };
+    refused(water_pentanol, liquid, PhaseKind::Vapor, "vapor branch absent: the sole stable root 35911.87");
+    refused(methane_ethane, gas, PhaseKind::Liquid, "liquid branch absent: the sole stable root 0.04009108");
+    const auto discover = [](const HelmholtzModel& model, EquilibriumProblem p) {
+        auto trial = equilibrium_support::phase("trial-V", PhaseKind::Vapor); trial.support = {0, 1};
+        StabilityOptions options; options.trials = std::vector<PhaseSpec>{trial}; options.declaration_budget = 4;
+        p.phases.clear(); p.topology_declared = false; p.discovery = options;
+        auto result = solve_equilibrium(model, p);
+        CHECK(result.success && result.declaration);
+        return result;
+    };
+    const auto split = discover(water_pentanol, liquid);
+    CHECK(split.phase_count == 2);
+    for (const auto& phase : split.declaration->phases) CHECK(phase.kind == PhaseKind::Liquid);
+    tpd_compare("branch-admission/split-g", split.objective, -18.07210327606597, 1e-10 * 18.07210327606597, {}, "mol");
+    tpd_compare("branch-admission/split-rho", split.molar_densities.at(1), 11193.38560166406, 1e-10 * 11193.38560166406, {}, "mol/m3");
+    tpd_compare("branch-admission/split-amount", split.amounts.at(1), 0.13612504455029806, 1e-10, {}, "mol");
+    const auto vapor = discover(methane_ethane, gas);
+    CHECK(vapor.phase_count == 1); CHECK(vapor.declaration->phases[0].kind == PhaseKind::Vapor);
+    tpd_compare("branch-admission/vapor-rho", vapor.molar_densities.at(0), 0.040091082039588319, 1e-10 * 0.040091082039588319, {}, "mol/m3");
+    // Donor: the declared liquid at 240 K has two stable feed roots. Withdrawing its x_methane=0.4623 liquid trial at
+    // half and quarter capacity leaves donors whose sole roots lie below their samples; an eighth is admitted.
+    const auto compiled = compile_problem(methane_ethane, problem(240.0, 3e6, {0.5, 0.5}));
+    const auto declared = solve_compiled(compiled);
+    CHECK(declared.success);
+    const auto report = stability_test(compiled, declared, StabilityOptions{});
+    const auto donor = std::find_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
+        return !t.composition.empty() && std::abs(t.composition[0] - 0.46231861363169502) < 1e-8; });
+    CHECK(donor != report.trials.end());
+    const auto beta = donor->quantities.find("split_beta_mol");
+    tpd_compare("branch-admission/donor-beta", beta == donor->quantities.end() ? NAN : beta->second, 0.11623984312000767,
+                1e-10 * 0.11623984312000767, {}, "mol");
+    CHECK(donor->resolved_descent && donor->split_checks.size() == 3);
+    CHECK(donor->split_checks[0].at("admitted") == 0.0 && donor->split_checks[0].at("component_error_mol") <= 1e-12);
+    CHECK(donor->message.find("finite split: liquid branch absent: the sole stable root 2124.87") != std::string::npos
+          && donor->message.find("below the negative-slope sample 8026.59") != std::string::npos);
 }
 
 }  // namespace equilibrium_checks

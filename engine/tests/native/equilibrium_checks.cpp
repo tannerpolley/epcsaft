@@ -34,6 +34,7 @@ void check_reacting_liquid_split();
 void check_declared_reacting_liquid_split();
 void check_gross_2002_bubble();
 void check_gross_2002_cooling_onset();
+void check_density_branch_admission();
 }  // namespace equilibrium_checks
 namespace caloric_specification_checks {
 void admission();
@@ -80,6 +81,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.declared-reacting-liquid-split", "TPD", "Automatic_fast"}, check_declared_reacting_liquid_split},
         {{"native.equilibrium.gross-2002-bubble", "TPD", "Automatic_fast"}, check_gross_2002_bubble},
         {{"native.equilibrium.gross-2002-cooling-onset", "TPD", "Automatic_fast"}, check_gross_2002_cooling_onset},
+        {{"native.equilibrium.density-branch-admission", "TPD", "Automatic_fast"}, check_density_branch_admission},
         {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_f5},
         {{"native.equilibrium.s1", "S1", "Automatic_fast"}, check_s1},
         {{"native.equilibrium.reference-caloric-identities", "reference-caloric-identities", "Automatic_fast"}, reactive_caloric_checks::cheap, "S2"},

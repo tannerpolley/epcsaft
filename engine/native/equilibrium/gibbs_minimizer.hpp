@@ -70,6 +70,8 @@ BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
 );
+// Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
+DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
 
 struct DriverLimits final {
     std::size_t iterations;

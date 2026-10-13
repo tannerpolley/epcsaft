@@ -355,7 +355,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
                 throw std::invalid_argument("finite split arithmetic conservation failed");
             ++report.work["finite_split_evaluations"];
-            const double donor_volume = 1.0 / stability_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
+            const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
             const auto changed = phase_energy(*c.model, at.temperature, at.pressure, donor_volume, x,
                 report.standard_over_rt, report.work);
             const double delta = remaining * changed.at("g_over_rt") + beta * q.at("g_over_rt")
@@ -690,7 +690,7 @@ std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(
         double volume = p == *recipient ? merged_volume / amount : at.volume[p];
         packing_admission(c.model->packing_fraction_coefficient(at.temperature, w) / volume);
         if (p == *recipient) {
-            const auto root = stability_root(*c.model, at.temperature, at.pressure, w, c.problem.phases[p].kind);
+            const auto root = declared_root(*c.model, at.temperature, at.pressure, w, c.problem.phases[p].kind);
             ++work["root_calls"];
             work["root_evaluations"] += root.convergence.evaluations;
             volume = 1.0 / root.molar_density;
@@ -829,8 +829,8 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             auto next = best_compiled.problem;
             auto phase = current.trials[i].phase;
             auto& trial = current.trials[i];
-            // The optimizer may cross its starting root's label. Reuse the density
-            // owner's two admitted end branches; a unique root keeps its source label.
+            // The optimizer may cross its starting root's label. Reuse the density owner's two admitted end
+            // branches; a unique root takes the side its negative-slope sample establishes, else its source label (#423).
             try {
                 DensityRoot sibling;
                 auto root = solve_density(model, best.temperature[0], best.pressure[0], trial.composition,
@@ -845,8 +845,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                     || root.convergence.residual > policy::DENSITY_ROOT_RESIDUAL.value
                     || trial.quantities.at("addition_root_log_displacement") > policy::DENSITY_ANCHOR_LOG_WINDOW.value)
                     throw std::runtime_error("descending trial has no admitted density branch");
-                if (root.branch != DensityBranch::Unspecified)
-                    phase.kind = root.branch == DensityBranch::Liquid ? PhaseKind::Liquid : PhaseKind::Vapor;
+                if (const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
+                    side != DensityBranch::Unspecified)
+                    phase.kind = side == DensityBranch::Liquid ? PhaseKind::Liquid : PhaseKind::Vapor;
                 if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
                     [&](auto j) { return z[j] != 0; })) throw std::runtime_error("ionic descending trial left liquid branch");
             } catch (const std::exception& error) { trial.message += "; addition: " + std::string(error.what()); continue; }
@@ -864,7 +865,8 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                     auto [reduced, seed] = remove_discovery_phase(system, attempt, &record->work);
                     system = compile_problem(model, reduced); attempt.clear();
                     result = invoke(system, std::move(seed), "removal", attempt);
-                } catch (const std::exception& error) { result.message += "; " + std::string(error.what()); break; }
+                } catch (const std::exception& error) {
+                    trial.message += "; removal of " + removed.back().first.name + ": " + error.what(); break; }
             }
             if (!result.success || result.convergence.residual > request.row_tolerance) continue;
             double error_estimate = 0.0;

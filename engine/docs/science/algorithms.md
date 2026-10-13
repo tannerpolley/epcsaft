@@ -645,7 +645,8 @@ qualify the bounded inputs stated there.
 
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
-root, an anchored closure establishes local uniqueness, and the corrected density
+root and refuses a sole root that ALG-DENSITY's stored negative-slope sample places
+on the other side (#423), an anchored closure establishes local uniqueness, and the corrected density
 must lie in that anchor's window with positive pressure slope. Failure clears the
 state and retains the optimizer and row diagnostics. Continuation uses the same
 predicate with its own anchors and retains its `branch_lost` cause; its internal
@@ -1113,7 +1114,7 @@ sample $\rho_-$ (the converse of the liquid-side feed test). A sole root above $
 with no negative-slope sample, is unconfirmed, and the operation refuses before that
 sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
 10,132,000 Pa from 392.05 K otherwise confirms a 227.63 K "dew" whose two phases are
-both liquid-like). The rule is sufficient, not a
+both liquid-like; since #423 the ordinary solve's branch admission already refuses that vapor). The rule is sufficient, not a
 necessary physical condition: without a fixed-composition mechanical loop the scan cannot
 establish vapor-side identity, so valid mixture dew boundaries, for example near the
 mixture critical region, can stay unconfirmed and be refused (the Gross 2002 row 173, 496
@@ -1332,7 +1333,8 @@ when U is neutral. For reactions, first construct the existing positive
 charge-neutral base on U, then run the unchanged ideal-solution speciation
 sweeps. A zero-fed reaction participant remains on the required support; its
 feed fraction is not an admissible log-chart seed. Record all initial attempts
-and retain the accepted lower-G candidate. This preparation belongs only to
+and retain the accepted lower-G candidate; shared branch admission refuses a
+candidate whose sole root lies on the other side (#423). This preparation belongs only to
 discovery; declared initialization remains unchanged.
 Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
 pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
@@ -1418,7 +1420,7 @@ Negative plane and slope beyond the complete estimate require a finite split
 eight halvings. Preserve every component, hence every moiety and phase charge;
 reconstruct arithmetic composition/charge, reclose the withdrawn donor at the
 request pressure on its declared density branch through the shared density
-owner, recompute packing and shared energy, and verify matching conserved
+owner (a sole root established on the other side fails the check, #423), recompute packing and shared energy, and verify matching conserved
 totals before comparing Gibbs energies. The trial keeps its own molar volume,
 and the donor's reclosed volume seeds any added declaration. A fixed donor
 volume is admissible for the minimized A+PV, but its mechanical penalty
@@ -1450,8 +1452,12 @@ Rank distinct resolved descending trials by actual donor slope, more negative
 first, ties by enumeration. This is deterministic, not a claim of the best
 possible addition start. Seed the full added declaration with the admitted
 finite split; preserve feed, reactions, standards and exact selected support.
-Reuse shared density-branch admission; a unique unlabelled root retains the
-source declaration label without asserting a physical phase theorem. Require
+Reuse shared density-branch admission. A unique unlabelled root takes the side
+its stored negative-slope sample establishes (ALG-DENSITY, #423), keeping the
+split and its Gibbs decrease: water(0.87)/1-pentanol at 150 K and 101,300 Pa with
+a vapor trial family adds a second liquid. Without a sample it retains the source
+declaration label without asserting a physical phase theorem; an ionic phase
+established as vapor-side is refused. Require
 achieved rows and an uncertainty-qualified lower Gibbs energy before accepting
 an addition; otherwise try the next distinct trial. The acceptance margin sums
 each present phase's molar energy estimate weighted by its amount in mol, so
@@ -1470,7 +1476,7 @@ Coalescence merges both component inventories and extensive volumes into the
 first phase. Disappearance transfers its complete small inventory and volume
 to the first remaining phase whose support contains it, ties by index. No
 recipient means unresolved removal. Normalize merged amounts, reclose recipient
-density on its declared branch, verify packing/association and balances/charges,
+density on its declared branch (refusing a sole root established on the other side, #423), verify packing/association and balances/charges,
 then solve the reduced declaration. Dropping a phase never drops its inventory.
 The public unavailable-state meaning is unchanged.
 
