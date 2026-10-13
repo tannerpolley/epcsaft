@@ -22,7 +22,6 @@
 #include <exception>
 #include <limits>
 #include <memory>
-#include <numeric>
 #include <string>
 
 namespace epcsaft::equilibrium {
@@ -264,44 +263,6 @@ bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start
         if (!admitted_packing_fraction(packing)) return false;
     }
     return true;
-}
-
-double active_constraint_residual(
-    const CompiledSystem& compiled, const std::vector<double>& values
-) {
-    double result = 0.0;
-    for (std::size_t row = 0; row < values.size(); ++row) {
-        if (!compiled.feasibility_cell() && compiled.rows[row].kind == RowKind::Chemical) continue;
-        result = std::max(result, std::abs(values[row]));
-    }
-    return result;
-}
-
-struct ResidualSummary final {
-    double maximum = 0.0;
-    double intensive = 0.0;
-    double balance = 0.0;
-    double normalization = 0.0;
-    double charge = 0.0;
-};
-
-ResidualSummary summarize_residuals(
-    const std::vector<Row>& rows, const std::vector<double>& values
-) {
-    ResidualSummary result;
-    const auto keep = [](double& slot, double value) {  // a nonfinite row stays infinite
-        slot = std::isfinite(value) ? std::max(slot, std::abs(value)) : std::numeric_limits<double>::infinity();
-    };
-    for (std::size_t index = 0; index < std::min(rows.size(), values.size()); ++index) {
-        const RowKind kind = rows[index].kind;
-        keep(result.maximum, values[index]);
-        if (kind == RowKind::Chemical || kind == RowKind::Pressure) keep(result.intensive, values[index]);
-        else if (kind == RowKind::Moiety) keep(result.balance, values[index]);
-        else if (kind == RowKind::Enthalpy || kind == RowKind::Entropy) keep(result.balance, values[index]);
-        else if (kind == RowKind::Normalization) keep(result.normalization, values[index]);
-        else if (kind == RowKind::Electro) keep(result.charge, values[index]);
-    }
-    return result;
 }
 
 }  // namespace
@@ -991,20 +952,7 @@ EquilibriumResult run_driver(
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
-    const auto residuals = summarize_residuals(result.rows, result.residuals);
-    scope.probe("maximum_residual", residuals.maximum);
-    scope.probe("intensive_residual", residuals.intensive);
-    scope.probe("balance_residual", residuals.balance);
-    scope.probe("normalization_residual", residuals.normalization);
-    scope.probe("charge_residual", residuals.charge);
-    scope.probe("row_count", static_cast<double>(result.rows.size()));
-    scope.probe("primal_size", static_cast<double>(compiled.primal_size));
-    scope.probe("balance_rank", static_cast<double>(compiled.rank));
-    scope.probe("pinned_count", static_cast<double>(compiled.pinned_count));
-    scope.probe("active_residual", active_constraint_residual(compiled, evaluation.values));
-    scope.probe("objective", result.objective);
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
-    scope.probe("prepared_points", static_cast<double>(nlp->work().prepared_points));
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.classified_residuals);
@@ -1110,11 +1058,8 @@ EquilibriumResult run_driver(
     // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
     // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
     // objective and material rows obey joint extensive homogeneity in amount, composition
-    // and volume, together with stationarity in the free amount. The raw
-    // optimizer values stay a trace probe.
-    scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
+    // and volume, together with stationarity in the free amount.
     if (!compiled.feasibility_cell()) {
-        result.constraint_multipliers.clear();
         std::size_t electro = 0;
         for (const auto& row : compiled.rows) {
             if (row.kind == RowKind::Moiety) {
@@ -1167,8 +1112,6 @@ EquilibriumResult run_driver(
         }
     }
     result.reduced_hessian_minimum = curvature.minimum;
-    scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
-    scope.probe("reduced_hessian_band", curvature.band);
     if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
         const bool singular = curvature.equilibrated >= -curvature.band;
@@ -1188,14 +1131,6 @@ EquilibriumResult run_driver(
         reject_elapsed(result, scope); return result; }
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
-    scope.probe("reduced_hessian_minimum", result.reduced_hessian_minimum);
-    scope.probe("phase_count", static_cast<double>(result.phase_count));
-    scope.probe("residual", result.convergence.residual);
-    scope.probe("iterations", static_cast<double>(result.iterations));
-    scope.probe("evaluations", static_cast<double>(result.evaluations));
-    scope.probe("rows", static_cast<double>(result.rows.size()));
-    scope.probe("multipliers", static_cast<double>(result.multipliers.size()));
-    scope.probe("amount_total", std::accumulate(result.amounts.begin(), result.amounts.end(), 0.0));
     return result;
 }
 

@@ -333,7 +333,6 @@ struct CompiledSystem final {
         return primal_size + rank + charge_row_count;
     }
 
-    std::size_t constraint_count() const noexcept { return rows.size(); }
 
     bool has_caloric_condition() const noexcept {
         return problem.enthalpy_j.has_value() || problem.entropy_j_per_k.has_value();

@@ -31,12 +31,6 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
     return result;
 }
 
-std::size_t count_rows(const CompiledSystem& compiled, RowKind kind) {
-    std::size_t result = 0;
-    for (const auto& row : compiled.rows) result += row.kind == kind;
-    return result;
-}
-
 void validate_intensive_seed(const FreeValue& value, const char* name) {
     if (!value.free && !value.is_positive()) {
         throw std::invalid_argument(std::string("invalid ") + name);
@@ -1034,7 +1028,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
 
 static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
-    const std::vector<std::vector<double>>* trial_basis, core::Scope& scope
+    const std::vector<std::vector<double>>* trial_basis
 ) {
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
@@ -1265,13 +1259,6 @@ static CompiledSystem compile_with_basis(
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
-    scope.probe("chemical_rows", static_cast<double>(count_rows(compiled, RowKind::Chemical)));
-    scope.probe("pressure_rows", static_cast<double>(count_rows(compiled, RowKind::Pressure)));
-    scope.probe("balance_rows", static_cast<double>(count_rows(compiled, RowKind::Moiety)));
-    scope.probe("normalization_rows",
-                static_cast<double>(count_rows(compiled, RowKind::Normalization)));
-    scope.probe("removed_species", static_cast<double>(compiled.removed_species.size()));
-    scope.probe("conserves_total_moles", compiled.conserves_total_moles ? 1.0 : 0.0);
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
     Eigen::MatrixXd matrix(
@@ -1287,12 +1274,7 @@ static CompiledSystem compile_with_basis(
     compiled.generic_nullity = point.size() > compiled.jacobian_rank
         ? point.size() - compiled.jacobian_rank : 0;
     compiled.feasible = compiled.generic_nullity == 0;
-    scope.probe("jacobian_rank", static_cast<double>(compiled.jacobian_rank));
-    scope.probe("unknowns", static_cast<double>(compiled.unknown_count()));
-    scope.probe("constraints", static_cast<double>(compiled.constraint_count()));
     // The compiled record is the sole source for both the driver and callers.
-    scope.probe("rows", static_cast<double>(compiled.rows.size()));
-    scope.probe("rank", static_cast<double>(compiled.rank));
     return compiled;
 }
 
@@ -1307,7 +1289,7 @@ void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>
 
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
     core::Scope scope("compile_problem");
-    return compile_with_basis(model, request, nullptr, scope);
+    return compile_with_basis(model, request, nullptr);
 }
 
 // The reduced trial space is internal: the public no-reaction compiler retains species balances.
@@ -1349,7 +1331,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.phases[0].amount = AmountSpec::free();
     request.row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
-    return compile_with_basis(model, request, &B, scope);
+    return compile_with_basis(model, request, &B);
 }
 
 std::vector<double> CompiledSystem::generic_point() const {

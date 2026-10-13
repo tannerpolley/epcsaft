@@ -113,8 +113,6 @@ SensitivityInfo inspect_sensitivity(
     scope.probe("dimension", static_cast<double>(dimension));
     scope.probe("condition", result.condition_estimate);
     scope.probe("jacobian_entries", static_cast<double>(jacobian.size()));
-    scope.probe("parameter_entries", static_cast<double>(parameter_rows.size()));
-    scope.probe("parameters", static_cast<double>(result.parameters));
     scope.probe("nonsingular", result.nonsingular ? 1.0 : 0.0);
     scope.probe("rank", static_cast<double>(result.rank));
     return result;
