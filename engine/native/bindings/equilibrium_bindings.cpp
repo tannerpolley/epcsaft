@@ -185,7 +185,6 @@ void register_equilibrium(py::module_& module) {
         .def_property_readonly("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     py::class_<PointEvaluation>(module, "PointEvaluation")
         .def_readonly("values", &PointEvaluation::values)
-        .def_readonly("jacobian", &PointEvaluation::jacobian)
         .def_readonly("objective", &PointEvaluation::objective)
         .def_readonly("floor", &PointEvaluation::floor);
     py::class_<CompiledSystem>(module, "CompiledSystem")
@@ -233,7 +232,6 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("constraint_multipliers", &EquilibriumResult::constraint_multipliers)
         .def_readonly("residuals", &EquilibriumResult::residuals)
         .def_readonly("classified_residuals", &EquilibriumResult::classified_residuals)
-        .def_readonly("sensitivity", &EquilibriumResult::sensitivity)
         .def_readonly("coordinates", &EquilibriumResult::coordinates)
         .def_readonly("phase_count", &EquilibriumResult::phase_count)
         .def_readonly("iterations", &EquilibriumResult::iterations)
