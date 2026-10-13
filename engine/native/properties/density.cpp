@@ -635,7 +635,7 @@ DensityRoot solve_density(
     core::Scope scope("solve_density");
     if (anchor_density.has_value() && sibling_root != nullptr)
         throw std::invalid_argument("density sibling requires an unanchored root search");
-    if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
+    if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature " + core::optional_number(temperature) + " K; need T > 0 K");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
     // EqID: ideal_gas_density
@@ -672,7 +672,8 @@ DensityRoot solve_density(
         std::copy_if(roots.begin(), roots.end(), std::back_inserter(stable), [](const auto& root) {
             return std::isfinite(root.pressure_density_derivative) && root.pressure_density_derivative > 0.0;
         });
-        if (stable.empty()) throw std::runtime_error("no stable density root (count 0)");
+        if (stable.empty()) throw std::runtime_error("no stable density root (count 0) at T = " + core::optional_number(temperature)
+            + " K, P = " + core::optional_number(pressure) + " Pa; check the units (K, Pa)");
         std::sort(stable.begin(), stable.end(), [](const auto& left, const auto& right) {
             return left.molar_density < right.molar_density;
         });
