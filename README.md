@@ -133,8 +133,7 @@ that evidence.
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
 Builds and Engine calculations run directly, with no thread, slot or memory limits.
-A warm `check-all.sh` takes about 20–40 s
-(24.0 s measured in #319). `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+`tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; build the
 checkout's side with `bash tools/build-engine.sh --wheel build/wheels/<name>`.
 After merges, `tools/refresh-main-wheel` builds main's

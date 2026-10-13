@@ -403,11 +403,9 @@ do not follow from this doctrine.
 Reuse of discovered declarations is numerically qualified for the retained
 owner-enumerated cases. It is not a guarantee for every amount scale or initial
 point. A 100 mol neutral discovery reproduces the one-mol intensive split and
-extensive Gibbs scaling, while both cold declared solving and supplied-result
-public reuse coalesce and are rejected by the distinct-phase check. This is a
-known declared-driver conditioning limit, not phase nonexistence or failure of
-the discovered-state scaling. [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
-owns investigation; no shared-driver change is selected in #223.
+extensive Gibbs scaling. Since [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
+(PR #400) cold declared solving and supplied-result public reuse at that scale
+also keep the split.
 
 ## Sensitivity and validity
 
