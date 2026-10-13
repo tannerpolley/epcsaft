@@ -474,14 +474,10 @@ mechanically stable feed root lies on the liquid side of the scanned loop; it do
 show that the equilibrium phase is liquid. Near-critical methane/ethane feeds with one
 unlabelled root and no witness keep $z/K$, which retains their solutions. The incipient
 estimate, the pressure step and the density closures are unchanged (#391, #410).
-Evidence (#391/#410 build, default starts): Gross 2002 712 to 721 of 724 with no
-success lost and no added iterations or evaluations; all 1,800 Cameretti 2005 aqueous
-electrolyte bubbles against 747; the 70-declaration methane/ethane bubble sweep 22 to 26
-with none lost; retained states agree within 1e-12 relative.
-Gross 2002 water/1-pentanol dew rows 558, 722 and 723 still fail from the generated
-start (local instability for 558 and 722, infeasibility for 723). Supplied starts reach
-two dew branches for 558 and 722; for 722 the higher, about 369.966334 K, is water-rich,
-so no single liquid start is a general answer. The explicit [cooling onset](#cooling-onset-dew) selects
+Default-start results: [Cameretti 2005](../../../analyses/reproduction/2005-cameretti/README.md) and
+[Gross 2002](../../../analyses/reproduction/2002-gross/README.md); `tools/check-equilibrium-corpora` pins them.
+Some water/1-pentanol dews have two dew branches, one of them water-rich, so no single
+liquid start is a general answer; the explicit [cooling onset](#cooling-onset-dew) selects
 the intended branch.
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
@@ -518,14 +514,9 @@ or after a failed speciation, nonfinite or nonpositive $K_i$, no bracket, a phas
 below `PHASE_DISAPPEARANCE_AMOUNT` of the feed or a nonpositive fraction, the
 apparent-species start above follows before the one solve; an exhausted budget
 propagates and nothing retries after the solve. Supplied compositions skip the
-split; supplied amounts and packings replace its coordinates. Evidence (#350/#356
-build; MEA case-7 declaration at 3 temperatures, 8 loadings and 3 pressures plus
-the key flash, 73 points): together with the amount step rule below, 72 are accepted
-against 58 from the apparent-species start, none of the 58 is lost and states agree
-within 1.5e-11; the key flash goes 43/57/44 to 19/42/20. Without the rule the split
-loses 9 of the 58, each ending on a vanished phase. Over 180 further MEA points
-(313–393 K, 2 kPa–1 MPa, loadings 0.01–0.5), 17 are newly accepted and none of the
-32 accepted ones is lost (states within 4.0e-11).
+split; supplied amounts and packings replace its coordinates. Without the amount step
+rule below the split loses accepted MEA states, each ending on a vanished phase; the
+qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md) (#350, #356; PR #370).
 Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
 redundant density initialization for a previous successful result with compatible
 positive coordinates. A multicomponent bubble declaration (fixed temperature, free
@@ -591,10 +582,9 @@ $P_w$, the start keeps $P_0$ and refuses with `no positive mechanical-loop witne
 pressure`; starts the rule does not cover keep the generic coexistence refusal. A missing
 witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
-No pressure is invented and nothing retries. Evidence: Gross and Sadowski (2002)
-methanol, 1-pentanol and 1-nonanol saturation, nine rows (eight states) recovered in
-four iterations, within 7.3e-13 of their declared-start states; no other
-declaration changed. Final residual and stability checks are unchanged.
+No pressure is invented and nothing retries; the rule was qualified on the near-critical
+alcohol saturation states of the [Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md)
+(PR #414). Final residual and stability checks are unchanged.
 With more than one free phase, every free amount that no start owner estimates (no
 Rachford–Rice or true-species split, speciated total, or caller or previous amount)
 starts at the feed amount $N$ instead of $N/k$ for $k$ free phases (#407). This is an
@@ -606,13 +596,11 @@ default, 1 from the new. That argument holds only for default-started free amoun
 Gibbs minimization; in pinned, caloric or critical feasibility problems, whose
 coordinates keep unit one, the change is only a different infeasible start. The
 $\kappa_N$ first-step retention below becomes $0.1N$ per phase instead of $0.1N/k$; it is
-recomputed at every iterate, so it is no permanent floor. From $N/k$, both declared
-esterification liquid pairs of the Ascani reproduction (318.15 K, $z=0.66$; 353.6 K,
-$z=0.78$) lost their minor liquid at 1, 100 and 10,000 mol (aq vanished, or the phases
-coincided); from $N$ they return the lower-G distinct liquids. Of the key solves only
-ionic LLE cold changes work, from 10/13/11 to 10/15/11 iterations/evaluations/Hessian
-calls. This is an empirically qualified initialization convention, not a convergence
-guarantee.
+recomputed at every iterate, so it is no permanent floor. From $N/k$ the declared
+esterification liquid pairs of the [Ascani 2023 reproduction](../../../analyses/reproduction/2023-ascani/README.md)
+lost their minor liquid at 1, 100 and 10,000 mol; from $N$ they return the lower-G distinct
+liquids (PR #421). This is an empirically qualified initialization convention, not a
+convergence guarantee.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors
@@ -863,13 +851,11 @@ In mol the solve was conditioned by the feed size. Ipopt starts every bound mult
 constant `bound_mult_init_val` 1, so in feed-relative units $q=n/N$ the initial amount bound
 multiplier is $z_q=N z_n=N$, while composition and packing multipliers do not depend on $N$.
 This mismatch is demonstrated but no experiment has isolated it as the sole cause; what matched
-across feeds was the normalized iteration-0 start, not the iteration-1 point. Water/isobutanol
-(293.15 K, $10^5$ Pa, feed $0.6N/0.4N$) coalesced at 100 mol into one liquid 0.0216 RT per mol
-of feed above the split, and the #312 feed-scaled matrix passed 39 of 42 declarations. In
-start-amount units it passes 42/42, and each declaration takes the same optimizer iterations
-at 1, 100 and 10,000 mol. The unit was chosen empirically, as the only qualified candidate that
-also adds no priority-solve iterations: feed-relative $n/N$ passes the matrix but raises the
-MEA flash from 19 to 21 iterations cold and 17 to 19 accepted; other order-one multiples of the
+across feeds was the normalized iteration-0 start, not the iteration-1 point. In start-amount
+units the #312 feed-scaled declaration matrix passes at 1, 100 and 10,000 mol with feed-independent
+optimizer iterations (PR #400). The unit was chosen empirically, as the only qualified candidate
+that also adds no key-solve iterations: feed-relative $n/N$ passes the matrix but raises the
+MEA flash iterations; other order-one multiples of the
 start add key-solve iterations or swap the neutral phase labels; Ipopt's gradient-based
 `nlp_scaling` does not scale variables; user variable scaling would conflict with the guard
 above; `mu-based` bound-multiplier initialization is untested. The floor regularizes the
@@ -1020,14 +1006,10 @@ and `phases_coincide` classification on every route through the driver: plain
 and explicit starts and continuation correctors. Charged and reacting cells need their
 admissible perturbation subspaces first and are not checked. Positive curvature
 certifies neither global stability nor another solution's absence, and a
-refusal does not say that no bubble point exists. Evidence (equimolar neutral
-binary, `bubble_at`, #352 design review): of 155 recorded successful returns
-from caller pressure guesses and seeds, the 58 near-trivial states (phase
-distance 7.5e-6 to 1.5e-3) each have `lambda_min` between -2.6e-4 and
--9.8e-7 in one phase. That is at least 5.5e8 times its band. The 95 genuine
-bubbles and the 266.5 K dew state have `lambda_min >= +3.2e-7` (265.95 K),
-against bands below 1.1e-14. E4-D pins the 260 K, 2.02606 MPa guess, which
-returned the trivial state at 5.414 MPa as a success.
+refusal does not say that no bubble point exists. On the equimolar neutral
+`bubble_at` returns of the #352 design review, near-trivial states have negative `lambda_min`
+and genuine bubbles positive by orders of magnitude beyond the band (PR #363).
+E4-D pins the 260 K, 2.02606 MPa guess, which returned the trivial state as a success.
 
 PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
 Its objective is constant; all chemical, pressure, material and caloric rows
@@ -1141,10 +1123,8 @@ descent at the corrected dew. All reference, density-scan, trial and corrector w
 including work before a refusal.
 Finite coverage: a narrow negative-distance interval between samples or a missed
 composition minimum is not excluded, and a refusal means unresolved selection, not an
-absent dew. Evidence (#391): rows 558, 722 and 723 from the default start and from 350,
-360, 375, 380 and 400 K, and row 722 from 475 K, reach the supplied-start dews within
-1e-10; the other 100 admitted Gross 2002 dews keep their ordinary states, each with one
-endpoint sample of three liquid trials.
+absent dew. PR #424 qualifies it on the water/1-pentanol dews of the
+[Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md) from several start temperatures.
 
 ### Critical-equation candidates and phase envelopes
 
