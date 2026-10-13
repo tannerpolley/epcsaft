@@ -1,0 +1,93 @@
+schema_version = 2
+packet_id = "hydrogen-binary-vle"
+packet_version = "2"
+title = "Hydrogen binary vapor-liquid equilibrium observations"
+description = "Source-transcribed H2 + benzene bubble-point rows (Park 1996) and H2 + CH4 coexisting liquid and vapor compositions (Benham 1957, Sagara 1972, Hong 1981) in SI units, with each row's source class. Every row of each selected table is retained. Successor to hydrogen-binary-vle/1 with identical row ids and values: partitions and discrepancy scales are consumer choices and are not carried, and the six x_H2 < 0.01 rows are ordinary source rows."
+license_or_use_basis = "Numeric transcription of published experimental table values and project-authored provenance only; the packet contains no paper text, figure, page image or generated model result. Source papers remain under their publishers' terms."
+tolerance_rationale = "Values are retained as printed and converted to SI; the literal source accuracy wording is quoted in provenance/source-origin.toml. The packet asserts no discrepancy scale or model-acceptance tolerance; consumers own both."
+
+[[sources]]
+source_id = "park1996"
+citation = "Park, J.; Robinson, R. L., Jr.; Gasem, K. A. M. Solubilities of Hydrogen in Aromatic Hydrocarbons from 323 to 433 K and Pressures to 21.7 MPa. J. Chem. Eng. Data 1996, 41, 70-73."
+doi = "10.1021/je950152n"
+use_basis = "Table 1 benzene blocks (p. 71); inspected PDF SHA-256 ee78ca0c7fe09b659216b194afe13f8c56a35fa5700b727c71c6ff8c04d17c5c."
+
+[[sources]]
+source_id = "benham1957"
+citation = "Benham, A. L.; Katz, D. L. Vapor-liquid equilibria for hydrogen-light-hydrocarbon systems at low temperatures. AIChE J. 1957, 3, 33-36."
+doi = "10.1002/aic.690030107"
+use_basis = "Table 1 H2-CH4 (p. 33); inspected PDF SHA-256 ee68791dfaa7d308417b6191e57f212c8e9402be3ad7257f2c2a05a0a605085b."
+
+[[sources]]
+source_id = "sagara1972"
+citation = "Sagara, H.; Arai, Y.; Saito, S. Vapor-liquid equilibria of binary and ternary systems containing hydrogen and light hydrocarbons. J. Chem. Eng. Japan 1972, 5, 339-348."
+doi = "10.1252/jcej.5.339"
+use_basis = "Table 1 H2-CH4 binary (p. 342); inspected PDF SHA-256 8c54d1d7b8cc8b02cf8fb21bc29c8c4d46d67180df3188674a8279f9745f5a31."
+
+[[sources]]
+source_id = "hong1981"
+citation = "Hong, J. H.; Kobayashi, R. Vapor-liquid equilibrium study of the hydrogen-methane system at low temperatures and elevated pressures. J. Chem. Eng. Data 1981, 26, 127-131."
+doi = "10.1021/je00024a007"
+use_basis = "Table I H2-CH4 (pp. 128-129); inspected PDF SHA-256 2ccb9bd55fbcf3f94943cadb1edb2429704ec2f3aac6b7155b8acdc9bbba7f83."
+
+[[domains]]
+domain_id = "park1996-h2-benzene"
+kind = "source-observation"
+temperature_min = 323.2
+temperature_max = 423.2
+pressure_min = 2550000.0
+pressure_max = 15730000.0
+temperature_unit = "kelvin"
+pressure_unit = "pascal"
+description = "H2 + benzene bubble points at 323.2, 373.2 and 423.2 K, 2.55-15.73 MPa; 18 ordinary rows."
+
+[[domains]]
+domain_id = "benham1957-h2-ch4"
+kind = "source-observation"
+temperature_min = 116.48333333333333
+temperature_max = 172.0388888888889
+pressure_min = 3378431.07365232
+pressure_max = 27579029.172672
+temperature_unit = "kelvin"
+pressure_unit = "pascal"
+description = "H2 + CH4 liquid and vapor compositions at -250, -200 and -150 degF (116.48-172.04 K), 490-4000 psia; 13 ordinary rows."
+
+[[domains]]
+domain_id = "sagara1972-h2-ch4"
+kind = "source-observation"
+temperature_min = 103.15
+temperature_max = 173.65
+pressure_min = 1023382.5
+pressure_max = 10831642.5
+temperature_unit = "kelvin"
+pressure_unit = "pascal"
+description = "H2 + CH4 liquid and vapor compositions at -170.0 to -99.5 degC (103.15-173.65 K), 10.1-106.9 atm; 28 ordinary rows."
+
+[[domains]]
+domain_id = "hong1981-h2-ch4"
+kind = "source-observation"
+temperature_min = 108.13
+temperature_max = 183.12
+pressure_min = 75200.0
+pressure_max = 28406000.0
+temperature_unit = "kelvin"
+pressure_unit = "pascal"
+description = "H2 + CH4 liquid and vapor compositions on ten isotherms 108.13-183.12 K, 0.0752-28.406 MPa; 130 ordinary rows, ten calculated pure-methane endpoints and four author-labelled critical points."
+
+[[files]]
+path = "observations/rows.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "f1ac2d418a88857528e796bb6ee6d0fe7bb313850b299b86fad3700d0fd9c275"
+source_refs = ["park1996", "benham1957", "sagara1972", "hong1981"]
+domain_refs = ["park1996-h2-benzene", "benham1957-h2-ch4", "sagara1972-h2-ch4", "hong1981-h2-ch4"]
+units_basis = "T_K kelvin; P_Pa pascal (absolute); x_H2 and y_H2 H2 mole fractions in liquid and vapor (y_H2 empty for bubble-point rows); row_id, source_key, table and source_row_class are non-numeric labels."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "402fcd81f130329f012dec04611d8ba5a1148c51d583602f64efa63e919d33bd"
+source_refs = ["park1996", "benham1957", "sagara1972", "hong1981"]
+domain_refs = ["park1996-h2-benzene", "benham1957-h2-ch4", "sagara1972-h2-ch4", "hong1981-h2-ch4"]
+units_basis = "Source PDF hashes, locators, literal accuracy wording, unit transformations and source-conflict notes are non-numeric provenance metadata."
