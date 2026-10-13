@@ -117,9 +117,9 @@ The 100 mol default-discovery margin has relative error zero against the
 amount-weighted reference; the old unweighted expression has relative error
 0.99 and fails the unchanged 1e-13 criterion. The same discovery preserves
 the neutral intensive split and extensive Gibbs scaling. Cold declared and
-supplied-result public reuse at this feed scale coalesce; that diagnosed
-pre-existing conditioning limit is retained and routed to
-[#243](https://github.com/tannerpolley/ePC-SAFT/issues/243). Original qualified
+supplied-result public reuse at this feed scale then coalesced; that
+pre-existing conditioning limit was removed by
+[#243](https://github.com/tannerpolley/ePC-SAFT/issues/243) (PR #400). Original qualified
 reuse cases and frozen declared work remain unchanged. No driver equilibration
 is adopted here, and no universal reuse guarantee is claimed.
 
