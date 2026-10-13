@@ -2,7 +2,7 @@
 
 Retained numerical diagnoses, source comparisons and executed commands for the
 identified implementations below. Current execution choices and qualification
-are owned by [the implementation plan](../implementation-plan.md). This record
+are owned by GitHub issues ([ADR 0010](../decisions/0010-github-issue-roadmap-authority.md)). This record
 supports the F1–F5 diagnoses and reference-case selection; it supplies no worker
 queue, implementation authorization or current completion status.
 

@@ -430,6 +430,8 @@ private:
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
     mutable SweepCounters counters_;
     mutable std::deque<std::pair<std::vector<double>, std::vector<NeutralReferenceReactionDiagnostic>>> references_;
+    // reference_taylor central Hessians of this immutable model by exact (T, V, n): a short FIFO (#449).
+    mutable std::deque<std::pair<std::vector<double>, HelmholtzDerivatives>> centrals_;
     mutable std::mutex mutex_;
 };
 

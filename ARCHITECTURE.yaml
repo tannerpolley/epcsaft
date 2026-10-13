@@ -1,7 +1,6 @@
 version: 17
 # Project structure declaration: components, Engine layers, path ownership and
-# code budgets. Implementation plans and dependencies are in GitHub issues;
-# qualified capability remains in repository evidence. Package dependencies live
+# code budgets. Plans are GitHub issues (ADR 0010). Package dependencies live
 # in pyproject.toml.
 
 # The rule this file exists to state: C++ is organised by dependency layer,

@@ -1,1 +1,0 @@
-Implementation plans and execution state are owned by the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones), as recorded in [ADR 0010](decisions/0010-github-issue-roadmap-authority.md).

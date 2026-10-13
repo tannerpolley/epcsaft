@@ -2,12 +2,12 @@
 
 // Shared physical constants and unit bridges. Values are SI unless the name
 // says otherwise; each is defined here once and reused by consumers.
-// Vacuum permittivity retains the CODATA 2018 central value, with relative
+// Vacuum permittivity retains the CODATA 2018 central value (https://physics.nist.gov/cuu/pdf/wall_2018.pdf), with relative
 // standard uncertainty 1.5e-10; updates require replaying affected evidence.
 
 // Measured or defined physical constants, each defined here and nowhere else (the
 // architecture checker rejects a second gas constant). Values are the 2019 SI
-// definitions, exact where the SI fixes them.
+// definitions (https://www.bipm.org/en/measurement-units/si-defining-constants), exact where the SI fixes them.
 
 namespace epcsaft {
 
@@ -22,7 +22,7 @@ inline constexpr double SPEED_OF_LIGHT_M_PER_S = 299792458.0;
 inline constexpr double PI = 3.141592653589793238462643383279502884;
 
 // Unit bridges. The equations work in angstrom and Debye because the published
-// parameter tables do; these are the only places that conversion appears.
+// parameter tables do; these are the only places that conversion appears. Debye in C m: https://cccbdb.nist.gov/dipunitsx.asp
 inline constexpr double ANGSTROM_M = 1.0e-10;
 inline constexpr double DEBYE_C_M = 1.0e-21 / SPEED_OF_LIGHT_M_PER_S;
 // mu^2/(4 pi epsilon_0) in J A^3 for mu in Debye; 1e-19 only under the pre-2019 mu_0.
