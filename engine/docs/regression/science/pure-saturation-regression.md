@@ -195,8 +195,12 @@ Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$ in a
 chart of the box instead of Ceres' bounds (whose projected line search would
 re-solve and differentiate all states at every trial and whose per-coordinate
 clamp spoils a step computed as if a bound could be crossed): a step leaving the
-box is shortened along its direction to the first bound (the trust-region ratio
-keeps the full step's predicted decrease, so it is conservative). Bounds form an
+box is shortened along its direction to the first bound. The trust-region ratio
+keeps the full step's predicted decrease while the evaluated step may be shortened
+or clamped, and is not shown to be conservative: in the 149-row reacting MEA fit
+(#455) it rejected five shortened steps that lowered the cost (full-step ratio at
+most $5.6\times10^{-4}$, shortened-step ratio above 0.9997, threshold $10^{-3}$)
+under the earlier release rule, and no such step under the current one. Bounds form an
 active set in optimizer space, against the physical bounds mapped by the affine
 transform (rounding is monotone, so a physical value inside its bounds is inside
 these): a coordinate within the named `FIT_ACTIVE_BOUND_DISTANCE` of a bound
@@ -204,16 +208,24 @@ whose objective gradient $J^\top r$ points out of the box is on it and is held
 where it is for a round, never moved onto the bound; a free coordinate on a
 bound it moves toward is clamped instead of shortening the step. A round ends
 when Ceres converges, an accepted step puts a free coordinate exactly on a
-bound it was not on at the previous accepted point, or the held membership
-selected by the full accepted weighted optimizer gradient $J^\top r$ changes,
-including release when a held coordinate's gradient turns inward. Rejected
-trials cannot change the set. The accepted-point Jacobian is reused without
-another thermodynamic solve; a failed gradient stops with its typed cause.
-Any other Ceres stop ends the fit. The set is rebuilt at that point, and the
-fit converges when a converged round leaves the set unchanged or every
-coordinate is held. Unchanged membership retains Ceres' function, parameter
-and gradient stopping criteria; it does not alone certify a small free
-projected gradient. Every coordinate held satisfies the bound-gradient signs
+bound it was not on at the previous accepted point, or the full accepted
+weighted optimizer gradient $J^\top r$ selects a coordinate that is not held.
+Rejected trials cannot change the set. The accepted-point Jacobian is reused
+without another thermodynamic solve; a failed gradient stops with its typed cause.
+Any other Ceres stop ends the fit. The set is rebuilt at that point: selected
+coordinates join it, and the held coordinates no longer selected (gradient turned
+inward) are released together, but only after a Ceres convergence report or when
+no coordinate would otherwise stay free. On a held coordinate $\pm g_c$ is its
+bound multiplier only where the free gradient vanishes, so release waits until
+Ceres stops on the current set (the drop timing of Nocedal and Wright, 2006,
+Algorithm 16.3). The convergence report (function, gradient, parameter or
+minimum-radius test) is a stopping trigger, not a stationarity certificate;
+releasing several coordinates at once is a choice, revisiting a face is not
+excluded, and a budget stop leaves before another set update, so a needed release
+can be missed (the fit reports its limit). The fit converges when a converged
+round leaves the set unchanged or every coordinate is held. Unchanged membership
+retains Ceres' function, parameter and gradient stopping criteria; it does not
+alone certify a small free projected gradient. Every coordinate held satisfies the bound-gradient signs
 to the declared distance. A bound within the same
 distance is active for the covariance, and physical values are clamped to their
 bounds against the affine map's rounding. Iterations
