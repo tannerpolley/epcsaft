@@ -117,6 +117,9 @@ std::vector<ReactionSpec> central_reference_reactions(
         throw std::invalid_argument(
             "reference_unavailable: supplied standard Gibbs conflicts with source reference");
     }
+    const auto unavailable = [&](std::size_t row, const std::string& tail) {
+        return std::invalid_argument("reference_unavailable: reaction " + reaction_name(request.reactions[row], row) + tail);
+    };
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
     if (fixed_pressure != nullptr && temperature_order == 0 && !parameter_jets) {
@@ -137,11 +140,8 @@ std::vector<ReactionSpec> central_reference_reactions(
         if (std::any_of(reused.begin(), reused.end(),
                 [row](const auto& item) { return item.reaction_index == row; })) continue;
         if (reaction.affinity_j_per_mol.has_value()
-            || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value())) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + " needs a scalar K or correlation source");
-        }
+            || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value()))
+            throw unavailable(row, " needs a scalar K or correlation source");
         reference_rows.push_back(row);
         stoichiometries.push_back(reaction.stoichiometry);
         references.push_back(*reaction.reference);
@@ -164,44 +164,20 @@ std::vector<ReactionSpec> central_reference_reactions(
         const std::size_t row = reference.reaction_index;
         const auto& reaction = request.reactions[row];
         diagnostics.push_back(reference);
-        if (reference.status != NeutralReferenceStatus::Available
-            || !reference.terminal_contraction.has_value()) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + (reference.message.empty() ? "" : " " + reference.message));
-        }
-        double ln_k = 0.0;
-        if (reaction.correlation.has_value()) {
-            try {
-                ln_k = evaluate_reaction_properties(
-                    *reaction.correlation, temperature).ln_k;
-            } catch (const std::exception& error) {
-                throw std::invalid_argument(
-                    "reference_unavailable: reaction " + reaction_name(reaction, row)
-                    + " " + error.what());
-            }
-        } else {
-            ln_k = std::log(*reaction.equilibrium_constant);
-        }
-        double scale = 0.0;
-        if (reaction.reference->source_basis
-                == ReferenceSourceBasis::CommonMolalityInfiniteDilution) {
-            try {
-                scale = reaction_reference_log_scale(
-                    model, *request.source_reference, reaction.stoichiometry);
-            } catch (const std::exception& error) {
-                throw std::invalid_argument(
-                    "reference_unavailable: reaction " + reaction_name(reaction, row)
-                    + " " + error.what());
-            }
+        if (reference.status != NeutralReferenceStatus::Available || !reference.terminal_contraction.has_value())
+            throw unavailable(row, reference.message.empty() ? "" : " " + reference.message);
+        double ln_k = 0.0, scale = 0.0;
+        try {
+            ln_k = reaction.correlation.has_value() ? evaluate_reaction_properties(*reaction.correlation, temperature).ln_k
+                                                    : std::log(*reaction.equilibrium_constant);
+            if (reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+                scale = reaction_reference_log_scale(model, *request.source_reference, reaction.stoichiometry);
+        } catch (const std::exception& error) {
+            throw unavailable(row, std::string(" ") + error.what());
         }
         const double ln_k_density = ln_k + scale + *reference.terminal_contraction;
         const double target = -GAS_CONSTANT_J_PER_MOL_K * temperature * ln_k_density;
-        if (!std::isfinite(target)) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + " has a nonfinite density-basis target");
-        }
+        if (!std::isfinite(target)) throw unavailable(row, " has a nonfinite density-basis target");
         result[row].equilibrium_constant.reset();
         result[row].correlation.reset();
         result[row].affinity_j_per_mol = target;
