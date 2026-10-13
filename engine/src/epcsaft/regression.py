@@ -141,7 +141,7 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
     return _finish(result, observed, form, scale, mass_basis)
 
 
-def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool = False,
+def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool | None = None,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
@@ -156,13 +156,15 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     result.kind = _KINDS[kind]
     if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
         raise ParameterError(f"{kind} needs its phase")
+    if mass_basis is None and kind == "phase_density":  # only a density has a basis
+        raise ParameterError("phase_density needs mass_basis: True for kg/m^3, False for mol/m^3")
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]
     if kind == "amount_ratio":
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
-    return _finish(result, observed, form, scale, mass_basis)
+    return _finish(result, observed, form, scale, bool(mass_basis))
 
 
 def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, feed: Mapping[str, float], amount: float,
