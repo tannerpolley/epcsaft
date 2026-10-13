@@ -245,6 +245,7 @@ public:
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }
+    std::size_t prepared_points() const noexcept { return prepared_points_; }  // distinct callback points
 
     double regularization_size() const noexcept { return regularization_size_; }
     const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
@@ -275,6 +276,7 @@ private:
     std::size_t iterations_ = 0;
     std::size_t evaluations_ = 0;
     std::size_t hessian_calls_ = 0;
+    std::size_t prepared_points_ = 0;
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
     const DriverLimits* limits_ = nullptr;

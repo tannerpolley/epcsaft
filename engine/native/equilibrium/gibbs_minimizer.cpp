@@ -465,6 +465,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
             preparation_error_ = error.what();
             throw;
         }
+        ++prepared_points_;
     }
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     return *prepared_;
@@ -927,6 +928,7 @@ EquilibriumResult run_driver(
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
+    scope.probe("prepared_points", static_cast<double>(nlp->prepared_points()));
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.classified_residuals);
@@ -1026,7 +1028,9 @@ EquilibriumResult run_driver(
     // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
     // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
     // objective and material rows obey joint extensive homogeneity in amount, composition
-    // and volume, together with stationarity in the free amount.
+    // and volume, together with stationarity in the free amount. The raw
+    // optimizer values stay a trace probe.
+    scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (!compiled.feasibility_cell()) {
         std::size_t electro = 0;
         for (const auto& row : compiled.rows) {
@@ -1080,6 +1084,8 @@ EquilibriumResult run_driver(
         }
     }
     result.reduced_hessian_minimum = curvature.minimum;
+    scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
+    scope.probe("reduced_hessian_band", curvature.band);
     if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
         const bool singular = curvature.equilibrated >= -curvature.band;
