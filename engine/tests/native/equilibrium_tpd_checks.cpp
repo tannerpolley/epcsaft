@@ -78,6 +78,33 @@ void check_phase_removal_inventory() {
             tpd_compare(id + "/attempt-inventory", preserved.amount[0] + preserved.amount[1], 1.0, 1e-12, {}, "mol");
         }
     }
+    // #423: a failed attempt whose liquid recipient L1 holds the methane(1e-8)/ethane feed at 300 K and 100 Pa, where
+    // the sole root 0.0401 mol/m3 lies below the 7087.88 mol/m3 negative-slope sample. V2 disappears; the recipient's
+    // reclosure is refused instead of reseeding L1 on that vapor-side root.
+    auto gas = one;
+    gas.pressure = FreeValue::fixed(100.0); gas.feed.values = {1e-8, 1.0 - 1e-8};
+    const auto vapor = solve_equilibrium(model, gas);
+    CHECK(vapor.success);
+    auto contradicted = gas;
+    contradicted.phases = {gas.phases[0], gas.phases[0]};
+    contradicted.phases[0].name = "L1"; contradicted.phases[0].kind = PhaseKind::Liquid; contradicted.phases[1].name = "V2";
+    const auto system = compile_problem(model, contradicted);
+    auto point = system.generic_point();
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        const auto offset = system.phase_offsets()[phase];
+        point[offset] = std::log(1e-8); point[offset + 1] = std::log1p(-1e-8);
+        point[offset + 2] = phase == 0 ? 1.0 - 5e-9 : 5e-9;
+        point[offset + 3] = std::log(vapor.packing_fractions[0]);
+    }
+    const auto event = check_topology(system, point);
+    CHECK(event.event == TopologyEvent::PhaseDisappeared && event.phase == 1 && system.problem.phases[1].name == "V2");
+    std::string cause;
+    try { (void)remove_discovery_phase(system, point); } catch (const std::exception& error) { cause = error.what(); }
+    tpd_compare("removal/contradicted-recipient-refused",
+        cause.find("liquid branch absent: the sole stable root 0.04009108") != std::string::npos
+            && cause.find("below the negative-slope sample 7087.88") != std::string::npos ? 1.0 : 0.0, 1.0, 0.0,
+        recording_support::fields({recording_support::field("dropped", system.problem.phases[1].name),
+            recording_support::field("cause", cause)}));
 }
 
 void check_tangent_plane_curvature() {
