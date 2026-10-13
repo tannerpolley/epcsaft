@@ -61,7 +61,10 @@ the [neutral analysis](../../analyses/2026-idaes-asl-adapter/README.md) owns tha
 qualification. Its equilibrium function transports E5 phase-component amounts
 and exact first/second feed actions at fixed T/P on a declared two-liquid branch.
 The [Khudaida analysis](../../analyses/2026-khudaida-idaes-settler/README.md) owns
-the nonreactive qualification. An explicit affine feed map, supports, scalar
+the nonreactive qualification. Its pressure-property function transports pressure-chart
+density, total enthalpy and component `ln(phi_i)` with exact first/second
+derivatives in `(T, P, w)`; [#73](https://github.com/tannerpolley/ePC-SAFT/issues/73)
+owns its qualification. An explicit affine feed map, supports, scalar
 reaction targets and phase-identity criterion are caller inputs, not application
 selectors. Each downstream application must qualify its own chemistry, input
 chart, nonlinear process chain and operating domain; neither reference qualifies

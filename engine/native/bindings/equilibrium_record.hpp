@@ -71,10 +71,7 @@ public:
     }
 };
 
-inline std::string asl_record(const ParameterDocument& d, const EquilibriumProblem& p,
-                              const ContinuationOptions& options, const AslFeedMap& map) {
-    AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v3");
+inline void put_document(AslRecordWriter& w, const ParameterDocument& d) {
     w.put("component_ids"); w.vector(d.component_ids);
     w.put("site_component"); w.vector(d.site_component);
     w.put("site_multiplicity"); w.vector(d.site_multiplicity);
@@ -87,6 +84,13 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     if (d.entries.size() > 4096) throw std::invalid_argument("ASL record exceeds 4096 parameters");
     w.put("parameter_entries"); w.put(d.entries.size());
     for (const auto& e : d.entries) { w.put(e.identity); w.put(e.field); w.vector(e.index); w.put(e.magnitude); w.put(e.unit); }
+}
+
+inline std::string asl_record(const ParameterDocument& d, const EquilibriumProblem& p,
+                              const ContinuationOptions& options, const AslFeedMap& map) {
+    AslRecordWriter w;
+    w.put("epcsaft.asl.equilibrium.v3");
+    put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
     w.put("phases"); w.put(p.phases.size());
@@ -110,6 +114,26 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     for (const auto& row : map.matrix) w.vector(row);
     w.put("anchor_controls"); w.vector(map.anchor); w.put("phase_identity");
     w.put(map.identity_component); w.put(map.minimum_gap);
+    return w.finish();
+}
+
+// Property callbacks: the parameter document and a NASA9 thermochemistry record, no state.
+inline std::string asl_property_record(const ParameterDocument& d, const ThermochemistryRecord& t) {
+    AslRecordWriter w;
+    w.put("epcsaft.asl.property.v1");
+    put_document(w, d);
+    w.put("standard_pressure"); w.put(t.standard_pressure); w.put("component_intervals"); w.put(t.component_intervals.size());
+    for (const auto& intervals : t.component_intervals) {
+        w.put(intervals.size());
+        for (const auto& item : intervals) {
+            // ponytail: NASA9 only (the qualified HDA use); add other forms when a consumer qualifies them.
+            const auto* nasa9 = std::get_if<IdealNASA9>(&item.correlation.form);
+            if (nasa9 == nullptr) throw std::invalid_argument("ASL property record supports NASA9 intervals only");
+            w.put(item.lower); w.put(item.upper); w.put(item.lower_inclusive); w.put(item.upper_inclusive);
+            w.put(item.correlation.source_pressure);
+            for (const double a : nasa9->coefficients) w.put(a);
+        }
+    }
     return w.finish();
 }
 }  // namespace epcsaft::equilibrium
