@@ -315,7 +315,10 @@ above (`epcsaft_property prepared record <k> of at most 16`). A failure returns
 nonfinite values with `epcsaft_property:<cause>:<PropertyActionStatus code>:...`,
 the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
 `ambiguous_branch`, `nonmechanical_root`, `inner_iteration_failure` or
-`unavailable_derivative`; an unavailable row leaves the other rows valid.
+`unavailable_derivative`; an unavailable row leaves the other rows valid, and an
+owned NASA9 endpoint keeps its value while its temperature derivative is
+unavailable. Derivatives are qualified for neutral records only: a single-ion
+weight direction is not charge balanced, and native admission refuses it.
 
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and

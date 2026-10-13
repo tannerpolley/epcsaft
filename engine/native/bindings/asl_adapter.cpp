@@ -581,16 +581,16 @@ double equilibrium_amount(arglist* arguments) {
     return report_failure(arguments, "epcsaft_equilibrium");
 }
 
-// Pressure-chart property callback (#73): q = (T, P, w_1..w_C) and x = w / sum(w). Native pressure actions supply the
-// value and the actions along dx/dq; only the exact chain d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) is added here.
-// Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
+// Pressure-chart property callback (#73): q = (T, P, w_1..w_C) and x = w / sum(w). Native pressure actions along the
+// O(1) directions e_j - x supply the value and actions; only dx/dw_j = (e_j - x)/sum(w) and the exact chain
+// d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) are applied here. Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
 struct PropertyContext final {
     std::string record;
     std::unique_ptr<epcsaft::HelmholtzModel> model;
     struct Branch final {
         std::vector<double> q, values;
         std::vector<std::vector<double>> gradients, hessians;
-        std::vector<std::string> failures;  // per row: an unavailable enthalpy leaves density and ln(phi) valid
+        std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
         int order = -1;
     } branches[2];  // liquid (highest stable root), vapor (lowest)
 };
@@ -633,7 +633,7 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     basis[0].temperature = 1.0;
     basis[1].pressure = 1.0;
     for (std::size_t j = 0; j < c; ++j)
-        for (std::size_t i = 0; i < c; ++i) basis[2 + j].composition[i] = ((i == j ? 1.0 : 0.0) - x[i]) / sum;
+        for (std::size_t i = 0; i < c; ++i) basis[2 + j].composition[i] = (i == j ? 1.0 : 0.0) - x[i];
     const std::vector<epcsaft::PropertyObservable> observables = {
         epcsaft::PropertyObservable::TotalEnthalpy, epcsaft::PropertyObservable::LogFugacityCoefficient};
     const auto cause = [](Status status, std::string fallback) {
@@ -645,7 +645,7 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     branch.q = q;
     branch.order = -1;
     branch.values.assign(n, 0.0);
-    branch.failures.assign(n, std::string());
+    branch.failures.assign(n, {3, std::string()});
     branch.gradients.assign(n, std::vector<double>(n));
     branch.hessians.assign(n, std::vector<double>(n * (n + 1) / 2));
     const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
@@ -660,32 +660,35 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
                 + std::to_string(static_cast<int>(batch.density_status)) + ":density:" + m);
         }
+        const auto fail = [&](std::size_t row, int k, Status status) {
+            if (k < branch.failures[row].first)
+                branch.failures[row] = {k, "epcsaft_property:" + cause(status, "unavailable_derivative") + ":"
+                    + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)};
+        };
         std::vector<double> actions(n);
         const bool first = !anchor;
         if (first) anchor = branch.values[0] = *batch.molar_density;
         actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
         for (std::size_t row = 1; row < n; ++row) {
             const auto& item = batch.results[row - 1];
-            if (item.status == Status::Available && item.value && item.action) {
-                if (first) branch.values[row] = *item.value;
-                actions[row] = *item.action;
-            } else if (branch.failures[row].empty()) {
-                branch.failures[row] = "epcsaft_property:" + cause(item.status, "unavailable_derivative") + ":"
-                    + std::to_string(static_cast<int>(item.status)) + ":" + std::to_string(row);
-            }
+            if (first && item.value) branch.values[row] = *item.value;  // an owned NASA9 endpoint keeps its value
+            if (first && !item.value) fail(row, 0, item.status);
+            actions[row] = item.action.value_or(0.0);
+            if (item.status != Status::Available || !item.action) fail(row, static_cast<int>(directions.size()), item.status);
         }
         return actions;
     };
     for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
         const auto actions = run({basis[k]});
-        for (std::size_t row = 0; row < n; ++row) branch.gradients[row][k] = actions[row];
+        for (std::size_t row = 0; row < n; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2);
     }
     std::size_t packed = 0;
     for (std::size_t j = 0; order >= 2 && j < n; ++j)
         for (std::size_t i = 0; i <= j; ++i, ++packed) {
             const auto actions = run({basis[i], basis[j]});
             for (std::size_t row = 0; row < n; ++row)
-                branch.hessians[row][packed] = actions[row] - (i >= 2 ? (branch.gradients[row][i] + branch.gradients[row][j]) / sum : 0.0);
+                branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2) + (j >= 2))
+                    - (i >= 2 ? (branch.gradients[row][i] + branch.gradients[row][j]) / sum : 0.0);
         }
     branch.order = order;
 }
@@ -708,9 +711,10 @@ double pressure_property(arglist* arguments) {
             if (!std::isfinite(q[i]) || q[i] < 0.0 || (i < 2 && q[i] == 0.0))
                 reject("T and P must be finite and positive, weights finite and nonnegative");
         if (!(std::accumulate(q.begin() + 2, q.end(), 0.0) > 0.0)) reject("weights must have a positive sum");
-        evaluate_property(context, phase, q, arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0));
+        const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
+        evaluate_property(context, phase, q, order);
         const auto& branch = context.branches[phase];
-        if (!branch.failures[row].empty()) throw std::runtime_error(branch.failures[row]);
+        if (branch.failures[row].first <= order) throw std::runtime_error(branch.failures[row].second);
         if (arguments->derivs != nullptr) std::copy(branch.gradients[row].begin(), branch.gradients[row].end(), arguments->derivs);
         if (arguments->hes != nullptr) std::copy(branch.hessians[row].begin(), branch.hessians[row].end(), arguments->hes);
         return branch.values[row];
