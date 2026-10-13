@@ -1,0 +1,134 @@
+schema_version = 1
+record_set_id = "hda-pc-saft-source-records"
+purpose = "Source-confirmed Gross-Sadowski-family nonassociating PC-SAFT pure and pair records for the toluene hydrodealkylation system H2/CH4/C6H6/C7H8, with the two #73 hydrogen-pair fits. parameters/parameters.json is the four-component document; the benzene/toluene choice (Yu k_ij with the full-precision Gross pure set) was adopted by the owner on 2026-09-26, with the #73 rounding check's 4.8e-4 liquid ln(phi_i) deviation from Yu's printed pure set accepted and recorded; no refit."
+
+[[documents]]
+source_id = "ghosh-chapman-french-2003"
+citation = "Ghosh, A.; Chapman, W. G.; French, R. N. Gas solubility in hydrocarbons - a SAFT-based approach. Fluid Phase Equilibria 2003, 209, 229-243."
+doi = "10.1016/S0378-3812(03)00147-X"
+file = "Ghosh et al. - 2003 - Gas solubility in hydrocarbons-a SAFT-based approach.pdf (Zotero 8TPUAQ6I)"
+file_sha256 = "4e5388d288d27ce95fd9bb146947a21fcb579c920f76ca92ceee4eb9ce7be611"
+
+[[documents]]
+source_id = "saajanlehto-2014"
+citation = "Saajanlehto, M.; Uusi-Kyyny, P.; Alopaeus, V. A modified continuous flow apparatus for gas solubility measurements at high pressure and temperature with camera system. Fluid Phase Equilibria 2014, 382, 150-157."
+doi = "10.1016/j.fluid.2014.08.035"
+file = "Saajanlehto et al. - 2014 - A modified continuous flow apparatus ... .pdf (Zotero 9NJ59Z2C)"
+file_sha256 = "4f8f415053d522f1fff89446a0bd67bcc626ebe221737417aad3a5bea2eb5cd4"
+
+[[documents]]
+source_id = "yu-2026"
+citation = "Yu, G.; Li, Y.; Bahrabadi Jovein, I.; Figiel, P.; Chen, B.; Sadowski, G.; Held, C. Olefin separation from FCC naphtha by deep eutectic solvents: PC-SAFT modeling and molecular insights. AIChE Journal 2026, 72(2), e70114."
+doi = "10.1002/aic.70114"
+file = "Yu et al. - 2026 - Olefin separation from FCC naphtha by deep eutectic solvents PC-SAFT modeling and molecular insight.pdf (Zotero E8SC73X8)"
+file_sha256 = "096e302a171a81fb58b51d1a28c4be62139b11758c100e68709a300ecb1cc07a"
+
+[[documents]]
+source_id = "yu-2026-supporting-information"
+citation = "Supporting Information of Yu et al. 2026 (aic70114-sup-0001-supinfo.docx)."
+doi = "10.1002/aic.70114"
+file = "aic70114-sup-0001-supinfo.docx (Zotero QZA2GXCK)"
+file_sha256 = "2495a3558905f5c74bce40b4f1d8f3fa9229bb9d57bbaa6d7e5bb54487f06b69"
+
+[[documents]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Ind. Eng. Chem. Res. 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+packet_path = "data/packets/gross-sadowski-2001/3/parameters/parameters.json"
+file_sha256 = "786c7d57b3e843c63bf12310e9982ac770e33e7195e6a7a95f981b35b4f2b4de"
+
+[[pure_records]]
+component_id = "hydrogen"
+source_id = "ghosh-chapman-french-2003"
+locator = "Table 1 (PC-SAFT parameters), Hydrogen row, p. 233 (PDF p. 5); fit basis Section 4.1.4, p. 238 (PDF p. 10)"
+segment_count = 1.00
+segment_diameter_angstrom = 2.9860
+dispersion_energy_over_k_kelvin = 19.2775
+molar_mass_kg_per_mol = 2.01588e-3
+molar_mass_basis = "NASA/TP-2002-211556 H2 record (2.0158800 g/mol = 2 x 1.00794, IUPAC standard atomic weight); Ghosh Table 1 prints the rounded M = 2.02 g/mol."
+domain = "Fitted to H2/decane VLE, 462.5-583.5 K and 1.5-247 bar (Table 1 T range 462-583 K); Ghosh Table 2 recommends k_ij = 0.000 for H2 with alkanes/alkenes."
+
+[[pure_records]]
+component_id = "methane"
+source_id = "gross-sadowski-2001"
+locator = "Table 2, methane row (via gross-sadowski-2001/3 parameters.json)"
+segment_count = 1.0
+segment_diameter_angstrom = 3.7039
+dispersion_energy_over_k_kelvin = 150.03
+molar_mass_kg_per_mol = 0.016043
+domain = "Pure fit range 97-300 K"
+
+[[pure_records]]
+component_id = "benzene"
+source_id = "gross-sadowski-2001"
+locator = "Table 2, benzene row (via gross-sadowski-2001/3 parameters.json)"
+segment_count = 2.4653
+segment_diameter_angstrom = 3.6478
+dispersion_energy_over_k_kelvin = 287.35
+molar_mass_kg_per_mol = 0.078114
+domain = "Pure fit range 278-562 K"
+
+[[pure_records]]
+component_id = "toluene"
+source_id = "gross-sadowski-2001"
+locator = "Table 2, toluene row (via gross-sadowski-2001/3 parameters.json)"
+segment_count = 2.8149
+segment_diameter_angstrom = 3.7169
+dispersion_energy_over_k_kelvin = 285.69
+molar_mass_kg_per_mol = 0.092141
+domain = "Pure fit range 178-594 K"
+
+[[pair_records]]
+component_ids = ["hydrogen", "toluene"]
+source_id = "saajanlehto-2014"
+locator = "Table 6, PC-SAFT rows, H2 + toluene column, p. 155 (PDF p. 6); pure set Table 2, p. 153 (PDF p. 4)"
+k_ij = -0.047
+pure_set = "Table 2: hydrogen m = 1, sigma = 2.986 A, epsilon/k = 19.2775 K (footnote f, Ghosh et al. 2003); toluene m = 2.8149, sigma = 3.7169 A, epsilon/k = 285.69 K (footnote e, Gross and Sadowski 2001)"
+domain = "Regressed against Simnick et al. 1978 (12 points at 502.15, 542.15, 575.15 K) and Laugier et al. 1980 (9 points at 542.15, 568.15 K), 502.15-575.15 K. The paper does not state the pressure range of those literature points; the authors' own H2 + toluene measurements (Table 3) span 501.4-575.0 K and 4.99-9.98 MPa."
+
+[[pair_records]]
+component_ids = ["benzene", "toluene"]
+source_id = "yu-2026"
+locator = "Table 2, toluene/benzene row, p. 6 of 17"
+k_ij = -0.003
+pure_set = "Yu Table 1 printed values (reference 46, Gross and Sadowski 2001): benzene m = 2.465, sigma = 3.648 A, u/k = 287.355 K; toluene m = 2.815, sigma = 3.717 A, u/k = 285.690 K"
+domain = "Fitted to infinite-dilution activity coefficients (Supporting Information Table S5, observations/benzene_toluene_gamma_inf.csv; printed -60 to 303 degC)."
+
+[[pair_records]]
+component_ids = ["benzene", "methane"]
+source_id = "gross-sadowski-2001"
+locator = "Table 4, methane-benzene row (via gross-sadowski-2001/3 parameters.json)"
+k_ij = 0.037
+domain = "421.15-501.15 K"
+
+[[pair_records]]
+component_ids = ["methane", "toluene"]
+source_id = "gross-sadowski-2001"
+locator = "Table 4, methane-toluene row (via gross-sadowski-2001/3 parameters.json)"
+k_ij = 0.052
+domain = "422.15-543.15 K"
+
+[[pair_records]]
+component_ids = ["hydrogen", "benzene"]
+source_id = "epcsaft-issue-73-fit"
+locator = "analyses/2026-hda-two-flash/results/hydrogen_pair_fit.json; Park, Robinson, Gasem 1996 Table 1 benzene rows at 323.2 and 423.2 K (packet hydrogen-binary-vle/1), 373.2 K held out"
+k_ij = -0.0525723788
+pure_set = "Ghosh 2003 hydrogen and Gross-Sadowski 2001 benzene records of this file"
+domain = "Fitted over 323.2-423.2 K, bubble pressures to 15.73 MPa; practical sensitivity band -0.0664 to -0.0391 (engineering discrepancy objective, not a confidence interval)."
+
+[[pair_records]]
+component_ids = ["hydrogen", "methane"]
+source_id = "epcsaft-issue-73-fit"
+locator = "analyses/2026-hda-two-flash/results/hydrogen_pair_fit.json; Benham-Katz 1957 and Sagara-Arai-Saito 1972 Table 1 rows (packet hydrogen-binary-vle/1), Hong-Kobayashi 1981 held out"
+k_ij = -0.176087738
+pure_set = "Ghosh 2003 hydrogen and Gross-Sadowski 2001 methane records of this file"
+domain = "Fitted over 103-174 K (cryogenic); every HDA state is upper-temperature extrapolation. Practical sensitivity band -0.2003 to -0.1540."
+
+[[observation_records]]
+retained_path = "observations/benzene_toluene_gamma_inf.csv"
+sha256 = "31964e71ac767430b750d5a78e530bb8377d55e35d9aa4de73976a72e9fdee9f"
+source_id = "yu-2026-supporting-information"
+locator = "Table S5 'Experimental activity coefficients at infinite dilution for binary mixtures', column pair headed 'Benzene(1)+toluene(2)' (10th of 12 pairs), sub-headers 'ln(γ1∞)' and 'T / °C', all 184 non-blank body rows in printed order"
+source_note = "Note: All data are derived from reference book (https://dechema.de/en/Analysis+_+Consulting/Publications/Chemistry+Data+Series/Volume+IX.html)"
+transformation = "Values copied as printed (trailing spaces removed); source_row is the printed order; T_K = T_C + 273.15 exactly. The final table row is blank (U+3000) for this pair and is not retained."
+flags = ["source_row 165 (ln gamma1_inf = 0.816 at 77 degC) is an isolated positive value among negative neighbours; retained unaltered.", "Printed temperatures span -60 to 303 degC, below benzene's melting point and above its critical temperature (562 K); retained as printed."]

@@ -67,7 +67,8 @@ not uniquely identify a microscopic interaction mechanism.
 ## Relationship to current work
 
 [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23) and its
-leaf issues #25–#29 own the implementation plan and qualification gates.
+leaf issues #25–#29 hold the implementation plan and qualification gates. The program
+closed on 2026-09-30; model selection (#29) was closed as not needed.
 
 Current equation definitions remain in [Engine equations](../../../../engine/docs/equations.md),
 conventions in [full EOS](../../../../engine/docs/science/full-eos.md), and methods in

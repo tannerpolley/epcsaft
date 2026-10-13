@@ -1,0 +1,77 @@
+schema_version = 1
+provenance_kind = "source-record-provenance-v1"
+copy_mode = "manual-transcription"
+normalization = "Every value was transcribed digit by digit from the printed source table (born-digital page for park1996; 300-600 dpi renders of the scanned pages for benham1957, sagara1972 and hong1981) and checked a second time against the page image. Source-unit strings were converted to SI with exact decimal arithmetic and written as the shortest round-trip float string. Rows follow printed reading order (left column top to bottom, then right column; page order for hong1981). row_id is <source_key>-T1-<NNN> in that order."
+transformations = [
+  "park1996: T_K as printed; P_Pa = p/MPa * 1e6; x_H2 = x1 as printed; y_H2 empty (bubble-point rows).",
+  "benham1957: T_K = (T/degF - 32) * 5/9 + 273.15; P_Pa = P/psia * 6894.757293168 (table footnote: all pressures absolute); x_H2 = liquid mole % H2 / 100; y_H2 = vapor mole % H2 / 100.",
+  "sagara1972: T_K = T/degC + 273.15; P_Pa = P/atm * 101325; x_H2 and y_H2 as printed. Printed x_CH4 and y_CH4 were transcribed only to check that each pair sums to 1 within print precision.",
+  "hong1981: T_K as printed in K; P_Pa = P/MPa * 1e6; x_H2 = 1 - printed liquid CH4 mole fraction; y_H2 = 1 - printed vapor CH4 mole fraction (the table reports CH4 fractions). Pure-methane endpoint rows (CH4 = 1.0000, footnote a) give x_H2 = y_H2 = 0. Author-labelled critical-point rows print a single composition in the vapor column; x_H2 = y_H2 = 1 - that value by the critical-point identity.",
+  "source_row_class: pure_endpoint for printed pure-methane rows (x_H2 = y_H2 = 0), critical_marker for author-labelled critical points, ordinary for every other printed two-phase row, including rows with x_H2 < 0.01. Partitions and discrepancy scales are not source data; consumers own them (hydrogen-binary-vle/1 carried the issue #73 partitions and scales).",
+]
+
+[[records]]
+retained_path = "observations/rows.csv"
+sha256 = "f1ac2d418a88857528e796bb6ee6d0fe7bb313850b299b86fad3700d0fd9c275"
+origin_repository = "none"
+origin_commit = "0000000000000000000000000000000000000000"
+origin_tree = "0000000000000000000000000000000000000000"
+origin_path = "Manual transcription of park1996 Table 1 (benzene), benham1957 Table 1, sagara1972 Table 1 and hong1981 Table I; source PDFs and hashes in [[source_documents]]."
+
+[[source_documents]]
+source_key = "park1996"
+citation = "Park, J.; Robinson, R. L., Jr.; Gasem, K. A. M. Solubilities of Hydrogen in Aromatic Hydrocarbons from 323 to 433 K and Pressures to 21.7 MPa. J. Chem. Eng. Data 1996, 41, 70-73."
+doi = "10.1021/je950152n"
+zotero_attachment = "I6GDXSQA"
+pdf_sha256 = "ee78ca0c7fe09b659216b194afe13f8c56a35fa5700b727c71c6ff8c04d17c5c"
+locator = "Table 1, p. 71 (PDF page 2); benzene blocks at 323.2, 373.2 and 423.2 K only (18 rows)."
+accuracy_wording = [
+  "p. 70 abstract: \"The uncertainty in these new solubility measurements is estimated to be less than 0.001 in mole fraction.\"",
+  "p. 71: \"Measurement uncertainties are estimated to be 0.1 K in temperature and less than 0.001 in composition (mole fraction). The uncertainty in the bubble point pressure is dependent on the steepness of the pressure vs composition relation; it is estimated to be approximately 0.06 MPa for the systems studied here.\"",
+]
+notes = "Figure 2 caption labels the third benzene isotherm 423.5 K; Table 1 and Figure 3 give 423.2 K. The table value 423.2 K is used."
+
+[[source_documents]]
+source_key = "benham1957"
+citation = "Benham, A. L.; Katz, D. L. Vapor-liquid equilibria for hydrogen-light-hydrocarbon systems at low temperatures. AIChE J. 1957, 3, 33-36."
+doi = "10.1002/aic.690030107"
+zotero_attachment = "5BKCQLH9"
+pdf_sha256 = "ee68791dfaa7d308417b6191e57f212c8e9402be3ad7257f2c2a05a0a605085b"
+locator = "Table 1 Original Data for Hydrogen-Methane System, p. 33 (PDF page 1); 13 rows, runs 3, 4, 8, 9, 2A, 5, 11, 2B, 15, 12, 13, 14, 16 in row_id order."
+accuracy_wording = [
+  "p. 34: \"The error in temperature measurement is believed to be within ±1.0°F. at −300°F. and ±0.1°F. at room temperature. Pressures are believed to be within ±0.5% of the true pressure.\"",
+  "p. 34: \"Analyses of vapor and liquid phases, made with a CEC 21-103B mass spectrometer, are generally accurate to within ±½% of the component composition except at low concentrations, where the error may be somewhat larger. Many of the analyses for the hydrogen-methane binary system were made by means of the gas-density method described by Williams and Katz (10) and are also believed to be accurate to within ±½%.\"",
+]
+
+[[source_documents]]
+source_key = "sagara1972"
+citation = "Sagara, H.; Arai, Y.; Saito, S. Vapor-liquid equilibria of binary and ternary systems containing hydrogen and light hydrocarbons. J. Chem. Eng. Japan 1972, 5, 339-348."
+doi = "10.1252/jcej.5.339"
+zotero_attachment = "3UAEMRRQ"
+pdf_sha256 = "8c54d1d7b8cc8b02cf8fb21bc29c8c4d46d67180df3188674a8279f9745f5a31"
+locator = "Table 1 Experimental results for the hydrogen-methane system, p. 342 (PDF page 4); 28 rows at -170.0, -150.0, -130.1, -101.1 and -99.5 degC. Ternary Tables 5 and 6 excluded."
+accuracy_wording = [
+  "p. 340: \"The accuracy of calibrated temperatures was belived [sic] to be within ±0.1°C. The temperature fluctuation inside the cryostat were less than ±0.1°C.\"",
+  "p. 340: \"All presented values of pressure are believed to be accurate to within ±0.1 atm.\"",
+  "p. 341: \"the compositions determined were believed to be accurate to within 1 per cent, though the error will be larger in the extremely dilute range.\"",
+]
+
+[[source_documents]]
+source_key = "hong1981"
+citation = "Hong, J. H.; Kobayashi, R. Vapor-liquid equilibrium study of the hydrogen-methane system at low temperatures and elevated pressures. J. Chem. Eng. Data 1981, 26, 127-131."
+doi = "10.1021/je00024a007"
+zotero_attachment = "QK82EIQ8"
+pdf_sha256 = "2ccb9bd55fbcf3f94943cadb1edb2429704ec2f3aac6b7155b8acdc9bbba7f83"
+locator = "Table I Experimental Vapor-Liquid Equilibrium Data for the Methane-Hydrogen System, pp. 128-129 (PDF pages 2-3); 144 rows on 10 isotherms 108.13-183.12 K."
+accuracy_wording = [
+  "p. 127: \"The bath temperature was controlled to better than 0.01 °C of the reported value.\"",
+  "p. 129: \"The pressure of the system was indicated by three Heise gauges (0-500, 0-2000, 0-6000 psia), which have an accuracy of 0.1% of the full scale reading.\"",
+  "p. 127: \"the calibration gas mixtures with the hydrogen concentration as low as 0.0051 mole fraction could be made. The calibration curve of methane is linear for the whole range with a maximum accuracy of 0.1 %.\"",
+  "p. 129: \"additional, special calibration curve (Figure 1) with emphasis on the low hydrogen concentration region (0.01-0.0051 mole fraction) from which both hydrogen and methane concentrations were obtained. When this was done, the maximum analytical error in measuring hydrogen (at the lowest hydrogen concentration) became as large as 8.3% of the amount of hydrogen present, all other hydrogen concentration errors being appreciably less, on the order of a few tenths of a percent.\"",
+]
+notes = [
+  "The Kelvin and Celsius isotherm labels disagree: 143.48 K is printed with (-130.08 °C), i.e. 143.07 K, and 133.14 K with (-140.21 °C), i.e. 132.94 K; other pairs differ by at most 0.07 K. The printed Kelvin values are used.",
+  "At 183.12 K a 'critical point' label stands alone on the line after the 7.539 MPa row with no pressure or composition; no critical-marker row exists for that isotherm and the 7.539 MPa row is retained as an ordinary row.",
+  "Printed K values disagree with the printed compositions at 183.12 K / 4.199 MPa (K_H2 4.775 vs 5.034 from compositions), 183.12 K / 4.344 MPa (K_CH4 0.9728 vs 0.9373), 153.21 K / 19.099 MPa (K_CH4 0.5388 vs 0.5433; consistent with vapor CH4 0.3564), and 143.48 K / 8.274 MPa (K_CH4 0.2208 vs 0.2158; consistent with vapor CH4 0.1983). The printed compositions were re-read at 600 dpi and are retained as printed.",
+  "The text states data reach 27.579 MPa (4000 psia) at -140 and -160 °C, but the 113.14 K isotherm prints a 28.406 MPa row; it is retained as printed.",
+]

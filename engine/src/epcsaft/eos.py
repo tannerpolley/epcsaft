@@ -36,6 +36,7 @@ PropertyActionResult = _core.PropertyActionResult
 PropertyActionBatch = _core.PropertyActionBatch
 ParameterError = _core.ParameterError
 EosError = _core.EosError
+property_asl_record = _core.property_asl_record
 
 
 def _branch(phase: str | None) -> _core.DensityBranch:

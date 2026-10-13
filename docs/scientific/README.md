@@ -30,7 +30,7 @@ each ceiling is raised or lowered; their single numeric owner is `ARCHITECTURE.y
 The [modular-model proposal](proposals/modular-models/README.md) retains a
 source-linked design for selecting complete thermodynamic formulations with
 compatible parameters. [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23)
-and its leaves own execution and completion.
+closed on 2026-09-30 with its delivered leaves; model selection (#29) was closed as not needed.
 [ADR 0011](decisions/0011-optional-dipole-dipole-term.md) owns the optional
 Gross–Vrabec dipole–dipole admission; remaining multipoles stay retired under
 [ADR 0006](decisions/0006-retire-residual-polar.md).

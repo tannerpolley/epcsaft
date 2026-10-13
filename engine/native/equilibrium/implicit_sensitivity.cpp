@@ -1014,12 +1014,14 @@ static SolvedStateActionBatch evaluate_action(
     }
     const bool reference_problem = !compiled.reference_diagnostics.empty();
     const ReferenceCalorics *calorics = nullptr;
-    const bool needs_calorics =
-        std::any_of(request.observables.begin(), request.observables.end(), [](const auto &o) {
-            return o.kind == SolvedStateObservableKind::SystemEnthalpy ||
-                   o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
-                   (o.kind == SolvedStateObservableKind::PhaseProperty && caloric_property(o.property));
-        });
+    const auto other_caloric = [](const auto &o) {
+        return o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
+               (o.kind == SolvedStateObservableKind::PhaseProperty && caloric_property(o.property));
+    };
+    const auto caloric = [&](const auto &o) {
+        return o.kind == SolvedStateObservableKind::SystemEnthalpy || other_caloric(o);
+    };
+    const bool needs_calorics = std::any_of(request.observables.begin(), request.observables.end(), caloric);
     if (reference_problem && needs_calorics) {
         bool moving = false, parameters = false;
         for (const auto &d : request.directions) {
@@ -1028,6 +1030,8 @@ static SolvedStateActionBatch evaluate_action(
                 parameters |= v != 0.0;
         }
         moving |= problem.temperature.free || problem.pressure.free || parameters;
+        // A first enthalpy action differentiates g - T g_T + RT once: standard Gibbs degree two.
+        moving &= order > 1 || std::any_of(request.observables.begin(), request.observables.end(), other_caloric);
         const auto consumed = moving ? std::min(order + 2, std::size_t(4)) : std::size_t(2);
         if (!shared->calorics || consumed > shared->caloric_order ||
             (parameters && !shared->caloric_parameters)) {
@@ -1097,10 +1101,7 @@ static SolvedStateActionBatch evaluate_action(
         }
         if (calorics && calorics->status != SolvedStateActionStatus::Available)
             for (auto &item : batch.results)
-                if (item.observable.kind == SolvedStateObservableKind::SystemEnthalpy ||
-                    item.observable.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
-                    (item.observable.kind == SolvedStateObservableKind::PhaseProperty &&
-                     caloric_property(item.observable.property)))
+                if (caloric(item.observable))
                     refuse(item, calorics->status, calorics->message, true);
         shared->central_results = batch.results;
         shared->diagnostics = batch.diagnostics;

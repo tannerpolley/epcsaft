@@ -306,6 +306,27 @@ fallback. Use an outer Ipopt executable whose C++ symbols do not interpose on
 the Engine's Ipopt dependency; the retained live campaign verifies the isolated
 official IDAES executable and exact option-file readback.
 
+`eos.property_asl_record(mixture)` constructs the immutable record of the installed
+`epcsaft_pressure_property` external function (#73) for a mixture with document
+parameters, no active parameters and a NASA9 thermochemistry record. Its real
+arguments are `q = (T K, P Pa, w_1..w_C)` with `x = w / sum(w)`, then the strings
+record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
+`ln(phi_i)`) and phase (`0` liquid, the highest stable density root; `1` vapor,
+the lowest). It returns the value, gradient and packed Hessian in physical `q`
+from the native pressure actions plus the exact normalization chain. A zero
+neutral weight follows the exact infinite-dilution limit when the weights sum
+to a positive value. A sole stable root is returned for either phase; the
+public `pressure_actions` diagnostics report `branch` and `stable_root_count`
+for the caller's post-solve audit. Records are prepared once per process, as
+above (`epcsaft_property prepared record <k> of at most 16`). A failure returns
+nonfinite values with `epcsaft_property:<cause>:<PropertyActionStatus code>:...`,
+the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
+`ambiguous_branch`, `nonmechanical_root`, `inner_iteration_failure` or
+`unavailable_derivative`; an unavailable row leaves the other rows valid, and an
+owned NASA9 endpoint keeps its value while its temperature derivative is
+unavailable. Derivatives are qualified for neutral records only: a single-ion
+weight direction is not charge balanced, and native admission refuses it.
+
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and
 `stable_root_count` exist only after a pressure-root search, so a T-rho state reports
