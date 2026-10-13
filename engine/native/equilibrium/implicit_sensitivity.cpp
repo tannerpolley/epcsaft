@@ -268,10 +268,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     for (const auto& direction : request.directions) {
         if (!std::isfinite(direction.temperature_k) || !std::isfinite(direction.pressure_pa)
             || direction.feed_amounts_mol.size() != components || direction.active_parameters.size() != actives
-            || !std::all_of(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(),
-                            [](double v) { return std::isfinite(v); })
-            || !std::all_of(direction.active_parameters.begin(), direction.active_parameters.end(),
-                            [](double v) { return std::isfinite(v); }))
+            || !all_numeric(direction.feed_amounts_mol) || !all_numeric(direction.active_parameters))
             throw std::invalid_argument("solved-state action direction");
         if (!direction.reaction_coefficients.empty() &&
             direction.reaction_coefficients.size() != problem.reactions.size())
@@ -357,17 +354,21 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
     state[0] = center.prepared.point;
     std::vector<double> right_norm(order + 1, 0.0), solution_norm(order + 1, 0.0);
-    for (std::size_t k = 1; k <= order; ++k) {
-        const std::vector<std::vector<double>> prefix(state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1));
-        RowSeries series;
+    // The series through order k, or false with the path refused when a reference is unavailable.
+    const auto rows_through = [&](const std::vector<std::vector<double>>& prefix, std::size_t k, RowSeries& series) {
         try {
             series = compiled.row_series(center.prepared, prefix, control, k);
+            return true;
         } catch (const std::invalid_argument& error) {
             if (!is_reference_unavailable(error)) throw;
             path.status = SolvedStateActionStatus::ReferenceUnavailable;
             path.diagnostic_message = error.what();
-            return path;
+            return false;
         }
+    };
+    for (std::size_t k = 1; k <= order; ++k) {
+        RowSeries series;
+        if (!rows_through({state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1)}, k, series)) return path;
         diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, series.maximum_energy_order);
         if (series.energy != PropertyActionStatus::Available) { path.status = energy_status(series.energy); return path; }
         Eigen::VectorXd right(static_cast<Eigen::Index>(n));
@@ -383,14 +384,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
     }
-    try {
-        path.series = compiled.row_series(center.prepared, state, control, order);
-    } catch (const std::invalid_argument& error) {
-        if (!is_reference_unavailable(error)) throw;
-        path.status = SolvedStateActionStatus::ReferenceUnavailable;
-        path.diagnostic_message = error.what();
-        return path;
-    }
+    if (!rows_through(state, order, path.series)) return path;
     if (compiled.has_caloric_condition() && std::any_of(path.series.temperature.begin() + 1,
             path.series.temperature.end(), [](double v) { return v != 0.0; })) {
         const auto calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, false, false, false, 1);
@@ -450,9 +444,6 @@ PhaseMap phase_map(const RowSeries& series, std::size_t phase, std::size_t compo
     return result;
 }
 
-Series observable_series(const HelmholtzModel &model, const SolvedStateObservable &observable, const RowSeries &series,
-                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics = nullptr,
-                         SolvedStateActionResult *result = nullptr, SolvedStateActionDiagnostics *diagnostics = nullptr);
 Series system_enthalpy_series(const HelmholtzModel &, const RowSeries &, const std::vector<PhaseMap> &,
                               const ReferenceCalorics *, SolvedStateActionResult *, SolvedStateActionDiagnostics *);
 
@@ -920,16 +911,8 @@ static SolvedStateActionBatch evaluate_action(
         item.order = order;
         batch.results.push_back(std::move(item));
     }
-    const auto finish = [&](SolvedStateActionStatus status) {
-        for (auto& item : batch.results)
-            if (item.status == SolvedStateActionStatus::Available) item.status = status;
-        return batch;
-    };
-    if (!central.success || !central.has_state()
-        || !std::all_of(central.coordinates.begin(), central.coordinates.end(), [](double v) { return std::isfinite(v); })) {
-        for (auto& item : batch.results) item.status = SolvedStateActionStatus::CentralSolveUnavailable;
-        return batch;
-    }
+    // Every result starts CentralSolveUnavailable (the struct default).
+    if (!central.success || !central.has_state() || !all_numeric(central.coordinates)) return batch;
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
     if (!shared) {
         shared.emplace();
@@ -1014,6 +997,8 @@ static SolvedStateActionBatch evaluate_action(
             item.value.reset();
         item.diagnostic_message = std::move(message);
     };
+    auto& property_rows = shared->property_rows;
+    auto& property_lists = shared->property_lists;
     if (shared->central_results.empty()) {
         // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
@@ -1030,8 +1015,6 @@ static SolvedStateActionBatch evaluate_action(
                 refuse(item, error.status, error.what(), true);
             }
         }
-        auto& property_rows = shared->property_rows;
-        auto& property_lists = shared->property_lists;
         property_rows.resize(problem.phases.size());
         property_lists.resize(problem.phases.size());
         for (std::size_t i = 0; i < batch.results.size(); ++i)
@@ -1078,8 +1061,6 @@ static SolvedStateActionBatch evaluate_action(
             item.action = order == 1 ? controls[0][index] : 0.0;
         }
     }
-    const auto& property_rows = shared->property_rows;
-    const auto& property_lists = shared->property_lists;
     // Admission of the central state, in the owner's precedence.
     if (!shared->topology_checked) {
         if (!(shared->classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
@@ -1165,7 +1146,7 @@ static SolvedStateActionBatch evaluate_action(
     if (zero) {
         for (auto& item : batch.results)
             if (item.status == SolvedStateActionStatus::Available && item.value.has_value()) item.action = 0.0;
-        return finish(SolvedStateActionStatus::Available);
+        return batch;
     }
     // Polarised diagonal paths: half the sign patterns with the first sign fixed positive.
     std::vector<double> accumulated(batch.results.size(), 0.0);
