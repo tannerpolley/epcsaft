@@ -14,7 +14,7 @@ for the bounded gap before inventing another test campaign.
 ## Focused falsifiers retained before producer corrections
 
 These two native checks protect the identified producer corrections. They test independent differential identities. F1 passes after the 2026-09-08
-caloric correction; F5 remains a known failure. A failure is diagnostic evidence, not a qualified
+caloric correction; F5 passes and runs in `Automatic_fast`. A failure is diagnostic evidence, not a qualified
 Engine result. The native checks print their ladder values and maximum errors to
 ordinary process output. Run `properties_checks F1` and `equilibrium_checks F5`
 from the configured build directory recorded in

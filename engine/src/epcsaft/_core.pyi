@@ -101,6 +101,8 @@ class Parameters:
     def component_count(self) -> int: ...
     @property
     def site_count(self) -> int: ...
+    @property
+    def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
 
@@ -720,6 +722,7 @@ class EquilibriumResult:
     topology_phase: Optional[int]
     topology_pair: Optional[tuple[int, int]]
     critical: Optional[CriticalRecord]
+    def phase_mole_fractions(self, phase: int) -> list[float]: ...  # one declared phase, component_ids order
 
 class TopologyEvent:
     None_: TopologyEvent
@@ -898,6 +901,7 @@ def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> Compi
 def equilibrium_asl_record(model: Any, problem: Any, continuation: Any, feed_offset: Sequence[float],
                            feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
                            identity_component: int, minimum_gap: float) -> str: ...
+def property_asl_record(model: Any) -> str: ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
 def solve_equilibrium(
     model: HelmholtzModel,

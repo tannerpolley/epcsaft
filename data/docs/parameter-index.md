@@ -21,10 +21,13 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `gross-sadowski-2001` | 3 | 2, 3 | Gross and Sadowski 2001 Table 2: 78 nonassociating pure fluids (alkanes, alkenes, aromatics, gases, esters, ethers, halocarbons). |
 | `gross-vrabec-2006` | 1 | 1 | Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters. |
 | `hamer-wu-1972-aqueous-alkali-halides` | 1 | 1 | Observations, not parameters: evaluated molality-scale mean ionic activity coefficients of six aqueous 1:1 salts at 298.15 K. |
+| `hda-pc-saft` | 1 | 1 | Toluene hydrodealkylation H2/CH4/benzene/toluene: nonassociating PC-SAFT pure records and all six k_ij (two fitted in #73). |
 | `held-2014-strategy2` | 1 | 1 | Held 2014 strategy-2 water and chloride ions at 298.15 K; transcription candidate, not a qualified fit. |
 | `held-cameretti-sadowski-2008` | 4 | 2, 3, 4 | Held 2008 water and 29 ions, fully dissociated aqueous electrolytes at 298.15 K and 1 bar. |
+| `hydrogen-binary-vle` | 2 | 2 | Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 7 | 5, 6, 7 | Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE. |
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
+| `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
 | `zuber-2014-electrolyte-permittivity` | 1 | 1 | Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol. |
 
 ## Components
@@ -54,7 +57,7 @@ Current packet versions whose parameter files hold the component.
 | `any-cation` | `zuber-2014-electrolyte-permittivity/1` |
 | `argon` | `gross-sadowski-2001/3` |
 | `barium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `benzene` | `gross-sadowski-2001/3` |
+| `benzene` | `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `bicarbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `biphenyl` | `gross-sadowski-2001/3` |
 | `bromate-anion` | `held-cameretti-sadowski-2008/4` |
@@ -104,6 +107,7 @@ Current packet versions whose parameter files hold the component.
 | `heptane` | `gross-sadowski-2001/3` |
 | `hexadecane` | `gross-sadowski-2001/3` |
 | `hexane` | `gross-sadowski-2001/3` |
+| `hydrogen` | `hda-pc-saft/1` |
 | `hydrogen-cation` | `figiel-yu-held-2025/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `hydrogen-chloride` | `gross-vrabec-2006/1` |
 | `hydrogen-phosphate-anion` | `held-cameretti-sadowski-2008/4` |
@@ -118,7 +122,7 @@ Current packet versions whose parameter files hold the component.
 | `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `m-xylene` | `gross-sadowski-2001/3` |
 | `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `methane` | `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3` |
+| `methane` | `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `methanol` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4` |
 | `methyl-butanoate` | `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
 | `methyl-chloride` | `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
@@ -160,7 +164,7 @@ Current packet versions whose parameter files hold the component.
 | `tetradecane` | `gross-sadowski-2001/3` |
 | `tetralin` | `gross-sadowski-2001/3` |
 | `thiocyanate-anion` | `held-cameretti-sadowski-2008/4` |
-| `toluene` | `gross-sadowski-2001/3` |
+| `toluene` | `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `tridecane` | `gross-sadowski-2001/3` |
 | `undecane` | `gross-sadowski-2001/3` |
 | `vanadium-iii-cation` | `figiel-yu-held-2025/4` |

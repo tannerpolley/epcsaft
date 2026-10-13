@@ -11,6 +11,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -84,18 +85,6 @@ double parse_decimal(const char* value, const char* name) {
     return result;
 }
 
-void validate_arguments(arglist* arguments) {
-    if (arguments == nullptr || arguments->n != 6 || arguments->nr != 2
-        || arguments->at == nullptr || arguments->ra == nullptr
-        || arguments->sa == nullptr) {
-        reject("epcsaft neutral function requires six arguments (two real, four string)");
-    }
-    for (int position = 0; position < arguments->n; ++position) {
-        const int expected = position < 2 ? position : -(position - 1);
-        if (arguments->at[position] != expected) reject("invalid neutral argument map");
-    }
-}
-
 double real_argument(arglist* arguments, int position) {
     const int index = arguments->at[position];
     if (index < 0 || index >= arguments->nr) reject("invalid real argument map");
@@ -103,12 +92,47 @@ double real_argument(arglist* arguments, int position) {
 }
 
 const char* string_argument(arglist* arguments, int position) {
+    if (arguments == nullptr) reject("missing arguments");
     const int index = arguments->at[position];
     if (index >= 0) reject("invalid string argument map");
     const char* value = arguments->sa[-index - 1];
     if (value == nullptr) reject("missing string argument");
     return value;
 }
+
+// Real arguments first, then `strings` string arguments, in declaration order; returns the real count.
+int argument_count(arglist* arguments, int strings, int maximum, const char* message) {
+    if (arguments == nullptr || arguments->nr < 1 || arguments->nr > maximum || arguments->n != arguments->nr + strings
+        || arguments->at == nullptr || arguments->ra == nullptr || arguments->sa == nullptr)
+        reject(message);
+    const int n = arguments->nr;
+    for (int i = 0; i < arguments->n; ++i)
+        if (arguments->at[i] != (i < n ? i : n - 1 - i)) reject("invalid argument map");
+    return n;
+}
+
+std::size_t selector(arglist* arguments, int position, std::size_t maximum) {
+    const std::string s(string_argument(arguments, position));
+    std::size_t v = 0;
+    const auto parsed = std::from_chars(s.data(), s.data() + s.size(), v);
+    if (s.empty() || parsed.ec != std::errc{} || parsed.ptr != s.data() + s.size() || v >= maximum)
+        reject("invalid observable selector");
+    return v;
+}
+
+// One context per distinct record content, prepared once; the ceiling bounds the number of prepared records per process.
+template <class Context> struct Prepared final {
+    static constexpr std::size_t max_records = 16;
+    std::mutex mutex;
+    std::vector<std::unique_ptr<Context>> contexts;
+    template <class Prepare> Context& find(std::string_view record, const char* kind, Prepare prepare) {
+        for (const auto& item : contexts) if (item->record == record) return *item;
+        if (contexts.size() == max_records) reject(std::string(kind) + " record limit reached");
+        auto& result = *contexts.emplace_back(prepare());
+        std::fprintf(stderr, "epcsaft_%s prepared record %zu of at most %zu\n", kind, contexts.size(), max_records);
+        return result;
+    }
+};
 
 epcsaft::HelmholtzModel& model_for(
     const std::tuple<std::string, std::string, std::string, std::string>& inputs
@@ -156,7 +180,8 @@ double evaluate(
     arglist* arguments,
     NeutralProperty property
 ) {
-    validate_arguments(arguments);
+    const char* message = "epcsaft neutral function requires two real and four string arguments";
+    if (argument_count(arguments, 4, 2, message) != 2) reject(message);
     const auto inputs = std::make_tuple(
         std::string(string_argument(arguments, 2)),
         std::string(string_argument(arguments, 3)),
@@ -303,18 +328,6 @@ struct EquilibriumContext final {
     int order = -1;
 };
 
-struct PreparedEquilibrium final {
-    // One state per distinct record content, prepared once; the ceiling bounds the number of prepared records per process.
-    static constexpr std::size_t max_records = 16;
-    std::mutex mutex;
-    std::vector<std::unique_ptr<EquilibriumContext>> contexts;
-};
-
-PreparedEquilibrium& prepared_equilibrium() {
-    static PreparedEquilibrium result;
-    return result;
-}
-
 void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
     const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)
@@ -330,9 +343,7 @@ void require_central(const EquilibriumContext& context, const eq::EquilibriumRes
         throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable);
 }
 
-std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
-    RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v3");
+epcsaft::ParameterDocument read_document(RecordReader& reader) {
     epcsaft::ParameterDocument document;
     reader.field("component_ids");
     document.component_ids = reader.vector([&] { return reader.next(); });
@@ -362,6 +373,13 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         entry.unit = reader.next();
         return entry;
     }, 4096);
+    return document;
+}
+
+std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
+    RecordReader reader(raw);
+    reader.field("epcsaft.asl.equilibrium.v3");
+    const auto document = read_document(reader);
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
     reader.field("temperature");
@@ -495,28 +513,30 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
     return batch;
 }
 
+// A solver only sees an evaluation error; name the typed cause and the trial real arguments.
+double report_failure(arglist* arguments, const char* callback) {
+    std::fprintf(stderr, "%s failure: %s controls=", callback, callback_error.c_str());
+    for (int i = 0; arguments != nullptr && arguments->ra != nullptr && i < arguments->nr; ++i)
+        std::fprintf(stderr, "%s%.17g", i != 0 ? "," : "", arguments->ra[i]);
+    std::fputc('\n', stderr);
+    invalidate(arguments);
+    if (arguments != nullptr) {
+        if (arguments->hes != nullptr) callback_error.insert(0, "\"");
+        else if (arguments->derivs != nullptr) callback_error.insert(0, "'");
+        arguments->Errmsg = callback_error.data();
+    }
+    return invalid_value();
+}
+
 double equilibrium_amount(arglist* arguments) {
-    auto& prepared = prepared_equilibrium();
+    static Prepared<EquilibriumContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
     std::string observable = "request";
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        if (arguments == nullptr || arguments->nr < 1 || arguments->nr > 64 || arguments->n != arguments->nr + 3
-            || arguments->at == nullptr || arguments->ra == nullptr || arguments->sa == nullptr)
-            reject("equilibrium callback requires real controls and three strings");
-        const int n = arguments->nr;
-        for (int i = 0; i < arguments->n; ++i)
-            if (arguments->at[i] != (i < n ? i : n - 1 - i)) reject("invalid equilibrium argument map");
-        auto selector = [&](int index, std::size_t maximum) {
-            const std::string s(string_argument(arguments, index));
-            std::size_t v = 0;
-            const auto parsed = std::from_chars(s.data(), s.data() + s.size(), v);
-            if (s.empty() || parsed.ec != std::errc{} || parsed.ptr != s.data() + s.size() || v >= maximum)
-                reject("invalid observable selector");
-            return v;
-        };
-        const auto p = selector(n + 1, 2), c = selector(n + 2, 64);
+        const int n = argument_count(arguments, 3, 64, "equilibrium callback requires real controls and three strings");
+        const auto p = selector(arguments, n + 1, 2), c = selector(arguments, n + 2, 64);
         observable = eq::solved_state_observable_id({eq::SolvedStateObservableKind::PhaseComponentAmount, p, c});
         std::vector<double> feed(n);
         for (std::size_t i = 0; i < feed.size(); ++i) {
@@ -524,16 +544,8 @@ double equilibrium_amount(arglist* arguments) {
             if (!std::isfinite(feed[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
             if (feed[i] < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        const std::string_view record = string_argument(arguments, n);
-        EquilibriumContext* selected = nullptr;
-        for (const auto& item : prepared.contexts) if (item->record == record) selected = item.get();
-        if (selected == nullptr) {
-            if (prepared.contexts.size() == PreparedEquilibrium::max_records) reject("equilibrium record limit reached");
-            selected = prepared.contexts.emplace_back(prepare_equilibrium(record.data(), observable)).get();
-            std::fprintf(stderr, "epcsaft_equilibrium prepared record %zu of at most %zu\n", prepared.contexts.size(),
-                         PreparedEquilibrium::max_records);
-        }
-        auto& context = *selected;
+        const char* record = string_argument(arguments, n);
+        auto& context = prepared.find(record, "equilibrium", [&] { return prepare_equilibrium(record, observable); });
         if (feed.size() != context.map.anchor.size() || c >= context.map.offset.size()) reject("control/observable dimension mismatch");
         if (context.order < 0 || context.feed != feed) select_feed(context, feed, observable);
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
@@ -565,19 +577,154 @@ double equilibrium_amount(arglist* arguments) {
     } catch (...) {
         callback_error = EquilibriumFailure(ActionStatus::Nonfinite, observable).what();
     }
-    // A solver only sees an evaluation error; name the typed cause and the trial controls.
-    std::fprintf(stderr, "epcsaft_equilibrium failure: %s controls=", callback_error.c_str());
-    for (int i = 0; arguments != nullptr && arguments->ra != nullptr && i < arguments->nr; ++i)
-        std::fprintf(stderr, "%s%.17g", i != 0 ? "," : "", arguments->ra[i]);
-    std::fputc('\n', stderr);
     for (const auto& item : prepared.contexts) item->order = -1;
-    invalidate(arguments);
-    if (arguments != nullptr) {
-        if (arguments->hes != nullptr) callback_error.insert(0, "\"");
-        else if (arguments->derivs != nullptr) callback_error.insert(0, "'");
-        arguments->Errmsg = callback_error.data();
+    return report_failure(arguments, "epcsaft_equilibrium");
+}
+
+// Pressure-chart property callback (#73): q = (T, P, w_1..w_C) and x = w / sum(w). Native pressure actions along the
+// O(1) directions e_j - x supply the value and actions; only dx/dw_j = (e_j - x)/sum(w) and the exact chain
+// d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) are applied here. Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
+struct PropertyContext final {
+    std::string record;
+    std::unique_ptr<epcsaft::HelmholtzModel> model;
+    struct Branch final {
+        std::vector<double> q, values;
+        std::vector<std::vector<double>> gradients, hessians;
+        std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
+        int order = -1;
+    } branches[2];  // liquid (highest stable root), vapor (lowest)
+};
+
+std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
+    RecordReader reader(raw);
+    reader.field("epcsaft.asl.property.v1");
+    const auto document = read_document(reader);
+    epcsaft::ThermochemistryRecord thermochemistry;
+    reader.field("standard_pressure");
+    thermochemistry.standard_pressure = reader.number();
+    reader.field("component_intervals");
+    thermochemistry.component_intervals = reader.vector([&] {
+        return reader.vector([&] {
+            epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
+            item.correlation.source_pressure = reader.number();
+            epcsaft::IdealNASA9 nasa9{};
+            for (double& a : nasa9.coefficients) a = reader.number();
+            item.correlation.form = nasa9;
+            return item;
+        });
+    });
+    reader.finish();
+    auto context = std::make_unique<PropertyContext>();
+    context->model = std::make_unique<epcsaft::HelmholtzModel>(
+        epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry);
+    context->record = raw;
+    return context;
+}
+
+void evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, int order) {
+    auto& branch = context.branches[phase];
+    if (branch.q == q && branch.order >= order) return;
+    using Status = epcsaft::PropertyActionStatus;
+    const std::size_t c = q.size() - 2, n = q.size();
+    const double sum = std::accumulate(q.begin() + 2, q.end(), 0.0);
+    std::vector<double> x(c);
+    for (std::size_t i = 0; i < c; ++i) x[i] = q[2 + i] / sum;
+    std::vector<epcsaft::PressureActionDirection> basis(n, {0.0, 0.0, std::vector<double>(c, 0.0), {}});
+    basis[0].temperature = 1.0;
+    basis[1].pressure = 1.0;
+    for (std::size_t j = 0; j < c; ++j)
+        for (std::size_t i = 0; i < c; ++i) basis[2 + j].composition[i] = (i == j ? 1.0 : 0.0) - x[i];
+    const std::vector<epcsaft::PropertyObservable> observables = {
+        epcsaft::PropertyObservable::TotalEnthalpy, epcsaft::PropertyObservable::LogFugacityCoefficient};
+    const auto cause = [](Status status, std::string fallback) {
+        if (status == Status::PressureSingular) return std::string("nonmechanical_root");
+        return status == Status::SupportChange || status == Status::IonicInsertion ? "support_insertion" : fallback;
+    };
+    // The first, exhaustive root search at this q owns branch identity and every value; later directions start from its root.
+    std::optional<double> anchor;
+    branch.q = q;
+    branch.order = -1;
+    branch.values.assign(n, 0.0);
+    branch.failures.assign(n, {3, std::string()});
+    branch.gradients.assign(n, std::vector<double>(n));
+    branch.hessians.assign(n, std::vector<double>(n * (n + 1) / 2));
+    const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
+        const auto batch = context.model->pressure_actions(q[0], q[1], x,
+            phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, observables, directions, anchor);
+        if (batch.density_status != Status::Available || !batch.molar_density) {
+            const auto& m = batch.density_message;
+            std::string root = batch.density_convergence ? "inner_iteration_failure" : "unavailable_derivative";
+            if (m.find("ambiguous") != std::string::npos) root = "ambiguous_branch";
+            if (m.find("no stable density root") != std::string::npos || m.find("density domain is empty") != std::string::npos)
+                root = "no_density_root";
+            throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
+                + std::to_string(static_cast<int>(batch.density_status)) + ":density:" + m);
+        }
+        const auto fail = [&](std::size_t row, int k, Status status) {
+            if (k < branch.failures[row].first)
+                branch.failures[row] = {k, "epcsaft_property:" + cause(status, "unavailable_derivative") + ":"
+                    + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)};
+        };
+        std::vector<double> actions(n);
+        const bool first = !anchor;
+        if (first) anchor = branch.values[0] = *batch.molar_density;
+        actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
+        for (std::size_t row = 1; row < n; ++row) {
+            const auto& item = batch.results[row - 1];
+            if (first && item.value) branch.values[row] = *item.value;  // an owned NASA9 endpoint keeps its value
+            if (first && !item.value) fail(row, 0, item.status);
+            actions[row] = item.action.value_or(0.0);
+            if (item.status != Status::Available || !item.action) fail(row, static_cast<int>(directions.size()), item.status);
+        }
+        return actions;
+    };
+    for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
+        const auto actions = run({basis[k]});
+        for (std::size_t row = 0; row < n; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2);
     }
-    return invalid_value();
+    std::size_t packed = 0;
+    for (std::size_t j = 0; order >= 2 && j < n; ++j)
+        for (std::size_t i = 0; i <= j; ++i, ++packed) {
+            const auto actions = run({basis[i], basis[j]});
+            for (std::size_t row = 0; row < n; ++row)
+                branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2) + (j >= 2))
+                    - (i >= 2 ? (branch.gradients[row][i] + branch.gradients[row][j]) / sum : 0.0);
+        }
+    branch.order = order;
+}
+
+double pressure_property(arglist* arguments) {
+    static Prepared<PropertyContext> prepared;
+    std::lock_guard<std::mutex> lock(prepared.mutex);
+    if (arguments != nullptr) arguments->Errmsg = nullptr;
+    invalidate(arguments);
+    try {
+        const int n = argument_count(arguments, 3, 66, "property callback requires T, P, weights and three strings");
+        const char* record = string_argument(arguments, n);
+        auto& context = prepared.find(record, "property", [&] { return prepare_property(record); });
+        const std::size_t c = context.model->parameters().component_count();
+        if (static_cast<std::size_t>(n) != 2 + c) reject("weight count differs from the record components");
+        const auto row = selector(arguments, n + 1, 2 + c), phase = selector(arguments, n + 2, 2);
+        const std::vector<double> q(arguments->ra, arguments->ra + n);
+        // Zero weights are admitted: the component enters at its exact infinite-dilution limit.
+        for (int i = 0; i < n; ++i)
+            if (!std::isfinite(q[i]) || q[i] < 0.0 || (i < 2 && q[i] == 0.0))
+                reject("T and P must be finite and positive, weights finite and nonnegative");
+        if (!(std::accumulate(q.begin() + 2, q.end(), 0.0) > 0.0)) reject("weights must have a positive sum");
+        const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
+        evaluate_property(context, phase, q, order);
+        const auto& branch = context.branches[phase];
+        if (branch.failures[row].first <= order) throw std::runtime_error(branch.failures[row].second);
+        if (arguments->derivs != nullptr) std::copy(branch.gradients[row].begin(), branch.gradients[row].end(), arguments->derivs);
+        if (arguments->hes != nullptr) std::copy(branch.hessians[row].begin(), branch.hessians[row].end(), arguments->hes);
+        return branch.values[row];
+    } catch (const std::invalid_argument& error) {
+        callback_error = std::string("epcsaft_property:invalid_input:") + error.what();
+    } catch (const std::exception& error) {
+        const std::string what = error.what();
+        callback_error = what.rfind("epcsaft_property:", 0) == 0 ? what : "epcsaft_property:native_failure:" + what;
+    }
+    return report_failure(arguments, "epcsaft_property");
 }
 
 }  // namespace
@@ -599,5 +746,9 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
     exports->Addfunc(
         "epcsaft_equilibrium_phase_component_amount", equilibrium_amount,
         FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -5, nullptr, exports
+    );
+    exports->Addfunc(
+        "epcsaft_pressure_property", pressure_property,
+        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -7, nullptr, exports
     );
 }

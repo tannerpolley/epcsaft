@@ -58,7 +58,7 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
     try:
         return ids.index(name)
     except ValueError as error:
-        raise ParameterError(f"unknown {what} {name}") from error
+        raise ParameterError(f"unknown {what} {name}; expected one of {', '.join(map(str, ids))}") from error
 
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
@@ -141,7 +141,7 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
     return _finish(result, observed, form, scale, mass_basis)
 
 
-def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool,
+def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool | None = None,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
@@ -149,20 +149,22 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     phase_fraction (mole basis), amount_ratio (phase-component amounts), or
     equilibrium_isobaric_heat_capacity (J/(mol-feed K), driven T/P)."""
     if kind not in _KINDS:
-        raise ParameterError(f"unknown observation kind {kind}")
+        raise ParameterError(f"unknown observation kind {kind}; expected one of {', '.join(_KINDS)}")
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
     result.kind = _KINDS[kind]
     if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
         raise ParameterError(f"{kind} needs its phase")
+    if mass_basis is None and kind == "phase_density":  # only a density has a basis
+        raise ParameterError("phase_density needs mass_basis: True for kg/m^3, False for mol/m^3")
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]
     if kind == "amount_ratio":
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
-    return _finish(result, observed, form, scale, mass_basis)
+    return _finish(result, observed, form, scale, False if mass_basis is None else mass_basis)
 
 
 def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, feed: Mapping[str, float], amount: float,
@@ -232,7 +234,7 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
              "osmotic_coefficient": ObservationKind.OsmoticCoefficient, "solvation_gibbs_energy": ObservationKind.SolvationGibbsEnergy,
              "transfer_gibbs_energy": ObservationKind.TransferGibbsEnergy, "bulk_relative_permittivity": ObservationKind.BulkRelativePermittivity}
     if kind not in kinds:
-        raise ParameterError(f"unknown electrolyte observation {kind}")
+        raise ParameterError(f"unknown electrolyte observation {kind}; expected one of {', '.join(kinds)}")
     result = _pressure_closed(parameters, kinds[kind], T, P, x, "liquid", observed, form, scale, False)
     result.ion_indices = (_index(parameters.component_ids, ions[0], "ion"), _index(parameters.component_ids, ions[1], "ion"))
     result.stoichiometry, result.molality = stoichiometry, molality

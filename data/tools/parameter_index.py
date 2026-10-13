@@ -25,9 +25,12 @@ USES = {
     "gross-vrabec-2006": "Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters.",
     "hamer-wu-1972-aqueous-alkali-halides": "Observations, not parameters: evaluated molality-scale mean ionic activity coefficients of six aqueous 1:1 salts at 298.15 K.",
     "held-2014-strategy2": "Held 2014 strategy-2 water and chloride ions at 298.15 K; transcription candidate, not a qualified fit.",
+    "hda-pc-saft": "Toluene hydrodealkylation H2/CH4/benzene/toluene: nonassociating PC-SAFT pure records and all six k_ij (two fitted in #73).",
     "held-cameretti-sadowski-2008": "Held 2008 water and 29 ions, fully dissociated aqueous electrolytes at 298.15 K and 1 bar.",
+    "hydrogen-binary-vle": "Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K.",
     "khudaida-2026-figure-2-electrolyte-lle": "Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE.",
     "mea-co2-h2o-nine-species-estimation": "CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets).",
+    "nasa-glenn-2002-hda-species": "NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters.",
     "zuber-2014-electrolyte-permittivity": "Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol.",
 }
 
@@ -36,7 +39,7 @@ def components(packet: Path) -> list[str]:
     found: list[str] = []
     for path in sorted((packet / "parameters").glob("*")):
         if path.suffix == ".json":
-            found += [item["component_id"] for item in json.loads(path.read_text())["components"]]
+            found += [item["component_id"] for item in json.loads(path.read_text()).get("components", [])]
         elif path.suffix == ".csv":
             found += [row["component_id"] for row in csv.DictReader(path.open())]
     return list(dict.fromkeys(found))

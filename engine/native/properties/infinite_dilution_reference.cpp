@@ -545,7 +545,8 @@ std::vector<double> formula_composition(
         || ion_indices[0] == ion_indices[1]
         || stoichiometry[0] <= 0 || stoichiometry[1] <= 0
         || !std::isfinite(molality) || molality <= 0.0) {
-        throw std::invalid_argument("invalid reference composition inputs");
+        throw std::invalid_argument("invalid reference composition inputs: need one solvent fraction per component, two "
+            "distinct ions, positive stoichiometry and finite molality > 0 (got molality " + core::optional_number(molality) + ")");
     }
     if (charges[ion_indices[0]] == 0 || charges[ion_indices[1]] == 0
         || static_cast<std::int64_t>(stoichiometry[0]) * charges[ion_indices[0]]

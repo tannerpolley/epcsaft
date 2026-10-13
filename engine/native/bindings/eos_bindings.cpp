@@ -122,7 +122,8 @@ void register_eos(py::module_& module) {
 
     py::class_<epcsaft::Parameters>(module, "Parameters")
         .def_property_readonly("component_count", &epcsaft::Parameters::component_count)
-        .def_property_readonly("site_count", &epcsaft::Parameters::site_count);
+        .def_property_readonly("site_count", &epcsaft::Parameters::site_count)
+        .def_readonly("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order");
     py::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
         .value("Value", epcsaft::DerivativeOrder::Value)
         .value("Gradient", epcsaft::DerivativeOrder::Gradient)

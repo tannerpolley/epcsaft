@@ -45,6 +45,31 @@ def test_unknown_species_and_amount_status_are_rejected_by_name() -> None:
         })
 
 
+def test_named_guess_follows_the_declared_support() -> None:
+    # A supported phase's guess has one entry per support component; a name map must start the same solve.
+    def solve(first: object, second: object) -> _core.EquilibriumResult:
+        return solve_equilibrium(mixture(), Problem(T=200.0, P=2e6, feed=equilibrium.MoleFractions({"methane": 0.5, "ethane": 0.5}),
+            phases=[Phase("Le", kind="liquid", support=["ethane"], composition_guess=first),  # type: ignore[arg-type]
+                    Phase("Lm", kind="liquid", support=["methane"], composition_guess=second)]))  # type: ignore[arg-type]
+    positional, named = solve((1.0,), (1.0,)), solve({"ethane": 1.0}, {"methane": 1.0})
+    assert positional.success and named.mole_fractions == positional.mole_fractions
+    assert named.molar_densities == positional.molar_densities and named.amounts == positional.amounts
+
+
+def test_named_guess_follows_native_support_order() -> None:
+    # Native sorts a declared support into component order; a name map must not follow the caller's order.
+    model = Mixture(Parameters.from_json(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=("water", "isobutanol")))
+
+    def solve(first: object, second: object) -> _core.EquilibriumResult:
+        return solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=equilibrium.Amounts({"water": .6, "isobutanol": .4}),
+            phases=[Phase("Lw", kind="liquid", support=["isobutanol", "water"], composition_guess=first),  # type: ignore[arg-type]
+                    Phase("Lo", kind="liquid", support=["isobutanol", "water"], composition_guess=second)]))  # type: ignore[arg-type]
+    positional = solve((.999, .001), (.3, .7))
+    named = solve({"isobutanol": .001, "water": .999}, {"isobutanol": .7, "water": .3})
+    assert positional.success and named.mole_fractions == positional.mole_fractions and named.amounts == positional.amounts
+
+
 def test_generic_phase_requires_an_explicit_kind() -> None:
     model = mixture()
     feed = Amounts({"methane": 0.5, "ethane": 0.5})
