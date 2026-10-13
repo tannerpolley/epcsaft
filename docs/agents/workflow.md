@@ -46,10 +46,23 @@ build/wheels/<name>`.
 | When | Run |
 |---|---|
 | Every delivery state | `bash tools/check-affected.sh origin/main` and `bash tools/check-all.sh` |
-| Native C++ change, final delivery state only | `bash engine/tools/check-native.sh` (clang-tidy) and `bash engine/tools/check-native-sanitizers.sh`; review rounds lint only the native `.cpp` files changed since the merge base with `check-native.sh --changed` (a header-only change waits for the final sweep) |
+| Native C++ change, final delivery state only | `bash engine/tools/check-native.sh --changed` (clang-tidy on the native units changed since the merge base and every unit that includes a changed file; a change to `.clang-tidy`, a Meson file or the subprojects sweeps every unit, as does running it with no argument) and `bash engine/tools/check-native-sanitizers.sh` |
 | Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main wheel> <slice wheel> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
 | Before handoff of a change to native equilibrium or regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
 | Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main wheel> <slice wheel> --pairs 1 --out build/<dir>` and an A=A control (the main wheel against a copy of itself). Exit 0 is the gate: identical ionic LLE and MEA flash work counts and returned states within 1e-10 of each quantity's scale. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner |
+
+Run the checks of one delivery state together with `tools/run-together.sh`, one
+argument per build directory. `check-affected.sh`, `check-all.sh`, `run-native-tests.sh`
+and `build-engine.sh` share the Engine tree, so they chain inside one argument;
+`check-native.sh` and `check-native-sanitizers.sh` have their own trees, and the
+wheel-only gates can start once the slice wheel exists. For a native change:
+
+```bash
+bash tools/run-together.sh \
+    'bash tools/check-affected.sh origin/main && bash tools/check-all.sh' \
+    'bash engine/tools/check-native.sh --changed' \
+    'bash engine/tools/check-native-sanitizers.sh'
+```
 
 Native tests run with `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to bring back the random heap
 fill. `EPCSAFT_BUILD_JOBS` caps the compile jobs of setup, `check-native.sh` and `check-native-sanitizers.sh`.

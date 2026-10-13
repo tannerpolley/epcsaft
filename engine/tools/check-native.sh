@@ -6,17 +6,24 @@ workspace_root="$(dirname "$engine_root")"
 cd "$engine_root"
 export PATH="$workspace_root/.venv/bin:$PATH"
 
-# --changed [base] checks only the native .cpp files changed since base (default: the merge base with
-# origin/main), for review rounds; with no argument every native translation unit is checked.
-files=('engine/(native|tests/native)/.*\.cpp$')
+# --changed [base] checks only the native translation units changed since base (default: the merge base
+# with origin/main) or depending on a changed file, by the lint build's own dependency records; a change
+# to the lint configuration, a Meson file, the subprojects or this script sweeps every unit, as does no argument.
+all_units='engine/(native|tests/native)/.*\.cpp$'
+files=("$all_units")
+changed=""
 if [[ "${1:-}" == --changed ]]; then
     base="${2:-$(git merge-base origin/main HEAD)}"
     git rev-parse --verify --quiet "$base^{commit}" >/dev/null || { echo "--changed: unknown base $base" >&2; exit 2; }
     # A command substitution (not mapfile < <(...)) so a failed git listing stops the script under set -e.
-    changed="$(git diff --name-only --diff-filter=d "$base" -- 'native/*.cpp' 'tests/native/*.cpp')"
-    untracked="$(git ls-files --full-name --others --exclude-standard -- 'native/*.cpp' 'tests/native/*.cpp')"
-    mapfile -t files < <(printf '%s\n%s\n' "$changed" "$untracked" | sed '/^$/d' | sort -u | sed 's/\./\\./g; s/^/\//; s/$/$/')
-    ((${#files[@]})) || { echo "no native .cpp file changed since $base"; exit 0; }
+    changed="$(git diff --name-only "$base" -- .; git ls-files --full-name --others --exclude-standard -- .)"
+    if grep -Eq '^engine/(\.clang-tidy|(.*/)?meson(\.build|\.options|_options\.txt)|build/subprojects/|tools/check-native\.sh)' <<<"$changed"; then
+        echo "lint configuration or build files changed since $base: full sweep"
+        changed=""
+    elif ! grep -Eq '^engine/(native|tests/native)/' <<<"$changed"; then
+        echo "no native file changed since $base"
+        exit 0
+    fi
 fi
 
 for required_command in meson cmake ninja clang-18 clang++-18 clang-tidy-18 run-clang-tidy-18; do
@@ -42,6 +49,8 @@ if [[ -f "$build_root/meson-private/coredata.dat" ]]; then
 elif [[ -d "$build_root" ]]; then
     rm -rf -- "$build_root"
 fi
+# Clang ships no quadmath.h; the binary128 test units take GCC's after Clang's own headers.
+setup_args+=("-Dcpp_args=-idirafter$(gcc -print-file-name=include)")
 # ccache as tools/locked-ninja sets it up; debug info names the build directory, so a new worktree
 # reuses another's objects only when ccache leaves the directory out of its hash.
 export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
@@ -52,12 +61,26 @@ CC="ccache clang-18" CXX="ccache clang++-18" meson setup \
     "$engine_root"
 meson compile -C "$build_root" -j "$jobs" \
     "_core$extension_suffix"
+if [[ -n "$changed" ]]; then
+    # Building every native unit's object leaves Ninja holding each unit's current dependencies.
+    mapfile -t objects < <("$workspace_root/.venv/bin/python" -c '
+import json, re, sys
+for entry in json.load(open(sys.argv[1])):
+    if re.search(sys.argv[2], entry["file"]): print(entry["output"])' "$build_root/compile_commands.json" "$all_units")
+    ninja -C "$build_root" -j "$jobs" "${objects[@]}"
+    # Each record lists the object's source first, then every file it includes, relative to the build directory.
+    mapfile -t files < <(ninja -C "$build_root" -t deps "${objects[@]}" | awk '
+        NR == FNR { changed[$0] = 1; next }
+        /^[^ ]/ { source = "" }
+        /^    / { path = $1; sub(/^(\.\.\/)+/, "", path); if (source == "") source = path; if (path in changed) units[source] = 1 }
+        END { for (unit in units) print unit }' <(printf '%s\n' "$changed") - | sort | sed 's/\./\\./g; s/^/\//; s/$/$/')
+    ((${#files[@]})) || { echo "no native unit includes a file changed since $base"; exit 0; }
+    echo "linting ${#files[@]} native units changed or including a changed file"
+fi
 
-# Clang ships no quadmath.h; the binary128 test units take GCC's after Clang's own headers.
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
-    -extra-arg="-idirafter$(gcc -print-file-name=include)" \
     -j "$jobs" \
     -quiet \
     "${files[@]}"

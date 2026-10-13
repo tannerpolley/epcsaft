@@ -124,7 +124,7 @@ tools/native-isolated compare regression_checks ionic-addition origin/main  # ro
 ```
 
 `engine/tools/check-native.sh` builds the native extension with Clang and runs the
-full clang-tidy sweep. `engine/tools/check-native-sanitizers.sh` builds a separate
+full clang-tidy sweep; `--changed` lints only the units a change reaches. `engine/tools/check-native-sanitizers.sh` builds a separate
 debug ASan/UBSan wheel and runs its compact numerical tests.
 `tools/check-equilibrium-corpora <wheel-A> <wheel-B>` runs the Equilibrium
 acceptance corpora on both wheels and prints one table (`--help`). Run slow Engine
