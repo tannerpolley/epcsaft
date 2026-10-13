@@ -232,6 +232,10 @@ def test_named_composition_and_molar_masses_follow_component_ids() -> None:
     assert named.molar_density == model.state(200.0, P=2e6, x=(0.7, 0.3), phase="liquid").molar_density
     with pytest.raises(ParameterError, match="propane; expected one of ethane, methane"):
         model.state(200.0, P=2e6, x={"propane": 1.0}, phase="liquid")
+    with pytest.raises(ParameterError, match="unknown species None"):  # None is a name, not a not-found marker
+        model.state(200.0, P=2e6, x={"methane": 1.0, None: 1.0}, phase="liquid")  # type: ignore[dict-item]
+    with pytest.raises(AttributeError):  # read from the native record, not a settable copy
+        parameters.molar_masses = (1.0, 2.0)  # type: ignore[misc]
 
 
 

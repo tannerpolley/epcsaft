@@ -60,11 +60,10 @@ def _choice(families: Sequence[object], kind: str, default: str | None = None) -
 
 
 class Parameters:
-    __slots__ = ("component_ids", "site_ids", "molar_masses", "_native", "_document")
+    __slots__ = ("component_ids", "site_ids", "_native", "_document")
 
     component_ids: tuple[str, ...]
     site_ids: tuple[tuple[str, str], ...]
-    molar_masses: tuple[float, ...]  # kg/mol, component_ids order, read from the native record
     _native: _core.Parameters
 
     def __init__(
@@ -77,7 +76,10 @@ class Parameters:
         self._document: _core.ParameterDocument | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
-        self.molar_masses = tuple(native.molar_masses)
+
+    @property
+    def molar_masses(self) -> tuple[float, ...]:  # kg/mol, component_ids order, read from the native record
+        return tuple(self._native.molar_masses)
 
     @classmethod
     def from_json(cls, path: str | Path, *, components: Sequence[str] | None = None) -> Parameters:

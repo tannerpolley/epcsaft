@@ -176,9 +176,8 @@ def _index(component_ids: tuple[str, ...], name: str) -> int:
 
 
 def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list[float]:
-    unknown = next((name for name in values if name not in component_ids), None)
-    if unknown is not None:
-        raise _core.ParameterError(f"unknown species {unknown}; expected one of {', '.join(component_ids)}")
+    if unknown := [name for name in values if name not in component_ids]:
+        raise _core.ParameterError(f"unknown species {unknown[0]}; expected one of {', '.join(component_ids)}")
     return [values.get(component_id, 0.0) for component_id in component_ids]
 
 
@@ -262,10 +261,11 @@ class Problem:
             item.kind = _phase_kind(phase)
             item.support_declared = phase.support is not None
             names = () if phase.support is None else phase.support
-            item.support = [_index(model.component_ids, name) for name in names]
+            item.support = sorted(_index(model.component_ids, name) for name in names)  # native order
             item.amount = _amount_spec(phase.amount)
             guess = phase.composition_guess
-            item.composition_guess = _vector(guess, model.component_ids) if isinstance(guess, dict) else list(guess)
+            order = tuple(model.component_ids[i] for i in item.support) or model.component_ids
+            item.composition_guess = _vector(guess, order) if isinstance(guess, dict) else list(guess)
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
         if isinstance(self.phases, Discover):

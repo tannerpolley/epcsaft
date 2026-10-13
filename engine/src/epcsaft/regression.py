@@ -164,7 +164,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     if kind == "amount_ratio":
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
-    return _finish(result, observed, form, scale, bool(mass_basis))
+    return _finish(result, observed, form, scale, False if mass_basis is None else mass_basis)
 
 
 def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, feed: Mapping[str, float], amount: float,
