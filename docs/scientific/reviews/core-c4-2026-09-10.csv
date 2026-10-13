@@ -1,6 +1,0 @@
-run_date,engine_wheel_sha256,case,record_id,quantity,model,reference,absolute_error,unit,inputs,criterion,atol,rtol,verdict,test_outcome
-2026-09-10,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,integrated,c4-wheel,installed_wheel_sha256,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,0,sha256,non-editable current-checkout wheel,strict_absolute,0,0,true,Passed
-2026-09-10,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,integrated,c4-native,fast_native_suites_passed,4,4,0,count,contributions|properties|diagnostics|specification,strict_absolute,0,0,true,Passed
-2026-09-10,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,integrated,c4-python,python_tests_passed,9,9,0,count,installed-wheel pytest suite,strict_absolute,0,0,true,Passed
-2026-09-10,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,integrated,c4-equilibrium-f5,pinned_f5_failure_preserved,1,1,0,bool,known assertion at equilibrium_checks.cpp:1180; C3 comparisons passed,reference_or_one,0,0,true,Expected failure preserved
-2026-09-10,f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7,cost,c4-check-all,check_all_elapsed_seconds,9.93,9.93,0,s,packets|python|native|ruff|mypy|analysis-layout|architecture,strict_absolute,0,0,true,Passed

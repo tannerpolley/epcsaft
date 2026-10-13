@@ -6,10 +6,6 @@
 The declared pure-liquid, pure-vapor or solvent infinite-dilution chemical-potential standard for one species. `SpeciesReference.PureGas` and `PureLiquid` select the native vapor or liquid branch at finite pressure and are refused where only the other side's root exists; a single root on an isotherm whose ALG-DENSITY scan finds no mechanical loop (a finite search, in practice above the EOS critical temperature) serves either branch; the solvent's default liquid reference retains the near-pure terminal realization.
 Source: chemical-potential standard-state invariance in `neutral_reaction_reference_transfer`; Uyan et al. (2015), Eqs. 22–23 for pure/dilute conventions; historical generator e12a5ff8 for pure CO2 vapor; issue #274.
 
-**Independent reference case**:
-Analytic identity, measurement, evaluated reference, or source model calculation; source class and uncertainty remain distinct.
-Source: CSE terminology and transfer audit §7
-
 **Support**:
 Species with coordinates in a phase; omitted species have structural zero amount.
 Source: equilibrium formulation
@@ -24,19 +20,19 @@ Source: full EOS §12
 
 **Derivative action**:
 A requested directional derivative of a named observable on a stated branch and coordinate chart.
-Source: algorithms
+Source: [ALG-ACTIONS](engine/docs/science/algorithms.md#alg-actions)
 
 **Convergence record**:
 Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics.
-Source: algorithms
+Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination)
 
 **Numerical floor**:
 An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound.
-Source: algorithms
+Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination)
 
 **Tolerance gated**:
 A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance.
-Source: algorithms
+Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination)
 
 **Fingerprint**:
 A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy.
@@ -44,7 +40,7 @@ Source: [packet requirements](data/docs/packet-contract.md) and root `AGENTS.md`
 
 **Typed failure**:
 An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value.
-Source: algorithms, fix before a negative disposition
+Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination), fix before a negative disposition
 
 **Claim boundary**:
 Observable, domain, evidence and uncertainty to which a scientific conclusion applies.

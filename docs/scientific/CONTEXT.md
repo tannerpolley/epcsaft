@@ -309,7 +309,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
 | Parameter regression observation and fit meaning | [parameter regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
-| Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
+| Current implementation plan, prerequisites and acceptance | GitHub issues ([ADR 0010](decisions/0010-github-issue-roadmap-authority.md)) |
 | Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
 | Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), resolved by `tools/project-map.py` |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
@@ -368,11 +368,8 @@ quantities do not assert complete root enumeration or physical validation.
 
 ## Implementation completion order
 
-The [GitHub milestones](https://github.com/tannerpolley/ePC-SAFT/milestones)
-and owning issues define the current completion order, status, scope,
-acceptance, reuse decisions and estimates. Native issue relationships own
-prerequisites; milestone numbering expresses delivery priority, not an additional
-scientific dependency. Do not maintain a competing sequence here.
+Completion order follows [ADR 0010](decisions/0010-github-issue-roadmap-authority.md); milestone numbering expresses
+delivery priority, not an additional scientific dependency.
 Finish and verify each prerequisite's current agreed scope before dependent
 implementation; deferred UV and global certification do not block current work.
 Later integration defects reopen the affected earlier issue. Design readiness is

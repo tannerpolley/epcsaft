@@ -5,10 +5,8 @@ The status report answers three questions from existing owners:
 1. **What exists?** `ARCHITECTURE.yaml` owns components, Engine layers, path
    ownership, and file roles. `tools/project-map.py` resolves only files
    that exist in the checkout and reports unmapped or ambiguous paths.
-2. **What remains?** The
-   [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
-   owns milestone plans, prerequisites and status. The report does not copy its
-   mutable state.
+2. **What remains?** Open GitHub issues ([ADR 0010](decisions/0010-github-issue-roadmap-authority.md));
+   the report does not copy their mutable state.
 3. **What happened?** Ordinary JUnit XML, key-solve comparison records and
    retained analysis results own execution outcomes, dates, inputs, values,
    failures, and build provenance.
