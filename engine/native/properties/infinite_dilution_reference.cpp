@@ -482,7 +482,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
                 a, b, parameter, scale, tolerance, observed)).value;
         };
         const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
-        if (trace.temperature_order > 0 || trace.parameter_jets) {
+        if (trace.temperature_order > 0) {
             result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt, temperature, tolerance,
                 &result.observed_temperature_derivative_change);
             if (trace.temperature_order > 1)
@@ -608,11 +608,11 @@ std::optional<std::vector<NeutralReferenceReactionDiagnostic>> HelmholtzModel::s
     return std::nullopt;
 }
 
-// Sixteen entries hold every endpoint of a fit state group at one (T, P); a bubble solve's moving
-// pressure only cycles the FIFO.
+// 256 entries keep a fit evaluation's repeated start-pressure requests (largest reuse gap 130 stores,
+// #449); a bubble solve's moving pressure only cycles the FIFO.
 void HelmholtzModel::store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (references_.size() == 16) references_.pop_front();
+    if (references_.size() == 256) references_.pop_front();
     references_.emplace_back(std::move(inputs), result);
 }
 
