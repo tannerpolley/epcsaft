@@ -673,11 +673,12 @@ void check_gross_2002_cooling_onset() {
 
 // #423: a sole cold root lies on the other side of its negative-slope sample from the declared phase.
 // Declared phases are refused; discovery refuses that initial candidate and relabels an added phase to
-// the established side with its Gibbs decrease kept. Water(0.87)/1-pentanol at 150 K, 101,300 Pa with a
-// vapor trial family; Gross 2001 methane/ethane z=1e-8 at 300 K, 100 Pa. Values from main 4363d103.
+// the established side with its Gibbs decrease kept; a finite-split donor on the other side is refused.
+// Water(0.87)/1-pentanol at 150 K, 101,300 Pa with a vapor trial family; Gross 2001 methane/ethane z=1e-8
+// at 300 K, 100 Pa and z=0.5 at 240 K, 3 MPa. Values from main 4363d103 and #423 slice 2.
 void check_density_branch_admission() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
-    const HelmholtzModel water_pentanol(gross_2002_water_pentanol()), ethane(properties_support::neutral_binary());
+    const HelmholtzModel water_pentanol(gross_2002_water_pentanol()), methane_ethane(properties_support::neutral_binary());
     const auto problem = [](double T, double P, std::vector<double> z) {
         auto p = equilibrium_support::flash(2);
         p.temperature = FreeValue::fixed(T); p.pressure = FreeValue::fixed(P); p.feed.values = std::move(z);
@@ -690,7 +691,7 @@ void check_density_branch_admission() {
         CHECK(!result.success); CHECK(result.molar_densities.empty()); CHECK(result.message.find(cause) != std::string::npos);
     };
     refused(water_pentanol, liquid, PhaseKind::Vapor, "vapor branch absent: the sole stable root 35911.87");
-    refused(ethane, gas, PhaseKind::Liquid, "liquid branch absent: the sole stable root 0.04009108");
+    refused(methane_ethane, gas, PhaseKind::Liquid, "liquid branch absent: the sole stable root 0.04009108");
     const auto discover = [](const HelmholtzModel& model, EquilibriumProblem p) {
         auto trial = equilibrium_support::phase("trial-V", PhaseKind::Vapor); trial.support = {0, 1};
         StabilityOptions options; options.trials = std::vector<PhaseSpec>{trial}; options.declaration_budget = 4;
@@ -705,9 +706,25 @@ void check_density_branch_admission() {
     tpd_compare("branch-admission/split-g", split.objective, -18.07210327606597, 1e-10 * 18.07210327606597, {}, "mol");
     tpd_compare("branch-admission/split-rho", split.molar_densities.at(1), 11193.38560166406, 1e-10 * 11193.38560166406, {}, "mol/m3");
     tpd_compare("branch-admission/split-amount", split.amounts.at(1), 0.13612504455029806, 1e-10, {}, "mol");
-    const auto vapor = discover(ethane, gas);
+    const auto vapor = discover(methane_ethane, gas);
     CHECK(vapor.phase_count == 1); CHECK(vapor.declaration->phases[0].kind == PhaseKind::Vapor);
     tpd_compare("branch-admission/vapor-rho", vapor.molar_densities.at(0), 0.040091082039588319, 1e-10 * 0.040091082039588319, {}, "mol/m3");
+    // Donor: the declared liquid at 240 K has two stable feed roots. Withdrawing its x_methane=0.4623 liquid trial at
+    // half and quarter capacity leaves donors whose sole roots lie below their samples; an eighth is admitted.
+    const auto compiled = compile_problem(methane_ethane, problem(240.0, 3e6, {0.5, 0.5}));
+    const auto declared = solve_compiled(compiled);
+    CHECK(declared.success);
+    const auto report = stability_test(compiled, declared, StabilityOptions{});
+    const auto donor = std::find_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
+        return !t.composition.empty() && std::abs(t.composition[0] - 0.46231861363169502) < 1e-8; });
+    CHECK(donor != report.trials.end());
+    const auto beta = donor->quantities.find("split_beta_mol");
+    tpd_compare("branch-admission/donor-beta", beta == donor->quantities.end() ? NAN : beta->second, 0.11623984312000767,
+                1e-10 * 0.11623984312000767, {}, "mol");
+    CHECK(donor->resolved_descent && donor->split_checks.size() == 3);
+    CHECK(donor->split_checks[0].at("admitted") == 0.0 && donor->split_checks[0].at("component_error_mol") <= 1e-12);
+    CHECK(donor->message.find("finite split: liquid branch absent: the sole stable root 2124.87") != std::string::npos
+          && donor->message.find("below the negative-slope sample 8026.59") != std::string::npos);
 }
 
 }  // namespace equilibrium_checks

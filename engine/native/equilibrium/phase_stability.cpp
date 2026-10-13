@@ -865,7 +865,8 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                     auto [reduced, seed] = remove_discovery_phase(system, attempt, &record->work);
                     system = compile_problem(model, reduced); attempt.clear();
                     result = invoke(system, std::move(seed), "removal", attempt);
-                } catch (const std::exception& error) { result.message += "; " + std::string(error.what()); break; }
+                } catch (const std::exception& error) {
+                    trial.message += "; removal of " + removed.back().first.name + ": " + error.what(); break; }
             }
             if (!result.success || result.convergence.residual > request.row_tolerance) continue;
             double error_estimate = 0.0;
