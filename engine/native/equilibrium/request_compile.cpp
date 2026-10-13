@@ -1839,7 +1839,7 @@ RowSeries CompiledSystem::row_series(
     };
     if (reuse && parameter_jets && !parameter_cache_ready()) {
         try {
-            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, 2,
+            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, std::max<std::size_t>(order, 1),
                 pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0));
         } catch (const std::invalid_argument&) {}
     }
