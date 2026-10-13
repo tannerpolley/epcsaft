@@ -210,6 +210,10 @@ def test_mapping_fails_closed_by_name() -> None:
             components=("water", "lithium-cation", "sodium-cation", "chloride-anion"),
         )
     mapping = copy.deepcopy(json.loads(parameters_json("gross-2001-methane-ethane", 3).read_text()))
+    mapping["pair"] = mapping.pop("pairs")  # an unread top-level field is refused, not dropped with its k_ij
+    with pytest.raises(ParameterError, match="does not read: pair$"):
+        Parameters.from_mapping(mapping)
+    mapping = copy.deepcopy(json.loads(parameters_json("gross-2001-methane-ethane", 3).read_text()))
     mapping["components"][0]["fixed"]["molar_mass"]["value"]["unit"] = "gram"
     with pytest.raises(ParameterError, match="(?=.*component/ethane/molar_mass)(?=.*gram)"):
         Parameters.from_mapping(mapping, components=("ethane",))

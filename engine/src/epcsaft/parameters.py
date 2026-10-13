@@ -8,6 +8,10 @@ from typing import cast
 from . import _core
 
 ParameterError = _core.ParameterError
+# Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
+_KEYS = {*"schema schema_version components correlations pairs model_families model_coefficients topology".split(),
+         *"document_id document_version purpose sources domains materialization".split(),
+         *"reaction_correlations empirical_density_correction".split()}
 
 
 def _mapping(value: object, name: str) -> Mapping[str, object]:
@@ -86,6 +90,8 @@ class Parameters:
         document = _mapping(mapping, "parameter document")
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1:
             raise _core.ParameterError("unsupported parameter document schema")
+        if unread := sorted(set(document) - _KEYS):
+            raise _core.ParameterError(f"parameter document fields the Engine does not read: {', '.join(unread)}")
         raw_components = _array(document.get("components"), "components")
         component_records: dict[str, Mapping[str, object]] = {}
         for index, item in enumerate(raw_components):

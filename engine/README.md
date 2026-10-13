@@ -176,8 +176,10 @@ ln K(T) = a + b/T + c ln(T/T_ref) + d T on the Engine standard state
 mole fraction at infinite dilution) also needs `Reaction(reference=ReactionReference(...))`
 and the problem's `neutral_reference`. Data packets carry no complete reaction
 set: `mea-co2-h2o-nine-species-estimation/5` holds candidate correlations for
-R4 and R5 only, and `Parameters.from_json` ignores a document's
-`reaction_correlations` without a message. Adopting reaction sets is
+R4 and R5 only. `Parameters.from_json` does not read a document's
+`reaction_correlations` (nor `empirical_density_correction`); those records
+are the caller's. It refuses any other top-level field it does not read,
+naming each one. Adopting reaction sets is
 application work: the adopted MEA set (R1-R5, their standard-state offsets and
 the Born constants `c_shell = c_dielectric = 1.0`, where the packet declares
 0.0) lives in Amine-Thermodynamics, `src/MEA/common/mea_source_contracts.py`
