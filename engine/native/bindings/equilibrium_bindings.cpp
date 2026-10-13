@@ -33,6 +33,13 @@ void register_equilibrium(py::module_& module) {
         return asl_record(document.cast<ParameterDocument>(), p, options, map);
     }, py::arg("model"), py::arg("problem"), py::arg("continuation"), py::arg("feed_offset"),
        py::arg("feed_matrix"), py::arg("anchor_controls"), py::arg("identity_component"), py::arg("minimum_gap"));
+    module.def("property_asl_record", [](py::object model) {
+        const py::object native_owner = model.attr("_model"), document = model.attr("parameters").attr("_document");
+        const auto& native = native_owner.cast<const HelmholtzModel&>();
+        if (document.is_none() || !native.active_parameters().empty() || !native.thermochemistry())
+            throw std::invalid_argument("ASL property record requires document parameters, inactive and with thermochemistry");
+        return asl_property_record(document.cast<ParameterDocument>(), *native.thermochemistry());
+    }, py::arg("model"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     py::enum_<PhaseKind>(module, "PhaseKind")
         .value("Liquid", PhaseKind::Liquid)
