@@ -78,3 +78,4 @@ delivers a slice says `Refs #N`. Merging does not finish the handoff: in the sam
 closeout, rewrite the issue body's current state and remaining criteria (replace,
 do not append dated blocks), remove the PR's `work:review` and `work:claimed`
 labels, and run the reconciler with `--apply` (without it the tool only previews). A comment alone is not a handoff.
+On closing #N, run `git grep -nw '#N' -- docs engine/docs 'analyses/**/README.md'` and update every statement that #N is open or pending.
