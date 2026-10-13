@@ -172,6 +172,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "hda-pc-saft",
+      "packet_version": "1",
+      "packet_path": "data/packets/hda-pc-saft/1",
+      "packet_fingerprint": "696126801725fa46102757c04c3d078fcc338ca945bd03f63aa38522c11cf4e2",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "held-cameretti-sadowski-2008",
       "packet_version": "2",
       "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
@@ -183,6 +190,13 @@
       "packet_version": "3",
       "packet_path": "data/packets/held-cameretti-sadowski-2008/3",
       "packet_fingerprint": "23dd06664f38338230d5ec5c553f1ebfabdc02a3831f8d53de12cf73012a1720",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "hydrogen-binary-vle",
+      "packet_version": "2",
+      "packet_path": "data/packets/hydrogen-binary-vle/2",
+      "packet_fingerprint": "e551600d2f932655593837f15ccdf9d85b4d122c0bef2945c95825574bb2767b",
       "materialization": "byte-for-byte"
     },
     {
@@ -232,6 +246,13 @@
       "packet_version": "5",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/5",
       "packet_fingerprint": "76315ac4e4961782d089c3c4504fb49667e120b9e31d46fe2a8e99837b8e0a45",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "nasa-glenn-2002-hda-species",
+      "packet_version": "1",
+      "packet_path": "data/packets/nasa-glenn-2002-hda-species/1",
+      "packet_fingerprint": "f053b8be1bda3a8b0383d04806316d8c7bed69f7d71358a561e91b89169005b4",
       "materialization": "byte-for-byte"
     },
     {

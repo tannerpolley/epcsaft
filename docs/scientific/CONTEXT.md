@@ -180,6 +180,15 @@ numerical kernels. Continuation and phase discovery control sequences of
 problems and reuse the same equilibrium driver where equilibrium is solved;
 their search operations do not duplicate it.
 
+The rule governs equilibrium specifications implemented inside the Engine
+(owner decision, 2026-09-16). An external process model, such as an IDAES
+`SmoothVLE` flowsheet, may assemble its own phase-equilibrium rows from
+Engine-owned single-phase properties (density, caloric properties, component
+`ln(phi_i)` and their derivative actions) without becoming a second Engine
+driver. The Engine then owns only those properties; the external model owns its
+equations, solve and claims, and no Engine equilibrium equation or solver is
+copied into it.
+
 The owner requires a single Ipopt driver with exact curvature, including bubble
 and dew specifications. This does not certify the current implementation or
 promise convergence for every input. Qualify its pinned/free-intensive equations,
