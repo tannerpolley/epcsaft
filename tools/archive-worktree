@@ -136,6 +136,7 @@ def verify(wt, files, unzstd):
             if not same or stats(wt, [member.name]) != before:
                 raise RuntimeError(f"member {member.name!r} differs from the worktree")
             verified.update(before)
+    unzstd.stdout.read()  # tarfile stops at the end-of-archive marker; drain the rest so zstd can exit
     if unzstd.wait():
         raise RuntimeError(f"zstd -d exited {unzstd.returncode}")
     if list(verified) != files:
