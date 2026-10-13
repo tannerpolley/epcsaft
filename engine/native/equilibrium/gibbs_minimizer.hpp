@@ -25,7 +25,6 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 };
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
-struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool supports_split_seed(const CompiledSystem& compiled);

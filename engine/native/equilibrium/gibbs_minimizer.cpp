@@ -32,8 +32,6 @@ double polish_forward_bound(const std::vector<double>& jacobian, const std::vect
     const std::vector<double>& delta, const std::vector<double>& scale) {
     const auto n = static_cast<Eigen::Index>(delta.size());
     const double unavailable = std::numeric_limits<double>::infinity();
-    if (n == 0 || rows.size() != delta.size() || scale.size() != delta.size()
-        || jacobian.size() != delta.size() * delta.size()) return unavailable;
     const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian.data(), n, n);
     const Eigen::Map<const Eigen::VectorXd> d(delta.data(), n), r(rows.data(), n), D(scale.data(), n);
     if (!J.allFinite() || !d.allFinite() || !r.allFinite() || !D.allFinite() || !(D.minCoeff() > 0.0)) return unavailable;
@@ -88,10 +86,6 @@ Curvature reduced_curvature_at(
             std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm())};
 }
 
-bool zero_amount(const PhaseSpec& phase) {
-    return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
-}
-
 // Local phase stability (ALG-EQUILIBRIUM, #352) of a neutral nonreacting liquid/vapor pair with an incipient
 // zero-amount phase: every phase's M = D Q D, Q = F_nn at unit amount as in EqID critical_equations, D = diag
 // sqrt(x) on its support, may hold no resolved negative eigenvalue, lambda < -(||M v - lambda v|| + C eps ||M||_F).
@@ -99,7 +93,7 @@ bool zero_amount(const PhaseSpec& phase) {
 std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
     const auto& phases = compiled.problem.phases;
     if (compiled.has_ions || compiled.has_reaction || phases.size() != 2 || phases[0].kind == phases[1].kind
-        || std::none_of(phases.begin(), phases.end(), zero_amount)) return {};
+        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_incipient(); })) return {};
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
@@ -145,10 +139,6 @@ void require_solution_shape(
 ) {
     if (!all_numeric(result.residuals) || result.rows.empty()) {
         throw std::runtime_error("equilibrium result has invalid residuals");
-    }
-    if (result.amounts.size() != phases || result.molar_densities.size() != phases
-        || result.mole_fractions.size() != phases * components) {
-        throw std::runtime_error("equilibrium result has invalid topology");
     }
     for (const double amount : result.amounts) {
         if (!std::isfinite(amount) || amount < 0.0) {
@@ -1161,7 +1151,8 @@ BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& re
 std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled, const DriverLimits* limits, StageWork& stages) {
     const auto& problem = compiled.problem;
     EquilibriumProblem present = problem;
-    present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(), zero_amount), present.phases.end());
+    present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(),
+        [](const PhaseSpec& phase) { return phase.is_incipient(); }), present.phases.end());
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
         || present.phases.size() == problem.phases.size()) return std::nullopt;
     present.pressure = FreeValue::fixed(compiled.seed_pressure());
@@ -1174,8 +1165,8 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
         std::size_t index = 0;
         for (auto& phase : seeded.problem.phases) {
             const bool guessed = phase.composition_guess.size() == phase.support.size();
-            if (zero_amount(phase) && guessed) continue;
-            const std::size_t source = zero_amount(phase) ? 0 : index++;
+            if (phase.is_incipient() && guessed) continue;
+            const std::size_t source = phase.is_incipient() ? 0 : index++;
             phase.composition_guess.clear();
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }

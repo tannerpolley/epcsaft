@@ -365,7 +365,7 @@ void admit_conditions(const CompiledSystem& compiled) {
     }
     const auto& e = *p.envelope;
     if (p.phases.size() != 2 || compiled.pinned_count != 1 || !std::isfinite(e.target) || p.phases[1].support != support
-        || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& x) { return x.is_pinned() && x.amount.fraction == 0.0; })
+        || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& phase) { return phase.is_incipient(); })
         || (e.kind == EnvelopeCoordinate::LogK && std::find(support.begin(), support.end(), e.component) == support.end()))
         throw std::invalid_argument("envelope requires a free feed phase and a zero-pinned incipient phase on one support");
 }
@@ -1105,7 +1105,7 @@ static CompiledSystem compile_with_basis(
             phase.support.begin(), phase.support.end(), [&](std::size_t index) {
                 return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
-        if (phase.is_pinned() && phase.amount.fraction == 0.0) {
+        if (phase.is_incipient()) {
             const auto removed = std::find_if(support_before.begin(), support_before.end(),
                 [&](std::size_t index) { return absent[index]; });
             if (removed != support_before.end()) {
