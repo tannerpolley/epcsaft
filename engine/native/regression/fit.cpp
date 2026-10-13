@@ -20,6 +20,7 @@
 #include <cmath>
 #include <chrono>
 #include <cstring>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -528,7 +529,7 @@ std::vector<int> select_held(const std::vector<double>& point, const std::vector
 // The optimizer's chart of the box, in place of Ceres' bounds: held coordinates are fixed; a step leaving
 // the box is shortened along its own direction to the first bound it meets (clamping one component keeps
 // the rest of a step computed as if that bound could be crossed), clamping coordinates already on it. As
-// the callback it ends a round on accepted new bound contact or changed held membership, including release.
+// the callback it ends a round on accepted new bound contact or a coordinate joining the held set, not on release.
 class BoxChart final : public ceres::Manifold, public ceres::IterationCallback {
 public:
     BoxChart(const std::vector<double>& u, const std::vector<double>& lower, const std::vector<double>& upper,
@@ -566,7 +567,8 @@ public:
             contact = contact || (side(u_[free_[k]], free_[k]) != 0 && side(u_[free_[k]], free_[k]) != at_bound_[k]);
             at_bound_[k] = side(u_[free_[k]], free_[k]);
         }
-        return summary.iteration > 0 && (contact || next != held_)
+        const bool join = !std::includes(held_.begin(), held_.end(), next.begin(), next.end());
+        return summary.iteration > 0 && (contact || join)
             ? ceres::SOLVER_TERMINATE_SUCCESSFULLY : ceres::SOLVER_CONTINUE;
     }
     int AmbientSize() const override { return static_cast<int>(lower_.size()); }
@@ -897,8 +899,10 @@ FitResult fit(const FitRequest& request) {
     // Bounds as an active set (a projected step alone stalls against a bound it wants to cross): a
     // coordinate on a bound (within FIT_ACTIVE_BOUND_DISTANCE) whose objective gradient points out of the
     // box is held where it is for a round. A round ends on Ceres convergence, accepted new bound contact,
-    // or changed accepted held membership (including release); the set is rebuilt from the cached
-    // Jacobian, g = J^T r through the same evaluation, checks and failure records as a Ceres trial.
+    // or an accepted coordinate joining the set; the set is rebuilt from the cached Jacobian, g = J^T r
+    // through the same evaluation, checks and failure records as a Ceres trial. Joins are added; a held
+    // coordinate whose gradient turns inward is released only after a Ceres convergence report or when none
+    // would stay free (Nocedal & Wright 2006, Alg. 16.3): its sign is a multiplier only where free gradients vanish.
     std::vector<double> gradient;
     ceres::Solver::Summary summary;
     std::vector<int> held;
@@ -918,7 +922,9 @@ FitResult fit(const FitRequest& request) {
         settled = (!first && summary.termination_type == ceres::CONVERGENCE && next == held) || all_held;
         exhausted = !settled && (remaining <= 0 || seconds <= 0.0);
         if (settled || exhausted) break;
-        held = next;
+        std::vector<int> kept;
+        std::set_union(held.begin(), held.end(), next.begin(), next.end(), std::back_inserter(kept));
+        held = summary.termination_type == ceres::CONVERGENCE || kept.size() == width ? next : kept;
         core::Scope round_scope("fit_round");
         round_scope.probe("round", round++);
         round_scope.observe([&] {
