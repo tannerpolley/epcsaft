@@ -3,6 +3,7 @@
 #include "equilibrium_support.hpp"
 
 #include <chrono>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -719,6 +720,22 @@ void run(bool ionic,bool fixed) {
     const auto q=quantities(c.parameters.component_count());const auto basis=directions(c);
     const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
     Actions actions(compiled,solved,q);
+    {   // #449: standalone first H actions request standard Gibbs degree two; a batch with Cp keeps degree three.
+        // Neither demand may move H or Cp: each must equal its standalone request bit for bit.
+        Observable h;h.kind=SolvedStateObservableKind::SystemEnthalpy;const auto cp=q[index(q,"total-cp")].observable;
+        std::vector<Direction> ds;for(const auto& d:basis) ds.push_back(d.value);
+        const auto alone=solved_state_first_actions(compiled,solved,{h},ds),cp_alone=solved_state_first_actions(compiled,solved,{cp},ds),
+            both=solved_state_first_actions(compiled,solved,{h,cp},ds);
+        for(std::size_t k=0;k<ds.size();++k) for(std::size_t i=0;i<2;++i) for(bool action:{false,true}) {
+            const auto& a=(i?cp_alone:alone)[k].results[0];const auto& b=both[k].results[i];
+            const auto& x=action?a.action:a.value;const auto& y=action?b.action:b.value;
+            const bool same=a.status==SolvedStateActionStatus::Available&&b.status==a.status&&x&&y&&std::memcmp(&*x,&*y,sizeof(double))==0;
+            const std::string id="449/"+c.name+"/H+cp-batch/"+basis[k].name+"/"+(i?"total-cp":"H")+(action?"/action":"/value");
+            recording_support::compare_custom(id.c_str(),i?"total-cp":"H",i?"J/(mol K)":"J",y.value_or(NAN),x.value_or(NAN),inputs,
+                "Relationship","standalone-request","Issue 449: the reference-column demand leaves H and Cp unchanged",
+                "batch bits == standalone bits",same,"reactive-caloric");
+        }
+    }
     const auto exact=actions.get({});
     // Order 0 against the binary128 oracle, which shares only the EOS kernels with production; one tape per case.
     std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic_oracle;
