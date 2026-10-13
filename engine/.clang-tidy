@@ -13,6 +13,6 @@ Checks: >
   performance-unnecessary-copy-initialization,
   portability-simd-intrinsics
 WarningsAsErrors: '*'
-HeaderFilterRegex: '^(.*[/\\])?(src/epcsaft/_native|cpp/regression|cpp/equilibrium)/.*'
+HeaderFilterRegex: '.*/engine/(native|tests/native)/.*'
 SystemHeaders: false
 FormatStyle: file

@@ -119,7 +119,11 @@ physical source interval remains a separate admission operation.
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
-slots in the existing affine chart. Their values use `ParameterRecord<Scalar>`
+slots in the existing affine chart. `DielectricVolume` (m^3/mol) and
+`DielectricTemperature` (K) own one neutral-component slot each and are admitted
+only under the density-temperature permittivity (EqID:
+`density_correlated_bulk_permittivity`); an L/mol coordinate takes target
+coefficient 1e-3 (#441). Their values use `ParameterRecord<Scalar>`
 with the other active families. Charges, masses, formulation choices and Born
 correction/solvation factors remain fixed. No cross-family factor tie is added.
 
@@ -645,7 +649,8 @@ qualify the bounded inputs stated there.
 
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
-root, an anchored closure establishes local uniqueness, and the corrected density
+root and refuses a sole root that ALG-DENSITY's stored negative-slope sample places
+on the other side (#423), an anchored closure establishes local uniqueness, and the corrected density
 must lie in that anchor's window with positive pressure slope. Failure clears the
 state and retains the optimizer and row diagnostics. Continuation uses the same
 predicate with its own anchors and retains its `branch_lost` cause; its internal
@@ -1113,7 +1118,7 @@ sample $\rho_-$ (the converse of the liquid-side feed test). A sole root above $
 with no negative-slope sample, is unconfirmed, and the operation refuses before that
 sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
 10,132,000 Pa from 392.05 K otherwise confirms a 227.63 K "dew" whose two phases are
-both liquid-like). The rule is sufficient, not a
+both liquid-like; since #423 the ordinary solve's branch admission already refuses that vapor). The rule is sufficient, not a
 necessary physical condition: without a fixed-composition mechanical loop the scan cannot
 establish vapor-side identity, so valid mixture dew boundaries, for example near the
 mixture critical region, can stay unconfirmed and be refused (the Gross 2002 row 173, 496
@@ -1332,7 +1337,8 @@ when U is neutral. For reactions, first construct the existing positive
 charge-neutral base on U, then run the unchanged ideal-solution speciation
 sweeps. A zero-fed reaction participant remains on the required support; its
 feed fraction is not an admissible log-chart seed. Record all initial attempts
-and retain the accepted lower-G candidate. This preparation belongs only to
+and retain the accepted lower-G candidate; shared branch admission refuses a
+candidate whose sole root lies on the other side (#423). This preparation belongs only to
 discovery; declared initialization remains unchanged.
 Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
 pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
@@ -1418,7 +1424,7 @@ Negative plane and slope beyond the complete estimate require a finite split
 eight halvings. Preserve every component, hence every moiety and phase charge;
 reconstruct arithmetic composition/charge, reclose the withdrawn donor at the
 request pressure on its declared density branch through the shared density
-owner, recompute packing and shared energy, and verify matching conserved
+owner (a sole root established on the other side fails the check, #423), recompute packing and shared energy, and verify matching conserved
 totals before comparing Gibbs energies. The trial keeps its own molar volume,
 and the donor's reclosed volume seeds any added declaration. A fixed donor
 volume is admissible for the minimized A+PV, but its mechanical penalty
@@ -1450,8 +1456,12 @@ Rank distinct resolved descending trials by actual donor slope, more negative
 first, ties by enumeration. This is deterministic, not a claim of the best
 possible addition start. Seed the full added declaration with the admitted
 finite split; preserve feed, reactions, standards and exact selected support.
-Reuse shared density-branch admission; a unique unlabelled root retains the
-source declaration label without asserting a physical phase theorem. Require
+Reuse shared density-branch admission. A unique unlabelled root takes the side
+its stored negative-slope sample establishes (ALG-DENSITY, #423), keeping the
+split and its Gibbs decrease: water(0.87)/1-pentanol at 150 K and 101,300 Pa with
+a vapor trial family adds a second liquid. Without a sample it retains the source
+declaration label without asserting a physical phase theorem; an ionic phase
+established as vapor-side is refused. Require
 achieved rows and an uncertainty-qualified lower Gibbs energy before accepting
 an addition; otherwise try the next distinct trial. The acceptance margin sums
 each present phase's molar energy estimate weighted by its amount in mol, so
@@ -1470,7 +1480,7 @@ Coalescence merges both component inventories and extensive volumes into the
 first phase. Disappearance transfers its complete small inventory and volume
 to the first remaining phase whose support contains it, ties by index. No
 recipient means unresolved removal. Normalize merged amounts, reclose recipient
-density on its declared branch, verify packing/association and balances/charges,
+density on its declared branch (refusing a sole root established on the other side, #423), verify packing/association and balances/charges,
 then solve the reduced declaration. Dropping a phase never drops its inventory.
 The public unavailable-state meaning is unchanged.
 
@@ -1825,8 +1835,9 @@ The same single-insertion owner supplies raw C_T, C_TT, C_theta,
 C_Ttheta and C_TP at the three literal terminal compositions, reusing each
 resolved liquid State. Each requested column retains independent availability.
 The existing lower-slope admission remains unchanged: T times each C_T change,
-max(|theta|,1) times each C_theta change, T max(|theta|,1) times each C_Ttheta
-change, and T P_source times each C_TP change must be at most 5e-5;
+s_theta times each C_theta change, T s_theta times each C_Ttheta change (s_theta
+from `standard_state_transfer_parameter_derivative`), and T P_source times each
+C_TP change must be at most 5e-5;
 R T^2 times each C_TT change must be at most 0.01 J/(mol K).
 Each column returns the sqrt(m) Richardson limit (10 f(1e-14) - f(1e-12))/9 and
 is admitted on its change from the (1e-10, 1e-12) limit, as for the contraction;
@@ -1849,7 +1860,8 @@ density; the returned EOS pressure still records the density-root residual.
 This avoids amplifying the closure residual in parameter differences of nearly
 invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
 Each terminal reference column is admitted independently by the maximum scaled
-two-ion change, max(|theta|,1) times the column difference, at the existing
+two-ion change, s_theta (`standard_state_transfer_parameter_derivative`) times
+the column difference, at the existing
 reference tolerance. The terminal pair is compared first; a witness checks a
 failed pair without changing the returned terminal column. An unavailable
 column preserves the value, molality and terminal value error. Activity and
@@ -1948,7 +1960,7 @@ are not interchangeable (EqID: `reference_species_calorics`).
 The existing value and lower-slope admission remains: first thermal and EOS
 slopes use the value criterion at their physical scales; the second thermal
 slope uses 0.01 J/(mol K); the mixed T/EOS slope retains its declared
-$T\max(|\theta|,1)$ scaled criterion. Higher consumed columns use ALG-REFERENCE's
+$Ts_\theta$ scaled criterion (EqID: `standard_state_transfer_parameter_derivative`). Higher consumed columns use ALG-REFERENCE's
 three terminal molalities and both scaled consecutive changes. For frozen heat
 capacities, complete both changes through the anchored Gibbs/volume quotient;
 individual column admission is not a bound on an ill-conditioned quotient.

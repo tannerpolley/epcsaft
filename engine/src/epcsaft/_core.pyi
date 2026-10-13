@@ -185,6 +185,8 @@ class ParameterFamily:
     AssociationEnergyOverK: ParameterFamily
     AssociationVolume: ParameterFamily
     KijReciprocalTemperatureSlope: ParameterFamily
+    DielectricVolume: ParameterFamily
+    DielectricTemperature: ParameterFamily
 
 class ActiveParameter:
     family: ParameterFamily

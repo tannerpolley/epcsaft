@@ -444,6 +444,9 @@ void validate_parameter_coordinate(
         if (family == ParameterFamily::BornDiameter || family == ParameterFamily::DebyeHuckelDiameter
             || family == ParameterFamily::PackingDiameter || family == ParameterFamily::IonSuppressionCoefficient)
             require(parameters.charge_number[indices.front()] != 0, "electrolyte coordinate needs charged slot");
+        if (family == ParameterFamily::DielectricVolume || family == ParameterFamily::DielectricTemperature)
+            require(parameters.charge_number[indices.front()] == 0 && parameters.permittivity_form.is(PermittivityForm::DensityTemperature),
+                "dielectric coordinate needs a neutral density-temperature slot");
         return;
     }
     const auto size = association ? parameters.site_count() : parameters.component_count();

@@ -596,13 +596,29 @@ void check_reaction_rejections() {
     reference.observations[1].problem.source_reference = source.source_reference;
     reference.observations[1].problem.reactions[0].correlation->reference_temperature = 300.0;
     reject(reference, "tied declarations or starts disagree");
-    // #433: rows that differ only in species_reference are different states; each keeps its own solve.
+    // #448: a tie needs one convention per reacting species; the explicit pure-liquid solvent is the default.
+    // Raw mole fractions admit mixed references, so only the tie refuses the pure-gas row.
+    reference.observations[1].problem.reactions[0].correlation->reference_temperature = 298.15;
+    for (auto& row : reference.observations)
+        row.problem.reactions[0].reference->source_basis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
+    reference.observations[1].problem.source_reference->species_reference = {SpeciesReference::PureGas,
+        SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
+    reject(reference, "tied species references disagree: component 0 pure liquid vs pure gas");
+    reference.observations[1].problem.source_reference->species_reference[0] = SpeciesReference::PureLiquid;
+    const auto admitted = [&] {
+        try { return reference.coordinates.start(reference.parameters, reference.observations).size() == 1; }
+        catch (const std::invalid_argument&) { return false; }
+    };
+    truth("reaction-rejection/matching-species-reference", "a tie whose reacting species share one effective convention is admitted", admitted(),
+          fields({field("water_reference", "explicit pure liquid equal to the default")}), "issue-448");
+    // #433: rows that differ only in species_reference are different states; each keeps its own solve
+    // (fixed ln K and an EOS coordinate, so no tie across conventions).
     FitRequest shared = reference;
     shared.observations = {solved(ObservationKind::PhaseMoleFraction, referenced_formula(std::nullopt), 0, {1})};
     shared.observations.push_back(shared.observations[0]);
     shared.observations[1].problem.source_reference->species_reference = {SpeciesReference::PureGas,
         SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
-    shared.coordinates.coordinates = {reaction_coordinate("H2O=Na++Cl-")};
+    shared.coordinates.coordinates = {{{{ParameterFamily::SegmentCount, {0}}}, 0.0, 1.0}};
     FitResult failures; ObservationEvaluation rows;
     CHECK(ObservationEvaluator(shared, failures, {0, 1}).evaluate(shared.coordinates.start(shared.parameters, shared.observations), false, rows));
     agree("reaction-rejections/species-reference", "x_Na", "1", rows.predictions[1],

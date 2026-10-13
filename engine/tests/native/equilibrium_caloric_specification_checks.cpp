@@ -74,6 +74,7 @@ void reactions() {
         for(auto& species:r.component_intervals) species[0].correlation={IdealPolynomial{{40},298.15,0,0},100000};
         r.component_intervals[1][0].correlation={IdealPolynomial{{40},298.15,kind==1?0.:5000.,kind==0?0.:R*std::log(2.)},100000};
         auto p=equilibrium_support::flash(2);p.temperature=FreeValue::fixed(300);p.pressure=FreeValue::fixed(1e6);
+        p.phases[0].kind=PhaseKind::Vapor;  // vapor-side sole root at 300 K, 1 MPa (#423)
         p.feed.values={2.5,0};p.row_tolerance=1e-11;
         ReactionSpec rx;rx.name="A=B";rx.stoichiometry={-1,1};
         if(kind==0) rx.affinity_j_per_mol=5000;else if(kind==1) rx.equilibrium_constant=2;

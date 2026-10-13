@@ -183,7 +183,7 @@ IdealThermalValue<Scalar> evaluate_ideal_correlation(
     auto result = std::visit([&](const auto& c) -> IdealThermalValue<Scalar> {
         using C = std::decay_t<decltype(c)>;
         const auto& a = c.coefficients;
-        const Scalar T = temperature;
+        const Scalar& T = temperature;
         if constexpr (std::is_same_v<C, IdealPolynomial>) {
             const Scalar dt = T - Scalar(c.reference_temperature);
             Scalar cp = Scalar(0.0), dh = Scalar(0.0);

@@ -285,9 +285,15 @@ thermochemistry records are rejected rather than silently omitted.
 For an observable `y(n)`, the callback returns `J_y B` and `B.T H_y B`, where
 `B = feed_matrix`; E5 owns these implicit actions, not a finite-difference
 callback. Pyomo owns any additional control products, ratios and process units.
-Each new feed continues from the immutable anchor; one exact-iterate cache and
-one immutable record are admitted per process. Use separate processes for
-different records. Failed central/branch/action checks return nonfinite values
+Each new feed continues from the immutable anchor. Each distinct record, by
+exact content, is prepared once per process and keeps its own model, anchor
+and exact-iterate cache; each preparation prints
+`epcsaft_equilibrium prepared record <k> of at most 16` on stderr. At most 16
+records are admitted per process (a count; memory is unmeasured), and a 17th
+distinct record fails with `defining_equations_not_satisfied`. A failed
+preparation takes no slot. An evaluation failure invalidates every record's
+cached response, and each record recomputes at its next call.
+Failed central/branch/action checks return nonfinite values
 and derivatives with an observable-specific typed error, never a surrogate
 fallback. Use an outer Ipopt executable whose C++ symbols do not interpose on
 the Engine's Ipopt dependency; the retained live campaign verifies the isolated
