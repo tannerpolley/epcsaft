@@ -148,6 +148,18 @@ Jet jet_inverse(const Jet& value) {
     }
     return result;
 }
+// log(v0 (1 + u)), v0 > 0, with nilpotent u: the series ends at the jet's direction count.
+Jet jet_log(const Jet& value) {
+    Jet u = jet_scale(value, 1.0 / value.front()), power, result(value.size(), 0.0);
+    u.front() = 0.0;
+    power = u;
+    for (std::size_t k = 1; (std::size_t(1) << (k - 1)) < value.size(); ++k) {
+        result = jet_add(result, power, (k % 2 ? 1.0 : -1.0) / static_cast<double>(k));
+        power = jet_multiply(power, u);
+    }
+    result.front() = std::log(value.front());
+    return result;
+}
 
 struct ActionDirection final {
     double temperature = 0.0, molar_density = 0.0;
@@ -194,6 +206,7 @@ struct ActionContext final {
     double molar_density;
     const std::vector<ActionDirection>& directions;
     const Eigen::FullPivLU<Eigen::MatrixXd>* factorization;
+    std::vector<std::size_t> unit_ids = {};  // e_i amount directions at fixed T and V, for mu_i
     struct CachedPath final {
         std::size_t order = 0;
         std::vector<std::vector<double>> outputs;
@@ -305,6 +318,7 @@ Jet volume_jet(const ActionContext& context, const std::vector<std::size_t>& ids
 
 struct PropertyJets final {
     std::array<Jet, 5> ideal, residual;
+    std::vector<Jet> chemical_potential;  // residual mu_i / RT; ln Z is added at fixed P
     Jet pressure, volume_temperature, volume_pressure;
     double pressure_slope = 0.0;
 };
@@ -312,9 +326,10 @@ struct PropertyJets final {
 PropertyJets property_jets(
     ActionContext& context, const std::vector<std::size_t>& ids,
     const std::array<bool, 5>& need_ideal,
-    const std::array<bool, 5>& need_residual, bool need_pressure
+    const std::array<bool, 5>& need_residual, bool need_pressure, bool need_fugacity = false
 ) {
     PropertyJets result;
+    result.chemical_potential.resize(context.unit_ids.size());
     for (std::size_t i = 0; i < 5; ++i) {
         if (need_ideal[i] && context.tape.ideal_available)
             result.ideal[i] = context.extract(ids, 0, 0, context.tape.ideal_offset + i);
@@ -322,7 +337,7 @@ PropertyJets property_jets(
     const bool h = need_residual[0], u = need_residual[1], s = need_residual[2];
     const bool cp = need_residual[3], cv = need_residual[4];
     if (!std::any_of(need_residual.begin(), need_residual.end(), [](bool value) { return value; })
-        && !need_pressure) return result;
+        && !need_pressure && !need_fugacity) return result;
     const double gas_constant = GAS_CONSTANT_J_PER_MOL_K;
     const auto temperature = temperature_jet(context, ids);
     const auto volume = volume_jet(context, ids);
@@ -368,22 +383,31 @@ PropertyJets property_jets(
     }
     if (need_pressure) result.pressure = jet_scale(jet_multiply(temperature,
         jet_add(inverse_volume, phi_v, -1.0)), gas_constant);
+    // EqID: log_fugacity_coefficient -- the d(A_res/RT)/dn_i term at T, V, n_j.
+    auto unit = ids;
+    unit.push_back(0);
+    for (std::size_t k = 0; need_fugacity && k < context.unit_ids.size(); ++k) {
+        unit.back() = context.unit_ids[k];
+        const Jet mu = context.extract(unit, 0, 0, 0);
+        result.chemical_potential[k].assign(mu.begin() + static_cast<std::ptrdiff_t>(temperature.size()), mu.end());
+    }
     return result;
 }
 
 bool is_ideal(PropertyObservable observable) { return static_cast<std::size_t>(observable) < 5; }
+bool is_fugacity(PropertyObservable observable) { return observable == PropertyObservable::LogFugacityCoefficient; }
 bool is_volume_partial(PropertyObservable observable) {
-    return static_cast<std::size_t>(observable) >= 15;
+    return static_cast<std::size_t>(observable) >= 15 && !is_fugacity(observable);
 }
 bool is_total(PropertyObservable observable) {
-    return static_cast<std::size_t>(observable) >= 10 && !is_volume_partial(observable);
+    return static_cast<std::size_t>(observable) >= 10 && !is_volume_partial(observable) && !is_fugacity(observable);
 }
 std::size_t property_index(PropertyObservable observable) {
-    return is_volume_partial(observable) ? 3 : static_cast<std::size_t>(observable) % 5;
+    return is_volume_partial(observable) ? 3 : is_fugacity(observable) ? 0 : static_cast<std::size_t>(observable) % 5;
 }
 bool is_heat_capacity(PropertyObservable observable) {
     const auto index = property_index(observable);
-    return index == 3 || index == 4;
+    return !is_fugacity(observable) && (index == 3 || index == 4);
 }
 bool zero_direction(const ActionDirection& direction) {
     return direction.temperature == 0.0 && direction.molar_density == 0.0
@@ -445,7 +469,7 @@ void validate_action_request(
     const std::vector<DensityActionDirection>& directions
 ) {
     require(directions.size() >= 1 && directions.size() <= 3, "action order");
-    std::vector<bool> seen(17, false);
+    std::vector<bool> seen(18, false);
     for (const auto observable : observables) {
         const auto index = static_cast<std::size_t>(observable);
         require(index < seen.size() && !seen[index], "observables");
@@ -490,7 +514,7 @@ std::vector<double> project_parameters(const HelmholtzModel& model, const std::v
 
 struct ActionPlan final {
     std::array<bool, 5> ideal{}, residual{};
-    bool pressure = false;
+    bool pressure = false, fugacity = false;
 };
 
 std::vector<IdealCorrelation> selected_ideal_correlations(
@@ -510,7 +534,10 @@ std::vector<IdealCorrelation> selected_ideal_correlations(
     return result;
 }
 
-PropertyActionStatus support_status(
+// {ideal and total entropy, every other result}: a neutral insertion follows its infinite-dilution limit (#73)
+// except through x ln x and in a model with the dipolar term, whose A2-only branch with every dipole absent
+// omits A3 beyond second composition order (full EOS 4.1); an ionic insertion is singular throughout.
+std::array<PropertyActionStatus, 2> support_status(
     const HelmholtzModel& model, const std::vector<double>& composition,
     const std::vector<ActionDirection>& directions
 ) {
@@ -521,26 +548,29 @@ PropertyActionStatus support_status(
             (model.parameters().charge_number[i] == 0 ? support : ionic) = true;
         }
     }
-    return support ? PropertyActionStatus::SupportChange
-        : ionic ? PropertyActionStatus::IonicInsertion : PropertyActionStatus::Available;
+    const auto status = [&](bool singular) { return ionic ? PropertyActionStatus::IonicInsertion
+        : singular ? PropertyActionStatus::SupportChange : PropertyActionStatus::Available; };
+    return {status(support), status(support && !model.parameters().dipole_count.empty())};
 }
 
 PropertyActionBatch unavailable_batch(
     const std::vector<PropertyObservable>& observables, PropertyActionStatus status,
-    std::size_t order
+    std::size_t order, std::size_t components
 ) {
     PropertyActionBatch result;
     result.maximum_energy_order = order + 2;
-    for (const auto observable : observables) result.results.push_back({
-        observable, std::nullopt, std::nullopt, status,
-        order + (is_heat_capacity(observable) ? 2 : 1)});
+    for (const auto observable : observables)
+        for (std::size_t i = 0; i < (is_fugacity(observable) ? components : 1); ++i)
+            result.results.push_back({observable,
+                is_fugacity(observable) ? std::optional<std::size_t>(i) : std::nullopt,
+                std::nullopt, std::nullopt, status, order + (is_heat_capacity(observable) ? 2 : 1)});
     return result;
 }
 
 PropertyActionBatch evaluate_actions(
     ActionContext& context, const std::vector<std::size_t>& ids,
     const std::vector<PropertyObservable>& observables, const ActionPlan& plan,
-    PropertyActionStatus support, PropertyActionStatus ideal_status,
+    std::array<PropertyActionStatus, 2> support, PropertyActionStatus ideal_status,
     PropertyActionStatus association_status, bool thermal_boundary,
     bool temperature_action, bool pressure_chart, double pressure_slope
 ) {
@@ -552,24 +582,28 @@ PropertyActionBatch evaluate_actions(
         residual[3] = false;
         residual[4] = false;
     }
-    const auto jets = property_jets(context, ids, plan.ideal, residual, false);
+    const auto jets = property_jets(context, ids, plan.ideal, residual, false,
+        plan.fugacity && context.tape.residual_available && association_available);
     const bool zero_action = std::any_of(ids.begin(), ids.end(), [&](std::size_t id) {
         return zero_direction(context.directions[id]);
     });
     PropertyActionBatch result;
     result.results.reserve(observables.size());
-    for (const auto observable : observables) {
+    for (const auto observable : observables)
+    for (std::size_t component = 0; component < (is_fugacity(observable) ? context.unit_ids.size() : 1); ++component) {
         const auto index = property_index(observable);
-        const bool ideal = is_ideal(observable), total = is_total(observable);
-        PropertyActionResult item{
-            observable, std::nullopt, std::nullopt, PropertyActionStatus::Available,
+        const bool ideal = is_ideal(observable), total = is_total(observable), fugacity = is_fugacity(observable);
+        PropertyActionResult item{observable, std::nullopt, std::nullopt, std::nullopt, PropertyActionStatus::Available,
             ids.size() + (is_heat_capacity(observable) ? 2 : 1)};
+        if (fugacity) item.component = component;
+        const Jet& residual_jet = fugacity ? jets.chemical_potential[component] : jets.residual[index];
         result.maximum_energy_order = std::max(result.maximum_energy_order, item.energy_order);
         if ((ideal || total) && !context.tape.ideal_available)
             item.status = ideal_status;
         else if ((ideal || total) && thermal_boundary && temperature_action)
             item.status = PropertyActionStatus::ThermalBoundary;
-        else if (support != PropertyActionStatus::Available) item.status = support;
+        else if (const auto s = support[(ideal || total) && index == 2 ? 0 : 1]; s != PropertyActionStatus::Available)
+            item.status = s;
         else if ((!ideal || (pressure_chart && index == 2)) && !association_available)
             item.status = association_status;
         else if (!ideal && !context.tape.residual_available)
@@ -583,10 +617,9 @@ PropertyActionBatch evaluate_actions(
 
         const bool ideal_value = context.tape.ideal_available && (!total || context.tape.residual_available)
             && jets.ideal[index].size() != 0;
-        const bool residual_value = context.tape.residual_available
-            && jets.residual[index].size() != 0;
+        const bool residual_value = context.tape.residual_available && residual_jet.size() != 0;
         if (ideal && ideal_value) item.value = jets.ideal[index].front();
-        else if (!ideal && !total && residual_value) item.value = jets.residual[index].front();
+        else if (!ideal && !total && residual_value) item.value = residual_jet.front();
         else if (total && ideal_value && residual_value)
             item.value = jets.ideal[index].front() + jets.residual[index].front();
         if (item.status == PropertyActionStatus::PressureSingular && index == 3)
@@ -594,7 +627,7 @@ PropertyActionBatch evaluate_actions(
 
         if (item.status == PropertyActionStatus::Available && !zero_action) {
             if (ideal && ideal_value) item.action = jets.ideal[index].back();
-            else if (!ideal && !total && residual_value) item.action = jets.residual[index].back();
+            else if (!ideal && !total && residual_value) item.action = residual_jet.back();
             else if (total && ideal_value && residual_value)
                 item.action = jets.ideal[index].back() + jets.residual[index].back();
         } else if (item.status == PropertyActionStatus::Available) {
@@ -1105,7 +1138,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     std::vector<ActionDirection> inserted;
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
-    if ((result.status = support_status(*this, amounts, inserted)) != PropertyActionStatus::Available) return result;
+    if ((result.status = support_status(*this, amounts, inserted)[0]) != PropertyActionStatus::Available) return result;
     const auto point = action_point(*this, temperature, volume, amounts);
     std::vector<double> norms(order);
     std::vector<std::vector<double>> normalized(directions);
@@ -1187,7 +1220,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         && std::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
     ReferenceTaylor result;
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
-    result.status = support_status(*this, composition, insertion);
+    result.status = support_status(*this, composition, insertion)[0];
     if (result.status != PropertyActionStatus::Available) return result;
     const auto central = evaluate(temperature, volume, composition, DerivativeOrder::Hessian);
     const std::size_t width = central.gradient.size(), components = composition.size();
@@ -1313,25 +1346,45 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     double temperature, double molar_density, const std::vector<double>& mole_fractions,
     const std::vector<PropertyObservable>& observables,
     const std::vector<DensityActionDirection>& directions,
-    const DensityRoot* root, const std::vector<double>& pressure_directions
+    const DensityRoot* root, const std::vector<double>& pressure_directions, double pressure
 ) const {
     ActionPlan plan;
     for (const auto observable : observables) {
         const auto index = property_index(observable);
+        plan.fugacity = plan.fugacity || is_fugacity(observable);
+        if (is_fugacity(observable)) continue;
         if (is_ideal(observable) || is_total(observable)) plan.ideal[index] = true;
         if (!is_ideal(observable)) plan.residual[index] = true;
         if (!is_ideal(observable) && index == 3) plan.pressure = true;
     }
+    require(root != nullptr || !plan.fugacity, "log fugacity coefficient needs the pressure chart");
     std::vector<ActionDirection> all;
     all.reserve(directions.size());
     for (const auto& direction : directions)
         all.push_back({direction.temperature, direction.molar_density,
             direction.composition, project_parameters(*this, direction.parameter)});
-    const bool pressure_chain = root != nullptr && (observables.empty() || plan.ideal[2]
+    const bool pressure_chain = root != nullptr && (observables.empty() || plan.ideal[2] || plan.fugacity
         || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; }));
     const auto point = action_point(*this, temperature, 1.0 / molar_density, mole_fractions);
+    // Linear polarization mixes each direction with the relative-T, relative-V and 1 mol labels.
+    // Actions are multilinear, so scale every direction to those label sizes, on the pressure chart before and
+    // after its density lift (dV/V ~ 1e-9 per Pa in a liquid), and rescale the results.
+    std::vector<double> scales(directions.size(), 1.0);
+    const auto normalize = [&](ActionDirection& d) {
+        double s = std::max(std::abs(d.temperature) / temperature, std::abs(d.molar_density) / molar_density);
+        for (const double v : d.composition) s = std::max(s, std::abs(v));
+        for (std::size_t a = 0; a < d.parameter.size(); ++a)
+            s = std::max(s, std::abs(d.parameter[a]) / std::max(std::abs(point[2 + mole_fractions.size() + a]), 1.0));
+        if (!(s > 0.0) || !std::isfinite(s)) return 1.0;
+        s = std::exp2(std::round(std::log2(s)));  // a power of two rescales exactly
+        d.temperature /= s;
+        d.molar_density /= s;
+        for (double& v : d.composition) v /= s;
+        for (double& v : d.parameter) v /= s;
+        return s;
+    };
     const bool need_ideal = std::any_of(plan.ideal.begin(), plan.ideal.end(), [](bool value) { return value; });
-    bool need_residual = pressure_chain || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; });
+    bool need_residual = pressure_chain || plan.fugacity || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; });
     bool endpoint = false;
     const auto correlations = need_ideal
         ? selected_ideal_correlations(thermochemistry_, temperature, endpoint)
@@ -1371,11 +1424,19 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     context.maximum_order = directions.size()
         + (plan.residual[3] || plan.residual[4] ? 2 : 1);
     const auto result_support = support_status(*this, mole_fractions, all);
+    // Direction subsets are bitmasks: base, lifted, radial and unit directions must fit one word.
+    require(2 * directions.size() + 1 + (plan.fugacity ? mole_fractions.size() : 0) < 64, "direction count");
+    for (std::size_t i = 0; plan.fugacity && i < mole_fractions.size(); ++i) {
+        context.unit_ids.push_back(all.size());
+        all.push_back({0.0, 0.0, std::vector<double>(mole_fractions.size()), std::vector<double>(active_.size())});
+        all.back().composition[i] = 1.0;
+    }
     const bool temperature_action = std::any_of(all.begin(), all.end(),
         [](const auto& direction) { return direction.temperature != 0.0; });
     auto diagnostics = result.diagnostics;
+    for (std::size_t i = 0; i < directions.size(); ++i) scales[i] = normalize(all[i]);
     if (!pressure_chain || association_status != PropertyActionStatus::Available) {
-        std::vector<std::size_t> ids(all.size());
+        std::vector<std::size_t> ids(directions.size());
         for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = i;
         context.planning = true;
         (void)evaluate_actions(context, ids, observables, plan, result_support,
@@ -1406,9 +1467,9 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         std::vector<ActionDirection> lifted;
         lifted.reserve(directions.size());
         for (std::size_t i = 0; i < directions.size(); ++i) {
-            const double density = density_solve(pressure_directions[i] - pressure_of({base_ids[i]}));
-            lifted.push_back({directions[i].temperature, density,
-                directions[i].composition, all[i].parameter});
+            const double density = density_solve(pressure_directions[i] / scales[i] - pressure_of({base_ids[i]}));
+            lifted.push_back({all[i].temperature, density, all[i].composition, all[i].parameter});
+            scales[i] *= normalize(lifted.back());
             all.push_back(lifted.back());
             lifted_ids.push_back(all.size() - 1);
         }
@@ -1419,19 +1480,19 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         const bool temperature_action = std::any_of(lifted.begin(), lifted.end(),
             [](const auto& direction) { return direction.temperature != 0.0; });
         context.planning = true;
-        (void)property_jets(context, lifted_ids, plan.ideal, plan.residual, true);
+        (void)property_jets(context, lifted_ids, plan.ideal, plan.residual, true, plan.fugacity);
         if (directions.size() >= 2 && !observables.empty())
-            (void)property_jets(context, {radial_id}, plan.ideal, plan.residual, false);
+            (void)property_jets(context, {radial_id}, plan.ideal, plan.residual, false, plan.fugacity);
         if (directions.size() == 3 && !observables.empty()) {
             for (const auto id : lifted_ids)
-                (void)property_jets(context, {id, radial_id}, plan.ideal, plan.residual, true);
+                (void)property_jets(context, {id, radial_id}, plan.ideal, plan.residual, true, plan.fugacity);
         }
         context.run();
         result = evaluate_actions(context, lifted_ids, observables, plan, status,
             ideal_status, association_status, endpoint, temperature_action, true,
             root->pressure_density_derivative);
         result.molar_density = molar_density;
-        result.density_status = status;
+        result.density_status = status[1];
         for (const auto& direction : lifted) result.density_action.push_back(direction.molar_density);
         if (!finite_vector(result.density_action)) result.density_status = PropertyActionStatus::Nonfinite;
         std::array<double, 3> density_pairs{};
@@ -1447,7 +1508,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         double density_123 = 0.0;
         if (directions.size() >= 2 && !observables.empty()) {
             radial = evaluate_actions(context, {radial_id}, observables, plan,
-                PropertyActionStatus::Available, ideal_status, association_status,
+                {}, ideal_status, association_status,
                 endpoint, false, true, root->pressure_density_derivative);
             if (directions.size() == 3) {
                 const double pressure_123 = pressure_of(lifted_ids);
@@ -1463,6 +1524,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
                 }
                 density_123 = density_solve(density_123);
             }
+            result.density_mixed_action = directions.size() == 2 ? density_pairs[0] : density_123;
         }
         diagnostics.pressure_factorizations = 1;
         diagnostics.pressure_solves = pressure_solves;
@@ -1501,7 +1563,31 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             if (!result.results[row].action.has_value())
                 result.results[row].status = PropertyActionStatus::Nonfinite;
         }
+        // ln(phi_i) = mu_i - ln Z with Z = P / (R T rho) on the pressure-closed path: 1 - V phi_V
+        // cancels in a dense liquid, while the total density actions above are well conditioned.
+        Jet p(std::size_t(1) << directions.size(), 0.0), t = p, rho = p;
+        p.front() = pressure; t.front() = temperature; rho.front() = molar_density;
+        for (std::size_t i = 0; i < directions.size(); ++i) {
+            p[std::size_t(1) << i] = pressure_directions[i] / scales[i];
+            t[std::size_t(1) << i] = lifted[i].temperature;
+            rho[std::size_t(1) << i] = lifted[i].molar_density;
+        }
+        for (std::size_t k = 0; k < directions.size() * (directions.size() - 1) / 2; ++k) rho[k == 0 ? 3 : 4 + k] = density_pairs[k];
+        if (directions.size() == 3) rho[7] = density_123;
+        const Jet log_z = jet_log(jet_multiply(p, jet_inverse(jet_multiply(t, rho))));
+        for (auto& item : result.results)
+            if (is_fugacity(item.observable) && item.action) *item.action -= log_z.back();
     }
+    const bool charged = detail::charged_support(mole_fractions, parameters_);
+    for (auto& item : result.results)  // fixed-pressure value, as state_at_pressure, which has no absent-ion value
+        if (is_fugacity(item.observable) && !charged && parameters_.charge_number[*item.component] != 0)
+            item = {item.observable, item.component, std::nullopt, std::nullopt, PropertyActionStatus::IonicInsertion, item.energy_order};
+        else if (is_fugacity(item.observable) && item.value)
+            *item.value -= std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * molar_density));
+    const double product = std::accumulate(scales.begin(), scales.end(), 1.0, std::multiplies<>());
+    for (auto& item : result.results) if (item.action) item.action = *item.action * product;
+    for (std::size_t i = 0; i < result.density_action.size(); ++i) result.density_action[i] *= scales[i];
+    if (result.density_mixed_action) result.density_mixed_action = *result.density_mixed_action * product;
     result.diagnostics = diagnostics;
     result.diagnostics.thermal_evaluations = ideal_available ? correlations.size() : 0;
     result.diagnostics.directional_paths = context.paths.size();
@@ -1519,7 +1605,12 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             }
         }
     }
-    if (result.density_status != PropertyActionStatus::Available) result.density_action.clear();
+    if (result.density_mixed_action && !std::isfinite(*result.density_mixed_action))
+        result.density_status = PropertyActionStatus::Nonfinite;
+    if (result.density_status != PropertyActionStatus::Available) {
+        result.density_action.clear();
+        result.density_mixed_action.reset();
+    }
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
         result.diagnostics.stability_determinant = root->pressure_density_derivative
@@ -1572,7 +1663,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     try {
         root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
     } catch (const std::runtime_error& error) {
-        auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size());
+        auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size(), mole_fractions.size());
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.density_message = error.what();
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
@@ -1581,7 +1672,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     }
     std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, root.molar_density, mole_fractions,
-        observables, validation, &root, pressure_directions);
+        observables, validation, &root, pressure_directions, pressure);
 }
 
 NeutralPropertyDerivatives HelmholtzModel::neutral_property(

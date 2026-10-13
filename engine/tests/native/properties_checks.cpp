@@ -26,6 +26,7 @@ void electrolyte_parameter_actions();
 void energy_e5_ladder();
 void energy_action_ladders();
 void neutral_property_pressure_hessian();
+void log_fugacity_actions();
 void liquid_reference_branch_evidence();
 }  // namespace properties_checks
 
@@ -56,6 +57,7 @@ int main(int argc, char** argv) {
         {{"native.properties.e5-ladder", "C4"}, energy_e5_ladder},
         {{"native.properties.issue26e", "Issue26E"}, energy_action_ladders},
         {{"native.properties.issue10", "Issue10"}, neutral_property_pressure_hessian},
+        {{"native.properties.log-fugacity", "LogFugacity"}, log_fugacity_actions},
         {{"native.properties.issue423", "Issue423"}, liquid_reference_branch_evidence},
     });
 }

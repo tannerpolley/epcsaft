@@ -373,31 +373,42 @@ void properties_p4() {
                 "reference", "T,rho,x,theta,h", "refined", "observable,order");
         }
     }
+    // Pressure rows: the 15 calorics, ln(phi_i) per component (#73), then the density action d^k rho.
+    auto pressure_observables = observables;
+    pressure_observables.push_back(epcsaft::PropertyObservable::LogFugacityCoefficient);
     for (std::size_t order = 1; order <= directions.size(); ++order) {
         const std::vector<epcsaft::PressureActionDirection> request(
             pressure_directions_all.begin(),
             pressure_directions_all.begin() + static_cast<std::ptrdiff_t>(order));
         const auto batch = model.pressure_actions(
             313.15, state.pressure, composition, pressure_root.density_branch,
-            observables, request);
+            pressure_observables, request);
         const auto reference = property_action_reference(model.parameters(), active, p3_binary_record(),
-            313.15, state.pressure, composition, observables, request, pressure_root.density_branch);
-        for (std::size_t index = 0; index < observables.size(); ++index) {
-            const auto& result = batch.results[index];
+            313.15, state.pressure, composition, pressure_observables, request, pressure_root.density_branch);
+        CHECK(reference.value.size() == observables.size() + composition.size() + 1);
+        for (std::size_t index = 0; index < reference.value.size(); ++index) {
+            const bool density = index == batch.results.size();
+            const auto& result = batch.results[std::min(index, batch.results.size() - 1)];
+            const bool component = !density && result.component == (index < observables.size()
+                ? std::nullopt : std::optional<std::size_t>(index - observables.size()));
+            const auto action = density ? (order == 1 ? std::optional<double>(batch.density_action.at(0))
+                : batch.density_mixed_action) : result.action;
             const double fine = reference.value[index], middle = reference.middle[index], coarse = reference.coarse[index];
             const double tolerance = std::array<double, 3>{5.0e-6, 5.0e-5, 5.0e-4}[order - 1];
-            const bool action_ok = result.status == epcsaft::PropertyActionStatus::Available
-                && result.action.has_value() && std::abs(*result.action - fine)
+            const bool action_ok = (density ? batch.density_status : result.status) == epcsaft::PropertyActionStatus::Available
+                && (density || component) && action.has_value() && std::abs(*action - fine)
                     <= tolerance * reference.scale[index];
             const bool refinement_ok = reference.uncertainty[index] <= tolerance * reference.scale[index];
             recording_support::compare_custom(
                 (std::string("pressure/action/") + std::to_string(index) + "/"
                     + std::to_string(order)).c_str(), "action", "native",
-                result.action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+                action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
                 recording_support::fields({recording_support::field("observable", index),
                     recording_support::field("order", order), recording_support::field("central",
-                        p4_state_value(pressure_root, observables[index])),
-                    recording_support::field("energy_order", result.energy_order),
+                        index < observables.size() ? p4_state_value(pressure_root, observables[index])
+                        : density ? pressure_root.molar_density
+                        : (*pressure_root.log_fugacity_coefficient)[index - observables.size()].value()),
+                    recording_support::field("energy_order", density ? order : result.energy_order),
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
                     recording_support::field("reference_coarse", coarse),
@@ -1039,14 +1050,21 @@ void properties_p4() {
         "Availability", "request-validation", "malformed requests fail at the trust boundary",
         "absolute", malformed_ok, "p4-supplemental", "malformed-requests",
         "invalid_argument", "request", "nine rejected cases");
+    // A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
     epcsaft::HelmholtzModel neutral(properties_support::neutral_binary());
-    const auto support = neutral.density_actions(300.0, 1000.0, {1.0, 0.0}, {observables[5]},
-        {epcsaft::DensityActionDirection{0.0, 0.0, {-0.01, 0.01}, {}}});
-    const bool support_change = support.results[0].status == epcsaft::PropertyActionStatus::SupportChange;
-    recording_support::compare_custom("supplemental/support-change", "status", "bool",
-        support_change ? 1.0 : 0.0, 1.0, "neutral x=(1,0), dx=(-.01,.01)", "Availability",
-        "support", "support-changing action unavailable", "absolute", support_change,
-        "p4-supplemental", "support-change", "status", "support", "support_change");
+    const auto inserted = [&](double eps) {
+        return neutral.density_actions(300.0, 1000.0, {1.0 - eps, eps}, {observables[5]},
+            {epcsaft::DensityActionDirection{0.0, 0.0, {-0.01, 0.01}, {}}}).results[0];
+    };
+    const auto support = inserted(0.0);
+    const double support_limit = 2.0 * inserted(1.0e-7).action.value() - inserted(2.0e-7).action.value();
+    const bool support_change = support.status == epcsaft::PropertyActionStatus::Available && support.action
+        && std::abs(*support.action - support_limit) <= std::max(1.0e-12, 1.0e-9 * std::abs(support_limit));
+    recording_support::compare_custom("supplemental/support-change", "action", "J/mol",
+        support.action.value_or(std::numeric_limits<double>::quiet_NaN()), support_limit,
+        "neutral x=(1,0), dx=(-.01,.01), eps=1e-7", "Relationship", "infinite-dilution-extrapolation",
+        "a neutral insertion action is its infinite-dilution limit", "symmetric_close_1e-9_1e-12", support_change,
+        "p4-supplemental", "support-change", "action", "support", "support_limit");
     epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     const auto ionic = aqueous.density_actions(300.0, 1000.0, {1.0, 0.0, 0.0}, {observables[5]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {-0.02, 0.01, 0.01}, {}}});
