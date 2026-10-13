@@ -1023,8 +1023,7 @@ static CompiledSystem compile_with_basis(
     compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
     const auto& z = model.parameters().charge_number;
-    double net_z = 0.0;
-    for (std::size_t i = 0; i < components; ++i) net_z += z[i] * compiled.n_feed[i];
+    const double net_z = std::inner_product(compiled.n_feed.begin(), compiled.n_feed.end(), z.begin(), 0.0);
     if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(1.0, compiled.feed_total)) {
         throw std::invalid_argument("feed carries net z");
@@ -1033,11 +1032,8 @@ static CompiledSystem compile_with_basis(
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");
         // The charge defect is judged against the stoichiometric scale ||nu||_1.
-        double total = 0.0, scale = 0.0;
-        for (std::size_t i = 0; i < components; ++i) {
-            total += z[i] * nu[i];
-            scale += std::abs(nu[i]);
-        }
+        const double total = std::inner_product(nu.begin(), nu.end(), z.begin(), 0.0);
+        const double scale = std::accumulate(nu.begin(), nu.end(), 0.0, [](double sum, double v) { return sum + std::abs(v); });
         if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale)) {
             throw std::invalid_argument("reaction " + reaction_name(request.reactions[row], row)
                                         + " violates z");
@@ -1061,11 +1057,8 @@ static CompiledSystem compile_with_basis(
     const auto central_reactions = central_reference_reactions(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
-    compiled.standard_gibbs = standard_state(
-        temperature_guess, components, central_reactions,
-        has_reaction_reference(request) ? std::vector<double>{}
-                                        : request.standard_gibbs_j_per_mol
-    );
+    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol);
     if (request.temperature.free)
         if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
@@ -1142,16 +1135,10 @@ static CompiledSystem compile_with_basis(
         }
         if (phase.support.empty()) throw std::invalid_argument("empty support in phase " + phase.name);
         for (const std::size_t index : phase.support) covered[index] = true;
-        bool positive = false;
-        bool negative = false;
-        for (const std::size_t index : phase.support) {
-            positive = positive || z[index] > 0;
-            negative = negative || z[index] < 0;
-        }
+        const bool positive = std::any_of(phase.support.begin(), phase.support.end(), [&](std::size_t i) { return z[i] > 0; });
+        const bool negative = std::any_of(phase.support.begin(), phase.support.end(), [&](std::size_t i) { return z[i] < 0; });
         compiled.has_ions = compiled.has_ions || positive || negative;
-        if (positive != negative && (positive || negative)) {
-            throw std::invalid_argument("support z sign in phase " + phase.name);
-        }
+        if (positive != negative) throw std::invalid_argument("support z sign in phase " + phase.name);
     }
     for (std::size_t i = 0; i < components; ++i) {
         if (!covered[i] && !absent[i] && (compiled.n_feed[i] != 0.0 || participant[i])) {
@@ -1160,27 +1147,17 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
-    compiled.pinned_count = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;
-    }
+    const auto& phases = compiled.problem.phases;
+    const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
+    compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
     admit_conditions(compiled);
     if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
-        if (compiled.free_intensive_count < compiled.pinned_count) {
-            std::string phase_name;
-            for (const auto& phase : compiled.problem.phases) {
-                if (phase.amount.kind == AmountKind::Pinned) {
-                    phase_name = phase.name;
-                    break;
-                }
-            }
-            throw std::invalid_argument(
-                "pinned phase " + phase_name + " requires a free T or P"
-            );
-        }
+        if (compiled.free_intensive_count < compiled.pinned_count)  // so at least one phase is pinned
+            throw std::invalid_argument("pinned phase " + std::find_if(phases.begin(), phases.end(), pinned)->name
+                                        + " requires a free T or P");
         throw std::invalid_argument(
             "free temperature or pressure requires a pinned phase amount"
         );
@@ -1197,27 +1174,16 @@ static CompiledSystem compile_with_basis(
             compiled.rows.push_back({RowKind::Chemical, phase, index});
         compiled.rows.push_back({RowKind::Pressure, phase, 0});
     }
-    std::vector<std::size_t> ion_phases;
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        for (const std::size_t index : compiled.problem.phases[phase].support) {
-            if (z[index] != 0) {
-                ion_phases.push_back(phase);
-                break;
-            }
+    // Every ion-bearing phase has a charge row except the first with a free or positive amount.
+    bool rowless = false;
+    for (std::size_t phase = 0; phase < phases.size(); ++phase) {
+        const auto& spec = phases[phase];
+        if (std::none_of(spec.support.begin(), spec.support.end(), [&](std::size_t i) { return z[i] != 0; })) continue;
+        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) rowless = true;
+        else {
+            compiled.rows.push_back({RowKind::Electro, phase, 0});
+            ++compiled.charge_row_count;
         }
-    }
-    std::optional<std::size_t> rowless;
-    for (const std::size_t phase : ion_phases) {
-        if (compiled.problem.phases[phase].amount.kind == AmountKind::Free
-            || compiled.problem.phases[phase].amount.fraction > 0.0) {
-            rowless = phase;
-            break;
-        }
-    }
-    for (const std::size_t phase : ion_phases) {
-        if (rowless.has_value() && phase == *rowless) continue;
-        compiled.rows.push_back({RowKind::Electro, phase, 0});
-        ++compiled.charge_row_count;
     }
     for (std::size_t row = 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
@@ -1237,18 +1203,10 @@ static CompiledSystem compile_with_basis(
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
-    Eigen::MatrixXd matrix(
-        static_cast<Eigen::Index>(compiled.rows.size()),
-        static_cast<Eigen::Index>(point.size()));
-    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        for (std::size_t column = 0; column < point.size(); ++column) {
-            matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                jacobian[row * point.size() + column];
-        }
-    }
+    const Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+        jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
     compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
-    compiled.generic_nullity = point.size() > compiled.jacobian_rank
-        ? point.size() - compiled.jacobian_rank : 0;
+    compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;
     // The compiled record is the sole source for both the driver and callers.
     return compiled;
