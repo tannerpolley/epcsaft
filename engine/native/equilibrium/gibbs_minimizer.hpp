@@ -18,16 +18,6 @@ namespace Ipopt { class TNLPAdapter; }
 
 namespace epcsaft::equilibrium {
 
-// Work actually performed on distinct callback points within one solve.
-struct EvaluationWork final {
-    std::size_t prepared_points = 0;
-    std::size_t row_evaluations = 0;
-    std::size_t jacobians = 0;
-    std::size_t gradients = 0;
-    std::size_t objective_hessians = 0;
-    std::size_t constraint_hessians = 0;
-};
-
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
@@ -258,7 +248,6 @@ public:
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }
 
     double regularization_size() const noexcept { return regularization_size_; }
-    const EvaluationWork& work() const noexcept { return work_; }
     const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
     const std::optional<std::string>& preparation_error() const noexcept {
         return preparation_error_;
@@ -281,7 +270,6 @@ private:
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;
     std::optional<std::string> preparation_error_;
-    EvaluationWork work_;
     std::vector<double> solution_;
     std::vector<double> constraint_multipliers_;
     Ipopt::SolverReturn status_ = Ipopt::UNASSIGNED;

@@ -411,10 +411,8 @@ bool GibbsMinimizer::get_starting_point(
     Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda
 ) {
     if (!init_x) return false;
-    const std::vector<double> point = !compiled_.feasibility_cell()
-        ? std::vector<double>(start_.begin(), start_.begin() + compiled_.primal_size)
-        : start_;
-    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (i < static_cast<Ipopt::Index>(point.size()) ? point[i] : 0.0) / chart_[i];
+    const std::size_t size = !compiled_.feasibility_cell() ? compiled_.primal_size : start_.size();
+    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (static_cast<std::size_t>(i) < size ? start_[i] : 0.0) / chart_[i];
     if (init_z) {
         std::fill(z_L, z_L + n, 0.0);
         std::fill(z_U, z_U + n, 0.0);
@@ -477,7 +475,6 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
             preparation_error_ = error.what();
             throw;
         }
-        ++work_.prepared_points;
     }
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     return *prepared_;
@@ -485,10 +482,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
 
 const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Number* x) {
     const auto& point = prepared(n, x);
-    if (!rows_.has_value()) {
-        rows_ = compiled_.evaluate_at(point);
-        ++work_.row_evaluations;
-    }
+    if (!rows_.has_value()) rows_ = compiled_.evaluate_at(point);
     return *rows_;
 }
 
@@ -509,10 +503,7 @@ bool GibbsMinimizer::eval_grad_f(
 ) {
     try {
         const auto& point = prepared(n, x);
-        if (!gradient_.has_value()) {
-            gradient_ = compiled_.objective_gradient_at(point);
-            ++work_.gradients;
-        }
+        if (!gradient_.has_value()) gradient_ = compiled_.objective_gradient_at(point);
         for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
         return true;
     } catch (const std::exception&) {
@@ -552,10 +543,7 @@ bool GibbsMinimizer::eval_jac_g(
     }
     try {
         const auto& point = prepared(n, x);
-        if (!jacobian_.has_value()) {
-            jacobian_ = compiled_.jacobian_at(point);
-            ++work_.jacobians;
-        }
+        if (!jacobian_.has_value()) jacobian_ = compiled_.jacobian_at(point);
         Ipopt::Index entry = 0;
         for (const std::size_t row : rows) {
             for (Ipopt::Index column = 0; column < n; ++column) {
@@ -590,15 +578,11 @@ bool GibbsMinimizer::eval_h(
         const auto& point = prepared(n, x);
         // Objective curvature is multiplier independent; the weighted constraint curvature is
         // recombined whenever the optimizer multipliers change at the same point.
-        if (!objective_hessian_.has_value()) {
-            objective_hessian_ = compiled_.hessian_at(point, {});
-            ++work_.objective_hessians;
-        }
+        if (!objective_hessian_.has_value()) objective_hessian_ = compiled_.hessian_at(point, {});
         const std::vector<double> multipliers(lambda, lambda + m);
         if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
             constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
             constraint_hessian_multipliers_ = multipliers;
-            ++work_.constraint_hessians;
         }
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < n; ++row) {
@@ -980,9 +964,7 @@ EquilibriumResult run_driver(
     result.message = core::describe(convergence);
     scope.finish(convergence);
     std::vector<double> volumes;
-    std::size_t intensive_offset = compiled.primal_size - compiled.free_intensive_count;
-    const double candidate_temperature = compiled.problem.temperature.free
-        ? full[intensive_offset] : compiled.problem.temperature.value;
+    const double temperature = prepared.temperature;
     bool topology_ok = true;
     std::string topology_failure;
     // Preparation above admitted every composition with a positive total.
@@ -995,7 +977,7 @@ EquilibriumResult run_driver(
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
         volumes.push_back(model.packing_fraction_coefficient(
-            candidate_temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
+            temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
@@ -1033,13 +1015,9 @@ EquilibriumResult run_driver(
         result.message += "; requested row tolerance " + std::to_string(row_tolerance)
             + " not met by an available floor-limited state";
     }
-    const double temperature = compiled.problem.temperature.free
-        ? full[intensive_offset++] : compiled.problem.temperature.value;
-    const double pressure = compiled.problem.pressure.free
-        ? full[intensive_offset++] : compiled.problem.pressure.value;
     result.success = true;
     result.temperature = {temperature};
-    result.pressure = {pressure};
+    result.pressure = {prepared.pressure};
     if (!prepared.standard.reference_diagnostics.empty()) {
         result.reference_diagnostics = prepared.standard.reference_diagnostics;
     }
@@ -1376,6 +1354,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             StageWork stages;
             try {
                 auto initial = seed.coordinates;
+                const auto offsets = compiled.phase_offsets();
                 const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
                     if (!ok) throw std::invalid_argument(field);
                 };
@@ -1421,7 +1400,6 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     for (std::size_t p = 0; p < packings.size(); ++p) packings[p] = packed(p);
                     initial = complete ? seeded.generic_point() : speciated ? std::move(*speciated)
                         : boundary_start(seeded, uncomposed, &work, &stages, packings);
-                    const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];
                         if (composed(p)) for (std::size_t j = 0; j < phase.composition_guess.size(); ++j)
@@ -1436,7 +1414,6 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 }
                 if (work.consumed >= work.iterations) throw std::runtime_error("iteration budget exhausted by the seed solves");
                 check(initial.size() == compiled.unknown_count() && all_numeric(initial));
-                const auto offsets = compiled.phase_offsets();
                 for (std::size_t p = 0; p < offsets.size(); ++p) {
                     const auto& phase = compiled.problem.phases[p]; auto cursor = offsets[p];
                     for (std::size_t j = 0; j < phase.support.size(); ++j) {
