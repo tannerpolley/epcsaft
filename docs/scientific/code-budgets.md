@@ -53,7 +53,8 @@ The band of a layer, or of the total, is 1% of its current count, rounded up.
    count plus the band, recording the raise below in the same change. No
    override flag or automatic upward ratchet exists.
 2. **Lower after consolidation.** When a ceiling sits more than one band above
-   the count, readiness fails with the ceiling to lower to (count plus band).
+   the count, readiness fails with the ceiling to lower to (count plus band;
+   for the total, no more than the sum of the layer ceilings).
    Lower it in the same change; lowering needs no approval. A ceiling up to one
    band above the count needs no table change.
 3. **Approve once per issue.** The owner approves a line allowance per layer
@@ -80,6 +81,7 @@ former per-slice tables and the retired floor and soft ceilings. Entries before
 [the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31);
 their approval assertions were not reverified in the #221 reconciliation.
 
+- 2026-10-13, #434 (rule 2, consolidation): Equilibrium **9,538 → 9,316** and Bindings **2,506 → 2,505**, the counts 9,223 and 2,480 plus their bands after the numerically identical audit set A2–A8, A10 and A15 (−253 Equilibrium, −2 Bindings on main `9b39db7f`). Total **24,895 → 24,672**, the sum of the layer ceilings, below the count 24,464 plus its band.
 - 2026-10-13, #439 (owner allowance Bindings +1, Python +15; the Python excess accepted 2026-10-13 as the recommended option while the owner was away, confirmed by the owner's merge): Python **2,025 → 2,050**, the count 2,029 plus its band after name-keyed compositions, `molar_masses`, `phase_mole_fractions`, five result reprs and clearer messages (+1 Bindings, +23 Python, +6 Properties, +1 Equilibrium); `mass_basis` required only for `phase_density` (+2), the refusal of unread top-level document fields (+8) and the review corrections (a read-only `molar_masses`, named guesses on the declared support in native component order) bring Python to +35, all within the same ceiling. Its +1 Bindings line fits under the #73 slice 2 ceiling 2,506. Total **24,870 → 24,895**, the sum of the layer ceilings.
 - 2026-10-13, #73 slice 2 (owner allowance, rule 1): Bindings **2,283 → 2,506**, the count 2,481 (main 2,283, plus +198 for the `epcsaft_pressure_property` ASL callback and `property_asl_record`) plus its band 25 (+198 Bindings, +1 Python). Total **24,486 → 24,870**, the sum of the layer ceilings, below the count 24,675 plus its band. The #73 cumulative is +313 of about +317 (slice 1 +114, slice 2 +199).
 - 2026-10-13, #73 slice 1 (owner): Properties **4,560 → 4,672**, the count 4,625 after merging #441 (main 4,514, plus +111 for the component ln(phi_i) pressure actions) plus its band 47 (+111 Properties, +3 Bindings). The owner raised the slice allowance from +108 to +114 for the dipolar-term and absent-ion status guards; the #73 total is then +316 of about +317. Total unchanged (24,476 / 24,486).
