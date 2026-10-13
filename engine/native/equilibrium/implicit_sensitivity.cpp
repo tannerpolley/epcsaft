@@ -34,27 +34,6 @@ double condition_estimate(const Eigen::MatrixXd& matrix) {
     return singular(0) / singular(singular.size() - 1);
 }
 
-std::size_t parameter_count(
-    const std::vector<double>& parameter_rows, std::size_t rows
-) {
-    if (rows == 0 || parameter_rows.empty() || parameter_rows.size() % rows != 0) return 0;
-    return parameter_rows.size() / rows;
-}
-
-void validate_parameter_rows(
-    const std::vector<double>& parameter_rows, std::size_t rows
-) {
-    if (!std::all_of(parameter_rows.begin(), parameter_rows.end(), [](double value) { return std::isfinite(value); }))
-        throw std::invalid_argument("invalid parameter derivative");
-    if (!parameter_rows.empty() && (rows == 0 || parameter_rows.size() % rows != 0))
-        throw std::invalid_argument("parameter derivative shape");
-}
-
-std::vector<double> flatten(const Eigen::MatrixXd& matrix) {
-    const RowMajor rows = matrix;
-    return {rows.data(), rows.data() + rows.size()};
-}
-
 bool valid_point(const std::vector<double>& point) {
     return !point.empty() && std::all_of(
         point.begin(), point.end(), [](double value) { return std::isfinite(value); });
@@ -89,14 +68,12 @@ bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() ==
 
 SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& point
 ) {
     core::Scope scope("inspect_implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
     const std::size_t dimension = point.size();
     if (!valid_point(point)) throw std::invalid_argument("invalid sensitivity point");
-    validate_parameter_rows(parameter_rows, rows);
     const auto jacobian = compiled.jacobian(point);
     if (jacobian.size() != rows * dimension) {
         throw std::invalid_argument("equilibrium Jacobian shape");
@@ -105,7 +82,6 @@ SensitivityInfo inspect_sensitivity(
     const auto lu = matrix.fullPivLu();
     SensitivityInfo result;
     result.equations = rows;
-    result.parameters = parameter_count(parameter_rows, rows);
     result.rank = static_cast<std::size_t>(lu.rank());
     result.condition_estimate = condition_estimate(matrix);
     result.nonsingular = square_and_numeric(matrix) && result.rank == dimension;
@@ -121,40 +97,29 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& column
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
     const std::size_t dimension = prepared.point.size();
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
-    validate_parameter_rows(parameter_rows, rows);
-    const std::size_t parameters = parameter_count(parameter_rows, rows);
-    if (parameters == 0) return {};
+    if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     const auto jacobian = compiled.jacobian_at(prepared);
     if (jacobian.size() != rows * dimension || rows != dimension) return {};
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     const auto lu = matrix.fullPivLu();
     if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension) return {};
-    Eigen::MatrixXd right(static_cast<Eigen::Index>(rows),
-                          static_cast<Eigen::Index>(parameters));
-    for (std::size_t row = 0; row < rows; ++row) {
-        for (std::size_t parameter = 0; parameter < parameters; ++parameter) {
-            right(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(parameter)) =
-                -parameter_rows[row * parameters + parameter];
-        }
-    }
+    // One column, kept a matrix so that Eigen takes the same solve path.
+    const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
     const Eigen::MatrixXd result = lu.solve(right);
-    double error = 0.0;
-    for (Eigen::Index j = 0; j < result.cols(); ++j)
-        error = std::max(error, backward_error((matrix * result.col(j) - right.col(j)).cwiseAbs().maxCoeff(),
-            matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.col(j).cwiseAbs().maxCoeff(), right.col(j).cwiseAbs().maxCoeff()));
+    const double error = backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
+        matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff());
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
-    scope.probe("parameters", static_cast<double>(parameters));
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
-    return flatten(result);
+    return {result.data(), result.data() + rows};
 }
 
 std::vector<double> sensitivity(

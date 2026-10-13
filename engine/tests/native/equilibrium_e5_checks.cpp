@@ -1274,7 +1274,7 @@ void check_e5_refusals() {
             recording_support::field("density_mol_m3", epcsaft::core::optional_number(ionic_batch.results[0].value))}));
     // The matrix owner on a rank-deficient Jacobian: the exact all-pinned system loses one
     // rank at its generic point; nonfinite and excessive-residual paths remain unexecuted.
-    const auto inspected = epcsaft::equilibrium::inspect_sensitivity(exact_compiled, exact_compiled.generic_point(), {});
+    const auto inspected = epcsaft::equilibrium::inspect_sensitivity(exact_compiled, exact_compiled.generic_point());
     record_bool("e5-8/matrix/rank-deficient", "e5-8", "the shared matrix owner reports the rank-deficient all-pinned Jacobian as singular with its rank below the dimension",
         !inspected.nonsingular && inspected.rank + 1 == exact_compiled.generic_point().size() && inspected.rank == exact_compiled.jacobian_rank,
         recording_support::fields({recording_support::field("rank", inspected.rank), recording_support::field("dimension", exact_compiled.generic_point().size()),

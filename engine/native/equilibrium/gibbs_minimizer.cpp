@@ -1262,7 +1262,7 @@ static void observe_endpoint(const HelmholtzModel& model, const CompiledSystem* 
         SensitivityInfo info;
         try {
             core::Capture isolated(false);
-            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates, {});
+            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates);
         } catch (const std::exception& error) {
             scope.probe("solved_endpoint_jacobian", {NAN, static_cast<double>(result.coordinates.size()), NAN, NAN}, attempt, error.what());
             return;

@@ -181,11 +181,11 @@ ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
-// J dy = -F_theta at a prepared point; empty when J is singular or the solve is not admitted.
+// J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& column
 );
 
 std::vector<double> sensitivity(
@@ -196,7 +196,6 @@ std::vector<double> sensitivity(
 
 struct SensitivityInfo final {
     std::size_t equations = 0;
-    std::size_t parameters = 0;
     std::size_t rank = 0;
     double condition_estimate = 0.0;
     bool nonsingular = false;
@@ -204,8 +203,7 @@ struct SensitivityInfo final {
 
 SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& point
 );
 
 class GibbsMinimizer final : public Ipopt::TNLP {
