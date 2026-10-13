@@ -35,7 +35,7 @@ fi
 
 notebooks=()
 for path in "${changed[@]}"; do
-    [[ "$path" == analyses/*/notebook.qmd ]] && notebooks+=("$path")
+    [[ "$path" == analyses/*/notebook.qmd || "$path" == analyses/*/README.md ]] && notebooks+=("$path")
 done
 ((${#notebooks[@]} == 0)) || timed notebook-numbers python3 tools/check-notebook-numbers.py "${notebooks[@]}"
 
