@@ -247,10 +247,39 @@ its existing search meaning, not exhaustive root enumeration.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
-Density closure requests only the reduced pressure gradient, a_VV and the
-association floor. With association sites these come from one adjoint sweep
-(the same site multipliers as the Hessian path) and one volume tangent through
-the site sensitivity; no request forms the full site Jacobian.
+Density closure evaluates normalized Taylor coefficients of the shared residual
+Helmholtz equations in volume at fixed temperature and composition. Order two
+supplies pressure and slope; order three adds pressure curvature. Association
+uses the primal mass-action solve and one checked Jacobian factorization for
+its implicit coefficients. The stationary association potential eliminates the
+highest site coefficient. Temperature and composition stay double in this
+chart; tape calls retain their differentiated scalar dependencies. Gradient and
+Hessian diagnostic requests still use the tape. Per-thread buffers hold scratch
+only, with no model or request cache.
+
+Every unanchored request first locates the liquid-side root, then locates the
+vapor root when requested or when a sibling is needed; other liquid requests
+check vapor existence. Sampled curvature and slope order test consistency with
+one interior minimum of the pressure slope. They do not prove this shape.
+On a concave pressure interval, the pressure tangents bound pressure from above;
+on a convex interval they bound it from below. Their envelope can exclude the
+corresponding crossing only with the existing pressure separation. A negative
+slope is a loop witness. A positive intersection of tangents to the slope cannot
+exclude a negative dip: this unresolved exit, any structure contradiction,
+degenerate or failed sample, and an exhausted budget hand the request to the
+inherited scan below. The original evaluation failure remains in the observation;
+the scan retains its association-connectivity and failure rules.
+
+Under the same conditional shape, an anchored root's window edge facing the
+slope minimum certifies positive slope throughout the window when that edge
+has the root's curvature sign and positive slope. The root, both final refinement
+endpoints and their bracket stay inside the local window. Every unproved case
+uses the inherited local scan. This is local uniqueness only; caller branch
+admission and corrected-density checks still apply. The existence count and an
+actually located sibling are separate: an existence-only result never invents
+another root density. Sole-root metadata and the scan's negative-slope witness
+retain their existing meanings. Finite sampling cannot certify arbitrary
+multi-loop completeness, including cold n-decane outside the assumed shape.
 
 A neutral reference trace at system pressure first tries the compile-time
 pure-solvent liquid density as an anchor for its pure-solvent point: the

@@ -11,17 +11,17 @@
 
 namespace epcsaft {
 
-template <typename Scalar, class ParameterSet>
+template <typename Scalar, class ParameterSet, typename Fixed>
 Scalar born_contribution(
-    const Scalar& temperature, const std::vector<Scalar>& mole_fractions,
+    const Fixed& temperature, const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters, const Scalar& bulk_relative_permittivity
 ) {
     if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) return Scalar(0.0);
 
-    Scalar fraction_sum = Scalar(0.0);
-    Scalar weighted_solvation = Scalar(0.0);
+    Fixed fraction_sum = Fixed(0.0);
+    Fixed weighted_solvation = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        const Scalar solvation_factor = Scalar(parameters.solvation_factor[component]);
+        const Fixed solvation_factor = Fixed(parameters.solvation_factor[component]);
         fraction_sum += mole_fractions[component];
         weighted_solvation += mole_fractions[component] * solvation_factor;
     }
@@ -29,17 +29,17 @@ Scalar born_contribution(
         if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation))
             throw std::invalid_argument("invalid solvation-factor mixture");
     }
-    const Scalar mixture_solvation = weighted_solvation / fraction_sum;
-    const Scalar ionic_region_relative_permittivity =
-        Scalar(parameters.ionic_region_relative_permittivity);
+    const Fixed mixture_solvation = weighted_solvation / fraction_sum;
+    const Fixed ionic_region_relative_permittivity =
+        Fixed(parameters.ionic_region_relative_permittivity);
     Scalar radial_work = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) continue;
-        const Scalar born_diameter = parameters.born_diameter_angstrom[component] * ANGSTROM_M;
+        const Fixed born_diameter = parameters.born_diameter_angstrom[component] * ANGSTROM_M;
         // EqID: born_outer_shell_diameter
-        const Scalar outer_shell_diameter = born_diameter
-            * (Scalar(1.0) + parameters.born_c_shell * (mixture_solvation - Scalar(1.0)) / std::abs(charge));
+        const Fixed outer_shell_diameter = born_diameter
+            * (Fixed(1.0) + parameters.born_c_shell * (mixture_solvation - Fixed(1.0)) / std::abs(charge));
         if constexpr (std::is_same_v<Scalar, double>) {
             if (!(outer_shell_diameter > 0.0) || !std::isfinite(outer_shell_diameter))
                 throw std::invalid_argument("Born outer-shell diameter is nonpositive");

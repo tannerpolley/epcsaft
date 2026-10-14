@@ -114,9 +114,11 @@ struct HelmholtzResult final {
     Scalar dipolar;
 };
 
-template <typename Scalar>
+// Fixed: the scalar of quantities that do not depend on density (temperature and composition), so a
+// density series carries only density-dependent arithmetic; the tape and double instantiations take Fixed = Scalar.
+template <typename Scalar, typename Fixed>
 // EqID: dispersion_polynomial
-Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) {
+Scalar polynomial(const std::array<Fixed, 7>& coefficients, const Scalar& eta) {
     Scalar value = coefficients.back();
     for (std::size_t index = coefficients.size() - 1; index > 0; --index) {
         value = value * eta + coefficients[index - 1];
@@ -164,15 +166,15 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 // EqID: packing_fraction
 Scalar packing_fraction_from_geometry(
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& diameter
+    const std::vector<Fixed>& diameter
 ) {
-    Scalar moment = Scalar(0.0);
+    Fixed moment = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         moment += mole_fractions[component]
             * parameters.segment_count[component]
@@ -183,19 +185,19 @@ Scalar packing_fraction_from_geometry(
 
 // EqID: packing_moments
 // zeta_3 comes from packing_fraction_from_geometry, the owner of the density bound.
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 std::array<Scalar, 4> packing_moments(
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& diameter
+    const std::vector<Fixed>& diameter
 ) {
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::array<Scalar, 4> zeta;
     for (std::size_t order = 0; order < 3; ++order) {
-        Scalar moment = Scalar(0.0);
+        Fixed moment = Fixed(0.0);
         for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
-            Scalar power = Scalar(1.0);
+            Fixed power = Fixed(1.0);
             for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
             moment += mole_fractions[i] * parameters.segment_count[i] * power;
         }
@@ -207,28 +209,28 @@ std::array<Scalar, 4> packing_moments(
 
 // EqID: hard_sphere_contact
 // Contact value at reduced diameter d_i d_j/(d_i + d_j); d_i/2 for a like pair.
-template <typename Scalar>
-Scalar hard_sphere_contact(const Scalar& reduced_diameter, const Scalar& zeta_2, const Scalar& one_minus_eta) {
+template <typename Scalar, typename Fixed>
+Scalar hard_sphere_contact(const Fixed& reduced_diameter, const Scalar& zeta_2, const Scalar& one_minus_eta) {
     return Scalar(1.0) / one_minus_eta
         + 3.0 * reduced_diameter * zeta_2 / (one_minus_eta * one_minus_eta)
         + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
             / (one_minus_eta * one_minus_eta * one_minus_eta);
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Fixed>
 // EqID: dipolar_integrals
 // Coefficient a_n(m) = t0 + (m-1)/m t1 + (m-1)(m-2)/m^2 t2 with m capped at 2.
 Scalar dipolar_integral(
     const std::array<std::array<double, 5>, 3>& table,
     const std::array<std::array<double, 5>, 3>* energy_table,
-    const Scalar& chain, const Scalar& reduced_energy, const Scalar& eta
+    const Fixed& chain, const Fixed& reduced_energy, const Scalar& eta
 ) {
-    const Scalar m = scalar_select_less(chain, Scalar(2.0), chain, Scalar(2.0));
-    const Scalar first = (m - 1.0) / m;
-    const Scalar second = first * (m - 2.0) / m;
+    const Fixed m = scalar_select_less(chain, Fixed(2.0), chain, Fixed(2.0));
+    const Fixed first = (m - 1.0) / m;
+    const Fixed second = first * (m - 2.0) / m;
     Scalar value = Scalar(0.0);
     for (std::size_t n = table[0].size(); n-- > 0;) {
-        Scalar coefficient = table[0][n] + first * table[1][n] + second * table[2][n];
+        Fixed coefficient = table[0][n] + first * table[1][n] + second * table[2][n];
         if (energy_table != nullptr) {
             const auto& b = *energy_table;
             coefficient += (b[0][n] + first * b[1][n] + second * b[2][n]) * reduced_energy;
@@ -238,18 +240,18 @@ Scalar dipolar_integral(
     return value;
 }
 
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 // EqID: dipolar_helmholtz
 // Gross and Vrabec (2006) Eqs. 7-9 with q_i = n_i mu_i^2 / (4 pi eps0 k T m_i sigma_i^3).
 // The unlike energy in J2 is sqrt(eps_i eps_j) without k_ij (source p. 1196).
 Scalar dipolar_helmholtz(
-    const Scalar& temperature, const Scalar& number_density, const Scalar& eta,
-    const std::vector<Scalar>& x, const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma, const std::vector<Scalar>& epsilon
+    const Fixed& temperature, const Scalar& number_density, const Scalar& eta,
+    const std::vector<Fixed>& x, const ParameterSet& parameters,
+    const std::vector<Fixed>& sigma, const std::vector<Fixed>& epsilon
 ) {
     const std::size_t size = x.size();
     constexpr double scale = DEBYE_SQUARED_J_ANGSTROM3 / BOLTZMANN_J_PER_K;
-    std::vector<Scalar> q(size, Scalar(0.0));
+    std::vector<Fixed> q(size, Fixed(0.0));
     std::vector<std::size_t> polar;
     for (std::size_t i = 0; i < size; ++i) {
         const double mu = parameters.dipole_moment_debye[i];
@@ -261,22 +263,22 @@ Scalar dipolar_helmholtz(
     Scalar second = Scalar(0.0);
     Scalar third = Scalar(0.0);
     for (const std::size_t i : polar) {
-        const Scalar volume_i = sigma[i] * sigma[i] * sigma[i];
+        const Fixed volume_i = sigma[i] * sigma[i] * sigma[i];
         for (const std::size_t j : polar) {
-            const Scalar volume_j = sigma[j] * sigma[j] * sigma[j];
-            const Scalar sigma_ij = 0.5 * (sigma[i] + sigma[j]);
-            const Scalar j2 = dipolar_integral<Scalar>(
+            const Fixed volume_j = sigma[j] * sigma[j] * sigma[j];
+            const Fixed sigma_ij = 0.5 * (sigma[i] + sigma[j]);
+            const Scalar j2 = dipolar_integral<Scalar, Fixed>(
                 DIPOLE_A, &DIPOLE_B,
                 scalar_sqrt(parameters.segment_count[i] * parameters.segment_count[j]),
                 scalar_sqrt(epsilon[i] * epsilon[j]) / temperature, eta);
             second += x[i] * x[j] * volume_i * volume_j
                 / (sigma_ij * sigma_ij * sigma_ij) * q[i] * q[j] * j2;
             for (const std::size_t k : polar) {
-                const Scalar j3 = dipolar_integral<Scalar>(
+                const Scalar j3 = dipolar_integral<Scalar, Fixed>(
                     DIPOLE_C, nullptr,
                     scalar_exp(scalar_log(parameters.segment_count[i]
                         * parameters.segment_count[j] * parameters.segment_count[k]) / 3.0),
-                    Scalar(0.0), eta);
+                    Fixed(0.0), eta);
                 third += x[i] * x[j] * x[k] * volume_i * volume_j
                     * sigma[k] * sigma[k] * sigma[k]
                     / (sigma_ij * 0.5 * (sigma[i] + sigma[k]) * 0.5 * (sigma[j] + sigma[k]))
@@ -294,14 +296,14 @@ Scalar dipolar_helmholtz(
         / scalar_select_less(Scalar(0.0), a2 * a2, a2 - a3, Scalar(1.0));
 }
 
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 HelmholtzResult<Scalar> residual_helmholtz(
-    const Scalar& temperature,
+    const Fixed& temperature,
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>& diameter,
+    const std::vector<Fixed>& sigma,
+    const std::vector<Fixed>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
     const Scalar& born
@@ -310,7 +312,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // EqID: angstrom_number_density
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     // EqID: mean_segment_count
-    Scalar mean_segment_count = Scalar(0.0);
+    Fixed mean_segment_count = Fixed(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
     }
@@ -337,16 +339,16 @@ HelmholtzResult<Scalar> residual_helmholtz(
     Scalar hard_chain = mean_segment_count * hard_sphere;
     for (std::size_t i = 0; i < size; ++i) {
         hard_chain -= mole_fractions[i] * (parameters.segment_count[i] - 1.0) *
-            scalar_log(hard_sphere_contact(diameter[i] / Scalar(2.0), zeta[2], one_minus_eta));
+            scalar_log(hard_sphere_contact(diameter[i] / Fixed(2.0), zeta[2], one_minus_eta));
     }
 
     // EqID: dispersion_chain_coefficients
-    const Scalar chain_factor_1 =
+    const Fixed chain_factor_1 =
         (mean_segment_count - 1.0) / mean_segment_count;
-    const Scalar chain_factor_2 = chain_factor_1 *
+    const Fixed chain_factor_2 = chain_factor_1 *
         (mean_segment_count - 2.0) / mean_segment_count;
-    std::array<Scalar, 7> a{};
-    std::array<Scalar, 7> b{};
+    std::array<Fixed, 7> a{};
+    std::array<Fixed, 7> b{};
     for (std::size_t i = 0; i < a.size(); ++i) {
         a[i] = A0[i] + chain_factor_1 * A1[i] + chain_factor_2 * A2[i];
         b[i] = B0[i] + chain_factor_1 * B1[i] + chain_factor_2 * B2[i];
@@ -368,21 +370,21 @@ HelmholtzResult<Scalar> residual_helmholtz(
              ((one_minus_eta * (Scalar(2.0) - zeta[3])) *
               (one_minus_eta * (Scalar(2.0) - zeta[3]))));
 
-    Scalar first_moment = Scalar(0.0);
-    Scalar second_moment = Scalar(0.0);
+    Fixed first_moment = Fixed(0.0);
+    Fixed second_moment = Fixed(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
             // EqID: cross_segment_diameter
-            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
-                * (Scalar(1.0) - parameters.l_ij[i * size + j]);
+            const Fixed sigma_ij = Fixed(0.5) * (sigma[i] + sigma[j])
+                * (Fixed(1.0) - parameters.l_ij[i * size + j]);
             const std::size_t pair = i * size + j;
             const double reference_temperature =
                 parameters.k_ij_reference_temperature_k[pair];
-            Scalar k_ij = parameters.k_ij[pair];
+            Fixed k_ij = parameters.k_ij[pair];
             if (reference_temperature > 0.0) {
                 k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]
-                    * (Scalar(1.0) / temperature
-                        - Scalar(1.0 / reference_temperature));
+                    * (Fixed(1.0) / temperature
+                        - Fixed(1.0 / reference_temperature));
             }
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
@@ -391,12 +393,12 @@ HelmholtzResult<Scalar> residual_helmholtz(
             const bool same_sign_excluded =
                 parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)
                 && charge_i * charge_j > 0;
-            const Scalar epsilon_i = Scalar(parameters.dispersion_energy_over_k[i]);
-            const Scalar epsilon_j = Scalar(parameters.dispersion_energy_over_k[j]);
-            const Scalar epsilon_ij = same_sign_excluded
-                ? Scalar(0.0)
-                : scalar_sqrt(epsilon_i * epsilon_j) * (Scalar(1.0) - k_ij);
-            const Scalar weight = mole_fractions[i] * mole_fractions[j] *
+            const Fixed epsilon_i = Fixed(parameters.dispersion_energy_over_k[i]);
+            const Fixed epsilon_j = Fixed(parameters.dispersion_energy_over_k[j]);
+            const Fixed epsilon_ij = same_sign_excluded
+                ? Fixed(0.0)
+                : scalar_sqrt(epsilon_i * epsilon_j) * (Fixed(1.0) - k_ij);
+            const Fixed weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;
             // EqID: dispersion_first_moment
@@ -414,7 +416,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // Optional: an undeclared polar family leaves the dipole arrays empty.
     Scalar dipolar = Scalar(0.0);
     if (!parameters.dipole_moment_debye.empty()) {
-        const std::vector<Scalar> epsilon(
+        const std::vector<Fixed> epsilon(
             parameters.dispersion_energy_over_k.begin(), parameters.dispersion_energy_over_k.end());
         dipolar = dipolar_helmholtz(
             temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon);
