@@ -76,7 +76,6 @@ is computed as `log(xmax)`, where `xmax` is four successive `nextafter` steps ab
 (8.881784197001248e-16 in the log coordinate). Re-prepare the snapped point and recheck
 the unchanged residual criterion; a failure falls back to Ipopt. Keep the additional exact
 correction and its retained work. Every other bound, tolerance and comparator is unchanged.
-The owner authorized resumed qualification; merging awaits the owner’s ruling.
 
 **When its point is returned.** Only when all of these hold:
 
