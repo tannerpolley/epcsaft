@@ -164,7 +164,111 @@ P2PressureChain p2_fixed_pressure_chain(
     };
 }
 
+// ALG-DENSITY: independent tape derivatives and verification-only log-volume stencils.
+void p2_density_series() {
+    struct Case { const char* name; epcsaft::Parameters parameters; double temperature, density; std::vector<double> composition; };
+    auto density_temperature = properties_support::aqueous_electrolyte();
+    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+    auto dipolar = properties_support::neutral_binary();
+    dipolar.dipole_moment_debye = {1.5, 0.0};
+    dipolar.dipole_count = {1.0, 0.0};
+    const std::vector<Case> cases = {
+        {"pure-neutral", properties_support::ethane(), 280.0, 800.0, {1.0}},
+        {"neutral", properties_support::neutral_binary(), 250.0, 800.0, {0.5, 0.5}},
+        {"association", properties_support::associating_binary(), 300.0, 35000.0, {0.1, 0.9}},
+        {"absent-species", properties_support::associating_binary(), 300.0, 35000.0, {0.0, 1.0}},
+        {"electrolyte", properties_support::aqueous_electrolyte(), 298.15, 55000.0, {0.98, 0.01, 0.01}},
+        {"trace-ion", properties_support::aqueous_electrolyte(), 298.15, 55000.0, {1.0-2e-10, 1e-10, 1e-10}},
+        {"density-permittivity", density_temperature, 298.15, 55000.0, {0.98, 0.01, 0.01}},
+        {"dipolar", dipolar, 250.0, 800.0, {0.5, 0.5}}};
+    for (const auto& item : cases) {
+        epcsaft::HelmholtzModel model(item.parameters);
+        const double volume = 1.0/item.density;
+        double floor = 0.0;
+        const auto series = epcsaft::properties::density_volume_taylor(model, item.temperature, item.density, item.composition, floor);
+        const auto tape = model.evaluate(item.temperature, volume, item.composition, epcsaft::DerivativeOrder::Hessian);
+        const auto smaller = model.evaluate(item.temperature, volume, item.composition, epcsaft::DerivativeOrder::PressureSlope);
+        std::vector<double> direction(item.composition.size()+2, 0.0); direction[1] = 1.0;
+        const auto third = model.residual_energy_action(item.temperature, volume, item.composition, {direction,direction,direction});
+        CHECK(third.action.has_value());
+        const std::array<double,3> exact = {volume*tape.gradient[1], volume*volume*tape.hessian[tape.gradient.size()+1],
+            volume*volume*volume*third.action.value_or(std::numeric_limits<double>::quiet_NaN())};
+        const std::array<double,3> calculated = {volume*series.c[1], 2*volume*volume*series.c[2], 6*volume*volume*volume*series.c[3]};
+        const auto inputs = recording_support::fields({model_inputs(item.parameters,item.temperature,volume,item.composition),
+            recording_support::field("site_fractions",tape.site_fractions), recording_support::field("series_gradient_floor",floor),
+            recording_support::field("tape_gradient_floor",tape.gradient_floor)});
+        for (std::size_t k=0;k<3;++k) {
+            recording_support::compare((std::string("volume-series/")+item.name+"/"+std::to_string(k+1)).c_str(),
+                "scaled_volume_derivative","1",calculated[k],exact[k],inputs,"Identity","independent-tape",
+                "normalized Taylor coefficients agree with implicit tape differentiation", "reference_or_one",0.0,1e-10,
+                close(calculated[k],exact[k],1e-10),"p2-volume-series",item.name,"V^k Phi_V...V","T,V,n","series=tape","order");
+            double best = std::numeric_limits<double>::infinity(), best_step = 0.0, previous = best;
+            bool decreasing = false;
+            for (double h : {1e-2,3e-3,1e-3,3e-4,1e-4,3e-5}) {
+                const auto plus=model.evaluate(item.temperature,volume*std::exp(h),item.composition,epcsaft::DerivativeOrder::Hessian);
+                const auto minus=model.evaluate(item.temperature,volume*std::exp(-h),item.composition,epcsaft::DerivativeOrder::Hessian);
+                const auto lower = [&](const epcsaft::HelmholtzDerivatives& d) {
+                    return k==0 ? d.value : k==1 ? d.gradient[1] : d.hessian[d.gradient.size()+1]; };
+                const double measured=std::pow(volume,static_cast<int>(k))*(lower(plus)-lower(minus))/(2*h);
+                const double error=std::abs(measured-exact[k])/std::max(1.0,std::abs(exact[k]));
+                decreasing = decreasing || error < previous; previous=error;
+                if(error<best) { best=error; best_step=h; }
+            }
+            const double limit=k==2 ? 1e-5 : 1e-6;
+            recording_support::compare((std::string("volume-stencil/")+item.name+"/"+std::to_string(k+1)).c_str(),
+                "scaled_error","1",best,0.0,recording_support::fields({inputs,recording_support::field("log_volume_step",best_step)}),
+                "Relationship","symmetric-log-volume-stencil","successive lower-derivative differences verify the exact volume derivative",
+                "absolute",limit,0.0,decreasing&&best<=limit,"p2-volume-stencil",item.name,"scaled error","T,V,n","d/dlnV=V d/dV","order");
+        }
+        const std::array<double,3> series_pressure={1-calculated[0],1+calculated[1],-calculated[2]-2*calculated[1]};
+        const std::array<double,3> tape_pressure={1-volume*smaller.gradient[1],1+volume*volume*smaller.volume_second_derivative,-exact[2]-2*exact[1]};
+        if (item.composition.size()==1) {
+            const auto pressure=model.neutral_property(item.temperature,item.density,epcsaft::NeutralProperty::Pressure,epcsaft::DerivativeOrder::Hessian);
+            const double curvature=item.density*pressure.hessian[3]/(epcsaft::GAS_CONSTANT_J_PER_MOL_K*item.temperature);
+            CHECK(close(series_pressure[2],curvature,1e-10));
+        }
+        for(std::size_t k=0;k<3;++k)
+            recording_support::compare((std::string("pressure-series/")+item.name+"/"+std::to_string(k)).c_str(),
+                "scaled_pressure_derivative","1",series_pressure[k],tape_pressure[k],inputs,"Identity","pressure-chain",
+                "pressure, slope and curvature follow the volume derivative chain", "reference_or_one",0.0,1e-10,
+                close(series_pressure[k],tape_pressure[k],1e-10),"p2-pressure-series",item.name,"scaled P derivative","T,V,n","pressure-chain","order");
+    }
+}
+
+// The inherited scan is deliberately incomplete for this out-of-shape isotherm.
+void p2_decane_fallback() {
+    auto parameters=properties_support::parameters(1);
+    parameters.segment_count={4.6627}; parameters.sigma_constant={3.8384};
+    parameters.dispersion_energy_over_k={243.87}; parameters.molar_mass_kg_per_mol={0.142286};
+    epcsaft::HelmholtzModel model(parameters);
+    const std::vector<double> composition{1.0};
+    constexpr double reference=0.9036845021232373, dense_reference=6174.391235069097;
+    CHECK(model.state(135.0,dense_reference,composition).pressure_density_derivative>0.0);
+    for(const auto branch : {epcsaft::DensityBranch::Vapor,epcsaft::DensityBranch::Liquid}) {
+        epcsaft::core::Capture capture(true);
+        epcsaft::DensityRoot sibling;
+        const auto root=epcsaft::solve_density(model,135.0,1000.0,composition,branch,std::nullopt,&sibling);
+        const auto trace=capture.take();
+        bool fallback=false;
+        for(const auto& e:trace.events) fallback=fallback||(std::string(e.name)=="structured_broken"&&e.reason=="curvature or slope order");
+        const bool ok=close(root.molar_density,reference,1e-10)&&root.stable_root_count==1
+            &&root.branch==epcsaft::DensityBranch::Unspecified&&sibling.branch==root.branch
+            &&close(sibling.molar_density,reference,1e-10)&&fallback;
+        recording_support::compare(branch==epcsaft::DensityBranch::Vapor ? "decane/vapor" : "decane/liquid",
+            "molar_density","mol/m3",root.molar_density,reference,recording_support::fields({
+                model_inputs(parameters,135.0,1.0/root.molar_density,composition),recording_support::field("P_star",1000.0),
+                recording_support::field("dense_diagnostic_root",dense_reference),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
+                recording_support::field("fallback",fallback)}),"Relationship","current-main-scan",
+            "both requests preserve the inherited dilute sole root after a structure contradiction", "reference_or_one",0.0,1e-10,ok,
+            "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","scan-selected sole root","case");
+    }
+}
+
 void properties_p2() {
+    p2_density_series();
+    p2_decane_fallback();
 
     const auto associating_parameters = properties_support::associating_binary();
     epcsaft::HelmholtzModel associating(associating_parameters);
@@ -625,6 +729,57 @@ void properties_p2() {
         close(anchored_liquid.molar_density, cold_liquid.molar_density, 1e-12),
         "p2-anchor", "liquid", "rho_l", "T,P,x",
         "rho_anchor_l=rho_l", "case");
+
+    // The certificate covers only the offered local window, including its final bracket.
+    for (const double offset : {-1e-11, 1e-3}) {
+        const double offered=cold_vapor.molar_density*std::exp(-epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value+offset);
+        const double edge=offered*std::exp(epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value);
+        bool returned=false, confined=false;
+        double density=0.0;
+        epcsaft::core::Capture capture(true);
+        try {
+            const auto root=epcsaft::solve_density(ethane,280.0,1e6,composition,epcsaft::DensityBranch::Vapor,offered);
+            returned=true; density=root.molar_density;
+            confined=density<=edge&&close(density,cold_vapor.molar_density,1e-10);
+            for(const auto& event:capture.trace().events)
+                if(std::string(event.name)=="density_root_bracket") confined=confined&&event.values[1]<=edge;
+        } catch(const std::runtime_error&) {}
+        const bool inside=offset>0.0, ok=inside ? returned&&confined : !returned;
+        recording_support::compare_custom((std::string("anchor/window-edge/")+(offset>0.0?"inside":"outside")).c_str(),
+            "admitted","bool",returned?1.0:0.0,inside?1.0:0.0,recording_support::fields({anchor_inputs,
+                recording_support::field("offered_density",offered),recording_support::field("upper_edge",edge),
+                recording_support::field("offset",offset),recording_support::field("returned_density",density)}),
+            "Availability","local-window","the selected crossing and its refine bracket stay inside the local window",
+            "absolute",ok,"p2-anchor-window",inside?"inside":"outside","admitted","T,P,x,anchor","root in window","case");
+    }
+
+    // An above-critical isotherm cannot use positive slope tangents to certify no hidden loop.
+    for(const double target:{1e6*(1-1e-6),1e6,1e6*(1+1e-6)}) {
+        double lo=1.0,hi=2000.0;
+        CHECK(ethane.state(320.0,lo,composition).pressure<target);
+        CHECK(ethane.state(320.0,hi,composition).pressure>target);
+        for(std::size_t i=0;i<100&&std::nextafter(lo,hi)<hi;++i) {
+            const double mid=0.5*(lo+hi);
+            (ethane.state(320.0,mid,composition).pressure<target?lo:hi)=mid;
+        }
+        const double reference=0.5*(lo+hi);
+        for(const auto branch:{epcsaft::DensityBranch::Vapor,epcsaft::DensityBranch::Liquid}) {
+            epcsaft::core::Capture capture(true);
+            const auto root=epcsaft::solve_density(ethane,320.0,target,composition,branch,std::nullopt);
+            bool fallback=false;
+            for(const auto& event:capture.trace().events)
+                fallback=fallback||(std::string(event.name)=="structured_broken"&&event.reason=="loop absence unresolved");
+            const bool ok=fallback&&root.branch==epcsaft::DensityBranch::Unspecified&&root.stable_root_count==1
+                &&root.pressure_density_derivative>0.0&&close(root.molar_density,reference,1e-10);
+            recording_support::compare((std::string("sole-root/fallback/")+std::to_string(target)+
+                (branch==epcsaft::DensityBranch::Vapor?"/vapor":"/liquid")).c_str(),"molar_density","mol/m3",root.molar_density,
+                reference,recording_support::fields({recording_support::field("T",320.0),recording_support::field("P_star",target),
+                    recording_support::field("fallback",fallback),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
+                    recording_support::field("slope",root.pressure_density_derivative)}),"Relationship","fixed-density-bisection",
+                "unresolved loop absence scans and preserves the sole unlabelled root", "reference_or_one",0.0,1e-10,ok,
+                "p2-sole-root-fallback",branch==epcsaft::DensityBranch::Vapor?"vapor":"liquid","rho","T,P,x,branch","rho=rho_ref","case");
+        }
+    }
 
     const auto association_anchor = associating.state_at_pressure(
         376.88, 101330.0, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid

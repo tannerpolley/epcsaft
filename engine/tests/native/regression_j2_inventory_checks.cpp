@@ -564,10 +564,19 @@ void check_minimax_consistency() {
     FitResult independent_failures;
     ObservationEvaluator fresh(request, independent_failures, {0, 1, 2, 3});
     CHECK(evaluator.evaluate(shifted, false, seeded) && evaluator.evaluate(shifted, true, promoted) && fresh.evaluate(shifted, true, cold));
+    // A column entry that cancels an observation's sensitivities (the held energy's optimizer column cancels
+    // terms near 1.5e4) carries their rounding: its absolute floor is four ulps of the row's largest physical
+    // sensitivity (#478); values keep the 1e-12 floor.
+    const std::size_t sensitivities = cold.gradient.size() / cold.predictions.size();
+    const auto floor = [&](std::size_t row) {
+        double scale = 0.0;
+        for (std::size_t k = 0; k < sensitivities; ++k) scale = std::max(scale, std::abs(cold.gradient[row * sensitivities + k]));
+        return std::max(1e-12, 4.0 * std::numeric_limits<double>::epsilon() * scale);
+    };
     for (const auto& pair : {std::pair{promoted.predictions, cold.predictions}, std::pair{promoted.gradient, cold.gradient}, std::pair{promoted.optimizer_gradient, cold.optimizer_gradient}})
-        for (std::size_t i = 0; i < pair.first.size(); ++i)
+        for (std::size_t i = 0, width = pair.first.size() / cold.predictions.size(); i < pair.first.size(); ++i)
             agree("density-seed/electrolyte/" + std::to_string(i), "value_or_column", "native", pair.first[i], pair.second[i],
-                1e-12, 1e-10, "held aqueous changed point and promotion", "fresh-point identity", "issue-245");
+                width == 1 ? 1e-12 : floor(i / width), 1e-10, "held aqueous changed point and promotion", "fresh-point identity", "issue-245");
     HelmholtzModel source_model(a.chart.parameters), shifted_model(promoted.chart.parameters);
     const auto prior = predict(source_model, gamma);
     const auto warm = predict(shifted_model, gamma, {}, {}, nullptr, &prior, &source_model, false);

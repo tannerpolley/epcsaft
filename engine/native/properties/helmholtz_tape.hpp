@@ -32,14 +32,24 @@ bool charged_support(const std::vector<double>& composition, const ParameterSet&
     return false;
 }
 
-template <typename Scalar, class ParameterSet>
-std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Scalar& temperature,
+template <typename Scalar, class ParameterSet, typename Fixed>
+std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Fixed& temperature,
     const Scalar& density,
-    const std::vector<Scalar>& composition, const std::vector<double>& reference,
+    const std::vector<Fixed>& composition, const std::vector<double>& reference,
     const ParameterSet& parameters) {
     const auto electrolyte = electrolyte_contribution(temperature, density, composition, reference, parameters);
     return {electrolyte, charged_support(reference, parameters)
         ? born_contribution(temperature, composition, parameters, electrolyte.bulk_relative_permittivity) : Scalar(0)};
+}
+
+// ALG-ASSOCIATION: the stationary potential eliminates the highest implicit site coefficient.
+template <typename Scalar, typename Fixed, typename ParameterSet>
+Scalar stationary_association(Scalar potential, const std::vector<Fixed>& composition,
+    const ParameterSet& parameters, const std::vector<Scalar>& residuals) {
+    for (std::size_t site = 0; site < residuals.size(); ++site)
+        potential -= Scalar(0.5) * composition[static_cast<std::size_t>(parameters.site_component[site])]
+            * parameters.site_multiplicity[site] * residuals[site];
+    return potential;
 }
 
 enum class ParameterFamily {
@@ -182,13 +192,7 @@ struct HelmholtzTape final {
                 tape_parameters.association_volume);
             const auto residuals = association_residuals(
                 density, composition, tape_parameters, sites, delta);
-            AD potential = contributions.association;
-            for (std::size_t site = 0; site < sites.size(); ++site) {
-                const std::size_t component = static_cast<std::size_t>(
-                    parameters.site_component[site]);
-                potential -= AD(0.5) * composition[component]
-                    * parameters.site_multiplicity[site] * residuals[site];
-            }
+            const auto potential = stationary_association(contributions.association, composition, parameters, residuals);
             dependent.push_back(total * (
                 contributions.hard_chain + contributions.dispersion
                 + contributions.debye_huckel + contributions.born + potential

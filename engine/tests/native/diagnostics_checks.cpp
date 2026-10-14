@@ -175,7 +175,9 @@ void check_density_record(
         returned.compressibility_factor
         - pressure / (result.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature)
     );
-    const bool residual_matches = std::abs(record.residual - residual) <= 1e-15;
+    // The solver's pressure kernel and state() are two exact routes to Z; they agree to the rounding of Z's
+    // contributions, which reach about 7 in a dense liquid (#478): a few ulps of them, not of Z.
+    const bool residual_matches = std::abs(record.residual - residual) <= 1e-14;
     recording_support::compare(
         (std::string("density-residual/") + point_id).c_str(),
         "density_residual", "1", record.residual, residual,
@@ -185,7 +187,7 @@ void check_density_record(
                                    recording_support::field("rho", result.molar_density),
                                    recording_support::field("branch", branch == epcsaft::DensityBranch::Liquid ? "liquid" : "vapor")}),
         "Relationship", "convergence-record", "recorded residual equals recomputed residual",
-        "absolute", 1e-15, 0.0,
+        "absolute", 1e-14, 0.0,
         residual_matches, "d4-density-residual", point_id,
         "residual", "T,P,\\mathbf{x},\\rho,branch", "r_{record}=r_{state}", "state");
     CHECK(record.criterion != nullptr);
