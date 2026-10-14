@@ -1,5 +1,6 @@
 // Reaction constants, analytic minimax, ln K, addition enthalpies and the reactive Cp fit.
 #include "regression_checks_shared.hpp"
+#include <cstring>
 
 namespace regression_checks {
 
@@ -1434,4 +1435,135 @@ void check_addition_enthalpy() {
 
 #include "reactive_cp_regression_checks.hpp"
 
+}  // namespace regression_checks
+
+namespace regression_checks {
+// #484: van 't Hoff coefficient motion, supplied-record preservation and decadic replay.
+void check_reaction_enthalpy_shift() {
+    FitRequest request;
+    request.parameters = properties_support::neutral_ternary();
+    request.controls = budgeted_controls();
+    auto problem = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
+        equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
+        equilibrium_support::Chemistry::TwoReactions);
+    problem.reactions[0].equilibrium_constant.reset();
+    problem.reactions[1].equilibrium_constant.reset();
+    problem.reactions[0].correlation = ReactionLogPolynomial{0.4, 80.0, 0.5, 0.001, 300.0, 250.0, 400.0,
+        equilibrium::EOS_STANDARD_STATE_ID};
+    // A supplied reciprocal coefficient already shifted from a manufactured earlier record.
+    const double log10 = std::log(10.0);
+    problem.reactions[1].correlation = ReactionLogPolynomial{-9.004 * log10, -(2500.0 + 117.0) * log10,
+        0.0, 0.009 * log10, 300.0, 250.0, 400.0, equilibrium::EOS_STANDARD_STATE_ID};
+    for (const auto& reaction : problem.reactions) {
+        Coordinate c;
+        c.reaction = ReactionCoordinate{reaction.name, ReactionCoefficient::EnthalpyShift, 313.15};
+        c.origin = 100.0; c.scale = 1000.0; c.lower = -5000.0; c.upper = 5000.0;
+        request.coordinates.coordinates.push_back(c);
+        for (const double t : {293.15, 313.15, 353.15, 393.15}) {
+            auto p = problem; p.temperature = FreeValue::fixed(t);
+            request.observations.push_back(log_constant(p, reaction.name.c_str()));
+        }
+    }
+    const auto start = request.coordinates.start(request.parameters, request.observations);
+    CHECK(start == std::vector<double>({-0.1, -0.1}));
+    for (const double h : {0.0, -25.0, 25.0, -2500.0, 2500.0, -5000.0, 5000.0}) {
+        auto rows = request.observations;
+        const auto laws = request.coordinates.apply(rows, {(h-100.0)/1000.0, (h-100.0)/1000.0});
+        for (const auto& reaction : problem.reactions) {
+            const auto& base = *reaction.correlation;
+            const auto& law = laws.at(reaction.name);
+            const auto key = "reaction-enthalpy/" + reaction.name + "/" + std::to_string(h);
+            agree(key + "/pivot", "ln_K", "1", reaction_log_value(law, 313.15), reaction_log_value(base, 313.15),
+                2e-12, 0.0, "pivot=313.15 K", "the supplied correlation is preserved at the declared pivot", "issue-484");
+            CHECK(law.c == base.c && law.d == base.d && law.reference_temperature == base.reference_temperature
+                && law.temperature_min == base.temperature_min && law.temperature_max == base.temperature_max
+                && law.standard_state_id == base.standard_state_id);
+            if (h == 0.0) {
+                for (const auto member:{&ReactionLogPolynomial::a,&ReactionLogPolynomial::b,&ReactionLogPolynomial::c,&ReactionLogPolynomial::d}) {
+                    const double x=law.*member,y=base.*member;
+                    CHECK(std::memcmp(&x,&y,sizeof(double))==0);
+                }
+            }
+            const auto direction = reaction_direction(*request.coordinates.coordinates[0].reaction);
+            const ReactionLogPolynomial action{direction[0], direction[1], direction[2], direction[3], 300.0, 250.0, 400.0, {}};
+            for (const double t : {293.15, 313.15, 353.15, 393.15}) {
+                agree(key + "/enthalpy/" + std::to_string(t), "d_h_reaction/d_h", "1",
+                    GAS_CONSTANT_J_PER_MOL_K * t * t * reaction_log_value(action, t, 1), 1.0,
+                    1e-12, 0.0, "constant source basis", "the analytic mixed thermal action changes reaction enthalpy by h", "issue-484");
+                const double a = t*t*reaction_log_value(law, t, 1), b = t*t*reaction_log_value(base, t, 1);
+                const double tolerance = 32*std::numeric_limits<double>::epsilon()*std::max({std::abs(a),std::abs(b),std::abs(h/GAS_CONSTANT_J_PER_MOL_K)});
+                agree(key + "/slope/" + std::to_string(t), "delta_dlnK_dinverseT", "K", b-a, -h/GAS_CONSTANT_J_PER_MOL_K,
+                    tolerance, 0.0, "propagated subtraction round-off", "the inverse-temperature slope changes by -h/R", "issue-484");
+                if (law.c == 0.0) {
+                    const auto source = reaction_log10_reciprocal(law);
+                    agree(key + "/replay/" + std::to_string(t), "ln_K", "1", -log10*(source[0]/t+source[1]+source[2]*t),
+                        reaction_log_value(law,t), 2e-12, 0.0, "negative base-10 reciprocal polynomial",
+                        "both fitted coefficients replay the supplied correlation", "issue-484");
+                }
+            }
+        }
+    }
+    // Manufacture values at nonzero shifts, keeping the original law as the fit's offset.
+    auto shifted = request.observations;
+    request.coordinates.apply(shifted, {1.1, -0.8});  // 1200 and -700 J/mol
+    for (std::size_t i=0; i<shifted.size(); ++i)
+        request.observations[i].observed = *predict(HelmholtzModel(request.parameters), shifted[i]).value;
+    const auto result = fit(request);
+    CHECK(result.usable && result.covariance.rank == 2);
+    for (std::size_t i=0; i<2; ++i)
+        agree("reaction-enthalpy/recovery/"+std::to_string(i), "h", "J/mol", result.physical[i], i==0 ? 1200.0 : -700.0,
+            1e-8, 1e-10, "noise-free source observations at four temperatures", "one physical shift is recovered per reaction", "issue-484");
+    CHECK(result.chart.reaction_laws.size() == 2);
+    auto joint = request;
+    Coordinate eos{{{ParameterFamily::SegmentCount, {0}}}, request.parameters.segment_count[0], 0.1};
+    eos.lower = eos.origin-0.5; eos.upper = eos.origin+0.5;
+    joint.coordinates.coordinates.insert(joint.coordinates.coordinates.begin()+1, eos);
+    joint.observations.push_back(density(300.0, 1e5, {1.0,0.0,0.0}, DensityBranch::Vapor));
+    const auto truth_point = std::vector<double>{1.1, 0.2, -0.8};
+    auto truth_rows = joint.observations;
+    joint.coordinates.apply(truth_rows,truth_point);
+    const HelmholtzModel truth_model(joint.coordinates.apply(joint.parameters,truth_point));
+    for (std::size_t i=0;i<truth_rows.size();++i)
+        joint.observations[i].observed = *predict(truth_model,truth_rows[i]).value;
+    const auto joint_fit = fit(joint);
+    CHECK(joint_fit.usable && joint_fit.covariance.rank == 3);
+    for (std::size_t i=0;i<3;++i)
+        agree("reaction-enthalpy/joint/"+std::to_string(i), "optimizer_coordinate", "1", joint_fit.optimizer[i], truth_point[i],
+            1e-8, 1e-10, "interleaved EOS and reaction coordinates", "the affine chain applies each coordinate scale once", "issue-484");
+    bool refused=false;
+    try { (void)reaction_log10_reciprocal(*problem.reactions[0].correlation); }
+    catch (const std::invalid_argument&) { refused=true; }
+    CHECK(refused);
+    refused=false;
+    try { (void)fit_sequence(request, {start}, 10, 10.0); } catch (const std::invalid_argument& e) { refused=std::string(e.what()).find("fit_sequence") != std::string::npos; }
+    CHECK(refused);
+    request.minimax = MinimaxRequest{};
+    CHECK(fit(request).message.find("not supported in minimax") != std::string::npos);
+    CHECK(fit_minimax(request, start).message.find("not supported in minimax") != std::string::npos);
+    request.minimax.reset();
+    auto wrong = request;
+    wrong.coordinates.coordinates[0].reaction->pivot_temperature = 0.0;
+    CHECK(fit(wrong).status == "invalid_setup");
+    wrong = request; wrong.coordinates.coordinates.push_back(reaction_coordinate("reaction_a"));
+    CHECK(fit(wrong).message.find("overlapping enthalpy shift") != std::string::npos);
+    // #448's effective species-reference refusal reaches point readers and heat final endpoints.
+    wrong = request; wrong.parameters = properties_support::aqueous_electrolyte();
+    auto source = referenced_formula(std::nullopt);
+    source.reactions[0].name = "reaction_a";
+    source.reactions[0].reference->source_basis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
+    wrong.coordinates.coordinates.resize(1);
+    wrong.observations = {solved(ObservationKind::PhaseMoleFraction, source, 0, {1})};
+    wrong.observations.push_back(wrong.observations[0]);
+    wrong.observations[1].kind = ObservationKind::AdditionEnthalpy;
+    wrong.observations[1].final_problem = source;
+    wrong.observations[1].final_problem.source_reference->species_reference = {SpeciesReference::PureGas,
+        SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
+    CHECK(fit(wrong).message.find("tied species references disagree") != std::string::npos);
+    refused=false;
+    try { FitResult errors; ObservationEvaluator reader(wrong, errors, {0,1}); }
+    catch (const std::invalid_argument& e) { refused=std::string(e.what()).find("tied species references disagree") != std::string::npos; }
+    CHECK(refused);
+    wrong.observations[1].final_problem.source_reference->species_reference[0] = SpeciesReference::PureLiquid;
+    CHECK(wrong.coordinates.start(wrong.parameters,wrong.observations).size() == 1);
+}
 }  // namespace regression_checks

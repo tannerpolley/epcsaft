@@ -79,6 +79,7 @@ struct EvaluatedCoordinates final {
     std::vector<ActiveParameter> active;
     std::vector<double> physical, map;  // independent EOS, held Born, then reaction rows; row-major D
     std::vector<HoldResult> holds;
+    std::map<std::string, ReactionLogPolynomial> reaction_laws;
 };
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
     const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,

@@ -3,7 +3,9 @@
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
+#include <array>
 #include <limits>
+#include <map>
 #include <optional>
 #include <string>
 #include <utility>
@@ -12,11 +14,15 @@
 namespace epcsaft::regression {
 
 struct Observation;
-enum class ReactionCoefficient { A, B, C, D };
+enum class ReactionCoefficient { A, B, C, D, EnthalpyShift };
 struct ReactionCoordinate final {
     std::string name;
     ReactionCoefficient coefficient = ReactionCoefficient::A;
+    double pivot_temperature = 0.0;  // K, required for EnthalpyShift
 };
+std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate);
+// -log10 K = A/T + B + C*T; refuses a nonzero logarithmic coefficient.
+std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law);
 
 struct CoordinateTarget final {
     ParameterFamily family;
@@ -52,7 +58,7 @@ struct CoordinateSet final {
     std::pair<std::vector<double>, std::vector<double>> optimizer_bounds() const;
     // A copy of `parameters` with every slot (both mirrored entries of a pair) rewritten.
     Parameters apply(Parameters parameters, const std::vector<double>& optimizer) const;
-    void apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const;
+    std::map<std::string, ReactionLogPolynomial> apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const;
 };
 
 // Reject invalid charts, conflicting named reaction declarations and constants fixed by other inputs.

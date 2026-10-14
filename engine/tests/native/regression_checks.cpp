@@ -26,6 +26,7 @@ void check_d7_minimax();
 void check_reaction_derivatives();
 void check_reaction_recovery();
 void check_reaction_rejections();
+void check_reaction_enthalpy_shift();
 void check_reactive_cp();
 void check_cp_derivatives();
 void check_cp_recovery();
@@ -58,6 +59,7 @@ int main(int argc, char** argv) {
         {{"native.regression.r2-d7-minimax-analytic", "R2-D7"}, check_d7_minimax, "R2"},
         {{"native.regression.reaction-derivatives", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "reaction-recovery"}, check_reaction_recovery, "R2"},
+        {{"native.regression.reaction-enthalpy-shift", "reaction-enthalpy-shift"}, check_reaction_enthalpy_shift, "R2"},
         {{"native.regression.reaction-rejections", "reaction-rejections"}, check_reaction_rejections, "R2"},
         {{"native.regression.reactive-cp", "reactive-cp"}, check_reactive_cp},
         {{"native.regression.cp-derivatives", "cp-derivatives"}, check_cp_derivatives, "R2"},

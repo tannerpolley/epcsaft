@@ -1556,7 +1556,7 @@ $$
 - Status: Exact derivation
 - Source: Chain rule for `reaction_constant_ln_polynomial`, the minimum-norm standard state in `chemical_potential_stationarity`, and `implicit_sensitivity`; issue #187 accepted design
 - Description: A fitted source-basis coefficient changes its density-basis reaction target by the same basis function. The source molality scale and reference contraction have no reaction-coefficient dependence. The minimum-norm image supplies chemical-row derivatives, and the existing defining Jacobian supplies the solved-state derivative.
-- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the coefficient law at the path temperature T(t) for state actions, including its free-temperature chain. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. The bounded caloric actions consume the same analytic thermal coefficient terms; outer coefficient Hessians remain outside this consumer set. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
+- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the coefficient law at the path temperature T(t) for state actions, including its free-temperature chain. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. The bounded caloric actions consume the same analytic thermal coefficient terms; outer coefficient Hessians remain outside this consumer set. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns. The constant source reaction-enthalpy shift $h$ (J/mol) at a fixed declared pivot $T_p$ is one derived coefficient direction (#484), preserving the supplied correlation. The existing coefficient chain consumes the combined direction $\mathbf w$. For the `reaction_constant_log10_reciprocal` view, a native law with $c=0$ replays as $(A,B,C)=-(b,a,d)/\ln 10$; source metadata remains caller-owned.
 
 $$
 \phi_k(T)=\left(1,\frac1T,\ln\frac{T}{T_{ref}},T\right)_k,
@@ -1570,7 +1570,13 @@ $$
 \frac{\partial s_i}{\partial\theta_{r,k}}=-\big(N^+\big)_{ir}\phi_k(T),
 \qquad
 \frac{d\mathbf y}{d\theta_{r,k}}=-\mathbf F_{\mathbf y}^{-1}\mathbf F_{\theta_{r,k}},
-\quad \mathbf F_{\theta_{r,k}}=\text{chemical rows only}.
+\quad \mathbf F_{\theta_{r,k}}=\text{chemical rows only},
+\qquad
+\frac{\partial(a,b,c,d)}{\partial h}=\mathbf w=
+\left(\frac{1}{RT_p},-\frac1R,0,0\right),\qquad
+\delta\ln K=\frac hR\left(\frac1{T_p}-\frac1T\right),\qquad
+\frac{\partial\Delta_r h^\circ}{\partial h}=1,\qquad
+\delta\frac{d\ln K}{d(1/T)}=-\frac hR.
 $$
 
 ## `source_log_equilibrium_constant_observation`

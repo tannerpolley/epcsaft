@@ -663,7 +663,7 @@ std::vector<PredictionGradient> differentiate_group(
             const auto& target = reactions[k - active_width];
             for (std::size_t j = 0; j < problem.reactions.size(); ++j)
                 if (problem.reactions[j].name == target.name)
-                    directions[k].reaction_coefficients[j][static_cast<std::size_t>(target.coefficient)] = 1.0;
+                    directions[k].reaction_coefficients[j] = reaction_direction(target);
         }
     }
     const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
