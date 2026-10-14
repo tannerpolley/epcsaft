@@ -140,7 +140,8 @@ thermodynamic implementation. This is stronger than a facade dispatching to
 independent equilibrium solvers. Density and association remain lower-level
 numerical kernels. Continuation and phase discovery control sequences of
 problems and reuse the same equilibrium driver where equilibrium is solved;
-their search operations do not duplicate it.
+their search operations do not duplicate it. The [ADR 0009 amendment](decisions/0009-general-platform-one-driver.md)
+defines the Newton attempt inside that driver.
 
 The rule governs equilibrium specifications implemented inside the Engine
 (owner decision, 2026-09-16). An external process model, such as an IDAES
@@ -152,7 +153,9 @@ equations, solve and claims, and no Engine equilibrium equation or solver is
 copied into it.
 
 The owner requires a single Ipopt driver with exact curvature, including bubble
-and dew specifications. This does not certify the current implementation or
+and dew specifications, with the scoped Newton attempt in the
+[ADR 0009 amendment](decisions/0009-general-platform-one-driver.md).
+This does not certify the current implementation or
 promise convergence for every input. Qualify its pinned/free-intensive equations,
 derivatives and cost; report a demonstrated limitation for an owner decision
 rather than substitute another equilibrium method.
@@ -204,7 +207,8 @@ remaining work.
   dimensionless mole fractions. Source-unit and reaction-convention conversions
   are explicit and never silently reinterpret parameter records.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
-  vapor-fraction specifications at fixed T or P. Phase fractions and absolute
+  vapor-fraction specifications at fixed T or P, with the scoped Newton attempt
+  in the [ADR 0009 amendment](decisions/0009-general-platform-one-driver.md). Phase fractions and absolute
   phase amounts are distinct. Neutral PH/PS uses the same driver; UV remains future work; explicit native
   fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P

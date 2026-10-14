@@ -689,7 +689,7 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
 EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
-    std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits
+    std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton
 ) {
     const double row_tolerance = compiled.problem.row_tolerance;
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
@@ -702,7 +702,7 @@ EquilibriumResult run_driver(
         reject_elapsed(result, scope); return result; }
     std::optional<EquilibriumResult> limit_audit;
     if (limits && !audit) audit = &limit_audit.emplace(result);
-    auto fallback = limits ? initial : std::vector<double>{};
+    auto fallback = limits || newton ? initial : std::vector<double>{};
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope, limits);
     if (audit) audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const auto capture_driver = [&] {
@@ -720,6 +720,7 @@ EquilibriumResult run_driver(
             ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
     };
     const auto [initialized, returned] = [&] {
+        if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
         try { return run_ipopt(nlp, inner_tolerance,
             static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
@@ -729,7 +730,7 @@ EquilibriumResult run_driver(
     }();
     capture_driver();
     if (nlp->step_rule_error()) throw std::logic_error(*nlp->step_rule_error());
-    const Ipopt::SolverReturn status = nlp->status();
+    const Ipopt::SolverReturn status = newton ? Ipopt::SUCCESS : nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
     const bool fatal = initialized != Ipopt::Solve_Succeeded
         || (returned <= Ipopt::Invalid_Problem_Definition && returned != Ipopt::Invalid_Number_Detected);
@@ -750,13 +751,14 @@ EquilibriumResult run_driver(
     };
     if (expired()) return limited_result();
     std::vector<double> point = nlp->solution();
-    if (point.empty()) point = limits ? std::move(fallback) : boundary_start(compiled);
+    if (point.empty()) point = limits || newton ? std::move(fallback) : boundary_start(compiled);
     std::vector<double> full = !compiled.feasibility_cell() ? add_multipliers(compiled, point) : point;
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows at any positive supported composition.
     // Curvature may raise classified rows temporarily; return the best classified
     // point visited, including the optimizer start, rather than the last step.
     std::size_t polish_evaluations = 0;
+    bool capped = false, in_bounds = true, corrected = false;
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
@@ -787,9 +789,10 @@ EquilibriumResult run_driver(
             if (expired()) { stop("elapsed budget"); break; }
             const double defect = maximum_abs(rows_before);
             const bool extension = step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value);
-            if (extension && defect <= row_tolerance) { stop("raw criterion"); break; }
+            const bool final_correction = newton && defect <= row_tolerance;
+            if (extension && defect <= row_tolerance && !final_correction) { stop("raw criterion"); break; }
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
-            if (!(defect > 0.0) || !std::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
+            if ((!final_correction && !(defect > 0.0)) || !std::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
             const auto jacobian = compiled.jacobian_at(at);
             if (expired()) { stop("elapsed budget"); return limited_result(); }
             const auto n = static_cast<Eigen::Index>(full.size());
@@ -813,7 +816,7 @@ EquilibriumResult run_driver(
             double bound = std::numeric_limits<double>::infinity();
             const bool size_admitted = positive && full == best && classified_before <= row_tolerance
                 && scaled_correction <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
-            if (size_admitted && lu.rank() == n)
+            if (size_admitted && lu.rank() == n && !final_correction)
                 bound = polish_forward_bound(jacobian, rows_before, {delta.data(), delta.data() + n},
                     {scale.data(), scale.data() + n});
             const bool correction_stop = size_admitted && bound <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
@@ -848,13 +851,14 @@ EquilibriumResult run_driver(
                 if (compiled.problem.pressure.free && index == static_cast<Eigen::Index>(intensive)) quantity = "P in Pa";
                 scope.probe("polish_coordinate", {control, phase, component, full[index]}, step, quantity);
             });
-            if (correction_stop) { stop("scaled correction"); break; }
+            if (correction_stop && !final_correction) { stop("scaled correction"); break; }
 
             bool accepted = false;
             // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
             for (const double alpha : {1.0, 0.5, 0.25}) {
+                if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;
                 if (expired()) { stop("elapsed budget"); break; }
                 std::vector<double> candidate = full;
@@ -877,19 +881,19 @@ EquilibriumResult run_driver(
                 }
                 const double after = maximum_abs(rows_after);
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
-                const bool admit = after < (extension ? ratio : 1.0) * defect;
+                const bool admit = final_correction || after < (extension ? ratio : 1.0) * defect;
                 if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
                     after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,
                     static_cast<double>(trial_index)}, step,
-                    admit ? "raw_contraction" : extension ? "extension ratio" : "raw noncontraction");
+                    final_correction ? "final correction" : admit ? "raw_contraction" : extension ? "extension ratio" : "raw noncontraction");
                 else scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
                 if (!admit) continue;
-                ratio = after / defect;
+                if (!final_correction) ratio = after / defect;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
                 rows_before = std::move(rows_after);
-                if (classified_after <= best_classified) {
+                if (final_correction || classified_after <= best_classified) {
                     best = full;
                     best_classified = classified_after;
                     if (detailed) best_raw = after;
@@ -898,13 +902,28 @@ EquilibriumResult run_driver(
                 break;
             }
             if (!accepted) { stop("no accepted trial"); break; }
-            if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) stop("iteration cap");
+            if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) { capped = true; stop("iteration cap"); }
+            if (final_correction) { corrected = true; stop("final correction"); break; }
         }
         if (detailed && best != full) scope.probe("polish_stop", {best_raw, best_classified,
             static_cast<double>(final_step)}, final_step, "best classified point returned");
         full = std::move(best);
     }
     if (expired()) return limited_result();
+    if (newton) {
+        std::vector<double> lower(full.size()), upper(full.size()), row_lower(compiled.rows.size()), row_upper(compiled.rows.size());
+        in_bounds = nlp->get_bounds_info(static_cast<Ipopt::Index>(full.size()), lower.data(), upper.data(),
+            static_cast<Ipopt::Index>(compiled.rows.size()), row_lower.data(), row_upper.data());
+        // Snap log-composition round-off on the physical x=1 scale before checking the exact box.
+        const auto offsets = compiled.phase_offsets();
+        for (std::size_t p = 0; p < offsets.size(); ++p) for (std::size_t j = 0; j < compiled.problem.phases[p].support.size(); ++j) {
+            const auto i = offsets[p] + j;
+            double xmax = 1.0;
+            for (int ulp = 0; ulp < 4; ++ulp) xmax = std::nextafter(xmax, INFINITY);
+            if (full[i] > upper[i] && full[i] <= std::log(xmax)) full[i] = upper[i];
+        }
+        for (std::size_t i = 0; i < full.size(); ++i) in_bounds = in_bounds && full[i] >= lower[i] && full[i] <= upper[i];
+    }
     PhasePoint prepared;
     try {
         prepared = compiled.prepare(full);
@@ -989,8 +1008,10 @@ EquilibriumResult run_driver(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
-    bool accepted = !expired() && non_error && topology_ok && (result.convergence.stop == core::Stop::converged
-        || (result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
+    bool accepted = !expired() && non_error && topology_ok && (!newton || (!capped && in_bounds && corrected))
+        && (result.convergence.stop == core::Stop::converged
+        || (!newton && result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
+    const bool rows_ok = result.convergence.stop == core::Stop::converged, original_topology_ok = topology_ok;
     if (accepted) {
         topology_failure = local_phase_instability(compiled, prepared);
         topology_ok = accepted = topology_failure.empty();
@@ -1000,6 +1021,8 @@ EquilibriumResult run_driver(
         if (!topology_ok) result.message = topology_failure;
         result.message += ipopt_failure;
         if (!rejected_preparation.empty()) result.message += "; trial preparation failed: " + rejected_preparation;
+        if (newton) result.message = capped ? "cap" : !in_bounds ? "bounds" : !rows_ok || !corrected ? "rows"
+            : !original_topology_ok ? "topology" : "stability";
         clear_state(result);
         return result;
     }
@@ -1008,6 +1031,7 @@ EquilibriumResult run_driver(
             + " not met by an available floor-limited state";
     }
     result.success = true;
+    if (newton) result.solver_status = "NEWTON_CONVERGED";
     result.temperature = {temperature};
     result.pressure = {prepared.pressure};
     if (!prepared.standard.reference_diagnostics.empty()) {
@@ -1030,7 +1054,7 @@ EquilibriumResult run_driver(
     // objective and material rows obey joint extensive homogeneity in amount, composition
     // and volume, together with stationarity in the free amount. The raw
     // optimizer values stay a trace probe.
-    scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
+    if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (!compiled.feasibility_cell()) {
         std::size_t electro = 0;
         for (const auto& row : compiled.rows) {
@@ -1044,7 +1068,7 @@ EquilibriumResult run_driver(
             }
         }
     } else {
-        result.constraint_multipliers = nlp->constraint_multipliers();
+        result.constraint_multipliers = newton ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
     }
     result.coordinates = full;
     if (expired()) return limited_result();
@@ -1259,6 +1283,15 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
     return result;
 }
 
+static bool newton_eligible(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
+        || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery
+        || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2 || compiled.free_intensive_count != 1) return false;
+    const auto& a = p.phases[0]; const auto& b = p.phases[1];
+    return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));
+}
+
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
                                  core::Scope* outer, const DriverLimits* limits) {
     std::optional<core::Scope> own;
@@ -1282,6 +1315,20 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         } else {
             initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied, limits, &stages);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+        }
+        if (newton_eligible(compiled)) {
+            core::Scope fast_scope("newton_fast_path");
+            auto fast = structural;
+            try {
+                fast = run_driver(model, compiled, initial, structural, fast_scope, nullptr, &fast, limits, true);
+                const bool accepted = fast.success && check_density_branches(model, compiled, fast, {}, true, fast_scope, limits).accepted;
+                fast_scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
+                    accepted ? "accepted" : fast.success ? "admission" : fast.message.c_str());
+                if (accepted) { stages.report(fast); return fast; }
+            } catch (const std::exception& error) {
+                fast_scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0, error.what());
+            }
+            stages.add(fast);
         }
         try {
             result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, nullptr, limits);
