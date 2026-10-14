@@ -9,7 +9,8 @@ dependent coding. Scope readiness to the slice being built: its equations,
 consumed inputs and falsifying checks come before implementation. Line
 allowances follow [code budgets](../scientific/code-budgets.md). Size a slice to
 deliver within a few rounds; split a growing issue into child issues that merge
-independently.
+independently. Each PR closes its issue; work left over gets a new issue before
+the merge ([roadmap skill](../../.agents/skills/manage-github-roadmap/SKILL.md#handoff-and-completion)).
 
 **Merge current main at the start of every build round.**
 

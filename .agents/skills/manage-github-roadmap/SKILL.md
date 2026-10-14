@@ -71,9 +71,10 @@ when its acceptance is supported. Reopen it when delivery or qualification is
 invalidated. Automatic unblocking publishes readiness; it never starts work,
 pushes, merges, or expands authority.
 
-A PR that completes a leaf's last acceptance criterion says `Closes #N`; a PR that
-delivers a slice says `Refs #N`. Merging does not finish the handoff: in the same
-closeout, rewrite the issue body's current state and remaining criteria (replace,
-do not append dated blocks), remove the PR's `work:review` and `work:claimed`
+Every PR closes its issue (owner, 2026-10-14): its body says `Closes #N`, and it
+merges only when that issue is done. A slice, follow-up or leftover correction gets
+its own new issue before its PR merges; never merge a PR that leaves its issue open.
+In the same closeout, write the delivered state into the issue
+(replace, do not append dated blocks), remove the PR's `work:review` and `work:claimed`
 labels, and run the reconciler with `--apply` (without it the tool only previews). A comment alone is not a handoff.
 On closing #N, run `git grep -nw '#N' -- docs engine/docs 'analyses/**/README.md'` and update every statement that #N is open or pending.
