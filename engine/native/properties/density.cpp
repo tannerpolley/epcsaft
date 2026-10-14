@@ -807,78 +807,34 @@ std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, b
     }
 }
 
-// The anchored Newton of `anchor`, whose local uniqueness comes from one window edge instead of the window scan:
-// under the single slope minimum P_rho is monotone on a window that excludes rho_m (the edge facing rho_m has the
-// root's curvature sign), so a positive P_rho at that edge leaves one stable root in the window. Nullopt hands
-// every other outcome to `anchor`.
-std::optional<DensityRoot> anchored_edge(
-    const PressureSeries& series, double temperature, double pressure,
-    const std::vector<double>& composition, DensityBranch branch, double lower, double upper,
-    double density, std::size_t& evaluations, core::Scope& scope
-) {
-    const double window = policy::DENSITY_ANCHOR_LOG_WINDOW.value, log_anchor = std::log(density);
-    const double local_lower = std::exp(std::max(std::log(lower), log_anchor - window));
-    const double local_upper = std::exp(std::min(std::log(upper), log_anchor + window));
-    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
-    Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope);
-    const auto sample = [&](double rho) {
-        iso.at(rho);
-        return *std::find_if(iso.samples().begin(), iso.samples().end(), [&](const Sample& s) { return s.density == rho; });
-    };
-    try {
-        for (std::size_t iteration = 0; iteration < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value); ++iteration) {
-            const Sample s = sample(density);
-            const double derivative = residual_derivative(s.point, density, pressure, temperature);
-            if (!std::isfinite(derivative) || derivative == 0.0) return std::nullopt;
-            if (std::abs(s.point.residual) <= tolerance && s.point.slope > 0.0) {
-                const Sample edge = sample(s.curvature > 0.0 ? local_lower : local_upper);
-                if ((edge.curvature > 0.0) != (s.curvature > 0.0) || !(edge.point.slope > 0.0)) return std::nullopt;
-                Sample low = s, high = s;
-                if (s.point.residual != 0.0) {
-                    const double past = s.point.residual < 0.0 ? 1.0 : -1.0;
-                    const double endpoint = density - s.point.residual / derivative + past * 0.25 * tolerance / std::abs(derivative);
-                    if (!(endpoint >= local_lower && endpoint <= local_upper)) return std::nullopt;
-                    const Sample q = sample(endpoint);
-                    if (!(q.point.residual * s.point.residual < 0.0)) return std::nullopt;
-                    (past > 0.0 ? high : low) = q;
-                }
-                auto result = refine(series, temperature, pressure, composition, low.density, low.point, high.density,
-                                     high.point, scope, evaluations);
-                result.branch = branch;
-                result.convergence.iterations += iteration + 1;
-                result.convergence.evaluations = evaluations;
-                result.iterations = result.convergence.iterations;
-                return result;
-            }
-            const double candidate = density - s.point.residual / derivative;
-            if (!(candidate > local_lower && candidate < local_upper) || !std::isfinite(candidate)) return std::nullopt;
-            density = candidate;
-        }
-    } catch (const StructureBroken&) {
-    }
-    return std::nullopt;
-}
-
 DensityRoot anchor(
     const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, DensityBranch branch, double lower, double upper,
     double density, std::size_t& evaluations
 ) {
     core::Scope anchor_scope("density_anchor");
-    if (auto root = anchored_edge(model, temperature, pressure, composition, branch, lower, upper, density, evaluations, anchor_scope)) {
-        anchor_scope.finish(root->convergence);
-        return *root;
-    }
     const double window = policy::DENSITY_ANCHOR_LOG_WINDOW.value, log_anchor = std::log(density);
     const double local_lower = std::exp(std::max(std::log(lower), log_anchor - window));
     const double local_upper = std::exp(std::min(std::log(upper), log_anchor + window));
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
+    Isotherm iso(model, temperature, pressure, lower, upper, evaluations, anchor_scope);
+    bool certificate_available = true;
+    const auto sample = [&](double rho) {
+        iso.at(rho);
+        return *std::find_if(iso.samples().begin(), iso.samples().end(), [&](const Sample& s) { return s.density == rho; });
+    };
     core::ResidualHistory history;
     core::Convergence anchor_record;
     std::size_t iteration = 0;
     for (; iteration < maximum; ++iteration) {
-        const auto point = at_density(model, temperature, pressure, composition, density,
-                                      evaluations, DerivativeOrder::PressureSlope);
+        std::optional<Sample> current;
+        if (certificate_available) {
+            try { current = sample(density); }
+            catch (const StructureBroken&) { certificate_available = false; }
+        }
+        const auto point = current ? current->point
+            : at_density(model, temperature, pressure, composition, density,
+                         evaluations, DerivativeOrder::PressureSlope);
         history.push(std::abs(point.residual));
         const double derivative = residual_derivative(point, density, pressure, temperature);
         const double candidate = std::isfinite(derivative) && derivative != 0.0
@@ -895,15 +851,41 @@ DensityRoot anchor(
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
-            auto roots = scan_roots(model, temperature, pressure, composition,
-                std::log(local_lower), std::log(local_upper),
-                static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
-                anchor_scope, evaluations);
-            roots.erase(std::remove_if(roots.begin(), roots.end(),
-                [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
-            anchor_record.evaluations = evaluations;
-            if (roots.size() == 1) {
-                auto result = roots.front();
+            // A positive edge slope certifies the local window only under the single slope minimum.
+            // Every unproved case uses the inherited local scan, without restarting Newton.
+            const auto certificate = [&]() -> std::optional<DensityRoot> {
+                if (!current || !std::isfinite(derivative) || derivative == 0.0) return std::nullopt;
+                try {
+                    const Sample edge = sample(current->curvature > 0.0 ? local_lower : local_upper);
+                    if ((edge.curvature > 0.0) != (current->curvature > 0.0) || !(edge.point.slope > 0.0)) return std::nullopt;
+                    Sample low = *current, high = *current;
+                    if (point.residual != 0.0) {
+                        const double past = point.residual < 0.0 ? 1.0 : -1.0;
+                        const double endpoint = candidate + past * 0.25 * anchor_record.criterion->value / std::abs(derivative);
+                        if (!(endpoint >= local_lower && endpoint <= local_upper)) return std::nullopt;
+                        const Sample q = sample(endpoint);
+                        if (!(q.point.residual * point.residual < 0.0)) return std::nullopt;
+                        (past > 0.0 ? high : low) = q;
+                    }
+                    return refine(model, temperature, pressure, composition, low.density, low.point, high.density,
+                                  high.point, anchor_scope, evaluations);
+                } catch (const StructureBroken&) {
+                    return std::nullopt;
+                }
+            };
+            std::optional<DensityRoot> selected = certificate();
+            if (!selected) {
+                auto roots = scan_roots(model, temperature, pressure, composition,
+                    std::log(local_lower), std::log(local_upper),
+                    static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
+                    anchor_scope, evaluations);
+                roots.erase(std::remove_if(roots.begin(), roots.end(),
+                    [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
+                anchor_record.evaluations = evaluations;
+                if (roots.size() == 1) selected = roots.front();
+            }
+            if (selected) {
+                auto result = *selected;
                 result.branch = branch;
                 result.convergence.iterations += iteration + 1;
                 result.convergence.evaluations = evaluations;

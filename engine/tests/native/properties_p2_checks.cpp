@@ -206,6 +206,7 @@ void p2_density_series() {
                 close(calculated[k],exact[k],1e-10),"p2-volume-series",item.name,"V^k Phi_V...V","T,V,n","series=tape","order");
             double best = std::numeric_limits<double>::infinity(), best_step = 0.0, previous = best;
             bool decreasing = false;
+            std::vector<double> steps, errors;
             for (double h : {1e-2,3e-3,1e-3,3e-4,1e-4,3e-5}) {
                 const auto plus=model.evaluate(item.temperature,volume*std::exp(h),item.composition,epcsaft::DerivativeOrder::Hessian);
                 const auto minus=model.evaluate(item.temperature,volume*std::exp(-h),item.composition,epcsaft::DerivativeOrder::Hessian);
@@ -213,12 +214,14 @@ void p2_density_series() {
                     return k==0 ? d.value : k==1 ? d.gradient[1] : d.hessian[d.gradient.size()+1]; };
                 const double measured=std::pow(volume,static_cast<int>(k))*(lower(plus)-lower(minus))/(2*h);
                 const double error=std::abs(measured-exact[k])/std::max(1.0,std::abs(exact[k]));
-                decreasing = decreasing || error < previous; previous=error;
+                decreasing = decreasing || (std::isfinite(previous) && std::isfinite(error) && error < previous); previous=error;
+                steps.push_back(h); errors.push_back(error);
                 if(error<best) { best=error; best_step=h; }
             }
             const double limit=k==2 ? 1e-5 : 1e-6;
             recording_support::compare((std::string("volume-stencil/")+item.name+"/"+std::to_string(k+1)).c_str(),
-                "scaled_error","1",best,0.0,recording_support::fields({inputs,recording_support::field("log_volume_step",best_step)}),
+                "scaled_error","1",best,0.0,recording_support::fields({inputs,recording_support::field("log_volume_step",best_step),
+                    recording_support::field("log_volume_steps",steps), recording_support::field("scaled_errors",errors)}),
                 "Relationship","symmetric-log-volume-stencil","successive lower-derivative differences verify the exact volume derivative",
                 "absolute",limit,0.0,decreasing&&best<=limit,"p2-volume-stencil",item.name,"scaled error","T,V,n","d/dlnV=V d/dV","order");
         }
@@ -251,22 +254,26 @@ void p2_decane_fallback() {
     constexpr double reference=0.9036845021232373, dense_reference=6174.391235069097;
     CHECK(model.state(135.0,dense_reference,composition).pressure_density_derivative>0.0);
     for(const auto branch : {epcsaft::DensityBranch::Vapor,epcsaft::DensityBranch::Liquid}) {
-        epcsaft::core::Capture capture(true);
-        epcsaft::DensityRoot sibling;
-        const auto root=epcsaft::solve_density(model,135.0,1000.0,composition,branch,std::nullopt,&sibling);
-        const auto trace=capture.take();
-        bool fallback=false;
-        for(const auto& e:trace.events) fallback=fallback||(std::string(e.name)=="structured_broken"&&e.reason=="curvature or slope order");
-        const bool ok=close(root.molar_density,reference,1e-10)&&root.stable_root_count==1
-            &&root.branch==epcsaft::DensityBranch::Unspecified&&sibling.branch==root.branch
-            &&close(sibling.molar_density,reference,1e-10)&&fallback;
-        recording_support::compare(branch==epcsaft::DensityBranch::Vapor ? "decane/vapor" : "decane/liquid",
-            "molar_density","mol/m3",root.molar_density,reference,recording_support::fields({
-                model_inputs(parameters,135.0,1.0/root.molar_density,composition),recording_support::field("P_star",1000.0),
-                recording_support::field("dense_diagnostic_root",dense_reference),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
-                recording_support::field("fallback",fallback)}),"Relationship","current-main-scan",
-            "both requests preserve the inherited dilute sole root after a structure contradiction", "reference_or_one",0.0,1e-10,ok,
-            "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","scan-selected sole root","case");
+        for (const bool request_sibling : {false, true}) {
+            epcsaft::core::Capture capture(true);
+            epcsaft::DensityRoot sibling;
+            const auto root=epcsaft::solve_density(model,135.0,1000.0,composition,branch,std::nullopt,request_sibling ? &sibling : nullptr);
+            const auto trace=capture.take();
+            bool fallback=false;
+            for(const auto& e:trace.events) fallback=fallback||(std::string(e.name)=="structured_broken"&&e.reason=="curvature or slope order");
+            const bool ok=close(root.molar_density,reference,1e-10)&&root.stable_root_count==1
+                &&root.branch==epcsaft::DensityBranch::Unspecified
+                &&(!request_sibling || (sibling.branch==root.branch && close(sibling.molar_density,reference,1e-10)))&&fallback;
+            recording_support::compare(branch==epcsaft::DensityBranch::Vapor
+                    ? (request_sibling ? "decane/vapor-sibling" : "decane/vapor")
+                    : (request_sibling ? "decane/liquid-sibling" : "decane/liquid"),
+                "molar_density","mol/m3",root.molar_density,reference,recording_support::fields({
+                    model_inputs(parameters,135.0,1.0/root.molar_density,composition),recording_support::field("P_star",1000.0),
+                    recording_support::field("dense_diagnostic_root",dense_reference),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
+                    recording_support::field("fallback",fallback), recording_support::field("request_sibling",request_sibling)}),"Relationship","current-main-scan",
+                "both requests preserve the inherited dilute sole root after a structure contradiction", "reference_or_one",0.0,1e-10,ok,
+                "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","scan-selected sole root","case");
+        }
     }
 }
 
@@ -735,24 +742,29 @@ void properties_p2() {
         "rho_anchor_l=rho_l", "case");
 
     // The certificate covers only the offered local window, including its final bracket.
-    for (const double offset : {-1e-11, 1e-3}) {
+    for (const double offset : {-1e-11, 1e-13}) {
         const double offered=cold_vapor.molar_density*std::exp(-epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value+offset);
         const double edge=offered*std::exp(epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value);
         bool returned=false, confined=false;
-        double density=0.0;
+        double density=0.0, bracket_lower=0.0, bracket_upper=0.0, residual=0.0;
         epcsaft::core::Capture capture(true);
         try {
             const auto root=epcsaft::solve_density(ethane,280.0,1e6,composition,epcsaft::DensityBranch::Vapor,offered);
-            returned=true; density=root.molar_density;
+            returned=true; density=root.molar_density; residual=root.convergence.residual;
             confined=density<=edge&&close(density,cold_vapor.molar_density,1e-10);
             for(const auto& event:capture.trace().events)
-                if(std::string(event.name)=="density_root_bracket") confined=confined&&event.values[1]<=edge;
+                if(std::string(event.name)=="density_root_bracket") {
+                    bracket_lower=event.values[0]; bracket_upper=event.values[1];
+                    confined=confined&&event.values[1]<=edge;
+                }
         } catch(const std::runtime_error&) {}
         const bool inside=offset>0.0, ok=inside ? returned&&confined : !returned;
         recording_support::compare_custom((std::string("anchor/window-edge/")+(offset>0.0?"inside":"outside")).c_str(),
             "admitted","bool",returned?1.0:0.0,inside?1.0:0.0,recording_support::fields({anchor_inputs,
                 recording_support::field("offered_density",offered),recording_support::field("upper_edge",edge),
-                recording_support::field("offset",offset),recording_support::field("returned_density",density)}),
+                recording_support::field("offset",offset),recording_support::field("returned_density",density),
+                recording_support::field("bracket_lower",bracket_lower),recording_support::field("bracket_upper",bracket_upper),
+                recording_support::field("residual",residual)}),
             "Availability","local-window","the selected crossing and its refine bracket stay inside the local window",
             "absolute",ok,"p2-anchor-window",inside?"inside":"outside","admitted","T,P,x,anchor","root in window","case");
     }
