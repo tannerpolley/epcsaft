@@ -27,6 +27,23 @@ using detail::family_values;
 
 }  // namespace
 
+std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate) {
+    std::array<double, 4> direction{};
+    if (coordinate.coefficient == ReactionCoefficient::EnthalpyShift) {
+        require(std::isfinite(coordinate.pivot_temperature) && coordinate.pivot_temperature > 0.0, "enthalpy shift pivot temperature");
+        // EqID: reaction_constant_coordinate_derivative
+        direction = {1.0 / (GAS_CONSTANT_J_PER_MOL_K * coordinate.pivot_temperature), -1.0 / GAS_CONSTANT_J_PER_MOL_K, 0.0, 0.0};
+    } else direction.at(static_cast<std::size_t>(coordinate.coefficient)) = 1.0;
+    return direction;
+}
+
+// EqID: reaction_constant_log10_reciprocal
+std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law) {
+    core::Scope scope("reaction_log10_reciprocal");
+    require(law.c == 0.0 && std::isfinite(law.a) && std::isfinite(law.b) && std::isfinite(law.d), "law is not a finite negative log10 reciprocal polynomial");
+    return {-law.b / std::log(10.0), -law.a / std::log(10.0), -law.d / std::log(10.0)};
+}
+
 std::vector<ActiveParameter> CoordinateSet::active_parameters() const {
     std::vector<ActiveParameter> result;
     for (const auto& coordinate : coordinates)
@@ -56,8 +73,12 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             const auto check = [&](bool ok, const char* cause) {
                 if (!ok) throw std::invalid_argument("reaction coordinate " + target.name + ": " + cause);
             };
-            check(static_cast<std::size_t>(target.coefficient) < 4, "unknown coefficient");
+            check(static_cast<std::size_t>(target.coefficient) <= 4, "unknown coefficient");
             check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
+            const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
+            (void)reaction_direction(target);
+            for (const auto& other : coordinates) if (&other != &coordinate && other.reaction && other.reaction->name == target.name)
+                check(!shift && other.reaction->coefficient != ReactionCoefficient::EnthalpyShift, "overlapping enthalpy shift");
             const equilibrium::ReactionSpec* prior = nullptr;
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
             std::vector<const equilibrium::EquilibriumProblem*> problems;
@@ -77,6 +98,8 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
                     check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
                     check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
+                    if (shift) check(reaction.correlation && target.pivot_temperature >= reaction.correlation->temperature_min
+                        && target.pivot_temperature <= reaction.correlation->temperature_max, "enthalpy shift pivot outside correlation interval");
                     check(reaction.reference || !thermochemistry || !reaction_thermochemistry_density(*thermochemistry,
                           reaction.stoichiometry, problem.temperature.value), "K fixed by thermochemistry");
                     if (prior) {
@@ -102,7 +125,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                         prior = &reaction;
                         prior_problem = &problem;
                         auto law = reaction.correlation.value_or(ReactionLogPolynomial{});
-                        first = reaction.correlation ? coefficient(law, target.coefficient) : std::log(reaction.equilibrium_constant.value());
+                        first = shift ? 0.0 : reaction.correlation ? coefficient(law, target.coefficient) : std::log(reaction.equilibrium_constant.value());
                     }
                 }
             }
@@ -192,7 +215,8 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     return parameters;
 }
 
-void CoordinateSet::apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const {
+std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const {
+    std::map<std::string, ReactionLogPolynomial> laws;
     const auto values = physical(optimizer);
     const auto order = tie();
     std::vector<equilibrium::EquilibriumProblem*> problems;
@@ -206,10 +230,19 @@ void CoordinateSet::apply(std::vector<Observation>& observations, const std::vec
         for (auto* problem : problems)
             for (auto& reaction : problem->reactions) {
                 if (reaction.name != target->name) continue;
-                if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
+                if (target->coefficient == ReactionCoefficient::EnthalpyShift) {
+                    require(reaction.correlation.has_value(), "enthalpy shift needs a correlation");
+                    const auto direction = reaction_direction(*target);
+                    if (values[row] != 0.0) {
+                        reaction.correlation->a += values[row] * direction[0];
+                        reaction.correlation->b += values[row] * direction[1];
+                    }
+                    laws.emplace(target->name, *reaction.correlation);
+                } else if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
                 else reaction.equilibrium_constant = std::exp(values[row]);
             }
     }
+    return laws;
 }
 
 void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations,

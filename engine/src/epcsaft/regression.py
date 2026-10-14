@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from typing import overload
+from typing import Any, overload
 
 from . import _core
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
-    ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
+    ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure, reaction_log10_reciprocal,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
 from .equilibrium import Discover, Problem
@@ -50,7 +50,7 @@ _KINDS = {
 __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
-           "predict", "reaction_coordinate", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
+           "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "hydration_hold", "evaluate_coordinates", "evaluate_checks")
 
 
@@ -105,6 +105,16 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
     result = Coordinate()
     result.reaction, result.origin, result.scale = target, origin, scale
     result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
+    return result
+
+
+def reaction_enthalpy_shift(name: str, *, pivot_temperature: float, origin: float, scale: float,
+                            bounds: tuple[float, float]) -> Coordinate:
+    """Shift source reaction enthalpy (J/mol), preserving supplied ln K at the required pivot (K)."""
+    result = reaction_coordinate(name, "a", origin=origin, scale=scale, bounds=bounds)
+    assert result.reaction is not None
+    result.reaction.coefficient = _core.ReactionCoefficient.EnthalpyShift
+    result.reaction.pivot_temperature = pivot_temperature
     return result
 
 
@@ -185,8 +195,18 @@ def predict(model: Mixture | Pure, item: Observation) -> Prediction:
     return _core.predict(model._model, item)
 
 
-def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradient:
-    """d(value)/d(theta) per active parameter of the model, in its active order, at a fresh prediction."""
+def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequence[Coordinate],
+                  observations: Sequence[Observation] | None = None, *, optimizer: Sequence[float] | None = None,
+                  thermochemistry: ThermochemistryRecord | None = None,
+                  holds: Sequence[HydrationHold] | None = None) -> Any:
+    """Exact native columns; coordinate-aware residual columns have unit observation weights."""
+    if isinstance(model, Parameters):
+        if isinstance(item, Observation) or observations is None or optimizer is None:
+            raise ParameterError("coordinate differentiation needs coordinates and observations")
+        return _core.evaluate_observations(model._native, list(item), list(optimizer), list(holds or ()),
+                                           list(observations), thermochemistry)
+    if not isinstance(item, Observation):
+        raise ParameterError("model differentiation needs one observation")
     return _core.differentiate(model._model, item)
 
 

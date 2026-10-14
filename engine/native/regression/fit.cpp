@@ -102,7 +102,7 @@ FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)
 FIELDS(ThermochemistryRecord, a, b)
 FIELDS(CoordinateTarget, a, b, c)
-FIELDS(ReactionCoordinate, a, b)
+FIELDS(ReactionCoordinate, a, b, c)
 FIELDS(Coordinate, a, b, c, d, e, f)
 FIELDS(equilibrium::PhaseSpec, a, b, c, d, e, f, g)
 FIELDS(equilibrium::FeedSpec, a, b, c, d)
@@ -383,9 +383,10 @@ struct ObservationEvaluator::Impl final {
         std::size_t i = 0;
         try {
             auto observations = request_.observations;
-            request_.coordinates.apply(observations, optimizer);
+            auto reaction_laws = request_.coordinates.apply(observations, optimizer);
             if (!same_point) {
                 trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, optimizer, request_.holds, request_.thermochemistry);
+                trial.chart.reaction_laws = std::move(reaction_laws);
                 trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry);
                 trial.centers.assign(groups_.size(), Prediction{});
             }
@@ -501,6 +502,11 @@ void serve_fit(int fd) {
 }
 
 ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows) {
+    for (const auto& coordinate : request.coordinates.coordinates)
+        if (coordinate.reaction && coordinate.reaction->coefficient == ReactionCoefficient::EnthalpyShift) {
+            validate(request.coordinates, request.parameters, request.observations, request.thermochemistry);
+            break;
+        }
     std::vector<double> selection(request.observations.size(), 0.0);
     for (const auto row : rows) { require(row < selection.size(), "evaluator row"); selection[row] = 1.0; }
     impl_ = std::make_shared<Impl>(request, failures, state_groups(request.observations), selection);
@@ -981,6 +987,9 @@ FitResult fit(const FitRequest& request) {
 
 std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds) {
+    for (const auto& coordinate : request.coordinates.coordinates)
+        require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
+            "reaction enthalpy shift is not supported in fit_sequence (starts)");
     require(iterations > 0 && std::isfinite(seconds) && seconds > 0.0, "shared fit budgets");
     const auto begin = std::chrono::steady_clock::now();
     std::vector<FitResult> results;

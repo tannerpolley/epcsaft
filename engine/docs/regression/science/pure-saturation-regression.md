@@ -179,6 +179,16 @@ products. Apparent-Cp fitting consumes Equilibrium H A2(T,coordinate), including
 phase-product terms. Physical increments are divided out once before affine
 ties, residual slopes and weights. No outer coefficient Hessian is consumed.
 
+`regression.reaction_enthalpy_shift(name, pivot_temperature=..., origin=...,
+scale=..., bounds=...)` uses that same native chain for the fixed-pivot direction
+in `reaction_constant_coordinate_derivative`. Pivot temperature is required in K;
+origin, scale, bounds and the physical result are in J/mol. Ordinary least squares
+and coordinate-aware `regression.differentiate` admit the declaration; sequence
+starts and minimax refuse it. The point reader's residual columns have unit
+weights. `result.chart.reaction_laws[name]` gives the fitted native correlation;
+`regression.reaction_log10_reciprocal(law)` supplies $(A,B,C)$ for the declared
+negative base-10 reciprocal form. Replay preserves caller-owned source metadata.
+
 ## Prediction Jacobians and fitting (R2, R3)
 
 $\partial y/\partial\theta$ comes from the shared owners only: the Properties

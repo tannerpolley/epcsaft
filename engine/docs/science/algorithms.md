@@ -2062,6 +2062,18 @@ unit-weight residual columns in `residual_optimizer_gradient`. Difference scale 
 gives dr/dv = (dy/dv)/a; natural-log LogRatio gives dr/dv = (dy/dv)/y.
 The Ceres Jacobian also includes square-root row weights. Minimax consumes
 prediction columns and applies its own native check-error slopes.
+`reaction_enthalpy_shift` declares one source enthalpy increment in J/mol and
+a required finite positive pivot in K within each supplied correlation interval.
+Its form-free direction is the derived instance in
+`reaction_constant_coordinate_derivative`. Every trial applies it once to its
+fresh observation copy; zero shift preserves the supplied coefficients.
+It starts at physical zero, refuses another coordinate on the same reaction,
+and retains the existing named and species-reference admission in point readers.
+The fitted chart publishes the native law by reaction name, alongside the
+existing physical shift row. The native `reaction_log10_reciprocal` helper
+returns its decadic coefficients and refuses $c\ne0$.
+Sequence starts and minimax explicitly refuse this coordinate; their existing
+coefficient and EOS charts retain their behavior.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact

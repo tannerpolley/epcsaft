@@ -64,7 +64,8 @@ void register_regression(py::module_& module) {
         EPCSAFT_READONLY(HoldResult, energy_error, correction, uncertainty, derivative, parameter_derivative,
             iterations);
     py::class_<EvaluatedCoordinates>(module, "EvaluatedCoordinates")
-        EPCSAFT_READONLY(EvaluatedCoordinates, parameters, active, physical, map, holds);
+        EPCSAFT_READONLY(EvaluatedCoordinates, parameters, active, physical, map, holds, reaction_laws);
+    module.def("reaction_log10_reciprocal", &reaction_log10_reciprocal, py::arg("law"));
     py::class_<CheckGroup>(module, "CheckGroup")
         .def(py::init<>())
         EPCSAFT_READWRITE(CheckGroup, name, rows, metric, maximum, mean, baseline, report_only);
@@ -77,10 +78,10 @@ void register_regression(py::module_& module) {
     py::class_<PredictionGradient>(module, "PredictionGradient")
         EPCSAFT_READONLY(PredictionGradient, value, status, message);
     py::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
-        EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D);
+        EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     py::class_<ReactionCoordinate>(module, "ReactionCoordinate")
         .def(py::init<>())
-        EPCSAFT_READWRITE(ReactionCoordinate, name, coefficient);
+        EPCSAFT_READWRITE(ReactionCoordinate, name, coefficient, pivot_temperature);
     py::class_<CoordinateTarget>(module, "CoordinateTarget")
         .def(py::init<>())
         EPCSAFT_READWRITE(CoordinateTarget, family, indices, coefficient);

@@ -1008,10 +1008,12 @@ class ReactionCoefficient:
     B: ReactionCoefficient
     C: ReactionCoefficient
     D: ReactionCoefficient
+    EnthalpyShift: ReactionCoefficient
 
 class ReactionCoordinate:
     name: str
     coefficient: ReactionCoefficient
+    pivot_temperature: float
 
 class CoordinateTarget:
     family: ParameterFamily
@@ -1179,6 +1181,7 @@ class HoldResult:
     iterations: int
 
 class EvaluatedCoordinates:
+    reaction_laws: dict[str, ReactionLogPolynomial]
     parameters: Parameters
     active: list[ActiveParameter]
     physical: list[float]
@@ -1268,3 +1271,5 @@ class EquilibriumStartsResult:
     budget_exhausted: bool
 
 def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem, starts: list[EquilibriumStart], limits: EquilibriumWorkLimits) -> EquilibriumStartsResult: ...
+
+def reaction_log10_reciprocal(law: ReactionLogPolynomial) -> list[float]: ...

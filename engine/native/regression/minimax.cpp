@@ -295,6 +295,9 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
     FitResult failures;
     try {
+        for (const auto& coordinate : request.coordinates.coordinates)
+            require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
+                "reaction enthalpy shift is not supported in minimax");
         validate_fit_request(request);
         const auto frozen = evaluate_checks(request, request.baseline.value_or(request.parameters));
         std::vector<std::size_t> selected = request.minimax->targets;
