@@ -45,7 +45,6 @@ language_backend: LSP
 language_servers:
 - python
 - cpp
-- scss
 - bash
 - powershell
 - html
