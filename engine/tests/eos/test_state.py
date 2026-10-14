@@ -434,3 +434,14 @@ def test_association_topology_is_order_independent_and_typed() -> None:
     invalid_subset["topology"]["edges"][2]["endpoint_b"]["site_id"] = "missing"
     with pytest.raises(ParameterError, match="missing topology site water/missing"):
         Parameters.from_mapping(invalid_subset, components=("ethanol", "water"))
+
+
+def test_density_anchor_outside_domain_keeps_native_convergence_failure() -> None:
+    from epcsaft import ConvergenceError, EosError
+    from tests.native_inputs import ETHANE, parameters
+
+    model = Pure(parameters((ETHANE,)))
+    anchor = model.state(200.0, rho=1.0e-15)
+    with pytest.raises(ConvergenceError, match="left_domain: residual 0") as failure:
+        model.state(200.0, P=1.0e5, phase="liquid", anchor=anchor)
+    assert isinstance(failure.value, EosError)

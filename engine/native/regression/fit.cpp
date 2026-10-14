@@ -85,13 +85,24 @@ struct Failure final {
     std::string message;
 };
 
-bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
+FitHost fit_host;
 
-// This binary, opened as it loads: workers run the loaded image even after a rebuild replaces its file.
-const int loaded_image = [] {
+bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
+int extension_image = -1;
+
+// Sources stay above inherited fd 3/4 so spawn's descriptor copies cannot overwrite one another.
+int open_image(const void* address) {
     Dl_info image{};
-    return dladdr(reinterpret_cast<void*>(&interrupted), &image) ? open(image.dli_fname, O_RDONLY | O_CLOEXEC) : -1;
-}();
+    if (!dladdr(address, &image)) return -1;
+    const int opened = open(image.dli_fname, O_RDONLY | O_CLOEXEC);
+    if (opened < 0) return -1;
+    const int retained = fcntl(opened, F_DUPFD_CLOEXEC, 5);
+    close(opened);
+    return retained;
+}
+
+// Pin the mapped inode before an incremental link can replace the on-disk file.
+const int native_image = open_image(reinterpret_cast<const void*>(&interrupted));
 
 // Every member of a request aggregate in declaration order, named by position: the structured binding stops
 // compiling when a member is added or removed, so a worker's request cannot silently omit one.
@@ -216,6 +227,17 @@ struct Workers final {
 
 }  // namespace
 
+void set_fit_host(FitHost host, const void* extension) {
+    const int image = open_image(extension);
+    if (!host.worker.empty() && (image < 0 || native_image < 0)) {
+        if (image >= 0) close(image);
+        throw std::runtime_error("fit worker images unavailable");
+    }
+    if (extension_image >= 0) close(extension_image);
+    extension_image = image;
+    fit_host = std::move(host);
+}
+
 // One successful point owns its immutable model and compiled central states through later promotion.
 // Worker processes each evaluate a fixed share of the rows and keep that share's starts and centers;
 // every process publishes only when the whole evaluation succeeds.
@@ -229,7 +251,7 @@ struct ObservationEvaluator::Impl final {
     // one reference cache and stay here, as does every row under a trace capture or in a native host.
     void start_workers(int requested) {
         interruptible_ = true;
-        const std::size_t count = core::active_trace || fit_host.worker.empty() || loaded_image < 3 ? 1
+        const std::size_t count = core::current_trace() || fit_host.worker.empty() ? 1
             : requested > 0 ? static_cast<std::size_t>(requested) : std::max(1u, std::thread::hardware_concurrency());
         std::size_t rank = 0;
         for (std::size_t i = 0; i < groups_.size(); ++i)
@@ -242,13 +264,14 @@ struct ObservationEvaluator::Impl final {
             int pair[2];
             if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
             workers_.sockets.push_back(pair[0]);
-            // The worker keeps its socket end as fd 0, this image as fd 3 and the standard streams. Its own
+            // The worker keeps its socket end as fd 0, the extension/native images as fd 3/4 and the standard streams. Its own
             // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
             posix_spawn_file_actions_t actions;
             posix_spawn_file_actions_init(&actions);
             posix_spawn_file_actions_adddup2(&actions, pair[1], 0);
-            posix_spawn_file_actions_adddup2(&actions, loaded_image, 3);
-            posix_spawn_file_actions_addclosefrom_np(&actions, 4);
+            posix_spawn_file_actions_adddup2(&actions, extension_image, 3);
+            posix_spawn_file_actions_adddup2(&actions, native_image, 4);
+            posix_spawn_file_actions_addclosefrom_np(&actions, 5);
             posix_spawnattr_t attributes;
             posix_spawnattr_init(&attributes);
             posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);

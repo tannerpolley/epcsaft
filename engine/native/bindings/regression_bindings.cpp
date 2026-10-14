@@ -23,12 +23,14 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 }  // namespace
 
 void register_regression(py::module_& module) {
-    // Fit workers rerun this interpreter on the extension image they inherit as fd 3 (#380).
+    FitHost host;
     if (const auto python = py::module_::import("sys").attr("executable"); !python.is_none() && py::len(python) > 0)
-        fit_host.worker = {python.cast<std::string>(), "-I", "-c", "import importlib.machinery as i, importlib.util as u; "
+        host.worker = {python.cast<std::string>(), "-I", "-c", "import ctypes, importlib.machinery as i, importlib.util as u; "
+            "native = ctypes.CDLL('/proc/self/fd/4', mode=ctypes.RTLD_GLOBAL); "
             "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', '/proc/self/fd/3')); "
             "m = u.module_from_spec(s); s.loader.exec_module(m); m._serve_fit()"};
-    fit_host.interrupted = [] { return PyErr_CheckSignals() != 0; };
+    host.interrupted = [] { return PyErr_CheckSignals() != 0; };
+    set_fit_host(std::move(host), reinterpret_cast<const void*>(&register_regression));
     py::register_exception_translator([](std::exception_ptr error) {
         try { if (error) std::rethrow_exception(error); } catch (const FitInterrupted&) {}  // the poll raised KeyboardInterrupt
     });

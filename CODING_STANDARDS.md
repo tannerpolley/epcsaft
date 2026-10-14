@@ -39,8 +39,9 @@ Use Numerical Verification-Driven Development:
 ## Engine runtime shape
 
 - `engine/` is the sole `epcsaft` runtime: one Python build, one Meson graph,
-  one version, one Python-free native archive and one extension, with
-  `ARCHITECTURE.yaml` dependency direction.
+  one version, one Python-free native shared library and one extension. ASL alone
+  uses a private archive from the same PIC objects. Follow `ARCHITECTURE.yaml`
+  dependency direction.
 - Compatibility imports, alternate package identities, hidden physical defaults
   and a public C++ ABI each need an approved scope change and a real external
   consumer.

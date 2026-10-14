@@ -168,8 +168,8 @@ struct FitHost final {
     std::vector<std::string> worker;
     bool (*interrupted)() = nullptr;
 };
-inline FitHost fit_host;
-struct FitInterrupted final {};
+void set_fit_host(FitHost host, const void* extension);
+struct __attribute__((visibility("default"))) FitInterrupted final {};
 [[noreturn]] void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
 FitResult fit(const FitRequest& request);
 std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,

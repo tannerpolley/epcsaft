@@ -334,6 +334,8 @@ public:
         std::optional<ThermochemistryRecord> thermochemistry = std::nullopt
     );
 
+    ~HelmholtzModel();
+
     HelmholtzDerivatives evaluate(
         double temperature,
         double volume,

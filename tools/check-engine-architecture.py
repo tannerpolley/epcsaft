@@ -68,7 +68,7 @@ def rule_one_archive() -> list[str]:
     extensions = len(re.findall(r"\bextension_module\s*\(", text))
     bad = []
     if archives != 1:
-        bad.append(f"meson.build declares {archives} static libraries, expected 1")
+        bad.append(f"meson.build declares {archives} PIC shared/private library pairs, expected 1")
     if extensions != 1:
         bad.append(f"meson.build declares {extensions} extensions, expected 1")
     return bad
@@ -103,6 +103,25 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
     )
     if leaked:
         return [f"{found[0].name} exports Python symbols: {leaked[:5]}"], True
+    if build_dir is not None:
+        ninja = (build_dir / "build.ninja").read_text().splitlines()
+        def link(name):
+            return next((line.split(" |", 1)[0].split()[3:] for line in ninja
+                         if line.startswith(f"build {name}: ")), [])
+        archive_objects = link("libepcsaft_native.a")
+        shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
+        if not archive_objects or archive_objects != shared_objects:
+            return ["native shared library and private archive do not reuse one PIC object set"], True
+        for line in ninja:
+            if line.startswith("build ") and ": cpp_LINKER " in line:
+                output = line.split()[1].removesuffix(":")
+                inputs = line.split()[3:]
+                if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
+                    return [f"private archive used outside ASL: {output}"], True
+        dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
+        exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
+        if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
+            return ["ASL private native copy is not localized"], True
     return [], True
 
 
@@ -484,7 +503,7 @@ def main() -> int:
 
     archive_findings, archive_built = rule_archive_is_python_free(arguments.build_dir)
     checks = [
-        ("one archive, one extension", rule_one_archive()),
+        ("one PIC object set, shared/private libraries, one extension", rule_one_archive()),
         (
             "archive is Python-free" if archive_built else "archive is Python-free (skipped, not built)",
             archive_findings,

@@ -37,7 +37,7 @@ struct Trace final {
     bool incomplete = false;
 };
 
-inline thread_local Trace* active_trace = nullptr;
+Trace*& current_trace() noexcept;
 
 template <typename Observation>
 void observe(Trace* trace, Observation&& observation) noexcept {
@@ -47,12 +47,12 @@ void observe(Trace* trace, Observation&& observation) noexcept {
 
 class Capture final {
 public:
-    explicit Capture(std::optional<bool> diagnostics = std::nullopt) noexcept : previous_(active_trace) {
+    explicit Capture(std::optional<bool> diagnostics = std::nullopt) noexcept : previous_(current_trace()) {
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;
-        active_trace = &trace_;
+        current_trace() = &trace_;
     }
-    ~Capture() { forward(); active_trace = previous_; }
+    ~Capture() { forward(); current_trace() = previous_; }
     Capture(const Capture&) = delete;
     Capture& operator=(const Capture&) = delete;
 
@@ -96,7 +96,7 @@ private:
 
 class Scope final {
 public:
-    explicit Scope(const char* name) noexcept : trace_(active_trace) {
+    explicit Scope(const char* name) noexcept : trace_(current_trace()) {
         if (trace_ == nullptr) return;
         const auto now = std::chrono::steady_clock::now();
         parent_ = trace_->current;
@@ -119,7 +119,8 @@ public:
     bool on() const noexcept { return trace_ != nullptr; }
     bool diagnostics_on() const noexcept { return on() && trace_->diagnostics; }
     static std::optional<Scope> detailed(const char* name) noexcept {
-        if (!active_trace || !active_trace->diagnostics) return std::nullopt;
+        const auto* trace = current_trace();
+        if (!trace || !trace->diagnostics) return std::nullopt;
         return std::optional<Scope>(std::in_place, name);
     }
     bool nested(const char* name) const noexcept {
