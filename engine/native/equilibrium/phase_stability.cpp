@@ -553,7 +553,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     const auto& phases = request.phases;
     const auto liquid = phases[0].kind == PhaseKind::Liquid ? 0u : 1u, vapor = 1u - liquid;
     if (phases[liquid].kind != PhaseKind::Liquid || phases[vapor].kind != PhaseKind::Vapor
-        || phases[liquid].amount.kind != AmountKind::Pinned || phases[liquid].amount.fraction != 0.0
+        || !phases[liquid].is_zero_pinned()
         || phases[vapor].amount.kind != AmountKind::Free
         || !std::all_of(phases.begin(), phases.end(), [&](const auto& phase) {
             return phase.composition_guess.empty() && !phase.packing_guess && phase.support.size() == c.feed_composition.size();

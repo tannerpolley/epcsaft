@@ -95,9 +95,7 @@ void register_equilibrium(py::module_& module) {
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_property_readonly("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     py::class_<PointEvaluation>(module, "PointEvaluation")
-        .def_readonly("values", &PointEvaluation::values)
-        .def_readonly("jacobian", &PointEvaluation::jacobian)
-        EPCSAFT_READONLY(PointEvaluation, objective, floor);
+        EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     py::class_<CompiledSystem>(module, "CompiledSystem")
         .def_property_readonly("rows", [](const CompiledSystem& system) { return system.rows; })
         EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
@@ -122,11 +120,9 @@ void register_equilibrium(py::module_& module) {
             multipliers,
             // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
-            constraint_multipliers, residuals, classified_residuals)
-        .def_readonly("sensitivity", &EquilibriumResult::sensitivity)
-        EPCSAFT_READONLY(EquilibriumResult, coordinates, phase_count, iterations, evaluations, hessian_calls, objective,
-            reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank, generic_nullity,
-            requested_tolerance_met, topology_event, topology_phase, topology_pair, critical);
+            constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
+            hessian_calls, objective, reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank,
+            generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical);
     py::class_<CriticalRecord>(module, "CriticalRecord")
         EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     py::class_<StabilityTrial>(module, "StabilityTrial")

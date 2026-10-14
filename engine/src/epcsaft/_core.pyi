@@ -660,7 +660,6 @@ class Row:
 
 class PointEvaluation:
     values: list[float]
-    jacobian: list[float]
     objective: float
     floor: float
 
@@ -704,7 +703,6 @@ class EquilibriumResult:
     constraint_multipliers: list[float]
     residuals: list[float]
     classified_residuals: list[float]
-    sensitivity: list[float]
     coordinates: list[float]
     phase_count: int
     iterations: int

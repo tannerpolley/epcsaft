@@ -22,7 +22,6 @@
 #include <exception>
 #include <limits>
 #include <memory>
-#include <numeric>
 #include <string>
 
 namespace epcsaft::equilibrium {
@@ -33,8 +32,6 @@ double polish_forward_bound(const std::vector<double>& jacobian, const std::vect
     const std::vector<double>& delta, const std::vector<double>& scale) {
     const auto n = static_cast<Eigen::Index>(delta.size());
     const double unavailable = std::numeric_limits<double>::infinity();
-    if (n == 0 || rows.size() != delta.size() || scale.size() != delta.size()
-        || jacobian.size() != delta.size() * delta.size()) return unavailable;
     const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian.data(), n, n);
     const Eigen::Map<const Eigen::VectorXd> d(delta.data(), n), r(rows.data(), n), D(scale.data(), n);
     if (!J.allFinite() || !d.allFinite() || !r.allFinite() || !D.allFinite() || !(D.minCoeff() > 0.0)) return unavailable;
@@ -89,10 +86,6 @@ Curvature reduced_curvature_at(
             std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm())};
 }
 
-bool zero_amount(const PhaseSpec& phase) {
-    return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
-}
-
 // Local phase stability (ALG-EQUILIBRIUM, #352) of a neutral nonreacting liquid/vapor pair with an incipient
 // zero-amount phase: every phase's M = D Q D, Q = F_nn at unit amount as in EqID critical_equations, D = diag
 // sqrt(x) on its support, may hold no resolved negative eigenvalue, lambda < -(||M v - lambda v|| + C eps ||M||_F).
@@ -100,7 +93,7 @@ bool zero_amount(const PhaseSpec& phase) {
 std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
     const auto& phases = compiled.problem.phases;
     if (compiled.has_ions || compiled.has_reaction || phases.size() != 2 || phases[0].kind == phases[1].kind
-        || std::none_of(phases.begin(), phases.end(), zero_amount)) return {};
+        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); })) return {};
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
@@ -146,10 +139,6 @@ void require_solution_shape(
 ) {
     if (!all_numeric(result.residuals) || result.rows.empty()) {
         throw std::runtime_error("equilibrium result has invalid residuals");
-    }
-    if (result.amounts.size() != phases || result.molar_densities.size() != phases
-        || result.mole_fractions.size() != phases * components) {
-        throw std::runtime_error("equilibrium result has invalid topology");
     }
     for (const double amount : result.amounts) {
         if (!std::isfinite(amount) || amount < 0.0) {
@@ -264,44 +253,6 @@ bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start
         if (!admitted_packing_fraction(packing)) return false;
     }
     return true;
-}
-
-double active_constraint_residual(
-    const CompiledSystem& compiled, const std::vector<double>& values
-) {
-    double result = 0.0;
-    for (std::size_t row = 0; row < values.size(); ++row) {
-        if (!compiled.feasibility_cell() && compiled.rows[row].kind == RowKind::Chemical) continue;
-        result = std::max(result, std::abs(values[row]));
-    }
-    return result;
-}
-
-struct ResidualSummary final {
-    double maximum = 0.0;
-    double intensive = 0.0;
-    double balance = 0.0;
-    double normalization = 0.0;
-    double charge = 0.0;
-};
-
-ResidualSummary summarize_residuals(
-    const std::vector<Row>& rows, const std::vector<double>& values
-) {
-    ResidualSummary result;
-    const auto keep = [](double& slot, double value) {  // a nonfinite row stays infinite
-        slot = std::isfinite(value) ? std::max(slot, std::abs(value)) : std::numeric_limits<double>::infinity();
-    };
-    for (std::size_t index = 0; index < std::min(rows.size(), values.size()); ++index) {
-        const RowKind kind = rows[index].kind;
-        keep(result.maximum, values[index]);
-        if (kind == RowKind::Chemical || kind == RowKind::Pressure) keep(result.intensive, values[index]);
-        else if (kind == RowKind::Moiety) keep(result.balance, values[index]);
-        else if (kind == RowKind::Enthalpy || kind == RowKind::Entropy) keep(result.balance, values[index]);
-        else if (kind == RowKind::Normalization) keep(result.normalization, values[index]);
-        else if (kind == RowKind::Electro) keep(result.charge, values[index]);
-    }
-    return result;
 }
 
 }  // namespace
@@ -450,10 +401,8 @@ bool GibbsMinimizer::get_starting_point(
     Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda
 ) {
     if (!init_x) return false;
-    const std::vector<double> point = !compiled_.feasibility_cell()
-        ? std::vector<double>(start_.begin(), start_.begin() + compiled_.primal_size)
-        : start_;
-    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (i < static_cast<Ipopt::Index>(point.size()) ? point[i] : 0.0) / chart_[i];
+    const std::size_t size = !compiled_.feasibility_cell() ? compiled_.primal_size : start_.size();
+    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (static_cast<std::size_t>(i) < size ? start_[i] : 0.0) / chart_[i];
     if (init_z) {
         std::fill(z_L, z_L + n, 0.0);
         std::fill(z_U, z_U + n, 0.0);
@@ -516,7 +465,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
             preparation_error_ = error.what();
             throw;
         }
-        ++work_.prepared_points;
+        ++prepared_points_;
     }
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     return *prepared_;
@@ -524,10 +473,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
 
 const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Number* x) {
     const auto& point = prepared(n, x);
-    if (!rows_.has_value()) {
-        rows_ = compiled_.evaluate_at(point);
-        ++work_.row_evaluations;
-    }
+    if (!rows_.has_value()) rows_ = compiled_.evaluate_at(point);
     return *rows_;
 }
 
@@ -548,10 +494,7 @@ bool GibbsMinimizer::eval_grad_f(
 ) {
     try {
         const auto& point = prepared(n, x);
-        if (!gradient_.has_value()) {
-            gradient_ = compiled_.objective_gradient_at(point);
-            ++work_.gradients;
-        }
+        if (!gradient_.has_value()) gradient_ = compiled_.objective_gradient_at(point);
         for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
         return true;
     } catch (const std::exception&) {
@@ -591,10 +534,7 @@ bool GibbsMinimizer::eval_jac_g(
     }
     try {
         const auto& point = prepared(n, x);
-        if (!jacobian_.has_value()) {
-            jacobian_ = compiled_.jacobian_at(point);
-            ++work_.jacobians;
-        }
+        if (!jacobian_.has_value()) jacobian_ = compiled_.jacobian_at(point);
         Ipopt::Index entry = 0;
         for (const std::size_t row : rows) {
             for (Ipopt::Index column = 0; column < n; ++column) {
@@ -629,15 +569,11 @@ bool GibbsMinimizer::eval_h(
         const auto& point = prepared(n, x);
         // Objective curvature is multiplier independent; the weighted constraint curvature is
         // recombined whenever the optimizer multipliers change at the same point.
-        if (!objective_hessian_.has_value()) {
-            objective_hessian_ = compiled_.hessian_at(point, {});
-            ++work_.objective_hessians;
-        }
+        if (!objective_hessian_.has_value()) objective_hessian_ = compiled_.hessian_at(point, {});
         const std::vector<double> multipliers(lambda, lambda + m);
         if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
             constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
             constraint_hessian_multipliers_ = multipliers;
-            ++work_.constraint_hessians;
         }
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < n; ++row) {
@@ -991,20 +927,8 @@ EquilibriumResult run_driver(
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
-    const auto residuals = summarize_residuals(result.rows, result.residuals);
-    scope.probe("maximum_residual", residuals.maximum);
-    scope.probe("intensive_residual", residuals.intensive);
-    scope.probe("balance_residual", residuals.balance);
-    scope.probe("normalization_residual", residuals.normalization);
-    scope.probe("charge_residual", residuals.charge);
-    scope.probe("row_count", static_cast<double>(result.rows.size()));
-    scope.probe("primal_size", static_cast<double>(compiled.primal_size));
-    scope.probe("balance_rank", static_cast<double>(compiled.rank));
-    scope.probe("pinned_count", static_cast<double>(compiled.pinned_count));
-    scope.probe("active_residual", active_constraint_residual(compiled, evaluation.values));
-    scope.probe("objective", result.objective);
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
-    scope.probe("prepared_points", static_cast<double>(nlp->work().prepared_points));
+    scope.probe("prepared_points", static_cast<double>(nlp->prepared_points()));
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.classified_residuals);
@@ -1032,9 +956,7 @@ EquilibriumResult run_driver(
     result.message = core::describe(convergence);
     scope.finish(convergence);
     std::vector<double> volumes;
-    std::size_t intensive_offset = compiled.primal_size - compiled.free_intensive_count;
-    const double candidate_temperature = compiled.problem.temperature.free
-        ? full[intensive_offset] : compiled.problem.temperature.value;
+    const double temperature = prepared.temperature;
     bool topology_ok = true;
     std::string topology_failure;
     // Preparation above admitted every composition with a positive total.
@@ -1047,7 +969,7 @@ EquilibriumResult run_driver(
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
         volumes.push_back(model.packing_fraction_coefficient(
-            candidate_temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
+            temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
@@ -1085,13 +1007,9 @@ EquilibriumResult run_driver(
         result.message += "; requested row tolerance " + std::to_string(row_tolerance)
             + " not met by an available floor-limited state";
     }
-    const double temperature = compiled.problem.temperature.free
-        ? full[intensive_offset++] : compiled.problem.temperature.value;
-    const double pressure = compiled.problem.pressure.free
-        ? full[intensive_offset++] : compiled.problem.pressure.value;
     result.success = true;
     result.temperature = {temperature};
-    result.pressure = {pressure};
+    result.pressure = {prepared.pressure};
     if (!prepared.standard.reference_diagnostics.empty()) {
         result.reference_diagnostics = prepared.standard.reference_diagnostics;
     }
@@ -1114,7 +1032,6 @@ EquilibriumResult run_driver(
     // optimizer values stay a trace probe.
     scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (!compiled.feasibility_cell()) {
-        result.constraint_multipliers.clear();
         std::size_t electro = 0;
         for (const auto& row : compiled.rows) {
             if (row.kind == RowKind::Moiety) {
@@ -1188,14 +1105,6 @@ EquilibriumResult run_driver(
         reject_elapsed(result, scope); return result; }
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
-    scope.probe("reduced_hessian_minimum", result.reduced_hessian_minimum);
-    scope.probe("phase_count", static_cast<double>(result.phase_count));
-    scope.probe("residual", result.convergence.residual);
-    scope.probe("iterations", static_cast<double>(result.iterations));
-    scope.probe("evaluations", static_cast<double>(result.evaluations));
-    scope.probe("rows", static_cast<double>(result.rows.size()));
-    scope.probe("multipliers", static_cast<double>(result.multipliers.size()));
-    scope.probe("amount_total", std::accumulate(result.amounts.begin(), result.amounts.end(), 0.0));
     return result;
 }
 
@@ -1248,7 +1157,8 @@ BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& re
 std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled, const DriverLimits* limits, StageWork& stages) {
     const auto& problem = compiled.problem;
     EquilibriumProblem present = problem;
-    present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(), zero_amount), present.phases.end());
+    present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(),
+        [](const PhaseSpec& phase) { return phase.is_zero_pinned(); }), present.phases.end());
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
         || present.phases.size() == problem.phases.size()) return std::nullopt;
     present.pressure = FreeValue::fixed(compiled.seed_pressure());
@@ -1261,8 +1171,8 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
         std::size_t index = 0;
         for (auto& phase : seeded.problem.phases) {
             const bool guessed = phase.composition_guess.size() == phase.support.size();
-            if (zero_amount(phase) && guessed) continue;
-            const std::size_t source = zero_amount(phase) ? 0 : index++;
+            if (phase.is_zero_pinned() && guessed) continue;
+            const std::size_t source = phase.is_zero_pinned() ? 0 : index++;
             phase.composition_guess.clear();
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
@@ -1327,7 +1237,7 @@ static void observe_endpoint(const HelmholtzModel& model, const CompiledSystem* 
         SensitivityInfo info;
         try {
             core::Capture isolated(false);
-            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates, {});
+            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates);
         } catch (const std::exception& error) {
             scope.probe("solved_endpoint_jacobian", {NAN, static_cast<double>(result.coordinates.size()), NAN, NAN}, attempt, error.what());
             return;
@@ -1441,6 +1351,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             StageWork stages;
             try {
                 auto initial = seed.coordinates;
+                const auto offsets = compiled.phase_offsets();
                 const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
                     if (!ok) throw std::invalid_argument(field);
                 };
@@ -1486,7 +1397,6 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     for (std::size_t p = 0; p < packings.size(); ++p) packings[p] = packed(p);
                     initial = complete ? seeded.generic_point() : speciated ? std::move(*speciated)
                         : boundary_start(seeded, uncomposed, &work, &stages, packings);
-                    const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];
                         if (composed(p)) for (std::size_t j = 0; j < phase.composition_guess.size(); ++j)
@@ -1501,7 +1411,6 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 }
                 if (work.consumed >= work.iterations) throw std::runtime_error("iteration budget exhausted by the seed solves");
                 check(initial.size() == compiled.unknown_count() && all_numeric(initial));
-                const auto offsets = compiled.phase_offsets();
                 for (std::size_t p = 0; p < offsets.size(); ++p) {
                     const auto& phase = compiled.problem.phases[p]; auto cursor = offsets[p];
                     for (std::size_t j = 0; j < phase.support.size(); ++j) {

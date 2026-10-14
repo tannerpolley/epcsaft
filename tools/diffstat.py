@@ -18,11 +18,12 @@ def band(count: int) -> int:
     return -(-count // 100)
 
 
-def budget_state(count: int, ceiling: int) -> str:
+def budget_state(count: int, ceiling: int, layer_sum: int | None = None) -> str:
+    """`layer_sum` bounds the total, which may not exceed the sum of the layer ceilings."""
     if count > ceiling:
         return f"FAIL over the ceiling by {count - ceiling}"
     if ceiling - count > band(count):
-        return f"FAIL headroom exceeds the band: lower the ceiling to {count + band(count)}"
+        return f"FAIL headroom exceeds the band: lower the ceiling to {min(count + band(count), layer_sum or ceiling)}"
     return "ok"
 
 
@@ -100,7 +101,7 @@ def code_budgets(root=None) -> int:
     failed = False
     print("runtime formatted lines: count / ceiling (band = 1% of count, rounded up)")
     for layer, ceiling in budgets.items():
-        state = budget_state(counts[layer], ceiling)
+        state = budget_state(counts[layer], ceiling, sum(budgets.values()) - budgets["total"] if layer == "total" else None)
         print(f"{counts[layer]:5} / {ceiling:5} (band {band(counts[layer]):3})  {layer:13} {state}")
         failed |= state != "ok"
     return int(failed)
@@ -116,6 +117,8 @@ def budget_self_check() -> None:
     for count, ceiling, fails in ((1000, 1000, False), (1000, 1010, False), (1000, 1011, True), (1001, 1000, True)):
         if (budget_state(count, ceiling) != "ok") != fails:  # exactly one band of headroom passes
             raise AssertionError(f"band edge wrong at count {count}, ceiling {ceiling}")
+    if not budget_state(1000, 1020, 1005).endswith("to 1005"):
+        raise AssertionError("total suggestion exceeds the sum of the layer ceilings")
     with tempfile.TemporaryDirectory(prefix="epcsaft-budget-") as temporary:
         root = Path(temporary)
         (root / "engine/native/core").mkdir(parents=True)

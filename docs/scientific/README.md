@@ -14,10 +14,7 @@ once; their YAML index is generated. Optional HTML/PDF views must render the
 same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
 neither becomes a second Engine specification. This is the repository's accepted CSE Markdown layout.
 
-The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
-is the sole current gap and completion plan. Issue bodies own design, scope,
-acceptance, reuse and handoff; native relationships own hierarchy and
-prerequisites. [ADR 0010](decisions/0010-github-issue-roadmap-authority.md) records that authority.
+[ADR 0010](decisions/0010-github-issue-roadmap-authority.md) gives GitHub issues the plan, scope and acceptance.
 [Dated reviews](reviews/transfer-audit-2026-09-06.md) retain
 numerical evidence and inspected limitations; they do not issue current
 instructions. Keep a record only while it supports a scientific result,
@@ -27,10 +24,6 @@ place and remove duplicate progress summaries; Git preserves edit history.
 [Code budgets](code-budgets.md) define how runtime lines are counted and how
 each ceiling is raised or lowered; their single numeric owner is `ARCHITECTURE.yaml`.
 
-The [modular-model proposal](proposals/modular-models/README.md) retains a
-source-linked design for selecting complete thermodynamic formulations with
-compatible parameters. [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23)
-closed on 2026-09-30 with its delivered leaves; model selection (#29) was closed as not needed.
 [ADR 0011](decisions/0011-optional-dipole-dipole-term.md) owns the optional
 Gross–Vrabec dipole–dipole admission; remaining multipoles stay retired under
 [ADR 0006](decisions/0006-retire-residual-polar.md).

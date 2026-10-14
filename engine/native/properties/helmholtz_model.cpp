@@ -1222,7 +1222,16 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
     result.status = support_status(*this, composition, insertion)[0];
     if (result.status != PropertyActionStatus::Available) return result;
-    const auto central = evaluate(temperature, volume, composition, DerivativeOrder::Hessian);
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<double> key{temperature, volume};
+    key.insert(key.end(), composition.begin(), composition.end());
+    auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return entry.first == key; });
+    if (found == centrals_.end()) {
+        if (centrals_.size() == 16) centrals_.pop_front();
+        centrals_.emplace_back(std::move(key), evaluate_locked(temperature, volume, composition, DerivativeOrder::Hessian));
+        found = std::prev(centrals_.end());
+    }
+    const auto& central = found->second;  // valid: centrals_ is not touched again while the lock is held
     const std::size_t width = central.gradient.size(), components = composition.size();
     const auto point = action_point(*this, temperature, volume, composition);
     std::vector<double> motion(width, 0.0);
@@ -1248,7 +1257,6 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     }
     if (norm == 0.0) norm = 1.0;
     for (double& v : motion) v /= norm;
-    std::lock_guard<std::mutex> lock(mutex_);
     result.diagnostics.recordings = ensure_tape(point, central.site_fractions,
         predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     tape_->site_values = central.site_fractions;

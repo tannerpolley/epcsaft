@@ -18,16 +18,6 @@ namespace Ipopt { class TNLPAdapter; }
 
 namespace epcsaft::equilibrium {
 
-// Work actually performed on distinct callback points within one solve.
-struct EvaluationWork final {
-    std::size_t prepared_points = 0;
-    std::size_t row_evaluations = 0;
-    std::size_t jacobians = 0;
-    std::size_t gradients = 0;
-    std::size_t objective_hessians = 0;
-    std::size_t constraint_hessians = 0;
-};
-
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
@@ -35,7 +25,6 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 };
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
-struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool supports_split_seed(const CompiledSystem& compiled);
@@ -181,11 +170,11 @@ ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
-// J dy = -F_theta at a prepared point; empty when J is singular or the solve is not admitted.
+// J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& column
 );
 
 std::vector<double> sensitivity(
@@ -196,7 +185,6 @@ std::vector<double> sensitivity(
 
 struct SensitivityInfo final {
     std::size_t equations = 0;
-    std::size_t parameters = 0;
     std::size_t rank = 0;
     double condition_estimate = 0.0;
     bool nonsingular = false;
@@ -204,8 +192,7 @@ struct SensitivityInfo final {
 
 SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& point
 );
 
 class GibbsMinimizer final : public Ipopt::TNLP {
@@ -258,9 +245,9 @@ public:
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }
+    std::size_t prepared_points() const noexcept { return prepared_points_; }  // distinct callback points
 
     double regularization_size() const noexcept { return regularization_size_; }
-    const EvaluationWork& work() const noexcept { return work_; }
     const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
     const std::optional<std::string>& preparation_error() const noexcept {
         return preparation_error_;
@@ -283,13 +270,13 @@ private:
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;
     std::optional<std::string> preparation_error_;
-    EvaluationWork work_;
     std::vector<double> solution_;
     std::vector<double> constraint_multipliers_;
     Ipopt::SolverReturn status_ = Ipopt::UNASSIGNED;
     std::size_t iterations_ = 0;
     std::size_t evaluations_ = 0;
     std::size_t hessian_calls_ = 0;
+    std::size_t prepared_points_ = 0;
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
     const DriverLimits* limits_ = nullptr;

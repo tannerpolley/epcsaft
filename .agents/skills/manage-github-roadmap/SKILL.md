@@ -5,11 +5,9 @@ description: Manage this repository's issue-backed implementation roadmap, nativ
 
 # Manage the GitHub roadmap
 
-GitHub is the sole owner of implementation plans, current scope, acceptance
-criteria, parent/sub-issue structure, prerequisites, authorization, and execution
-status. Repository documents own scientific equations, accepted requirements,
-numerical evidence, and capability qualification; never copy editable roadmap
-status back into them.
+[ADR 0010](../../../docs/scientific/decisions/0010-github-issue-roadmap-authority.md)
+gives GitHub the plans, scope, acceptance, prerequisites, authorization and
+execution status; never copy editable roadmap status into repository documents.
 
 ## Load the accepted plan
 

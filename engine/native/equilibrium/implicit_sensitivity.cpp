@@ -34,27 +34,6 @@ double condition_estimate(const Eigen::MatrixXd& matrix) {
     return singular(0) / singular(singular.size() - 1);
 }
 
-std::size_t parameter_count(
-    const std::vector<double>& parameter_rows, std::size_t rows
-) {
-    if (rows == 0 || parameter_rows.empty() || parameter_rows.size() % rows != 0) return 0;
-    return parameter_rows.size() / rows;
-}
-
-void validate_parameter_rows(
-    const std::vector<double>& parameter_rows, std::size_t rows
-) {
-    if (!std::all_of(parameter_rows.begin(), parameter_rows.end(), [](double value) { return std::isfinite(value); }))
-        throw std::invalid_argument("invalid parameter derivative");
-    if (!parameter_rows.empty() && (rows == 0 || parameter_rows.size() % rows != 0))
-        throw std::invalid_argument("parameter derivative shape");
-}
-
-std::vector<double> flatten(const Eigen::MatrixXd& matrix) {
-    const RowMajor rows = matrix;
-    return {rows.data(), rows.data() + rows.size()};
-}
-
 bool valid_point(const std::vector<double>& point) {
     return !point.empty() && std::all_of(
         point.begin(), point.end(), [](double value) { return std::isfinite(value); });
@@ -89,14 +68,12 @@ bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() ==
 
 SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& point
 ) {
     core::Scope scope("inspect_implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
     const std::size_t dimension = point.size();
     if (!valid_point(point)) throw std::invalid_argument("invalid sensitivity point");
-    validate_parameter_rows(parameter_rows, rows);
     const auto jacobian = compiled.jacobian(point);
     if (jacobian.size() != rows * dimension) {
         throw std::invalid_argument("equilibrium Jacobian shape");
@@ -105,7 +82,6 @@ SensitivityInfo inspect_sensitivity(
     const auto lu = matrix.fullPivLu();
     SensitivityInfo result;
     result.equations = rows;
-    result.parameters = parameter_count(parameter_rows, rows);
     result.rank = static_cast<std::size_t>(lu.rank());
     result.condition_estimate = condition_estimate(matrix);
     result.nonsingular = square_and_numeric(matrix) && result.rank == dimension;
@@ -113,8 +89,6 @@ SensitivityInfo inspect_sensitivity(
     scope.probe("dimension", static_cast<double>(dimension));
     scope.probe("condition", result.condition_estimate);
     scope.probe("jacobian_entries", static_cast<double>(jacobian.size()));
-    scope.probe("parameter_entries", static_cast<double>(parameter_rows.size()));
-    scope.probe("parameters", static_cast<double>(result.parameters));
     scope.probe("nonsingular", result.nonsingular ? 1.0 : 0.0);
     scope.probe("rank", static_cast<double>(result.rank));
     return result;
@@ -123,40 +97,29 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& parameter_rows
+    const std::vector<double>& column
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
     const std::size_t dimension = prepared.point.size();
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
-    validate_parameter_rows(parameter_rows, rows);
-    const std::size_t parameters = parameter_count(parameter_rows, rows);
-    if (parameters == 0) return {};
+    if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     const auto jacobian = compiled.jacobian_at(prepared);
     if (jacobian.size() != rows * dimension || rows != dimension) return {};
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     const auto lu = matrix.fullPivLu();
     if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension) return {};
-    Eigen::MatrixXd right(static_cast<Eigen::Index>(rows),
-                          static_cast<Eigen::Index>(parameters));
-    for (std::size_t row = 0; row < rows; ++row) {
-        for (std::size_t parameter = 0; parameter < parameters; ++parameter) {
-            right(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(parameter)) =
-                -parameter_rows[row * parameters + parameter];
-        }
-    }
+    // One column, kept a matrix so that Eigen takes the same solve path.
+    const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
     const Eigen::MatrixXd result = lu.solve(right);
-    double error = 0.0;
-    for (Eigen::Index j = 0; j < result.cols(); ++j)
-        error = std::max(error, backward_error((matrix * result.col(j) - right.col(j)).cwiseAbs().maxCoeff(),
-            matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.col(j).cwiseAbs().maxCoeff(), right.col(j).cwiseAbs().maxCoeff()));
+    const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
+        matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
-    scope.probe("parameters", static_cast<double>(parameters));
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
-    return flatten(result);
+    return {result.data(), result.data() + rows};
 }
 
 std::vector<double> sensitivity(
@@ -305,10 +268,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     for (const auto& direction : request.directions) {
         if (!std::isfinite(direction.temperature_k) || !std::isfinite(direction.pressure_pa)
             || direction.feed_amounts_mol.size() != components || direction.active_parameters.size() != actives
-            || !std::all_of(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(),
-                            [](double v) { return std::isfinite(v); })
-            || !std::all_of(direction.active_parameters.begin(), direction.active_parameters.end(),
-                            [](double v) { return std::isfinite(v); }))
+            || !all_numeric(direction.feed_amounts_mol) || !all_numeric(direction.active_parameters))
             throw std::invalid_argument("solved-state action direction");
         if (!direction.reaction_coefficients.empty() &&
             direction.reaction_coefficients.size() != problem.reactions.size())
@@ -394,17 +354,21 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
     state[0] = center.prepared.point;
     std::vector<double> right_norm(order + 1, 0.0), solution_norm(order + 1, 0.0);
-    for (std::size_t k = 1; k <= order; ++k) {
-        const std::vector<std::vector<double>> prefix(state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1));
-        RowSeries series;
+    // The series through order k, or false with the path refused when a reference is unavailable.
+    const auto rows_through = [&](const std::vector<std::vector<double>>& prefix, std::size_t k, RowSeries& series) {
         try {
             series = compiled.row_series(center.prepared, prefix, control, k);
+            return true;
         } catch (const std::invalid_argument& error) {
             if (!is_reference_unavailable(error)) throw;
             path.status = SolvedStateActionStatus::ReferenceUnavailable;
             path.diagnostic_message = error.what();
-            return path;
+            return false;
         }
+    };
+    for (std::size_t k = 1; k <= order; ++k) {
+        RowSeries series;
+        if (!rows_through({state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1)}, k, series)) return path;
         diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, series.maximum_energy_order);
         if (series.energy != PropertyActionStatus::Available) { path.status = energy_status(series.energy); return path; }
         Eigen::VectorXd right(static_cast<Eigen::Index>(n));
@@ -420,14 +384,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
     }
-    try {
-        path.series = compiled.row_series(center.prepared, state, control, order);
-    } catch (const std::invalid_argument& error) {
-        if (!is_reference_unavailable(error)) throw;
-        path.status = SolvedStateActionStatus::ReferenceUnavailable;
-        path.diagnostic_message = error.what();
-        return path;
-    }
+    if (!rows_through(state, order, path.series)) return path;
     if (compiled.has_caloric_condition() && std::any_of(path.series.temperature.begin() + 1,
             path.series.temperature.end(), [](double v) { return v != 0.0; })) {
         const auto calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, false, false, false, 1);
@@ -487,9 +444,6 @@ PhaseMap phase_map(const RowSeries& series, std::size_t phase, std::size_t compo
     return result;
 }
 
-Series observable_series(const HelmholtzModel &model, const SolvedStateObservable &observable, const RowSeries &series,
-                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics = nullptr,
-                         SolvedStateActionResult *result = nullptr, SolvedStateActionDiagnostics *diagnostics = nullptr);
 Series system_enthalpy_series(const HelmholtzModel &, const RowSeries &, const std::vector<PhaseMap> &,
                               const ReferenceCalorics *, SolvedStateActionResult *, SolvedStateActionDiagnostics *);
 
@@ -957,16 +911,8 @@ static SolvedStateActionBatch evaluate_action(
         item.order = order;
         batch.results.push_back(std::move(item));
     }
-    const auto finish = [&](SolvedStateActionStatus status) {
-        for (auto& item : batch.results)
-            if (item.status == SolvedStateActionStatus::Available) item.status = status;
-        return batch;
-    };
-    if (!central.success || !central.has_state()
-        || !std::all_of(central.coordinates.begin(), central.coordinates.end(), [](double v) { return std::isfinite(v); })) {
-        for (auto& item : batch.results) item.status = SolvedStateActionStatus::CentralSolveUnavailable;
-        return batch;
-    }
+    // Every result starts CentralSolveUnavailable (the struct default).
+    if (!central.success || !central.has_state() || !all_numeric(central.coordinates)) return batch;
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
     if (!shared) {
         shared.emplace();
@@ -1051,6 +997,8 @@ static SolvedStateActionBatch evaluate_action(
             item.value.reset();
         item.diagnostic_message = std::move(message);
     };
+    auto& property_rows = shared->property_rows;
+    auto& property_lists = shared->property_lists;
     if (shared->central_results.empty()) {
         // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
@@ -1067,8 +1015,6 @@ static SolvedStateActionBatch evaluate_action(
                 refuse(item, error.status, error.what(), true);
             }
         }
-        auto& property_rows = shared->property_rows;
-        auto& property_lists = shared->property_lists;
         property_rows.resize(problem.phases.size());
         property_lists.resize(problem.phases.size());
         for (std::size_t i = 0; i < batch.results.size(); ++i)
@@ -1115,8 +1061,6 @@ static SolvedStateActionBatch evaluate_action(
             item.action = order == 1 ? controls[0][index] : 0.0;
         }
     }
-    const auto& property_rows = shared->property_rows;
-    const auto& property_lists = shared->property_lists;
     // Admission of the central state, in the owner's precedence.
     if (!shared->topology_checked) {
         if (!(shared->classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
@@ -1202,7 +1146,7 @@ static SolvedStateActionBatch evaluate_action(
     if (zero) {
         for (auto& item : batch.results)
             if (item.status == SolvedStateActionStatus::Available && item.value.has_value()) item.action = 0.0;
-        return finish(SolvedStateActionStatus::Available);
+        return batch;
     }
     // Polarised diagonal paths: half the sign patterns with the first sign fixed positive.
     std::vector<double> accumulated(batch.results.size(), 0.0);

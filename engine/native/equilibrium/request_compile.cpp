@@ -31,12 +31,6 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
     return result;
 }
 
-std::size_t count_rows(const CompiledSystem& compiled, RowKind kind) {
-    std::size_t result = 0;
-    for (const auto& row : compiled.rows) result += row.kind == kind;
-    return result;
-}
-
 void validate_intensive_seed(const FreeValue& value, const char* name) {
     if (!value.free && !value.is_positive()) {
         throw std::invalid_argument(std::string("invalid ") + name);
@@ -123,6 +117,9 @@ std::vector<ReactionSpec> central_reference_reactions(
         throw std::invalid_argument(
             "reference_unavailable: supplied standard Gibbs conflicts with source reference");
     }
+    const auto unavailable = [&](std::size_t row, const std::string& tail) {
+        return std::invalid_argument("reference_unavailable: reaction " + reaction_name(request.reactions[row], row) + tail);
+    };
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
     if (fixed_pressure != nullptr && temperature_order == 0 && !parameter_jets) {
@@ -143,11 +140,8 @@ std::vector<ReactionSpec> central_reference_reactions(
         if (std::any_of(reused.begin(), reused.end(),
                 [row](const auto& item) { return item.reaction_index == row; })) continue;
         if (reaction.affinity_j_per_mol.has_value()
-            || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value())) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + " needs a scalar K or correlation source");
-        }
+            || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value()))
+            throw unavailable(row, " needs a scalar K or correlation source");
         reference_rows.push_back(row);
         stoichiometries.push_back(reaction.stoichiometry);
         references.push_back(*reaction.reference);
@@ -170,44 +164,20 @@ std::vector<ReactionSpec> central_reference_reactions(
         const std::size_t row = reference.reaction_index;
         const auto& reaction = request.reactions[row];
         diagnostics.push_back(reference);
-        if (reference.status != NeutralReferenceStatus::Available
-            || !reference.terminal_contraction.has_value()) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + (reference.message.empty() ? "" : " " + reference.message));
-        }
-        double ln_k = 0.0;
-        if (reaction.correlation.has_value()) {
-            try {
-                ln_k = evaluate_reaction_properties(
-                    *reaction.correlation, temperature).ln_k;
-            } catch (const std::exception& error) {
-                throw std::invalid_argument(
-                    "reference_unavailable: reaction " + reaction_name(reaction, row)
-                    + " " + error.what());
-            }
-        } else {
-            ln_k = std::log(*reaction.equilibrium_constant);
-        }
-        double scale = 0.0;
-        if (reaction.reference->source_basis
-                == ReferenceSourceBasis::CommonMolalityInfiniteDilution) {
-            try {
-                scale = reaction_reference_log_scale(
-                    model, *request.source_reference, reaction.stoichiometry);
-            } catch (const std::exception& error) {
-                throw std::invalid_argument(
-                    "reference_unavailable: reaction " + reaction_name(reaction, row)
-                    + " " + error.what());
-            }
+        if (reference.status != NeutralReferenceStatus::Available || !reference.terminal_contraction.has_value())
+            throw unavailable(row, reference.message.empty() ? "" : " " + reference.message);
+        double ln_k = 0.0, scale = 0.0;
+        try {
+            ln_k = reaction.correlation.has_value() ? evaluate_reaction_properties(*reaction.correlation, temperature).ln_k
+                                                    : std::log(*reaction.equilibrium_constant);
+            if (reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+                scale = reaction_reference_log_scale(model, *request.source_reference, reaction.stoichiometry);
+        } catch (const std::exception& error) {
+            throw unavailable(row, std::string(" ") + error.what());
         }
         const double ln_k_density = ln_k + scale + *reference.terminal_contraction;
         const double target = -GAS_CONSTANT_J_PER_MOL_K * temperature * ln_k_density;
-        if (!std::isfinite(target)) {
-            throw std::invalid_argument(
-                "reference_unavailable: reaction " + reaction_name(reaction, row)
-                + " has a nonfinite density-basis target");
-        }
+        if (!std::isfinite(target)) throw unavailable(row, " has a nonfinite density-basis target");
         result[row].equilibrium_constant.reset();
         result[row].correlation.reset();
         result[row].affinity_j_per_mol = target;
@@ -395,7 +365,7 @@ void admit_conditions(const CompiledSystem& compiled) {
     }
     const auto& e = *p.envelope;
     if (p.phases.size() != 2 || compiled.pinned_count != 1 || !std::isfinite(e.target) || p.phases[1].support != support
-        || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& x) { return x.is_pinned() && x.amount.fraction == 0.0; })
+        || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); })
         || (e.kind == EnvelopeCoordinate::LogK && std::find(support.begin(), support.end(), e.component) == support.end()))
         throw std::invalid_argument("envelope requires a free feed phase and a zero-pinned incipient phase on one support");
 }
@@ -1034,7 +1004,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
 
 static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
-    const std::vector<std::vector<double>>* trial_basis, core::Scope& scope
+    const std::vector<std::vector<double>>* trial_basis
 ) {
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
@@ -1053,8 +1023,7 @@ static CompiledSystem compile_with_basis(
     compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
     const auto& z = model.parameters().charge_number;
-    double net_z = 0.0;
-    for (std::size_t i = 0; i < components; ++i) net_z += z[i] * compiled.n_feed[i];
+    const double net_z = std::inner_product(compiled.n_feed.begin(), compiled.n_feed.end(), z.begin(), 0.0);
     if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(1.0, compiled.feed_total)) {
         throw std::invalid_argument("feed carries net z");
@@ -1063,11 +1032,8 @@ static CompiledSystem compile_with_basis(
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");
         // The charge defect is judged against the stoichiometric scale ||nu||_1.
-        double total = 0.0, scale = 0.0;
-        for (std::size_t i = 0; i < components; ++i) {
-            total += z[i] * nu[i];
-            scale += std::abs(nu[i]);
-        }
+        const double total = std::inner_product(nu.begin(), nu.end(), z.begin(), 0.0);
+        const double scale = std::accumulate(nu.begin(), nu.end(), 0.0, [](double sum, double v) { return sum + std::abs(v); });
         if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale)) {
             throw std::invalid_argument("reaction " + reaction_name(request.reactions[row], row)
                                         + " violates z");
@@ -1091,11 +1057,8 @@ static CompiledSystem compile_with_basis(
     const auto central_reactions = central_reference_reactions(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
-    compiled.standard_gibbs = standard_state(
-        temperature_guess, components, central_reactions,
-        has_reaction_reference(request) ? std::vector<double>{}
-                                        : request.standard_gibbs_j_per_mol
-    );
+    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol);
     if (request.temperature.free)
         if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
@@ -1142,7 +1105,7 @@ static CompiledSystem compile_with_basis(
             phase.support.begin(), phase.support.end(), [&](std::size_t index) {
                 return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
-        if (phase.is_pinned() && phase.amount.fraction == 0.0) {
+        if (phase.is_zero_pinned()) {
             const auto removed = std::find_if(support_before.begin(), support_before.end(),
                 [&](std::size_t index) { return absent[index]; });
             if (removed != support_before.end()) {
@@ -1172,16 +1135,10 @@ static CompiledSystem compile_with_basis(
         }
         if (phase.support.empty()) throw std::invalid_argument("empty support in phase " + phase.name);
         for (const std::size_t index : phase.support) covered[index] = true;
-        bool positive = false;
-        bool negative = false;
-        for (const std::size_t index : phase.support) {
-            positive = positive || z[index] > 0;
-            negative = negative || z[index] < 0;
-        }
+        const bool positive = std::any_of(phase.support.begin(), phase.support.end(), [&](std::size_t i) { return z[i] > 0; });
+        const bool negative = std::any_of(phase.support.begin(), phase.support.end(), [&](std::size_t i) { return z[i] < 0; });
         compiled.has_ions = compiled.has_ions || positive || negative;
-        if (positive != negative && (positive || negative)) {
-            throw std::invalid_argument("support z sign in phase " + phase.name);
-        }
+        if (positive != negative) throw std::invalid_argument("support z sign in phase " + phase.name);
     }
     for (std::size_t i = 0; i < components; ++i) {
         if (!covered[i] && !absent[i] && (compiled.n_feed[i] != 0.0 || participant[i])) {
@@ -1190,27 +1147,17 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
-    compiled.pinned_count = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;
-    }
+    const auto& phases = compiled.problem.phases;
+    const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
+    compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
     admit_conditions(compiled);
     if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
-        if (compiled.free_intensive_count < compiled.pinned_count) {
-            std::string phase_name;
-            for (const auto& phase : compiled.problem.phases) {
-                if (phase.amount.kind == AmountKind::Pinned) {
-                    phase_name = phase.name;
-                    break;
-                }
-            }
-            throw std::invalid_argument(
-                "pinned phase " + phase_name + " requires a free T or P"
-            );
-        }
+        if (compiled.free_intensive_count < compiled.pinned_count)  // so at least one phase is pinned
+            throw std::invalid_argument("pinned phase " + std::find_if(phases.begin(), phases.end(), pinned)->name
+                                        + " requires a free T or P");
         throw std::invalid_argument(
             "free temperature or pressure requires a pinned phase amount"
         );
@@ -1227,27 +1174,16 @@ static CompiledSystem compile_with_basis(
             compiled.rows.push_back({RowKind::Chemical, phase, index});
         compiled.rows.push_back({RowKind::Pressure, phase, 0});
     }
-    std::vector<std::size_t> ion_phases;
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        for (const std::size_t index : compiled.problem.phases[phase].support) {
-            if (z[index] != 0) {
-                ion_phases.push_back(phase);
-                break;
-            }
+    // Every ion-bearing phase has a charge row except the first with a free or positive amount.
+    bool rowless = false;
+    for (std::size_t phase = 0; phase < phases.size(); ++phase) {
+        const auto& spec = phases[phase];
+        if (std::none_of(spec.support.begin(), spec.support.end(), [&](std::size_t i) { return z[i] != 0; })) continue;
+        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) rowless = true;
+        else {
+            compiled.rows.push_back({RowKind::Electro, phase, 0});
+            ++compiled.charge_row_count;
         }
-    }
-    std::optional<std::size_t> rowless;
-    for (const std::size_t phase : ion_phases) {
-        if (compiled.problem.phases[phase].amount.kind == AmountKind::Free
-            || compiled.problem.phases[phase].amount.fraction > 0.0) {
-            rowless = phase;
-            break;
-        }
-    }
-    for (const std::size_t phase : ion_phases) {
-        if (rowless.has_value() && phase == *rowless) continue;
-        compiled.rows.push_back({RowKind::Electro, phase, 0});
-        ++compiled.charge_row_count;
     }
     for (std::size_t row = 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
@@ -1265,34 +1201,14 @@ static CompiledSystem compile_with_basis(
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
-    scope.probe("chemical_rows", static_cast<double>(count_rows(compiled, RowKind::Chemical)));
-    scope.probe("pressure_rows", static_cast<double>(count_rows(compiled, RowKind::Pressure)));
-    scope.probe("balance_rows", static_cast<double>(count_rows(compiled, RowKind::Moiety)));
-    scope.probe("normalization_rows",
-                static_cast<double>(count_rows(compiled, RowKind::Normalization)));
-    scope.probe("removed_species", static_cast<double>(compiled.removed_species.size()));
-    scope.probe("conserves_total_moles", compiled.conserves_total_moles ? 1.0 : 0.0);
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
-    Eigen::MatrixXd matrix(
-        static_cast<Eigen::Index>(compiled.rows.size()),
-        static_cast<Eigen::Index>(point.size()));
-    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        for (std::size_t column = 0; column < point.size(); ++column) {
-            matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                jacobian[row * point.size() + column];
-        }
-    }
+    const Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+        jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
     compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
-    compiled.generic_nullity = point.size() > compiled.jacobian_rank
-        ? point.size() - compiled.jacobian_rank : 0;
+    compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;
-    scope.probe("jacobian_rank", static_cast<double>(compiled.jacobian_rank));
-    scope.probe("unknowns", static_cast<double>(compiled.unknown_count()));
-    scope.probe("constraints", static_cast<double>(compiled.constraint_count()));
     // The compiled record is the sole source for both the driver and callers.
-    scope.probe("rows", static_cast<double>(compiled.rows.size()));
-    scope.probe("rank", static_cast<double>(compiled.rank));
     return compiled;
 }
 
@@ -1307,7 +1223,7 @@ void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>
 
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
     core::Scope scope("compile_problem");
-    return compile_with_basis(model, request, nullptr, scope);
+    return compile_with_basis(model, request, nullptr);
 }
 
 // The reduced trial space is internal: the public no-reaction compiler retains species balances.
@@ -1349,7 +1265,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.phases[0].amount = AmountSpec::free();
     request.row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
-    return compile_with_basis(model, request, &B, scope);
+    return compile_with_basis(model, request, &B);
 }
 
 std::vector<double> CompiledSystem::generic_point() const {

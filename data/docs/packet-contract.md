@@ -16,6 +16,11 @@ evidence.
 Packets live at `packets/<packet-id>/<version>/packet.toml`. Optional content
 appears only when needed under `parameters/`, `observations/`, `sources/`, or
 `provenance/`. Empty placeholder directories and unlisted files are invalid.
+There is no parallel top-level `species/`, `properties/` or mutable catalog
+directory: packets are the unit of review, hashing, versioning and consumer
+locking. A packet may hold several species that share a source product and
+license boundary; split packets when source identity, versioning or use basis
+differs.
 
 Full papers, broad extraction corpora, rejected experiments, and exploratory
 notebooks are outside Data. Generated results and plots remain in
@@ -28,7 +33,11 @@ property record that can be consumed independently of one named validation
 campaign. It should retain the component identity, independent conditions,
 explicit units, source locator or source ID, and source uncertainty when the
 source provides it. Source-native wide tables are acceptable when their column
-names and packet metadata make the units and meaning unambiguous.
+names and packet metadata make the units and meaning unambiguous. Observation
+files preserve source values as decimal strings and retain source row roles.
+Missing source uncertainty stays missing; it is never replaced with zero or
+turned into a model-acceptance threshold. Model predictions and fitted values
+are not observations.
 
 Paper- or figure-specific matrices, digitized curves, direct experimental rows
 kept only to reproduce a named publication, fitted targets, campaign-specific

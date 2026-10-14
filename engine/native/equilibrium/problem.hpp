@@ -58,6 +58,7 @@ struct PhaseSpec final {
     std::optional<double> packing_guess;
 
     bool is_pinned() const noexcept { return amount.kind == AmountKind::Pinned; }
+    bool is_zero_pinned() const noexcept { return is_pinned() && amount.fraction == 0.0; }
     bool is_free() const noexcept { return amount.kind == AmountKind::Free; }
 };
 
@@ -139,10 +140,6 @@ struct EquilibriumProblem final {
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
-
-    std::size_t component_count() const noexcept {
-        return feed.values.size();
-    }
 };
 
 enum class RowKind {
@@ -185,7 +182,6 @@ inline double maximum_abs(const std::vector<double>& values) noexcept {
 
 struct PointEvaluation final {
     std::vector<double> values;
-    std::vector<double> jacobian;
     double objective = 0.0;
     double floor = 0.0;
 };
@@ -333,7 +329,6 @@ struct CompiledSystem final {
         return primal_size + rank + charge_row_count;
     }
 
-    std::size_t constraint_count() const noexcept { return rows.size(); }
 
     bool has_caloric_condition() const noexcept {
         return problem.enthalpy_j.has_value() || problem.entropy_j_per_k.has_value();
@@ -417,7 +412,6 @@ struct EquilibriumResult final {
     std::vector<double> residuals;
     // The residuals the classification actually used (see CompiledSystem::classified_residuals).
     std::vector<double> classified_residuals;
-    std::vector<double> sensitivity;
     std::vector<double> coordinates;
     std::size_t phase_count = 0;
     std::size_t iterations = 0;
