@@ -227,7 +227,11 @@ void p2_density_series() {
         if (item.composition.size()==1) {
             const auto pressure=model.neutral_property(item.temperature,item.density,epcsaft::NeutralProperty::Pressure,epcsaft::DerivativeOrder::Hessian);
             const double curvature=item.density*pressure.hessian[3]/(epcsaft::GAS_CONSTANT_J_PER_MOL_K*item.temperature);
-            CHECK(close(series_pressure[2],curvature,1e-10));
+            recording_support::compare("pressure-hessian/pure-neutral", "scaled_pressure_curvature", "1",
+                series_pressure[2], curvature, inputs, "Identity", "neutral-pressure-Hessian",
+                "the exact pressure Hessian agrees with the volume-series curvature", "reference_or_one", 0.0, 1e-10,
+                close(series_pressure[2],curvature,1e-10), "p2-pressure-hessian", item.name,
+                "rho P_rhorho/(RT)", "T,rho", "series=pressure Hessian", "case");
         }
         for(std::size_t k=0;k<3;++k)
             recording_support::compare((std::string("pressure-series/")+item.name+"/"+std::to_string(k)).c_str(),
@@ -1050,6 +1054,8 @@ void properties_p2() {
         unresolved ? 1.0 : 0.0, 1.0, recording_support::fields({
             recording_support::field("T", 308.0), recording_support::field("P_star", fold.pressure),
             recording_support::field("fold_density", fold.molar_density),
+            recording_support::field("fold_bracket_lower", fold_lower),
+            recording_support::field("fold_bracket_upper", fold_upper),
             recording_support::field("pressure_density_derivative", fold.pressure_density_derivative)}),
         "Availability", "independent-slope-bisection", "a mechanical fold is not a resolved stable branch",
         "absolute", unresolved, "p2-fold-resolution", "vapor", "unresolved", "T,P,x", "P_rho=0", "case");
