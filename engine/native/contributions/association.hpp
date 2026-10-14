@@ -23,16 +23,16 @@
 
 namespace epcsaft {
 
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 std::vector<Scalar> association_delta_values(
-    const Scalar& temperature,
+    const Fixed& temperature,
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>& diameter,
-    const std::vector<Scalar>& association_energy_over_k,
-    const std::vector<Scalar>& association_volume
+    const std::vector<Fixed>& sigma,
+    const std::vector<Fixed>& diameter,
+    const std::vector<Fixed>& association_energy_over_k,
+    const std::vector<Fixed>& association_volume
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
@@ -53,14 +53,14 @@ std::vector<Scalar> association_delta_values(
                 diameter[i] * diameter[j] / (diameter[i] + diameter[j]), zeta[2], one_minus_eta);
             // Wolbach--Sandler pairs (active == 2): the Gross2002 Eq. 3 size
             // factor times sigma_ij^3 is the geometric-mean diameter cubed.
-            const Scalar size_ij = (parameters.association_active[pair] == 2
-                    ? scalar_sqrt(sigma[i] * sigma[j]) : Scalar(0.5) * (sigma[i] + sigma[j]))
-                * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            const Fixed size_ij = (parameters.association_active[pair] == 2
+                    ? scalar_sqrt(sigma[i] * sigma[j]) : Fixed(0.5) * (sigma[i] + sigma[j]))
+                * (Fixed(1.0) - parameters.l_ij[i * components + j]);
             // EqID: association_strength
             delta[pair] = contact
                 * (scalar_exp(
                        association_energy_over_k[pair] / temperature
-                   ) - Scalar(1.0))
+                   ) - Fixed(1.0))
                 * size_ij * size_ij * size_ij
                 * association_volume[pair];
         }
@@ -78,9 +78,9 @@ inline std::vector<double> association_delta(
 }
 
 // B_a = sum_b x_c(b) n_b X_b Delta_ab, the bonded density of every site a.
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 std::vector<Scalar> bonded_densities(
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta
@@ -94,10 +94,10 @@ std::vector<Scalar> bonded_densities(
     return bonded;
 }
 
-template <typename Scalar, typename ParameterSet>
+template <typename Scalar, typename ParameterSet, typename Fixed>
 std::vector<Scalar> association_residuals(
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta
@@ -161,6 +161,9 @@ inline std::vector<double> solve_linear(
 }
 
 // EqExclude: numerical iteration mechanics
+// `start` replaces the unbonded start X = 1 (a neighbouring solution, inside (0, 1]); `strength` supplies
+// association_delta at this state; `pair_start` takes the analytic pair step from X = 1 whatever the association
+// strength. None changes the solved system or its tolerance.
 inline std::vector<double> solve_site_fractions(
     double temperature,
     double molar_density,
@@ -168,7 +171,10 @@ inline std::vector<double> solve_site_fractions(
     const Parameters& parameters,
     const std::vector<double>& sigma,
     const std::vector<double>& diameter,
-    core::Convergence* record = nullptr
+    core::Convergence* record = nullptr,
+    const std::vector<double>* start = nullptr,
+    const std::vector<double>* strength = nullptr,
+    bool pair_start = false
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
@@ -185,10 +191,12 @@ inline std::vector<double> solve_site_fractions(
         return {};
     }
     core::Scope scope("association_newton");
-    const auto delta = association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter);
+    const auto computed = strength != nullptr ? std::vector<double>{}
+        : association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter);
+    const auto& delta = strength != nullptr ? *strength : computed;
     const double number_density =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-    std::vector<double> fractions(sites, 1.0);
+    std::vector<double> fractions = start != nullptr ? *start : std::vector<double>(sites, 1.0);
     core::ResidualHistory history;
     std::size_t evaluations = 0;
     std::optional<double> last_pivot;
@@ -259,8 +267,8 @@ inline std::vector<double> solve_site_fractions(
             for (std::size_t a = 0; a < sites; ++a)
                 negative_residual[a] = 1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
             // Chapman1990 mass action: exact equivalent-partner pair, otherwise row quadratic.
-            if (iteration == 0 && number_density * *std::max_element(bonded.begin(), bonded.end())
-                > 1.0 / policy::ASSOCIATION_JACOBIAN_CONDITION.value) {
+            if (iteration == 0 && ((pair_start && start == nullptr) || number_density * *std::max_element(bonded.begin(), bonded.end())
+                > 1.0 / policy::ASSOCIATION_JACOBIAN_CONDITION.value)) {
                 next.resize(sites);
                 for (std::size_t a = 0; a < sites; ++a) {
                     const double q = number_density * bonded[a];

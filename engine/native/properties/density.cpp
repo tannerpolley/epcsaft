@@ -35,18 +35,122 @@ struct PressurePoint final {
     double gradient_floor;
 };
 
-PressurePoint at_density(const HelmholtzModel& model, double temperature, double pressure,
+// P(rho) at fixed T and amounts: the shared residual Helmholtz templates as a Taylor series in volume
+// at the tape's PressureSlope chart (unit total amount), P = RT (rho - A_V), dP/drho = RT (1 + A_VV/rho^2)
+// and d2P/drho2 = -RT (A_VVV/rho^4 + 2 A_VV/rho^3). Only density-dependent arithmetic carries the series;
+// temperature and composition terms stay double. The solved site fractions enter with their implicit volume
+// coefficients from the factorized mass action, so the series is the stationary association potential's.
+// It reads no tape and takes no lock.
+class PressureSeries final {
+public:
+    PressureSeries(const HelmholtzModel& model, double temperature, const std::vector<double>& amounts)
+        : model_(model), parameters_(model.parameters()), temperature_(temperature) {
+        for (double amount : amounts) total_ += amount;
+        for (double amount : amounts) composition_.push_back(amount / total_);
+        sigma_ = segment_sigma(temperature, parameters_);
+        if (!std::all_of(sigma_.begin(), sigma_.end(), [](double v) { return std::isfinite(v) && v > 0.0; }))
+            throw std::invalid_argument("invalid sigma correlation");
+        diameter_ = segment_diameter(temperature, parameters_, sigma_);
+        if (!std::all_of(diameter_.begin(), diameter_.end(), [](double v) { return std::isfinite(v) && v > 0.0; }))
+            throw std::invalid_argument("invalid segment diameter");
+        // With one partner per site the mass action's pair step is its exact solution at every density.
+        const std::size_t sites = parameters_.site_component.size();
+        for (std::size_t a = 0; a < sites; ++a)
+            pairs_ = pairs_ && std::count_if(parameters_.association_active.begin() + static_cast<std::ptrdiff_t>(a * sites),
+                parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
+    }
+    const HelmholtzModel& model() const { return model_; }
+
+    // Coefficients of A_res/(RT) in t at V = 1/density + t, and the association gradient floor. `start` begins the
+    // site solve from a neighbouring solution; `sites` receives the site fractions' coefficients in t (N per site).
+    template <std::size_t N>
+    Taylor<N> residual(double density, double& floor, const std::vector<double>* start = nullptr,
+                       std::vector<double>* sites_out = nullptr) const {
+        using Series = Taylor<N>;
+        core::Scope scope("evaluate");
+        const double volume = 1.0 / density, rho0 = total_ / volume;
+        Series v(volume);
+        v.c[1] = 1.0;
+        const Series rho = total_ / v;
+        // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
+        static thread_local std::vector<Series> delta, site_series, residuals;
+        static thread_local std::vector<double> strength;
+        static thread_local Eigen::VectorXd rows, coefficient, cross, unit;
+        delta.clear(); strength.clear(); site_series.clear(); residuals.clear();
+        if (!parameters_.site_component.empty()) {
+            delta = association_delta_values(temperature_, rho, composition_, parameters_, sigma_, diameter_,
+                                             parameters_.association_energy_over_k, parameters_.association_volume);
+            for (const auto& d : delta) strength.push_back(d.c[0]);
+        }
+        core::Convergence record;
+        const auto sites = strength.empty() ? std::vector<double>{}
+            : solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record,
+                !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr, &strength, true);
+        site_series.assign(sites.begin(), sites.end());
+        floor = 0.0;
+        if (!sites.empty()) {
+            static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+            properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
+            const auto count = static_cast<Eigen::Index>(sites.size());
+            rows.resize(count); cross.resize(count);
+            // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order.
+            for (std::size_t k = 1; k < N; ++k) {
+                residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
+                for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
+                coefficient = factorization.solve(rows);
+                for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
+                if (k > 1) continue;
+                for (Eigen::Index s = 0; s < count; ++s) {
+                    const auto site = static_cast<std::size_t>(s);
+                    cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
+                        * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
+                }
+                unit = factorization.solve(Eigen::VectorXd::Ones(count));
+                floor = std::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
+            }
+            residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
+        }
+        const auto [electrolyte, born] = detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+        const auto contributions = residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
+                                                      diameter_, site_series, electrolyte.debye_huckel, born);
+        if (sites_out != nullptr) {
+            sites_out->clear();
+            for (const auto& x : site_series) sites_out->insert(sites_out->end(), x.c.begin(), x.c.begin() + N);
+        }
+        const auto potential = detail::stationary_association(contributions.association, composition_, parameters_, residuals);
+        return total_ * (contributions.hard_chain + contributions.dispersion + contributions.debye_huckel
+                         + contributions.born + potential + contributions.dipolar);
+    }
+
+private:
+    const HelmholtzModel& model_;
+    const Parameters& parameters_;
+    double temperature_, total_ = 0.0;
+    bool pairs_ = true;
+    std::vector<double> composition_, sigma_, diameter_;
+};
+
+PressurePoint at_density(const PressureSeries& series, double temperature, double pressure,
                          const std::vector<double>& composition, double density,
                          std::size_t& evaluations, DerivativeOrder order) {
     ++evaluations;
-    const auto derivatives = model.evaluate(temperature, 1.0 / density, composition, order);
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    const double scale = density * GAS_CONSTANT_J_PER_MOL_K * temperature;  // z - P/(rho R T), as recorded
+    if (order == DerivativeOrder::PressureSlope) {
+        double floor = 0.0;
+        const auto energy = series.residual<2>(density, floor);
+        if (!std::all_of(energy.c.begin(), energy.c.end(), [](double v) { return std::isfinite(v); }))
+            throw std::runtime_error("nonfinite density derivatives");
+        const double calculated = rt * (density - energy.c[1]);
+        return {calculated / scale - pressure / scale, calculated,
+                rt * (1.0 + 2.0 * energy.c[2] / (density * density)), floor};
+    }
+    const auto derivatives = series.model().evaluate(temperature, 1.0 / density, composition, order);
     if (!std::all_of(derivatives.gradient.begin(), derivatives.gradient.end(), [](double v) { return std::isfinite(v); })
         || !std::all_of(derivatives.hessian.begin(), derivatives.hessian.end(), [](double v) { return std::isfinite(v); }))
         throw std::runtime_error("nonfinite density derivatives");
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature, calculated = rt * (density - derivatives.gradient[1]);
-    const double scale = density * GAS_CONSTANT_J_PER_MOL_K * temperature;  // z - P/(rho R T), as recorded
-    return {calculated / scale - pressure / scale, calculated, order == DerivativeOrder::PressureSlope
-            ? rt * (1.0 + derivatives.volume_second_derivative / (density * density)) : 0.0, derivatives.gradient_floor};
+    const double calculated = rt * (density - derivatives.gradient[1]);
+    return {calculated / scale - pressure / scale, calculated, 0.0, derivatives.gradient_floor};
 }
 
 double residual_derivative(
@@ -54,6 +158,12 @@ double residual_derivative(
 ) {
     return (point.slope * density - (point.pressure - pressure))
         / (density * density * GAS_CONSTANT_J_PER_MOL_K * temperature);
+}
+
+bool bracket_closed(const PressurePoint& point, double derivative, double width) {
+    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    return point.residual == 0.0 || (std::abs(point.residual) <= tolerance && std::isfinite(derivative)
+        && derivative != 0.0 && width * std::abs(derivative) <= tolerance);
 }
 
 bool association_failure(const std::exception& error) {
@@ -68,7 +178,7 @@ bool association_failure(const std::exception& error) {
 // Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
 DensityRoot refine(
-    const HelmholtzModel& model, double temperature, double pressure,
+    const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations
 ) {
@@ -83,8 +193,7 @@ DensityRoot refine(
     for (; iterations < maximum; ++iterations) {
         const double derivative = residual_derivative(point, density, pressure, temperature);
         const bool residual_met = std::abs(point.residual) <= tolerance;
-        if (point.residual == 0.0 || (residual_met && std::isfinite(derivative) && derivative != 0.0
-            && (upper - lower) * std::abs(derivative) <= tolerance)) break;
+        if (bracket_closed(point, derivative, upper - lower)) break;
         // Once the residual passes, the bracket must still witness the tolerance/amplification
         // radius: step a quarter radius past the Newton root toward the far end (bisection fallback).
         double candidate = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
@@ -146,7 +255,7 @@ DensityRoot refine(
 // (mean value theorem): bisect toward the crossing until a stable sample splits the cell into
 // two fold cells, or fail. An exact stable root at that sample is this cell's one root.
 void scan_cell(
-    const HelmholtzModel& model, double temperature, double pressure,
+    const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& scope, std::size_t& evaluations,
     std::vector<DensityRoot>& roots
@@ -215,7 +324,7 @@ void scan_cell(
 struct ScanPoint final { double density; PressurePoint point; bool linked; };
 
 void search_slope(
-    const HelmholtzModel& model, double temperature, double pressure,
+    const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, std::vector<ScanPoint>& points,
     core::Scope& scope, std::size_t& evaluations,
     const std::function<PressurePoint(double)>& evaluate = {},
@@ -274,7 +383,7 @@ void search_slope(
 // section in log density until a negative slope exposes the loop or the quadratic slope model
 // estimates its minimum positive; this finite search is not a completeness certificate.
 std::vector<DensityRoot> scan_roots(
-    const HelmholtzModel& model, double temperature, double pressure,
+    const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, double log_lower, double log_upper,
     std::size_t intervals, core::Scope& scope, std::size_t& evaluations
 ) {
@@ -328,8 +437,378 @@ std::vector<DensityRoot> scan_roots(
     return roots;
 }
 
+// ------------------------------------------------------------- single-loop structure
+
+// P, P_rho and P_rhorho at one density from the third-order series.
+struct Sample final {
+    double density;
+    PressurePoint point;
+    double curvature;
+    std::vector<double> sites;  // site fractions' coefficients in volume (three per site): a neighbour's site-solve start
+};
+
+// A sample contradicts the single slope minimum, or a step left its budget: the caller scans instead.
+struct StructureBroken final {};
+
+// ALG-DENSITY's single mechanical loop, sampled: P_rho has one interior minimum rho_m, so P is concave below rho_m
+// (P_rhorho < 0, P_rho falling) and convex above it (P_rhorho > 0, P_rho rising). Each sample is checked against
+// that order; a contradiction throws StructureBroken. Tangents then bound P: from above on the concave side, from
+// below on the convex side.
+class Isotherm final {
+public:
+    Isotherm(const PressureSeries& series, double temperature, double pressure, double lower, double upper,
+             std::size_t& evaluations, core::Scope& scope)
+        : series_(series), temperature_(temperature), pressure_(pressure), lower_(lower), upper_(upper),
+          evaluations_(evaluations), scope_(scope) {}
+    // A broken structure is traced with its cause before the caller scans.
+    [[noreturn]] void broken(const char* cause, double density) const {
+        scope_.probe("structured_broken", {density}, 0, cause);
+        throw StructureBroken{};
+    }
+
+    void at(double density) {
+        if (!(density > lower_ && density < upper_)) broken("outside the domain", density);
+        if (samples_.size() == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) broken("sample budget", density);
+        if (std::any_of(samples_.begin(), samples_.end(), [&](const Sample& s) { return s.density == density; })) broken("repeated sample", density);
+        ++evaluations_;
+        double floor = 0.0;
+        Taylor<3> energy;
+        std::vector<double> sites, start;
+        const Sample* nearest = nullptr;
+        for (const auto& s : samples_)
+            if (!s.sites.empty() && (!nearest || std::abs(std::log(s.density / density)) < std::abs(std::log(nearest->density / density))))
+                nearest = &s;
+        if (nearest) {  // the nearest sample's site fractions continued along volume, kept inside (0, 1]
+            const double dv = 1.0 / density - 1.0 / nearest->density;
+            for (std::size_t i = 0; i + 2 < nearest->sites.size(); i += 3) {
+                const double x = nearest->sites[i] + dv * (nearest->sites[i + 1] + dv * nearest->sites[i + 2]);
+                start.push_back(x > 0.0 && x <= 1.0 ? x : nearest->sites[i]);
+            }
+        }
+        try { energy = series_.residual<3>(density, floor, start.empty() ? nullptr : &start, &sites); }
+        catch (const std::exception& error) { broken(error.what(), density); }
+        const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature_, scale = density * rt, squared = density * density;
+        const double calculated = rt * (density - energy.c[1]), avv = 2.0 * energy.c[2], avvv = 6.0 * energy.c[3];
+        Sample sample{density, {calculated / scale - pressure_ / scale, calculated, rt * (1.0 + avv / squared), floor},
+                      -rt * (avvv / (squared * squared) + 2.0 * avv / (squared * density)), std::move(sites)};
+        if (!std::isfinite(sample.point.residual) || !std::isfinite(sample.point.slope)
+            || !std::isfinite(sample.curvature) || sample.curvature == 0.0 || sample.point.slope == 0.0) broken("degenerate sample", density);
+        const auto at = std::upper_bound(samples_.begin(), samples_.end(), density,
+                                         [](double d, const Sample& s) { return d < s.density; });
+        // Concave samples lie below convex ones; P_rho falls across concave samples and rises across convex ones
+        // (compared only between samples a millionth apart, beyond the slope's rounding).
+        const bool concave = sample.curvature < 0.0;
+        const auto apart = [&](const Sample& s) { return std::abs(s.density - density) > policy::DENSITY_SLOPE_SEPARATION.value * density; };
+        for (auto it = at; it != samples_.end(); ++it)
+            if ((concave && it->curvature < 0.0 && apart(*it) && !(it->point.slope < sample.point.slope))
+                || (!concave && (it->curvature < 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) broken("curvature or slope order", density);
+        for (auto it = samples_.begin(); it != at; ++it)
+            if ((!concave && it->curvature > 0.0 && apart(*it) && !(it->point.slope < sample.point.slope))
+                || (concave && (it->curvature > 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) broken("curvature or slope order", density);
+        samples_.insert(at, std::move(sample));
+    }
+    const std::vector<Sample>& samples() const { return samples_; }
+    Isotherm empty() const { return {series_, temperature_, pressure_, lower_, upper_, evaluations_, scope_}; }
+    double pressure() const { return pressure_; }
+    double lower() const { return lower_; }
+    double upper() const { return upper_; }
+    double temperature() const { return temperature_; }
+    // The concave side ends below the lowest convex sample and the convex side starts above the highest concave one.
+    double concave_end() const {
+        for (const auto& s : samples_) if (s.curvature > 0.0) return s.density;
+        return upper_;
+    }
+    double convex_start() const {
+        for (auto it = samples_.rbegin(); it != samples_.rend(); ++it) if (it->curvature < 0.0) return it->density;
+        return lower_;
+    }
+    // The sample with the most negative P_rho: inside the loop, nearest its slope minimum.
+    std::optional<double> witness() const {
+        const Sample* best = nullptr;
+        for (const auto& s : samples_) if (s.point.slope < 0.0 && (!best || s.point.slope < best->point.slope)) best = &s;
+        return best ? std::optional<double>(best->density) : std::nullopt;
+    }
+    // Extremum over [from, to] of the lower (concave side) or upper (convex side) envelope of the side's tangents:
+    // a bound on P there, at a density where the bound is attained.
+    std::pair<double, double> envelope(bool concave_side, double from, double to) const {
+        std::vector<const Sample*> lines;
+        for (const auto& s : samples_) if ((s.curvature < 0.0) == concave_side) lines.push_back(&s);
+        if (lines.empty()) return {concave_side ? std::numeric_limits<double>::infinity() : -std::numeric_limits<double>::infinity(), 0.5 * (from + to)};
+        const auto value = [&](double rho) {
+            double bound = concave_side ? std::numeric_limits<double>::infinity() : -std::numeric_limits<double>::infinity();
+            for (const auto* s : lines) {
+                const double tangent = s->point.pressure + s->point.slope * (rho - s->density);
+                bound = concave_side ? std::min(bound, tangent) : std::max(bound, tangent);
+            }
+            return bound;
+        };
+        std::vector<double> candidates{from, to};
+        for (std::size_t i = 0; i < lines.size(); ++i)
+            for (std::size_t j = i + 1; j < lines.size(); ++j) {
+                const double ds = lines[i]->point.slope - lines[j]->point.slope;
+                if (ds == 0.0) continue;
+                const double rho = (lines[j]->point.pressure - lines[i]->point.pressure
+                    + lines[i]->point.slope * lines[i]->density - lines[j]->point.slope * lines[j]->density) / ds;
+                if (rho > from && rho < to) candidates.push_back(rho);
+            }
+        std::pair<double, double> best{value(candidates.front()), candidates.front()};
+        for (const double rho : candidates) {
+            const double v = value(rho);
+            if (concave_side ? v > best.first : v < best.first) best = {v, rho};
+        }
+        return best;
+    }
+
+private:
+    const PressureSeries& series_;
+    double temperature_, pressure_, lower_, upper_;
+    std::size_t& evaluations_;
+    core::Scope& scope_;
+    std::vector<Sample> samples_;
+};
+
+struct SideRoot final {
+    bool exists = false;
+    std::optional<Sample> lower, upper;  // a bracket of the side's stable root, when found
+};
+
+// The next density toward P_t from a sample. On the convex (liquid) side, the root of the local quadratic
+// P + P_rho d + P_rhorho d^2 / 2 in the stable form: in Newton's direction and at most twice its length. From
+// below, where the stiff liquid isotherm's curvature dominates, Halley's step falls far shorter. Elsewhere
+// Halley's step when its curvature term keeps Newton's direction and at most doubles the step, which is when
+// (P - P_t) P_rhorho <= P_rho^2, else Newton's: concavity keeps a vapor Newton iterate below its root.
+double step_toward(const Isotherm& iso, const Sample& from) {
+    const double excess = from.point.pressure - iso.pressure(), slope = from.point.slope;
+    const double discriminant = slope * slope - 2.0 * excess * from.curvature;
+    if (from.curvature > 0.0 && slope > 0.0 && discriminant >= 0.0)
+        return from.density - 2.0 * excess / (slope + std::sqrt(discriminant));
+    return from.density + (excess * from.curvature <= slope * slope
+        ? -2.0 * excess * slope / (2.0 * slope * slope - excess * from.curvature) : -excess / slope);
+}
+
+// From one side of a root: the step toward P_t, or once the residual passes a quarter radius past the root (as
+// refine), so the next sample brackets it. `past` points from the sample toward the root.
+double approach(const Isotherm& iso, const Sample& from, double past) {
+    const double derivative = residual_derivative(from.point, from.density, iso.pressure(), iso.temperature());
+    if (std::abs(from.point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value && std::isfinite(derivative) && derivative != 0.0)
+        return from.density - from.point.residual / derivative
+            + std::copysign(0.25 * policy::DENSITY_ROOT_RESIDUAL.value / std::abs(derivative), past);
+    return step_toward(iso, from);
+}
+
+// A new density in (lo, hi): x itself when it lies inside and off every sample, else the interval's midpoint.
+double inside(const Isotherm& iso, double x, double lo, double hi) {
+    const auto taken = [&](double rho) {
+        return std::any_of(iso.samples().begin(), iso.samples().end(), [&](const Sample& s) { return s.density == rho; });
+    };
+    return x > lo && x < hi && !taken(x) ? x : 0.5 * (lo + hi);
+}
+
+// Refine's stop rule on a bracket [lower, upper] of one up-crossing: the sample nearer P_t meets the residual
+// tolerance and the bracket is within the tolerance radius. Otherwise the next density: the step toward P_t from that
+// sample, or once its residual passes a quarter radius past the root toward the other end; bisection when the
+// step leaves the bracket.
+std::optional<double> converge(const Isotherm& iso, const Sample& lower, const Sample& upper) {
+    const bool from_lower = std::abs(lower.point.pressure - iso.pressure()) < std::abs(upper.point.pressure - iso.pressure());
+    const Sample& near = from_lower ? lower : upper;
+    const double derivative = residual_derivative(near.point, near.density, iso.pressure(), iso.temperature());
+    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    const bool met = std::abs(near.point.residual) <= tolerance;
+    if (bracket_closed(near.point, derivative, upper.density - lower.density)) return std::nullopt;
+    double x = !(near.point.slope > 0.0) ? 0.5 * (lower.density + upper.density)
+        : met && std::isfinite(derivative) && derivative != 0.0
+        ? near.density - near.point.residual / derivative
+            + std::copysign(0.25 * tolerance / std::abs(derivative), from_lower ? 1.0 : -1.0)
+        : step_toward(iso, near);
+    if (!(x > lower.density && x < upper.density)) x = 0.5 * (lower.density + upper.density);
+    return x;
+}
+
+// Main's fold rule (scan_cell): a side whose pressure extremum lies within the residual tolerance of P_t is
+// unresolved, neither rooted nor rootless. A deciding sample is checked by its quadratic estimate of that extremum,
+// P - P_t - P_rho^2 / (2 P_rhorho) (a loop sample by P - P_t): within the tolerance, the request goes to the scan,
+// which applies the rule at its located spinodal. The tolerance in pressure at a density.
+double tolerance_pressure(const Isotherm& iso, double density) {
+    return policy::DENSITY_ROOT_RESIDUAL.value * density * GAS_CONSTANT_J_PER_MOL_K * iso.temperature();
+}
+
+const Sample& decided(const Isotherm& iso, const Sample& s) {
+    const double reach = s.point.pressure - iso.pressure()
+        - (s.point.slope > 0.0 ? s.point.slope * s.point.slope / (2.0 * s.curvature) : 0.0);
+    if (std::abs(reach) <= tolerance_pressure(iso, s.density)) iso.broken("pressure extremum within the tolerance", s.density);
+    return s;
+}
+
+// The concave side holds at most one stable root, the up-crossing below its pressure maximum, which is the
+// smallest stable root. A sample at or above P_t on this side (concave, or inside the loop) brackets it with a
+// rising concave sample below P_t; the side is rootless when the tangent envelope stays below P_t up to its end.
+// To establish only whether the root exists, samples go to the envelope's peak; to locate it, steps toward P_t
+// climb from below and converge in the bracket.
+SideRoot vapor_side(Isotherm& iso, double start, bool locate) {
+    for (;;) {
+        const auto& samples = iso.samples();
+        const Sample* above = nullptr;
+        for (const auto& s : samples)
+            if (s.point.residual >= 0.0 && (s.curvature < 0.0 || s.point.slope < 0.0)) { above = &s; break; }
+        const Sample* below = nullptr;
+        for (const auto& s : samples)
+            if (s.point.residual < 0.0 && s.curvature < 0.0 && s.point.slope > 0.0 && (!above || s.density < above->density)) below = &s;
+        if (above && above->point.residual == 0.0 && above->point.slope > 0.0) return {true, decided(iso, *above), *above};
+        if (above && !locate) return {true, std::nullopt, decided(iso, *above)};
+        double x = start;
+        if (above && below) {
+            const auto next = converge(iso, *below, *above);
+            if (!next) return {true, *below, decided(iso, *above)};
+            x = *next;
+        } else if (above) {
+            x = above->point.slope > 0.0 && above->curvature < 0.0 ? approach(iso, *above, -1.0) : 0.5 * above->density;
+        } else if (below || std::any_of(samples.begin(), samples.end(), [&](const Sample& s) { return s.density <= start; })) {
+            const double end = iso.concave_end();
+            const auto [bound, peak] = iso.envelope(true, iso.lower(), end);
+            if (bound < iso.pressure() - tolerance_pressure(iso, peak)) return {};
+            if (!below) x = 0.25 * samples.front().density;
+            else x = inside(iso, locate ? std::min(approach(iso, *below, 1.0), peak)
+                                        : below->density - below->point.slope / below->curvature, below->density, end);
+        }
+        iso.at(x);
+    }
+}
+
+// The convex side mirrored: its stable root is the up-crossing above its pressure minimum, the largest stable root.
+SideRoot liquid_side(Isotherm& iso, double start, bool locate) {
+    for (;;) {
+        const auto& samples = iso.samples();
+        const Sample* below = nullptr;
+        for (auto it = samples.rbegin(); it != samples.rend(); ++it)
+            if (it->point.residual <= 0.0 && (it->curvature > 0.0 || it->point.slope < 0.0)) { below = &*it; break; }
+        const Sample* above = nullptr;
+        for (auto it = samples.rbegin(); it != samples.rend(); ++it)
+            if (it->point.residual > 0.0 && it->curvature > 0.0 && it->point.slope > 0.0 && (!below || it->density > below->density)) above = &*it;
+        if (below && below->point.residual == 0.0 && below->point.slope > 0.0) return {true, decided(iso, *below), *below};
+        if (below && !locate) return {true, decided(iso, *below), std::nullopt};
+        double x = start;
+        if (below && above) {
+            const auto next = converge(iso, *below, *above);
+            if (!next) return {true, decided(iso, *below), *above};
+            x = *next;
+        } else if (below) {
+            x = below->point.slope > 0.0 && below->curvature > 0.0 ? approach(iso, *below, 1.0) : 0.5 * (below->density + iso.upper());
+        } else if (above || std::any_of(samples.begin(), samples.end(), [&](const Sample& s) { return s.density >= start; })) {
+            const double begin = iso.convex_start();
+            const auto [bound, trough] = iso.envelope(false, begin, iso.upper());
+            if (bound > iso.pressure() + tolerance_pressure(iso, trough)) return {};
+            if (!above) x = 0.5 * (samples.back().density + iso.upper());
+            // P_rho grows steeply above the liquid spinodal, so its Newton step creeps: no further than the log midpoint.
+            else x = inside(iso, locate ? std::max(approach(iso, *above, -1.0), trough)
+                                        : std::min(above->density - above->point.slope / above->curvature,
+                                                   std::sqrt(begin * above->density)), begin, above->density);
+        }
+        iso.at(x);
+    }
+}
+
+// A negative slope witnesses the loop. Tangents to P_rho propose a sample, but their positive
+// intersection cannot exclude a hidden negative dip under the single-minimum assumption.
+void loop_search(Isotherm& iso) {
+    while (!iso.witness()) {
+        const auto& samples = iso.samples();
+        const Sample *a = nullptr, *b = nullptr;
+        for (const auto& s : samples) {
+            if (s.curvature < 0.0) a = &s;
+            else if (!b) b = &s;
+        }
+        if (!a || !b) iso.broken("loop search without both sides", 0.0);
+        const double z = (b->point.slope - a->point.slope + a->curvature * a->density - b->curvature * b->density)
+            / (a->curvature - b->curvature);
+        const double bound = a->point.slope + a->curvature * (z - a->density);
+        if (bound > 0.0) iso.broken("loop absence unresolved", z);
+        iso.at(z > a->density && z < b->density ? z : 0.5 * (a->density + b->density));
+    }
+}
+
+// The scan's witness for a sole root: the first node of scan_roots' log grid with a negative slope. Under the single
+// loop those nodes lie between the spinodals, so the first one follows from a binary search over the nodes between
+// the highest rising sample below the loop and the lowest loop sample (or the first node above it). Throws
+// StructureBroken when no node falls inside the loop: the scan's slope search owns that case.
+double grid_witness(Isotherm& iso) {
+    const double log_lower = std::log(iso.lower()), log_upper = std::log(iso.upper());
+    const auto intervals = static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value);
+    const auto node = [&](std::size_t index) {
+        return std::exp(log_lower + static_cast<double>(index) / intervals * (log_upper - log_lower)); };
+    const auto slope_at = [&](double rho) {
+        for (const auto& s : iso.samples()) if (s.density == rho) return s.point.slope;
+        iso.at(rho);
+        for (const auto& s : iso.samples()) if (s.density == rho) return s.point.slope;
+        return 0.0;
+    };
+    const auto loop = std::find_if(iso.samples().begin(), iso.samples().end(), [](const Sample& s) { return s.point.slope < 0.0; });
+    if (loop == iso.samples().end()) iso.broken("no sample inside the loop", 0.0);
+    const double inside = loop->density;
+    double rising = iso.lower();
+    for (const auto& s : iso.samples()) if (s.density < inside && s.point.slope > 0.0) rising = s.density;
+    std::size_t first = 0, last = 0;  // the nodes in (rising, inside]
+    while (first <= intervals && !(node(first) > rising)) ++first;
+    last = first;
+    while (last <= intervals && node(last) <= inside) ++last;
+    // Binary search for the first negative slope among nodes [first, last); `last` (above the lowest loop sample)
+    // is the candidate when every one of them is positive.
+    std::size_t lo = first, hi = last;
+    while (lo < hi) {
+        const std::size_t mid = lo + (hi - lo) / 2;
+        if (slope_at(node(mid)) < 0.0) hi = mid;
+        else lo = mid + 1;
+    }
+    if (lo > intervals || !(slope_at(node(lo)) < 0.0)) iso.broken("loop between scan nodes", inside);
+    return node(lo);
+}
+
+// The density at packing fraction eta (the upper bound sits at DENSITY_UPPER_FRACTION of the close-packing density).
+double structured_start(const Isotherm& iso, double eta) {
+    return eta / policy::CLOSE_PACKING_FRACTION.value * iso.upper() / policy::DENSITY_UPPER_FRACTION.value;
+}
+
+// Both sides' stable roots or their absence under the single-loop structure, with the loop witness; nullopt
+// when a sample breaks the structure. Brackets are kept for the roots a request needs.
+struct Structure final {
+    SideRoot vapor, liquid;
+    std::optional<double> witness;
+};
+
+std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, bool sibling) {
+    try {
+        const double ideal = iso.pressure() / (GAS_CONSTANT_J_PER_MOL_K * iso.temperature());
+        // Starts by packing fraction: dilute below 0.037, the loop's typical slope minimum near 0.133 and a liquid at 0.38.
+        const double vapor_start = std::min(ideal, structured_start(iso, 0.037)), liquid_start = structured_start(iso, 0.38);
+        const double loop_start = structured_start(iso, 0.133);
+        Structure result;
+        // Unless a sample already lies inside the loop: a loop sample witnesses the loop and, below P_t, the liquid root.
+        const auto loop_sample = [&] {
+            if (!iso.witness()) iso.at(loop_start);
+        };
+        // Every request checks the liquid structure first, including vapor requests.
+        result.liquid = liquid_side(iso, liquid_start, true);
+        loop_sample();
+        const bool locate_vapor = branch != DensityBranch::Liquid || sibling;
+        result.vapor = vapor_side(iso, locate_vapor ? vapor_start
+            : std::min(2.0 * ideal, structured_start(iso, 0.037)), locate_vapor);
+        if (result.vapor.exists && !result.liquid.exists) {
+            Isotherm fresh = iso.empty();
+            result.vapor = vapor_side(fresh, vapor_start, true);
+        }
+        if (!result.vapor.exists && !result.liquid.exists) iso.broken("neither side has a root", 0.0);
+        if (result.vapor.exists && result.liquid.exists && !(result.vapor.upper->density < result.liquid.lower->density))
+            iso.broken("side roots out of order", result.vapor.upper->density);
+        if (!(result.vapor.exists && result.liquid.exists)) loop_search(iso);
+        result.witness = iso.witness();
+        if (result.witness && !(result.vapor.exists && result.liquid.exists)) result.witness = grid_witness(iso);
+        return result;
+    } catch (const StructureBroken&) {
+        return std::nullopt;
+    }
+}
+
 DensityRoot anchor(
-    const HelmholtzModel& model, double temperature, double pressure,
+    const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, DensityBranch branch, double lower, double upper,
     double density, std::size_t& evaluations
 ) {
@@ -338,12 +817,24 @@ DensityRoot anchor(
     const double local_lower = std::exp(std::max(std::log(lower), log_anchor - window));
     const double local_upper = std::exp(std::min(std::log(upper), log_anchor + window));
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
+    Isotherm iso(model, temperature, pressure, lower, upper, evaluations, anchor_scope);
+    bool certificate_available = true;
+    const auto sample = [&](double rho) {
+        iso.at(rho);
+        return *std::find_if(iso.samples().begin(), iso.samples().end(), [&](const Sample& s) { return s.density == rho; });
+    };
     core::ResidualHistory history;
     core::Convergence anchor_record;
     std::size_t iteration = 0;
     for (; iteration < maximum; ++iteration) {
-        const auto point = at_density(model, temperature, pressure, composition, density,
-                                      evaluations, DerivativeOrder::PressureSlope);
+        std::optional<Sample> current;
+        if (certificate_available) {
+            try { current = sample(density); }
+            catch (const StructureBroken&) { certificate_available = false; }
+        }
+        const auto point = current ? current->point
+            : at_density(model, temperature, pressure, composition, density,
+                         evaluations, DerivativeOrder::PressureSlope);
         history.push(std::abs(point.residual));
         const double derivative = residual_derivative(point, density, pressure, temperature);
         const double candidate = std::isfinite(derivative) && derivative != 0.0
@@ -360,15 +851,41 @@ DensityRoot anchor(
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
-            auto roots = scan_roots(model, temperature, pressure, composition,
-                std::log(local_lower), std::log(local_upper),
-                static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
-                anchor_scope, evaluations);
-            roots.erase(std::remove_if(roots.begin(), roots.end(),
-                [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
-            anchor_record.evaluations = evaluations;
-            if (roots.size() == 1) {
-                auto result = roots.front();
+            // A positive edge slope certifies the local window only under the single slope minimum.
+            // Every unproved case uses the inherited local scan, without restarting Newton.
+            const auto certificate = [&]() -> std::optional<DensityRoot> {
+                if (!current || !std::isfinite(derivative) || derivative == 0.0) return std::nullopt;
+                try {
+                    const Sample edge = sample(current->curvature > 0.0 ? local_lower : local_upper);
+                    if ((edge.curvature > 0.0) != (current->curvature > 0.0) || !(edge.point.slope > 0.0)) return std::nullopt;
+                    Sample low = *current, high = *current;
+                    if (point.residual != 0.0) {
+                        const double past = point.residual < 0.0 ? 1.0 : -1.0;
+                        const double endpoint = candidate + past * 0.25 * anchor_record.criterion->value / std::abs(derivative);
+                        if (!(endpoint >= local_lower && endpoint <= local_upper)) return std::nullopt;
+                        const Sample q = sample(endpoint);
+                        if (!(q.point.residual * point.residual < 0.0)) return std::nullopt;
+                        (past > 0.0 ? high : low) = q;
+                    }
+                    return refine(model, temperature, pressure, composition, low.density, low.point, high.density,
+                                  high.point, anchor_scope, evaluations);
+                } catch (const StructureBroken&) {
+                    return std::nullopt;
+                }
+            };
+            std::optional<DensityRoot> selected = certificate();
+            if (!selected) {
+                auto roots = scan_roots(model, temperature, pressure, composition,
+                    std::log(local_lower), std::log(local_upper),
+                    static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
+                    anchor_scope, evaluations);
+                roots.erase(std::remove_if(roots.begin(), roots.end(),
+                    [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
+                anchor_record.evaluations = evaluations;
+                if (roots.size() == 1) selected = roots.front();
+            }
+            if (selected) {
+                auto result = *selected;
                 result.branch = branch;
                 result.convergence.iterations += iteration + 1;
                 result.convergence.evaluations = evaluations;
@@ -431,12 +948,13 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         && evaluation_order != DerivativeOrder::Hessian)
         throw std::invalid_argument("finite-domain evaluation requires Gradient, PressureSlope or Hessian");
     const auto started = std::chrono::steady_clock::now();
+    const PressureSeries series(*this, temperature, composition);
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
             throw DiagnosticBudgetExhausted();
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
-        auto point = at_density(*this, temperature, pressure, composition, rho, result.evaluations, order);
+        auto point = at_density(series, temperature, pressure, composition, rho, result.evaluations, order);
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
             throw std::runtime_error("nonfinite density evaluation");
         return point;
@@ -535,7 +1053,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         };
         crossings(points);
         if (adaptive) {
-            search_slope(*this, temperature, pressure, composition, points, scope, result.evaluations,
+            search_slope(series, temperature, pressure, composition, points, scope, result.evaluations,
                          [&](double rho) {
                 auto point = evaluate(rho);
                 auto sample = row(rho, point, rho, rho, false);
@@ -605,6 +1123,11 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     return result;
 }
 
+Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
+    const std::vector<double>& composition, double& gradient_floor) {
+    return PressureSeries(model, temperature, composition).residual<3>(density, gradient_floor);
+}
+
 bool properties::regular_density(double density, double slope, const std::optional<core::Convergence>& record) {
     if (!(density > 0.0) || !std::isfinite(density) || !(slope > 0.0) || !std::isfinite(slope)
         || !record || !record->floor || !record->amplification) return false;
@@ -647,6 +1170,7 @@ DensityRoot solve_density(
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
+    const PressureSeries series(model, temperature, mole_fractions);
     if (anchor_density.has_value()) {
         try {
             if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
@@ -658,36 +1182,77 @@ DensityRoot solve_density(
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
                 throw core::ConvergenceFailure(record);
             }
-            result = anchor(model, temperature, pressure, mole_fractions, branch, lower, upper,
+            result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
                             *anchor_density, evaluations);
         } catch (const std::exception& error) {
             if (scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
             throw;
         }
     } else {
-        const auto roots = scan_roots(model, temperature, pressure, mole_fractions,
-            std::log(lower), std::log(upper),
-            static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value), scope, evaluations);
+        Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope);
+        const auto structure = structured_roots(iso, branch, sibling_root != nullptr);
         std::vector<DensityRoot> stable;
-        std::copy_if(roots.begin(), roots.end(), std::back_inserter(stable), [](const auto& root) {
-            return std::isfinite(root.pressure_density_derivative) && root.pressure_density_derivative > 0.0;
-        });
+        std::size_t count = 0;
+        if (structure) {
+            const auto refined = [&](const SideRoot& side) {
+                return refine(series, temperature, pressure, mole_fractions, side.lower->density, side.lower->point,
+                              side.upper->density, side.upper->point, scope, evaluations);
+            };
+            const bool both = structure->vapor.exists && structure->liquid.exists;
+            count = static_cast<std::size_t>(structure->vapor.exists) + static_cast<std::size_t>(structure->liquid.exists);
+            if (structure->vapor.exists && (branch == DensityBranch::Vapor || sibling_root != nullptr || !both))
+                stable.push_back(refined(structure->vapor));
+            if (structure->liquid.exists && (branch == DensityBranch::Liquid || sibling_root != nullptr || !both))
+                stable.push_back(refined(structure->liquid));
+            for (auto& root : stable) root.negative_slope_density = structure->witness;
+        } else {
+            const auto roots = scan_roots(series, temperature, pressure, mole_fractions,
+                std::log(lower), std::log(upper),
+                static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value), scope, evaluations);
+            std::copy_if(roots.begin(), roots.end(), std::back_inserter(stable), [](const auto& root) {
+                return std::isfinite(root.pressure_density_derivative) && root.pressure_density_derivative > 0.0;
+            });
+            count = stable.size();
+            // A sole root takes its own side's value from no samples, as the structured search returns it.
+            if (stable.size() == 1) {
+                for (const bool vapor : {true, false}) {
+                    try {
+                        Isotherm fresh = iso.empty();
+                        const auto side = vapor ? vapor_side(fresh, std::min(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature),
+                                                                             structured_start(fresh, 0.037)), true)
+                                                : liquid_side(fresh, structured_start(fresh, 0.38), true);
+                        if (!side.exists) continue;
+                        auto root = refine(series, temperature, pressure, mole_fractions, side.lower->density, side.lower->point,
+                                           side.upper->density, side.upper->point, scope, evaluations);
+                        // The same root when the two lie within their tolerance radii, (tolerance + floor) / |dr/drho|.
+                        const auto radius = [](const DensityRoot& r) {
+                            return (policy::DENSITY_ROOT_RESIDUAL.value + r.convergence.floor.value_or(0.0)) * r.convergence.amplification.value_or(0.0); };
+                        if (std::abs(root.molar_density - stable.front().molar_density) <= radius(root) + radius(stable.front())) {
+                            root.negative_slope_density = stable.front().negative_slope_density;
+                            stable.front() = root;
+                        }
+                        break;
+                    } catch (const StructureBroken&) {
+                    }
+                }
+            }
+        }
+        scope.probe("stable_root_count", static_cast<double>(count));
+        if (count > 1 && branch == DensityBranch::Unspecified)
+            throw std::runtime_error("density root is ambiguous (stable count "
+                                     + std::to_string(count) + ")");
         if (stable.empty()) throw std::runtime_error("no stable density root (count 0) at T = " + core::optional_number(temperature)
             + " K, P = " + core::optional_number(pressure) + " Pa; check the units (K, Pa)");
         std::sort(stable.begin(), stable.end(), [](const auto& left, const auto& right) {
             return left.molar_density < right.molar_density;
         });
-        scope.probe("stable_root_count", static_cast<double>(stable.size()));
-        if (stable.size() > 1 && branch == DensityBranch::Unspecified)
-            throw std::runtime_error("density root is ambiguous (stable count "
-                                     + std::to_string(stable.size()) + ")");
         result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
-        result.stable_root_count = stable.size();
-        result.branch = stable.size() == 1 ? DensityBranch::Unspecified : branch;
+        result.stable_root_count = count;
+        result.branch = count == 1 ? DensityBranch::Unspecified : branch;
         if (sibling_root != nullptr) {
             *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
-            sibling_root->stable_root_count = stable.size();
-            sibling_root->branch = stable.size() == 1 ? DensityBranch::Unspecified
+            sibling_root->stable_root_count = count;
+            sibling_root->branch = count == 1 ? DensityBranch::Unspecified
                 : branch == DensityBranch::Vapor ? DensityBranch::Liquid : DensityBranch::Vapor;
         }
     }

@@ -538,6 +538,17 @@ ElectrolyteActivity electrolyte_activity(
 );
 
 namespace properties {
+// Unit-amount residual Helmholtz coefficients in V+t, used by density pressure closure.
+Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
+    const std::vector<double>& composition, double& gradient_floor);
+
+// The factorized mass-action Jacobian of the solved site fractions; a singular or ill-conditioned one
+// throws, or with `status` is reported there.
+Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(const std::vector<double>& sites, const std::vector<double>& composition,
+    const Parameters& parameters, double number_density, const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
+void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const std::vector<double>& sites,
+    const std::vector<double>& composition, const Parameters& parameters, double number_density,
+    const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
 // liquid-side; explicit labels and roots without a sample are kept. vapor_side refuses a liquid reference (#423).

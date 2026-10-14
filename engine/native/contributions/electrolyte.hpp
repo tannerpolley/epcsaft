@@ -72,27 +72,27 @@ struct ElectrolyteResult final {
     Scalar debye_huckel;
 };
 
-template <typename Scalar, class ParameterSet>
+template <typename Scalar, class ParameterSet, typename Fixed>
 Scalar bulk_relative_permittivity(
-    const Scalar& temperature,
+    const Fixed& temperature,
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters
 ) {
     const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
-    Scalar solvent_mass = Scalar(0.0);
-    Scalar dielectric_mass = Scalar(0.0);
-    Scalar solvent_fraction = Scalar(0.0);
-    Scalar ion_dielectric = Scalar(0.0);
-    Scalar dielectric_volume = Scalar(0.0);
-    Scalar dielectric_temperature = Scalar(0.0);
-    Scalar ion_suppression = Scalar(0.0);
+    Fixed solvent_mass = Fixed(0.0);
+    Fixed dielectric_mass = Fixed(0.0);
+    Fixed solvent_fraction = Fixed(0.0);
+    Fixed ion_dielectric = Fixed(0.0);
+    Fixed dielectric_volume = Fixed(0.0);
+    Fixed dielectric_temperature = Fixed(0.0);
+    Fixed ion_suppression = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        const Scalar& fraction = mole_fractions[component];
+        const Fixed& fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
         if (dielectric_solvent_component(component, parameters)) {
             solvent_fraction += fraction;
-            const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
+            const Fixed mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
             dielectric_mass += mass * relative_permittivity[component];
             dielectric_volume += fraction
@@ -108,9 +108,10 @@ Scalar bulk_relative_permittivity(
 
     if (parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)) {
         const Scalar number_density_angstrom3 = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-        Scalar effective_dipolar_density = Scalar(0.0), dipolar_correlation = Scalar(0.0);
+        Scalar effective_dipolar_density = Scalar(0.0);
+        Fixed dipolar_correlation = Fixed(0.0);
         for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-            const Scalar& fraction = mole_fractions[component];
+            const Fixed& fraction = mole_fractions[component];
             // EqID: effective_dipolar_density
             effective_dipolar_density += number_density_angstrom3 * fraction
                 * (
@@ -138,11 +139,11 @@ Scalar bulk_relative_permittivity(
     }
     if (parameters.permittivity_form.is(PermittivityForm::DensityTemperature)) {
         // EqID: density_correlation_mixed_parameters
-        const Scalar mixed_volume = dielectric_volume / solvent_fraction;
-        const Scalar mixed_temperature = dielectric_temperature / solvent_fraction;
+        const Fixed mixed_volume = dielectric_volume / solvent_fraction;
+        const Fixed mixed_temperature = dielectric_temperature / solvent_fraction;
         // EqID: density_correlated_bulk_permittivity
         return Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
-            * (mixed_temperature / temperature - Scalar(1.0));
+            * (mixed_temperature / temperature - Fixed(1.0));
     }
 
     if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
@@ -155,13 +156,13 @@ Scalar bulk_relative_permittivity(
     }
 
     // EqID: salt_free_solvent_permittivity
-    const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
+    const Fixed salt_free_permittivity = dielectric_mass / solvent_mass;
     if (parameters.permittivity_form.is(PermittivityForm::IonSuppression)) {
         // EqID: ion_suppressed_bulk_permittivity
         // Covers ion-specific suppression directly, ion-fraction
         // suppression with alpha equal for every ion, and solvent-only
         // with alpha = 0.
-        return salt_free_permittivity / (Scalar(1.0) + ion_suppression);
+        return salt_free_permittivity / (Fixed(1.0) + ion_suppression);
     }
     throw std::invalid_argument("no permittivity form selected");
 }
@@ -181,11 +182,11 @@ Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
         / (reduced * reduced * reduced);
 }
 
-template <typename Scalar, class ParameterSet>
+template <typename Scalar, class ParameterSet, typename Fixed>
 ElectrolyteResult<Scalar> electrolyte_contribution(
-    const Scalar& temperature,
+    const Fixed& temperature,
     const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Fixed>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
     const ParameterSet& parameters
 ) {
@@ -230,12 +231,12 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         return {neutral_permittivity, Scalar(0.0)};
     }
 
-    Scalar solvent_mass = Scalar(0.0);
-    Scalar charge_square_sum = Scalar(0.0);
+    Fixed solvent_mass = Fixed(0.0);
+    Fixed charge_square_sum = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (dielectric_solvent_component(component, parameters)) {
-            const Scalar mass = mole_fractions[component]
+            const Fixed mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
         } else {
@@ -275,7 +276,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         if (charge == 0) {
             continue;
         }
-        const Scalar diameter_m = ANGSTROM_M * parameters.debye_huckel_diameter_angstrom[component];
+        const Fixed diameter_m = ANGSTROM_M * parameters.debye_huckel_diameter_angstrom[component];
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = scalar_select_less(reduced, Scalar(policy::SCREENING_SERIES_SWITCH.value),
             finite_size_chi(reduced, true), finite_size_chi(reduced, false));

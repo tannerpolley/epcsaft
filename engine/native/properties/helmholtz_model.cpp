@@ -48,17 +48,29 @@ bool symmetric(const std::vector<Value>& values, std::size_t size) {
     return true;
 }
 
-Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
+}  // namespace
+
+Eigen::FullPivLU<Eigen::MatrixXd> properties::site_factorization(
+    const std::vector<double>& sites, const std::vector<double>& composition, const Parameters& parameters,
+    double number_density, const std::vector<double>& delta, PropertyActionStatus* status
+) {
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+    site_factorization(factorization, sites, composition, parameters, number_density, delta, status);
+    return factorization;
+}
+
+void properties::site_factorization(
+    Eigen::FullPivLU<Eigen::MatrixXd>& factorization,
     const std::vector<double>& sites,
     const std::vector<double>& composition,
     const Parameters& parameters,
     double number_density,
     const std::vector<double>& delta,
-    PropertyActionStatus* status = nullptr
+    PropertyActionStatus* status
 ) {
     const std::size_t sites_count = sites.size();
-    if (sites_count == 0) return {};  // no association sites: no mass-action system to factor
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian(composition, parameters, sites,
+    if (sites_count == 0) { factorization = {}; return; }  // no association sites: no mass-action system to factor
+    factorization.compute(mass_action_jacobian(composition, parameters, sites,
         number_density, delta, bonded_densities(composition, parameters, sites, delta)));
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
     auto scope = core::Scope::detailed("association_derivative");
@@ -76,7 +88,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
         failure("association Jacobian is singular");
         if (status != nullptr) {
             *status = PropertyActionStatus::AssociationSingular;
-            return factorization;
+            return;
         }
         throw std::domain_error("association Jacobian is singular");
     }
@@ -84,12 +96,13 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
         failure("association Jacobian is ill-conditioned");
         if (status != nullptr) {
             *status = PropertyActionStatus::AssociationIllConditioned;
-            return factorization;
+            return;
         }
         throw std::runtime_error("association Jacobian is ill-conditioned");
     }
-    return factorization;
 }
+
+namespace {
 
 // One central association factorization with its rank and pivot diagnostics; a failure
 // is reported through `status` and the factorization is still returned.
@@ -99,7 +112,7 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
 ) {
     if (sites.empty()) return nullptr;
     const auto sigma = segment_sigma(temperature, parameters), diameter = segment_diameter(temperature, parameters, sigma);
-    auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(site_factorization(
+    auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(properties::site_factorization(
         sites, composition, parameters, density * NUMBER_DENSITY_PER_ANGSTROM3,
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
@@ -970,7 +983,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     }
     const auto delta = association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
-    auto factorization = site_factorization(
+    auto factorization = properties::site_factorization(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
     if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
         // Density closure consumes the reduced gradient, a_VV and the floor only: one adjoint for
@@ -1757,6 +1770,8 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     std::vector<double> point = {temperature, volume, 1.0};
     const std::vector<double> weight = {1.0};
     auto third = [&](std::size_t direction) {
+        core::Scope scope("pressure_third_derivative"), evaluation("evaluate");
+        scope.probe("direction", static_cast<double>(direction));
         tape_->function.Forward(0, point);
         ++counters_.forward;
         std::vector<double> first(3, 0.0);
@@ -1794,17 +1809,21 @@ State HelmholtzModel::state(
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
     const auto derivatives = evaluate(temperature, volume, mole_fractions, DerivativeOrder::Hessian);
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto& sites = derivatives.site_fractions;
-    const auto [electro, born] = detail::supported_electrostatics(
-        temperature, molar_density,
-        mole_fractions, mole_fractions, parameters_
-    );
-    const auto terms = residual_helmholtz(
-        temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
-        sites, electro.debye_huckel, born
-    );
+    const auto [electro, terms] = [&] {
+        core::Scope scope("state_residual_recompute"), evaluation("evaluate");
+        const auto sigma = segment_sigma(temperature, parameters_);
+        const auto diameter = segment_diameter(temperature, parameters_, sigma);
+        const auto [electro, born] = detail::supported_electrostatics(
+            temperature, molar_density,
+            mole_fractions, mole_fractions, parameters_
+        );
+        const auto terms = residual_helmholtz(
+            temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
+            sites, electro.debye_huckel, born
+        );
+        return std::pair{electro, terms};
+    }();
     // EqID: residual_chemical_potential
     const double phi_v = derivatives.gradient[1];
     const double phi_t = derivatives.gradient[0];
