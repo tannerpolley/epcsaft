@@ -31,7 +31,7 @@ code changes (root [`README.md`](../README.md) "Checks").
 ## C++ usage and debugging
 
 `tests/native/surface_example.cpp` is an ordinary Python-free caller of the
-native archive. It includes only `surface/parameter_builder.hpp` and
+native shared library. It includes only `surface/parameter_builder.hpp` and
 `equilibrium/problem.hpp` and shows, in order: a `ParameterDocument` with
 explicit units (species index = position in `component_ids`), one reusable
 `HelmholtzModel`, a full `State` in the T-P and T-rho charts, selected

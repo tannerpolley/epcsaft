@@ -314,7 +314,7 @@ inline constexpr Tolerance FIT_DENSITY_PARAMETER_FRACTION{"FIT_DENSITY_PARAMETER
 
 // ------------------------------------------------------------- equilibrium
 
-inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
+__attribute__((visibility("default"))) inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
     1.0e-10,
     Category::AlgorithmTolerance,
     "dimensionless equilibrium-row infinity norm; two decades above the "

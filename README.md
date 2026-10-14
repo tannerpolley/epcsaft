@@ -125,17 +125,17 @@ tools/native-isolated compare regression_checks ionic-addition origin/main  # ro
 
 `engine/tools/check-native.sh` builds the native extension with Clang and runs the
 full clang-tidy sweep; `--changed` lints only the units a change reaches. `engine/tools/check-native-sanitizers.sh` builds a separate
-debug ASan/UBSan wheel and runs its compact numerical tests.
-`tools/check-equilibrium-corpora <wheel-A> <wheel-B>` runs the Equilibrium
-acceptance corpora on both wheels and prints one table (`--help`). Run slow Engine
+debug ASan/UBSan editable environment and runs its compact numerical tests.
+`tools/check-equilibrium-corpora <A> <B>` accepts retained wheels or prepared Python interpreters and runs the Equilibrium
+acceptance corpora in both environments and prints one table (`--help`). Run slow Engine
 tests or an analysis reproduction only when the changed scientific claim requires
 that evidence.
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
 Builds and Engine calculations run directly, with no thread, slot or memory limits.
-`tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
-the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; build the
-checkout's side with `bash tools/build-engine.sh --wheel build/wheels/<name>`.
+`tools/time-key-solves <A> <B>` accepts retained wheels or prepared Python interpreters and reports work counts,
+the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; use the
+checkout's prepared `.venv/bin/python` for development comparisons against the retained main wheel.
 After merges, `tools/refresh-main-wheel` builds main's
 wheel in the main checkout, compares its key-solve work with the previous
 `build/wheels/main-current/`, replaces that directory and its README, and keeps

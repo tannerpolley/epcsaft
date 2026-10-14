@@ -138,21 +138,31 @@ def main():
     began = time.perf_counter()
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
-    wheels = {'A': wheel_file(args.wheel_a), 'B': wheel_file(args.wheel_b)}
+    wheels = {label: Path(value).absolute() if Path(value).is_file() and Path(value).suffix != '.whl' else wheel_file(value)
+              for label, value in (('A', args.wheel_a), ('B', args.wheel_b))}
+    interpreters, identities = {}, {}
     for label, wheel in wheels.items():
-        venv = out / label / 'venv'
-        subprocess.run(['uv', 'venv', '-q', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
-        subprocess.run(['uv', 'pip', 'install', '-q', '--python', str(venv / 'bin/python'), str(wheel),
-                        'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
-        subprocess.run([str(venv / 'bin/python'), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)],
-                       check=True, env=env, stdout=subprocess.DEVNULL)
+        (out / label).mkdir()
+        if wheel.suffix != '.whl':
+            interpreters[label] = wheel
+            identities[label] = json.loads(subprocess.check_output([str(wheel), str(ROOT / 'tools/engine_identity.py')], env=env))
+        else:
+            venv = out / label / 'venv'
+            subprocess.run(['uv', 'venv', '-q', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
+            subprocess.run(['uv', 'pip', 'install', '-q', '--python', str(venv / 'bin/python'), str(wheel),
+                            'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
+            subprocess.run([str(venv / 'bin/python'), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)],
+                           check=True, env=env, stdout=subprocess.DEVNULL)
+            interpreters[label] = venv / 'bin/python'
+            identities[label] = json.loads(subprocess.check_output([str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=env))
+    (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
 
     # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
     parallel = threading.Lock()
 
     def run(label, name, *command):
         with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
-            code = subprocess.run([str(out / label / 'venv/bin/python'), *map(str, command)], cwd=ROOT, env=env,
+            code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=env,
                                   stdout=log, stderr=subprocess.STDOUT).returncode
         return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
 
@@ -173,7 +183,8 @@ def main():
                                                    '--reference', reference / 'original-states.json'), wheels)
     failures = [f for f in failures if f]
     for venv in (out / label / 'venv' for label in wheels):
-        shutil.rmtree(venv)
+        if venv.is_dir():
+            shutil.rmtree(venv)
 
     rows, found = [], {}
 

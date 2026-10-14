@@ -222,9 +222,9 @@ def main():
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
-    wheels = {label: path.resolve(strict=True) for label, path in (('A', args.wheel_A), ('B', args.wheel_B))}
-    if any(path.suffix != '.whl' for path in wheels.values()):
-        parser.error('both inputs must be wheel files')
+    wheels = {label: path.absolute() for label, path in (('A', args.wheel_A), ('B', args.wheel_B))}
+    if any(not path.is_file() for path in wheels.values()):
+        parser.error('inputs must be wheel files or prepared Python interpreters')
     out = args.out.resolve()
     if out.exists() and any(out.iterdir()):
         parser.error('--out must be new or empty')
@@ -237,7 +237,7 @@ def main():
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     processes, venvs = {}, []
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
-    summary = dict(wheels={label: dict(path=str(path), sha256=digest(path)) for label, path in wheels.items()},
+    summary = dict(wheels={label: dict(path=str(path), sha256=digest(path) if path.suffix == ".whl" else None) for label, path in wheels.items()},
                    source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                    cpu=cpu, nice=10, threads=1, host=platform.node(), pairs=args.pairs, warmups=1,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
@@ -269,15 +269,21 @@ def main():
 
     try:
         for label, wheel in wheels.items():
-            venv = ROOT / 'build/time-key-solves' / label
-            if venv.exists():
-                raise RuntimeError(f'throwaway environment already exists: {venv}')
-            venvs.append(venv)
-            subprocess.run(['uv', 'venv', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
-            python = venv / 'bin/python'
-            subprocess.run(['uv', 'pip', 'install', '--python', str(python), str(wheel),
-                            'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
-            subprocess.run([str(python), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)], check=True, env=env)
+            if wheel.suffix != '.whl':
+                python = wheel
+                identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=env))
+                summary['wheels'][label].update(identity)
+                summary['wheels'][label]['sha256'] = identity['native_library_sha256']
+            else:
+                venv = ROOT / 'build/time-key-solves' / label
+                if venv.exists():
+                    raise RuntimeError(f'throwaway environment already exists: {venv}')
+                venvs.append(venv)
+                subprocess.run(['uv', 'venv', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
+                python = venv / 'bin/python'
+                subprocess.run(['uv', 'pip', 'install', '--python', str(python), str(wheel),
+                                'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
+                subprocess.run([str(python), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)], check=True, env=env)
             processes[label] = subprocess.Popen(['taskset', '-c', str(cpu), 'nice', '-n', str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))),
                                                   str(python), str(Path(__file__).resolve()), '--worker'],
                                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=env)

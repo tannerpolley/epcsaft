@@ -10,6 +10,7 @@ project(
     'buildtype=release',
     'cpp_std=c++17',
     'strip=true',
+    'b_staticpic=true',
   ],
 )
 py = import('python').find_installation('python3', pure: false)
@@ -99,8 +100,9 @@ regression_sources = files(
   'native/regression/minimax.cpp',
 )
 
-epcsaft_native = static_library(
+epcsaft_native = shared_library(
   'epcsaft_native',
+  'native/core/trace.cpp',
   properties_sources,
   surface_sources,
   equilibrium_sources,
@@ -117,8 +119,17 @@ epcsaft_native = static_library(
     cppad_headers_dep,
   ],
   include_directories: native_inc,
+  install: true,
+  install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
+  build_rpath: '$ORIGIN',
+  install_rpath: '$ORIGIN',
+  gnu_symbol_visibility: 'default',
+)
+
+epcsaft_private = static_library(
+  'epcsaft_native',
+  objects: epcsaft_native.extract_all_objects(recursive: true),
   install: false,
-  pic: true,
 )
 
 asl_library = shared_library(
@@ -138,7 +149,7 @@ asl_library = shared_library(
     '-Wl,--exclude-libs,ALL',
     '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
   ],
-  link_with: epcsaft_native,
+  link_with: epcsaft_private,
   install: true,
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
 )
@@ -165,6 +176,8 @@ py.extension_module(
   install: true,
   link_args: release_link_args,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
+  install_rpath: '$ORIGIN',
   subdir: 'epcsaft',
 )
 
@@ -174,7 +187,9 @@ contributions_checks = executable(
   'contributions_checks',
   'tests/native/contributions_checks.cpp',
   cppad_temp_file,
+  objects: epcsaft_native.extract_objects('native/core/trace.cpp'),
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   install: false,
@@ -192,9 +207,11 @@ properties_checks = executable(
         'tests/native/properties_p4_checks.cpp',
         'tests/native/properties_log_fugacity_checks.cpp'),
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -204,9 +221,11 @@ diagnostics_checks = executable(
   'diagnostics_checks',
   'tests/native/diagnostics_checks.cpp',
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -223,9 +242,11 @@ equilibrium_checks = executable(
         'tests/native/equilibrium_critical_envelope_checks.cpp',
         'tests/native/equilibrium_reactive_caloric_checks.cpp'),
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -244,9 +265,11 @@ surface_example = executable(
   'surface_example',
   'tests/native/surface_example.cpp',
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -256,9 +279,11 @@ boundary_checks = executable(
   'boundary_checks',
   'tests/native/boundary_checks.cpp',
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -271,9 +296,11 @@ regression_checks = executable(
         'tests/native/regression_j2_inventory_checks.cpp',
         'tests/native/regression_reaction_checks.cpp'),
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -286,9 +313,11 @@ specification_checks = executable(
   'specification_checks',
   'tests/native/specification_checks.cpp',
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )
@@ -298,9 +327,11 @@ association_comparison_checks = executable(
   'association_comparison_checks',
   'tests/native/association_comparison_checks.cpp',
   cpp_args: native_warnings,
+  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
+  build_rpath: '$ORIGIN',
   install: false,
   build_by_default: false,
 )

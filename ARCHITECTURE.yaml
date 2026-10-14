@@ -116,7 +116,8 @@ project_map: {
 
 native:
   root: engine/native
-  archive: epcsaft_native
+  shared_library: epcsaft_native
+  private_archive_consumer: epcsaft_asl
   extension: epcsaft._core
   checker: tools/check-engine-architecture.py
   # Downward only. bindings may include anything; nothing includes bindings.
@@ -136,9 +137,10 @@ native:
     permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
     forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
   invariants:
-    static_libraries: 1
+    native_pic_object_sets: 1
+    private_static_archives: 1
     native_extensions: 1
-    python_inside_static_library: forbidden
+    python_inside_native_library: forbidden
     installed_headers: forbidden
     public_cpp_abi: forbidden
     iterative_python_callbacks: forbidden

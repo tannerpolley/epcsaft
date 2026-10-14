@@ -22,6 +22,8 @@
 #include <utility>
 
 namespace epcsaft {
+
+HelmholtzModel::~HelmholtzModel() = default;
 namespace {
 
 bool finite_vector(const std::vector<double>& values) {

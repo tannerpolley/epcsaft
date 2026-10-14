@@ -18,18 +18,20 @@ if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
 fi
 
 run_root="$workspace_root/build/native-sanitizers"
-wheelhouse="$run_root/wheelhouse"
-# The sanitizer Meson tree ($run_root/build) stays between runs; the wheel and its venv do not.
-rm -rf -- "$wheelhouse" "$run_root/venv"
-mkdir -p "$wheelhouse"
+mkdir -p "$run_root"
+uv venv --allow-existing --python 3.13 "$run_root/venv"
+uv export --locked --all-packages --no-emit-workspace --no-hashes \
+    --output-file "$run_root/constraints.txt" >/dev/null
+uv pip install --python "$run_root/venv/bin/python" \
+    --constraint "$run_root/constraints.txt" pytest meson meson-python pybind11 numpy
 
 # ccache and the build-job count as in check-native.sh; Ninja's default would start a job per CPU.
 export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
 jobs="${EPCSAFT_BUILD_JOBS:-$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)}"
 [[ "$jobs" =~ ^[1-9][0-9]*$ ]] || { echo "build-job count must be a positive integer (got $jobs)" >&2; exit 2; }
 CC="ccache clang-18" CXX="ccache clang++-18" \
-    uv build --python "$workspace_root/.venv/bin/python" \
-        --wheel --no-build-isolation --out-dir "$wheelhouse" \
+    uv pip install --python "$run_root/venv/bin/python" --no-deps --no-build-isolation \
+        --reinstall-package epcsaft -e . \
         --config-setting="build-dir=$run_root/build" \
         --config-setting="compile-args=-j$jobs" \
         --config-setting="setup-args=-Dbuildtype=debug" \
@@ -45,24 +47,10 @@ if grep -Fq -- '-DNDEBUG' "$run_root/build/compile_commands.json"; then
 fi
 echo "sanitizer compile commands: NDEBUG absent"
 
-mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl')
-if ((${#wheels[@]} != 1)); then
-    echo "expected exactly one sanitizer wheel, found ${#wheels[@]}" >&2
-    exit 1
-fi
-
-uv venv --python 3.13 "$run_root/venv"
-uv export --locked --all-packages --no-emit-workspace --no-hashes \
-    --output-file "$run_root/constraints.txt" >/dev/null
-uv pip install --python "$run_root/venv/bin/python" \
-    --constraint "$run_root/constraints.txt" pytest "${wheels[0]}"
 uv pip check --python "$run_root/venv/bin/python"
-mapfile -t installed_extensions < <(
-    find "$run_root/venv/lib" -type f \
-        -name '_core*.so'
-)
+mapfile -t installed_extensions < <(find "$run_root/build" -maxdepth 1 -type f -name '_core*.so')
 if ((${#installed_extensions[@]} != 1)); then
-    echo "expected one installed sanitizer extension, found ${#installed_extensions[@]}" >&2
+    echo "expected one prepared sanitizer extension, found ${#installed_extensions[@]}" >&2
     exit 1
 fi
 for extension in "${installed_extensions[@]}"; do
@@ -96,8 +84,7 @@ LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
-    "$run_root/venv/bin/python" "$workspace_root/tools/verify-installed-wheel.py" \
-        --wheel "${wheels[0]}"
+    "$run_root/venv/bin/python" "$workspace_root/tools/engine_identity.py" >"$run_root/prepared-identity.json"
 
 LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
@@ -107,4 +94,5 @@ EPCSAFT_PYTEST_RESULTS="$run_root/pytest-results.json" \
     "$run_root/venv/bin/python" -m pytest -q \
         tests/eos/test_activity.py \
         tests/eos/test_diagnostics.py \
+        tests/eos/test_state.py::test_density_anchor_outside_domain_keeps_native_convergence_failure \
         tests/equilibrium/test_problem.py

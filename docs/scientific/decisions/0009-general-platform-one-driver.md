@@ -19,8 +19,9 @@ This replaces the proposal to allow independently selected equilibrium drivers.
 It preserves lower-level density/association kernels and the distinct search
 and continuation operations that reuse equilibrium calculations.
 
-The existing native ownership principles remain: one Python-free native
-archive, one extension, no public C++ ABI or iterative Python callbacks, explicit
+The existing native ownership principles remain: one Python-free native shared library for Python and native programs,
+one extension and an ASL adapter with its private native copy from the same PIC
+objects (#485 owner decision, 2026-10-14; supersedes archive-only linkage), no public C++ ABI or iterative Python callbacks, explicit
 physical inputs, common parameter identities and owner-supplied derivative
 chains. General platform scope does not introduce compatibility support,
 external catalogs, speculative extension frameworks or a second installation.
