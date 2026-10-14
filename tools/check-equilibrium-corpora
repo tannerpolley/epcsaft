@@ -7,7 +7,8 @@ matrix and the four-section replay, then compares B with A. Cases a gate already
 #407 pins, e4-d, the Gross pins in equilibrium/Automatic*) are omitted. Work counts, timings,
 messages and diagnostic residuals are reported by the scripts, not compared here; every other value
 must be finite on both sides and agree within 1e-10 relative (absolute floor 1e-12), with equal text
-and JSON kinds. Both sides must reproduce the accepted inventories and successes (ACCEPTED), every
+and JSON kinds. Gross deviation and percent columns are reported, not compared: they are functions of
+the compared value and its input reference, and amplify last-bit changes (owner, 2026-10-13). Both sides must reproduce the accepted inventories and successes (ACCEPTED), every
 criterion must be finite and positive, and every successful result must have a finite residual within
 its own criterion (Gross: calculation.json row_tolerance; Cameretti: run.py's criterion-violations.csv
 must have no rows, and each band's largest declared residual must be within its largest criterion).
@@ -35,6 +36,9 @@ SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
             'wall_seconds', 'parallel_solve_seconds'}
+# value - reference and 100|value/reference - 1| (2002-gross calculate.py:217); `value` itself is compared.
+GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
+                             'liquid_density_aad_percent', 'liquid_volume_aad_percent'}
 MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df', 'inventory'}  # gated by `passes`
 # Accepted results at the #391 delivery, which both wheels must reproduce; a slice that changes one edits it
 # here. Gross failures are CSV line numbers of default-start-comparisons.csv; neutral successes are initial
@@ -216,7 +220,7 @@ def main():
             found += accepted(f'{label} Gross', dict(rows=len(gross(out / label)), failed_lines=[
                 i + 2 for i, r in enumerate(gross(out / label)) if r['success'] != 'True']), ACCEPTED['gross'])
             found += unmet(f'{label} Gross', gross(out / label), 'success', 'residual', lambda r: tolerance)
-        return found + differences(gross(out / 'A'), gross(out / 'B'))
+        return found + differences(gross(out / 'A'), gross(out / 'B'), GROSS_REPORTED)
     corpus('Gross 2002 default start', lambda d: f"{sum(r['success'] == 'True' for r in gross(d))}/{len(gross(d))}",
            gross_problems)
 
