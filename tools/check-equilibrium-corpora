@@ -36,7 +36,8 @@ SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
             'wall_seconds', 'parallel_solve_seconds'}
-# value - reference and 100|value/reference - 1| (2002-gross calculate.py:217); `value` itself is compared.
+# value - reference, 100|value/reference - 1| and, for liquid volume, 100|reference/value - 1|
+# (2002-gross calculate.py:217-223); `value` itself is compared.
 GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
                              'liquid_density_aad_percent', 'liquid_volume_aad_percent'}
 MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df', 'inventory'}  # gated by `passes`
