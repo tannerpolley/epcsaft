@@ -154,8 +154,22 @@ def test_malformed_explicit_mapping_fields_are_rejected() -> None:
             mapped(**changes)
 
 
+def test_incidental_ipopt_options_preserve_equilibrium_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("EPCSAFT_IPOPT_OPTIONS_FILE", raising=False)
+    monkeypatch.chdir(tmp_path)
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    declaration = _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3]))
+    clean = solve_equilibrium(model, declaration)
+    (tmp_path / "ipopt.opt").write_text("mu_strategy adaptive\nmax_iter 0\nbogus_option 1\n")
+    stray = solve_equilibrium(model, declaration)
+    assert clean.success and stray.success
+    for key in ("amounts", "mole_fractions", "molar_densities"):
+        assert all(math.isclose(x, y, rel_tol=1e-10, abs_tol=1e-12)
+                   for x, y in zip(getattr(stray, key), getattr(clean, key), strict=True))
+
+
 def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    # Ipopt reads ipopt.opt from the working directory. An unknown option fails Initialize(); an unavailable
+    # An explicitly selected options file with an unknown option fails Initialize(); an unavailable
     # linear solver fails OptimizeTNLP() before any iterate, leaving the fallback start, whose classified
     # rows (1.50) meet this deliberately loose criterion. A zero iteration budget is an eligible
     # non-error stop: its polished start meets the rows and still publishes.
@@ -163,8 +177,9 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
     loose = Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1.0e5,
                     feed=Amounts({"methane": 0.5, "ethane": 0.5}), row_tolerance=2.0)
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("EPCSAFT_IPOPT_OPTIONS_FILE", str(tmp_path / "diagnostic.opt"))
     for option, fatal in (("bogus_option 1", True), ("linear_solver ma57", True), ("max_iter 0", False)):
-        (tmp_path / "ipopt.opt").write_text(option + "\n")
+        (tmp_path / "diagnostic.opt").write_text(option + "\n")
         result = solve_equilibrium(model, loose)
         if not fatal:
             assert result.success and math.isclose(result.amounts[0], 1.0)

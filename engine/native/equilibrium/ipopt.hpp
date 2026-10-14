@@ -2,6 +2,7 @@
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
 #include <algorithm>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -56,7 +57,7 @@ inline std::string application_return_name(Ipopt::ApplicationReturnStatus code) 
     }
 }
 
-// One checked option/lifecycle owner; only estimation excludes ipopt.opt and uses BFGS.
+// One checked option/lifecycle owner for exact curvature and estimation's BFGS.
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
     double seconds, bool exact, double objective_factor) {
@@ -64,7 +65,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));
-    admit(options->SetStringValue("sb", "yes"));  // no banner on stdout; an ipopt.opt file still overrides both
+    admit(options->SetStringValue("sb", "yes"));  // no banner on stdout
     admit(options->SetStringValue("nlp_scaling_method", "none"));
     admit(options->SetNumericValue("obj_scaling_factor", objective_factor));
     admit(options->SetStringValue("hessian_approximation", exact ? "exact" : "limited-memory"));
@@ -81,7 +82,8 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
-    const auto initialized = exact ? app->Initialize() : app->Initialize("");
+    const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    const auto initialized = app->Initialize(options_file ? options_file : "");
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};
 }
 }  // namespace epcsaft::equilibrium

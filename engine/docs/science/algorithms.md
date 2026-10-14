@@ -913,6 +913,16 @@ domain; lifting variables does not automatically remove that requirement. This
 is a capability requirement, not a claim that the current implementation
 satisfies it.
 
+<a id="ipopt-diagnostic-options"></a>
+The shared Ipopt driver ignores an incidental `ipopt.opt` in the working directory.
+For deliberate diagnostics, set `EPCSAFT_IPOPT_OPTIONS_FILE` to an options-file path;
+the driver passes that path to `Initialize` for both exact-Hessian equilibrium and
+limited-memory parameter fitting. An unset or empty variable disables file loading.
+Relative paths resolve from the working directory. The named file can override
+the driver's solver options, including iteration limits; unset the variable after
+the experiment. Iterate logging can use `output_file <log-path>` and
+`file_print_level 12` in that file.
+
 The caller supplies one dimensionless row tolerance per solve request; the
 named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That value alone
 classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
@@ -2177,8 +2187,8 @@ scales and eliminated Born rows. The epigraph and slack columns are analytic.
 Only exact first actions are supplied; Ipopt uses limited-memory BFGS, with no
 finite-difference derivative checker or parameter Hessian claim. Equilibrium
 retains exact Lagrangian curvature. The common checked Ipopt option/lifecycle
-owner preserves equilibrium's `Initialize()` and uses `Initialize("")` for
-estimation, excluding file overrides. Required positive scaled tolerance,
+owner uses the [diagnostic options-file route](#ipopt-diagnostic-options) for both Hessian modes.
+Required positive scaled tolerance,
 iteration/CPU limits and a steady-clock elapsed callback bound each estimate.
 `acceptable_iter=0` and `bound_relax_factor=0` preserve the declared limits.
 
