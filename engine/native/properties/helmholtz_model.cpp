@@ -1757,6 +1757,8 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     std::vector<double> point = {temperature, volume, 1.0};
     const std::vector<double> weight = {1.0};
     auto third = [&](std::size_t direction) {
+        core::Scope scope("pressure_third_derivative"), evaluation("evaluate");
+        scope.probe("direction", static_cast<double>(direction));
         tape_->function.Forward(0, point);
         ++counters_.forward;
         std::vector<double> first(3, 0.0);
@@ -1794,17 +1796,21 @@ State HelmholtzModel::state(
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
     const auto derivatives = evaluate(temperature, volume, mole_fractions, DerivativeOrder::Hessian);
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto& sites = derivatives.site_fractions;
-    const auto [electro, born] = detail::supported_electrostatics(
-        temperature, molar_density,
-        mole_fractions, mole_fractions, parameters_
-    );
-    const auto terms = residual_helmholtz(
-        temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
-        sites, electro.debye_huckel, born
-    );
+    const auto [electro, terms] = [&] {
+        core::Scope scope("state_residual_recompute"), evaluation("evaluate");
+        const auto sigma = segment_sigma(temperature, parameters_);
+        const auto diameter = segment_diameter(temperature, parameters_, sigma);
+        const auto [electro, born] = detail::supported_electrostatics(
+            temperature, molar_density,
+            mole_fractions, mole_fractions, parameters_
+        );
+        const auto terms = residual_helmholtz(
+            temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
+            sites, electro.debye_huckel, born
+        );
+        return std::pair{electro, terms};
+    }();
     // EqID: residual_chemical_potential
     const double phi_v = derivatives.gradient[1];
     const double phi_t = derivatives.gradient[0];

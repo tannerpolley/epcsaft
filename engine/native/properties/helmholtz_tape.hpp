@@ -229,6 +229,8 @@ struct HelmholtzTape final {
         double* coefficient_residual = nullptr,
         std::vector<std::vector<double>>* output_prefix = nullptr
     ) {
+        core::Scope scope("implicit_taylor"), evaluation("evaluate");
+        scope.probe("derivative_order", static_cast<double>(order));
         const std::size_t input_count = regular_count + site_count;
         std::vector<double> input(input_count), output;
         if (output_prefix != nullptr) output_prefix->clear();
