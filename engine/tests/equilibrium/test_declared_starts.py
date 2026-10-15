@@ -110,6 +110,24 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     assert unfinished > 1e-10
     evidence.observe("declared-starts/work", raw_rows=raw, limited_raw_rows=unfinished,
                      limited_iterations=stopped.iterations, selected=solved.selected)
+    binary = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3),
+                                         components=("methane", "ethane")))
+    declared = eq.Problem(T=300., P=1e5, phases=[eq.Phase("L", kind="liquid")],
+                          feed=eq.Amounts({"methane": .5, "ethane": .5}), row_tolerance=1e-8)
+    reference = eq.solve_equilibrium(binary, declared)
+    assert reference.success and reference.solver_settings
+    timed = eq.solve_equilibrium_starts(binary, declared, [eq.EquilibriumStart(coordinates=reference.coordinates)],
+                                        eq.EquilibriumWorkLimits(attempt_seconds=.001))
+    result = timed.results[0]
+    if result is not None and result.evaluations > 0:
+        assert result.solver_settings == reference.solver_settings
+        assert result.diagnostic_options_file == reference.diagnostic_options_file
+        if "elapsed" in timed.causes[0]:
+            assert not result.success and timed.selected is None
+            assert result.message == timed.causes[0] and timed.iterations == result.iterations
+        evidence.observe("declared-starts/elapsed-work", cause=timed.causes[0], iterations=result.iterations,
+                         evaluations=result.evaluations, solver_settings=result.solver_settings,
+                         diagnostic_options_file=result.diagnostic_options_file)
 
 
 def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None:

@@ -697,6 +697,8 @@ EquilibriumResult run_driver(
     if (audit) audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const auto capture_driver = [&] {
         if (!audit) return;
+        audit->solver_settings = result.solver_settings;
+        audit->diagnostic_options_file = result.diagnostic_options_file;
         audit->solver_status = solver_status_name(nlp->status());
         audit->convergence.iterations = audit->iterations = nlp->iterations();
         audit->convergence.evaluations = audit->evaluations = nlp->evaluations();

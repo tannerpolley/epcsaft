@@ -605,7 +605,10 @@ class CriticalRecord:
     rank: int
 
 class EquilibriumProblem:
-    solver_options: Mapping[str, float] | None
+    @property
+    def solver_options(self) -> list[dict[str, Any]]: ...
+    @solver_options.setter
+    def solver_options(self, value: Mapping[str, float] | None) -> None: ...
     discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
     temperature: FreeValue
