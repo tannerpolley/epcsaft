@@ -74,7 +74,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-15, #513 (lead decision): **Properties allowance raised by the lead from +200 to +220 within the unchanged +238 total**; gross additions remain at most 300 Properties and 356 total. Against fixed design base `5ad73fb9`, the authored change adds Properties +218 and total +236; the separately accepted #505 main changes add 2 Properties and 287 total before integration. The same authored growth is measured against integrated base `ffda2bc0`. Properties **5,535 → 5,806**, its combined count 5,748 plus band 58; total **26,473 → 26,744**, the layer-ceiling sum, below its combined count 26,551 plus band 266. Shared sampled-contradiction detection, local mesh subdivision, partition agreement and cause preservation retain the existing scan, fold bisection and Newton owners. Other layer allowances remain those in the accepted design.
+- 2026-10-15, #513 (lead decision, R1 corrected after merging #497): **Properties allowance raised by the lead from +200 to +220 within the unchanged +238 total**; gross additions remain at most 300 Properties and 356 total. Against merged main `54a6d798`, the authored change adds Properties +220 and total +238. Main's Properties count is 5,532 after #497; the corrected combined count is 5,752. Properties **5,535 → 5,810**, count plus band 58; total **26,473 → 26,810**, the layer-ceiling sum, below combined count 26,584 plus band 266. The fixed design base remains `5ad73fb9`; separately accepted #505 and #497 additions are excluded from the authored allowance. Both main amendments below are retained. Shared sampled-contradiction detection, local mesh subdivision, partition agreement and cause preservation reuse the existing scan, fold bisection and Newton owners. R1 preserves a refined boundary crossing unless the ordinary partition owns its exact-zero node; it introduces no tolerance. Other layer allowances remain those in the accepted design.
+
+- 2026-10-15, #497 (lead allowance: parameter Regression +60 net / 100 gross,
+  Properties +5 net / 10 gross, other runtime layers zero): parameter Regression
+  **3,812 → 3,874**, count 3,835 plus its band 39, for opt-in process CPU timing
+  of native fit evaluations. Properties gains two trace observations within its
+  existing ceiling; the total ceiling stayed 26,083 on the fixed base
+  `5ad73fb9`. Integration with #505 retains its later total ceiling.
 
 - 2026-10-15, #505: the accepted design's net allowances are Core +25,
   Equilibrium +380, Properties +10 (entry scopes), other layers zero;

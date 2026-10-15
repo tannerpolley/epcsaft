@@ -408,6 +408,7 @@ std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivativ
 NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
     std::optional<std::size_t> parameter, double scale, double tolerance, std::optional<double>* observed = nullptr) {
+    core::Scope scope("reference_column");
     NeutralReferenceReactionDiagnostic::Derivative column;
     column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
     for (std::size_t point = 0; point < 3; ++point) {
@@ -660,6 +661,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
     }
     if (auto stored = model.stored_references(inputs)) return std::move(*stored);
+    scope.probe("reference_cache_miss", 1.0);
     struct CachedTrace final {
         double pressure = 0.0;
         NeutralReferenceTraceResult result;
