@@ -21,6 +21,10 @@
 #include <cmath>
 #include <chrono>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
 #include <iterator>
 #include <memory>
 #include <numeric>
@@ -34,6 +38,8 @@
 
 namespace epcsaft::regression {
 namespace {
+
+const char* compute_cpu_directory = std::getenv("EPCSAFT_FIT_CPU_PROFILE");
 
 void require(bool condition, const char* what) {
     if (!condition) throw std::invalid_argument(std::string("fit ") + what);
@@ -634,6 +640,26 @@ struct ObservationEvaluator::Impl final {
     // This process's rows of one trial; `i`, the sweep position, orders a refused trial among row failures.
     std::optional<Failure> compute(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
                                    Trial& trial, bool same_point, core::Scope& scope) {
+        if (!compute_cpu_directory) return compute_rows(optimizer, jacobian, out, trial, same_point, scope);
+        // #405/#498: process CPU inside compute, excluding output setup and writing.
+        std::ofstream file(std::string(compute_cpu_directory) + "/" + std::to_string(getpid()) + ".csv", std::ios::app);
+        if (!file) throw std::runtime_error("fit compute CPU output unavailable");
+        const auto cpu = [] {
+            timespec value{};
+            if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &value)) throw std::runtime_error("fit compute CPU clock unavailable");
+            return double(value.tv_sec) + double(value.tv_nsec) * 1e-9;
+        };
+        const double start = cpu();
+        auto result = compute_rows(optimizer, jacobian, out, trial, same_point, scope);
+        const double elapsed = cpu() - start;
+        file << ++profile_evaluations_ << ',' << process_ << ',' << jacobian << ',' << std::setprecision(17) << elapsed << '\n';
+        file.flush();
+        if (!file) throw std::runtime_error("fit compute CPU output failed");
+        return result;
+    }
+
+    std::optional<Failure> compute_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
+                                       Trial& trial, bool same_point, core::Scope& scope) {
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         std::size_t i = 0;
         try {
@@ -756,6 +782,7 @@ struct ObservationEvaluator::Impl final {
     std::vector<std::optional<equilibrium::EquilibriumResult>> starts_;
     std::optional<Trial> cached_;
     std::size_t trials_ = 0;
+    std::size_t profile_evaluations_ = 0;
     std::vector<std::size_t> owner_;  // the process that evaluates each row; 0 is the fit's own
     std::size_t process_ = 0;
     bool interruptible_ = false;  // a least-squares fit's own process polls cancellation between rows

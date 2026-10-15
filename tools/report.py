@@ -125,9 +125,10 @@ def key_solves(wheels, head):
     head_row = ["Case"] + [s["source_commit"][:8] for _, s, _ in runs] + ["Wall time per run (latest, range)"]
     return (stamp(time.strftime("%Y-%m-%d %H:%M", time.strptime(when, "%Y%m%dT%H%M%S")),
                   latest["source_commit"], "clean", head)
-            + f"<p>Iterations/evaluations/Hessian calls of the new main wheel (B) per commit, oldest first, "
+            + f"<p>Ordinary cases: iterations/evaluations/Hessian calls; F1: reference computations/columns/density solves/equilibrium iterations. "
+              f"Counts of the new main wheel (B) per commit, oldest first, "
               f"from <code>{escape(str(wheels))}/key-solves-*/summary.json</code>; a change is bold. "
-              f"Wall time is <code>median_B_seconds</code> from {latest['pairs']} timing pair(s) on a shared host; "
+              f"Wall time is <code>median_B_seconds</code>: one evaluation for F1, {latest['pairs']} timing pair(s) otherwise, on a shared host; "
               f"work counts are the gate.</p>" + table(head_row, rows))
 
 

@@ -74,6 +74,13 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #497 (lead allowance: parameter Regression +60 net / 100 gross,
+  Properties +5 net / 10 gross, other runtime layers zero): parameter Regression
+  **3,812 → 3,874**, count 3,835 plus its band 39, for opt-in process CPU timing
+  of native fit evaluations. Properties gains two trace observations within its
+  existing ceiling; the total ceiling stayed 26,083 on the fixed base
+  `5ad73fb9`. Integration with #505 retains its later total ceiling.
+
 - 2026-10-15, #505: the accepted design's net allowances are Core +25,
   Equilibrium +380, Properties +10 (entry scopes), other layers zero;
   total +415, gross additions at most 510. Relative to `5ad73fb9`, the
