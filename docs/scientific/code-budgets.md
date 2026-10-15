@@ -74,7 +74,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-15, #495 (lead-set allowances under the owner's overnight authority, 2026-10-15): Bindings **2,050 → 2,151**, the count 2,129 plus its band 22 after the nanobind port and delivered-review input corrections, including #486 solver options. The issue allowance is +100 net / 1,100 gross Bindings lines; other runtime layers have zero additions. The total ceiling remains 26,083.
+- 2026-10-15, #495 (lead-set allowances under the owner's overnight authority, 2026-10-15): Bindings **2,050 → 2,151**, the count 2,129 plus its band 22 after the nanobind port and delivered-review input corrections, including #486 solver options. The final count is 2,141, within one band of the ceiling. The issue allowance is +115 net / 1,100 gross Bindings lines, raised by the lead from +100 to restore the pybind11 input conversions the delivered review found missing; other runtime layers have zero additions. The total ceiling remains 26,083.
 
 - 2026-10-15, #512: lead-set allowances under the owner's overnight authority, 2026-10-15; Properties +50 net / +140 gross formatted lines, every other runtime layer zero. The bracket change adds 1 net formatted line: Properties 5,517 (band 56), total 25,905 (band 260). No ceiling raise is needed: the existing Properties ceiling 5,535 and total ceiling 26,083 remain within their bands.
 

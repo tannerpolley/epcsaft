@@ -11,10 +11,13 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace nb = nanobind;
 
@@ -37,8 +40,14 @@ auto bind_coefficients(nb::module_& module, const char* name, Args... args) {
             || !(PySequence_Check(value.ptr()) || PyGen_Check(value.ptr()) || PyAnySet_Check(value.ptr())
                 || type == "dict_keys" || type == "dict_values" || type == "dict_items" || type == "map" || type == "zip"))
             throw nb::type_error("expected a coefficient sequence or iterable");
-        decltype(T::coefficients) result;
-        if (!nb::try_cast(nb::tuple(value), result)) throw nb::type_error("invalid coefficient values or count");
+        std::vector<double> values;
+        for (nb::handle item : nb::iter(value)) {
+            if (!nb::try_cast(item, values.emplace_back())) throw nb::type_error("invalid coefficient value");
+        }
+        decltype(T::coefficients) result{};
+        if constexpr (std::is_same_v<decltype(result), std::vector<double>>) result = std::move(values);
+        else if (values.size() == result.size()) std::copy(values.begin(), values.end(), result.begin());
+        else throw nb::type_error("invalid coefficient count");
         return result;
     };
     return nb::class_<T>(module, name)
