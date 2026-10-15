@@ -72,8 +72,11 @@ F1 runs once per environment, outside the ordinary warmup/AB/BA timing repeats.
 The same `work.csv`, `states.csv`, comparison and `summary.json` retain it.
 Its four work counts are reference computations after cache lookup (misses),
 computed `reference_column` calls, `solve_density` calls, and the sum of
-`solve_equilibrium` convergence iterations. A decrease passes; any increase or
-inconsistent repeated count fails unless `--expect-change` is given. A missing
+driver iteration ordinals from `ipopt_iteration` events, summed across every
+attempt (including failed attempts and restoration). Missing iteration evidence
+fails. A decrease passes; `--expect-change` waives only an increase from A to B.
+Repeated counts within either environment must agree, including timer-on/off
+samples, even with `--expect-change`. A missing
 or incomplete native trace, unavailable row or nonfinite output stops the run.
 Predictions and derivatives use the same `STATE_TOLERANCE`: entrywise relative
 error with the packet's observation scales as absolute floors; physical
@@ -101,7 +104,9 @@ For A=A, invoke `--fit` without a control to retain two same-image fits. For
 A/B, supply that passing summary as `--control <summary.json>`; its host, A
 images, packet and worker count must match. The observed A=A wall range is
 printed alongside the two absolute-ceiling decisions. A control that itself
-breaks the ceiling is not eligible; host contention never waives the limit.
+breaks the ceiling, lacks either serial or fit arm, has nonfinite required
+times, or reports a failed fit is not eligible; host contention never waives
+the limit.
 
 `fit-cpu-A/` and `fit-cpu-B/` contain native per-process rows:
 `evaluation,worker,jacobian,cpu_seconds`. The timer is off by default, with

@@ -2,6 +2,7 @@
 import importlib.machinery
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 loader = importlib.machinery.SourceFileLoader('time_key_solves', str(Path(__file__).resolve().parents[1] / 'time-key-solves'))
 tool = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
@@ -59,9 +60,31 @@ for key in tool.F1_COUNTS:
 
 ceiling = 1.25 * tool.F1_IDENTITY['frozen']['serial_cpu_seconds']
 evaluation = dict(cpu_seconds=ceiling, seconds=ceiling, reference_taylor_evaluations=664)
-fit = dict(seconds=120, critical_cpu_seconds=10)
+fit = dict(seconds=120, critical_cpu_seconds=10, status='converged')
 assert not tool.f1_ceilings({'A': evaluation, 'B': evaluation}, [('A', fit), ('B', fit)])
 assert tool.f1_ceilings({'B': dict(evaluation, cpu_seconds=ceiling * 1.001)})
 assert tool.f1_ceilings({}, [('B', dict(fit, seconds=120.001))])
 assert tool.gate(*rows(skip_b=[tool.F1]), expect_change=True)
 print('F1 A=A, planted work increases, fixed ceilings and missing evidence: ok')
+
+# A failed attempt followed by a successful attempt can share one trace span.
+trace = SimpleNamespace(
+    spans=[SimpleNamespace(name='solve_equilibrium', convergence=SimpleNamespace(iterations=3))],
+    events=[SimpleNamespace(name='ipopt_iteration', span=0, iteration=i) for i in (0, 1, 2, 2, 4, 0, 1, 3)])
+assert tool.equilibrium_iterations(trace) == 7
+
+work, states = rows()
+work.extend(dict(row, sample='timer', reference_computations=row['reference_computations'] + (row['wheel'] == 'B'))
+            for row in list(work) if row['case'] == tool.F1)
+states.extend(dict(row, sample='timer') for row in list(states) if row['case'] == tool.F1)
+assert tool.gate(work, states, expect_change=True)
+
+controls = [({'A': evaluation}, {'A': fit, 'B': fit}),
+            ({'A': evaluation, 'B': evaluation}, {'A': fit, 'B': dict(fit, critical_cpu_seconds=float('nan'))}),
+            ({'A': evaluation, 'B': evaluation}, {'A': fit, 'B': dict(fit, status='failed')})]
+assert all(tool.f1_ceilings(evaluations, fits.items(), control=True) for evaluations, fits in controls)
+
+work, states = rows()
+next(row for row in states if row['case'] == tool.F1 and row['wheel'] == 'B')['value'] = float('nan')
+assert tool.gate(work, states, expect_change=True)
+print('F1 attempt totals, timer invariance, invalid controls and nonfinite retained states: ok')

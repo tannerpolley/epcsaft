@@ -45,6 +45,25 @@ def quantities(case):
     return F1_VALUES if case == F1 else PHYSICAL
 
 
+def equilibrium_iterations(trace):
+    # Callback iteration ordinals include restoration; zero starts each driver attempt.
+    last, total = {}, 0
+    for event in trace.events:
+        if event.name != 'ipopt_iteration':
+            continue
+        if event.iteration == 0:
+            last[event.span] = 0
+        elif event.span not in last or event.iteration < last[event.span]:
+            raise RuntimeError('F1 equilibrium iteration observations missing or unordered')
+        total += event.iteration - last[event.span]
+        last[event.span] = event.iteration
+    for index, span in enumerate(trace.spans):
+        if span.name == 'solve_equilibrium' and index not in last and (
+                span.convergence is None or span.convergence.iterations != 0):
+            raise RuntimeError('F1 equilibrium iteration observations missing')
+    return total
+
+
 def f1_result(operation):
     import epcsaft
     from epcsaft import _core
@@ -100,8 +119,7 @@ def f1_result(operation):
     counts = dict(reference_computations=sum(e.name == 'reference_cache_miss' for e in trace.events),
                   reference_columns=sum(s.name == 'reference_column' for s in spans),
                   density_solves=sum(s.name == 'solve_density' for s in spans),
-                  equilibrium_iterations=sum(s.convergence.iterations for s in spans
-                                             if s.name == 'solve_equilibrium' and s.convergence is not None))
+                  equilibrium_iterations=equilibrium_iterations(trace))
     if not all(counts.values()):
         raise RuntimeError(f'F1 work observations missing: {counts}')
     row = dict(point=F1, **counts, **{k: getattr(result, k) for k in F1_VALUES},
@@ -252,14 +270,16 @@ def scaled_differences(a, b, case=None, quantity=None):
 
 
 def physical_difference(a, b, keys=PHYSICAL):
-    maximum = 0.0
+    maximum = (0.0, None)
     for left, right in zip(a['rows'], b['rows'], strict=True):
         if left['point'] != right['point']:
             raise RuntimeError('physical-state point order differs')
         for key in keys:
             if not left[key] or not right[key] or not all(math.isfinite(v) for v in (*left[key], *right[key])):
                 raise RuntimeError(f'{left["point"]}: empty or nonfinite {key}')
-            maximum = max([maximum, *scaled_differences(left[key], right[key], left['point'], key)])
+            for index, difference in enumerate(scaled_differences(left[key], right[key], left['point'], key)):
+                if difference > maximum[0]:
+                    maximum = (difference, (left['point'], key, index, left[key][index], right[key][index]))
     return maximum
 
 
@@ -279,8 +299,8 @@ def gate(work_rows, state_rows, expect_change=False):
             print(line, flush=True)
             if case.rsplit('/', 1)[0] in ORDINARY and not expect_change:
                 failures.append(line)
-            if case == F1 and not expect_change and (len(seen['A']) != 1 or len(seen['B']) != 1
-                    or any(b > a for a, b in zip(next(iter(seen['A'])), next(iter(seen['B'])), strict=True))):
+            if case == F1 and (len(seen['A']) != 1 or len(seen['B']) != 1 or (not expect_change
+                    and any(b > a for a, b in zip(next(iter(seen['A'])), next(iter(seen['B'])), strict=True)))):
                 failures.append(line)
     values = {}
     for row in state_rows:
@@ -307,9 +327,15 @@ def gate(work_rows, state_rows, expect_change=False):
     for key, pair in values.items():
         if len(pair['A']) != len(pair['B']):
             continue
-        for index, difference in enumerate(scaled_differences(pair['A'], pair['B'], key[0], key[3])):
-            if difference > worst[0]:
-                worst = (difference, (*key, index, pair['A'][index], pair['B'][index]))
+        try:
+            difference, detail = physical_difference(
+                {'rows': [dict(point=key[2], **{key[3]: pair['A']})]},
+                {'rows': [dict(point=key[2], **{key[3]: pair['B']})]}, (key[3],))
+        except RuntimeError as error:
+            failures.append(f'INVALID STATE {key}: {error}')
+            continue
+        if difference > worst[0]:
+            worst = (difference, (*key[:2], *detail))
     line = f'WORST STATE ROW {worst[0]:.3g} (case, sample, point, quantity, index, A, B): {worst[1]}'
     print(line, flush=True)
     if worst[0] > STATE_TOLERANCE:
@@ -322,19 +348,22 @@ def work(result):
     return {key: sum(row[key] for row in result['rows']) for key in keys}
 
 
-def f1_ceilings(evaluations, fits=()):
-    failures = []
+def f1_ceilings(evaluations, fits=(), control=False):
+    failures, fits = [], dict(fits)
+    if control and (set(evaluations) != set('AB') or set(fits) != set('AB')):
+        return ['A=A control needs both serial evaluations and both fits']
     ceiling = 1.25 * F1_IDENTITY['frozen']['serial_cpu_seconds']
     for label, result in evaluations.items():
         print(f'F1 {label}: serial CPU {result["cpu_seconds"]:.6f} s / ceiling {ceiling:.6f} s; '
               f'wall {result["seconds"]:.6f} s; central Taylor {result["reference_taylor_evaluations"]}', flush=True)
-        if not 0 < result['cpu_seconds'] <= ceiling:
+        if not 0 < result['cpu_seconds'] <= ceiling or not math.isfinite(result['seconds']) or result['seconds'] <= 0:
             failures.append(f'F1 {label} serial CPU exceeds {ceiling:.6f} s or is invalid')
-    for label, result in fits:
+    for label, result in fits.items():
         print(f'F1 {label}: fit wall {result["seconds"]:.6f} s / ceiling 120 s; '
               f'critical-path CPU {result["critical_cpu_seconds"]:.6f} s', flush=True)
-        if not 0 < result['seconds'] <= 120:
-            failures.append(f'F1 {label} fit wall exceeds 120 s or is invalid')
+        if (not 0 < result['seconds'] <= 120 or result['status'] != 'converged'
+                or not math.isfinite(result['critical_cpu_seconds']) or result['critical_cpu_seconds'] <= 0):
+            failures.append(f'F1 {label} fit failed, exceeds 120 s or has invalid CPU evidence')
     return failures
 
 
@@ -463,7 +492,7 @@ def main():
             equal = all(tuple(left[k] for k in count_keys(case)) == tuple(right[k] for k in count_keys(case))
                         for left, right in zip(a['rows'], b['rows'], strict=True))
             comparisons[case] = dict(work_A=work(a), work_B=work(b), work_identical=equal,
-                                     max_state_difference=physical_difference(a, b, quantities(case)))
+                                     max_state_difference=physical_difference(a, b, quantities(case))[0])
             print(f'{case}: {tuple(work(a).values())} vs {tuple(work(b).values())} '
                   f'{"IDENTICAL" if equal else "WORK DIFFERENCE"}', flush=True)
             if case == 'khudaida/sequential-8':
@@ -485,7 +514,7 @@ def main():
                             comparisons[case]['work_identical'] = False
                             print(f'WORK DIFFERENCE: {case} environment {label} sample {pair}-{order}', flush=True)
                     a, b = results['A'], results['B']
-                    difference = physical_difference(a, b)
+                    difference = physical_difference(a, b)[0]
                     comparisons[case]['max_state_difference'] = max(comparisons[case]['max_state_difference'], difference)
                     pair_rows.append(dict(case=case, pair=pair, order=order, A_seconds=a['seconds'], B_seconds=b['seconds'],
                                           change_percent=100 * (b['seconds'] / a['seconds'] - 1),
@@ -522,7 +551,7 @@ def main():
         summary['gate_failures'].extend(f1_ceilings(baseline[F1]))
         if args.fit:
             control = json.loads(args.control.read_text()) if args.control else None
-            if (control or not same_prepared) and (not control or control.get('gate_failures') != [] or control.get('error')
+            if (args.control or not same_prepared) and (not control or control.get('gate_failures') != [] or control.get('error')
                     or not control.get('identical_engine_images') or control.get('host') != summary['host']
                     or any(control['environments']['A'][key] != control['environments']['B'][key]
                            for key in ('source_root', 'source_revision', 'source_diff_sha256', 'interpreter',
@@ -531,8 +560,8 @@ def main():
                            for key in ('extension_sha256', 'native_library_sha256'))
                     or control.get('f1_packet_sha256') != F1_IDENTITY['packet_sha256']):
                 raise RuntimeError('--fit comparison needs a passing same-host, same-A-image A=A --control')
-            if control and f1_ceilings(control['cases'][F1]['evaluations'], control['cases'][F1]['fits'].items()):
-                raise RuntimeError('A=A control breaks a fixed ceiling')
+            if control and f1_ceilings(control['cases'][F1]['evaluations'], control['cases'][F1]['fits'].items(), control=True):
+                raise RuntimeError('A=A control has incomplete, invalid or over-ceiling evidence')
             fits = {}
             for label in ('A', 'B'):
                 stop(label)
@@ -541,7 +570,7 @@ def main():
                 # The serial timer-on sample verifies that profiling preserves the work and numerical values.
                 timer_sample = call(label, F1)
                 retain(label, F1, 'timer', timer_sample)
-                if physical_difference(timer_sample, baseline[F1][label], F1_VALUES) > STATE_TOLERANCE:
+                if physical_difference(timer_sample, baseline[F1][label], F1_VALUES)[0] > STATE_TOLERANCE:
                     summary['gate_failures'].append(f'F1 {label} timer changed numerical values')
                 for path in directory.glob('*.csv'):
                     path.rename(out / f'timer-{label}-{path.name}')
@@ -554,7 +583,7 @@ def main():
                                          if control else [fits[label]['seconds'] for label in 'AB'])
             print(f'F1 A=A control wall range: {min(f1["control_wall_seconds"]):.6f}–'
                   f'{max(f1["control_wall_seconds"]):.6f} s', flush=True)
-            difference = physical_difference(fits['A'], fits['B'], FIT_VALUES)
+            difference = physical_difference(fits['A'], fits['B'], FIT_VALUES)[0]
             f1['fit_max_state_difference'] = difference
             if difference > STATE_TOLERANCE:
                 summary['gate_failures'].append(f'F1 fit numerical difference {difference}')
