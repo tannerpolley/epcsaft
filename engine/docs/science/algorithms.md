@@ -257,9 +257,22 @@ chart; tape calls retain their differentiated scalar dependencies. Gradient and
 Hessian diagnostic requests still use the tape. Per-thread buffers hold scratch
 only, with no model or request cache.
 
-Every unanchored request first locates the liquid-side root, then locates the
+Every unanchored request checks the liquid side first, then locates the
 vapor root when requested or when a sibling is needed; other liquid requests
-check vapor existence. Sampled curvature and slope order test consistency with
+check vapor existence. An explicit vapor request without an actual sibling
+stops liquid location once a strict pressure bracket has positive slope and
+positive curvature at both endpoints, retaining the deciding endpoint's fold
+separation check and the same locating proposals. Under the assumed shape,
+this convex bracket contains one stable crossing. The vapor bracket must lie
+strictly below it. Only the vapor root is refined and published when both
+sides exist; the unrefined liquid bracket is private existence evidence.
+If vapor is absent, liquid location resumes fully before publishing its sole
+root. Selected-liquid, unspecified and actual-sibling requests retain full
+liquid location. Anchored requests retain their independent local search.
+The [#512 retained evaluation counts](../../../build/issue-512/pressure-evaluations.csv)
+qualify reduced work; quiet-host timing remains open. Removing refinement
+samples does not guarantee detection of every otherwise observable shape
+contradiction or evaluation failure. Sampled curvature and slope order test consistency with
 one interior minimum of the pressure slope. They do not prove this shape.
 On a concave pressure interval, the pressure tangents bound pressure from above;
 on a convex interval they bound it from below. Their envelope can exclude the
