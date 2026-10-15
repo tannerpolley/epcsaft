@@ -2,6 +2,7 @@
 
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
+#include "equilibrium/stoichiometry.hpp"
 
 #include <ceres/ceres.h>
 #include <Eigen/Dense>
@@ -53,17 +54,200 @@ void chain(const FitRequest& request, const std::vector<double>& map, std::size_
 }
 
 // Each input row names the first row with the same state; this is the sole membership map.
-std::vector<std::size_t> state_groups(const std::vector<Observation>& observations) {
+std::vector<std::size_t> state_groups(const std::vector<Observation>& observations, const std::vector<std::size_t>* membership = nullptr) {
     std::vector<std::size_t> groups;
     // ponytail: quadratic declaration comparison; index exact state records if fit datasets grow large.
     for (std::size_t i = 0; i < observations.size(); ++i) {
         const auto prior = std::find_if(observations.begin(), observations.begin() + static_cast<std::ptrdiff_t>(i),
-            [&](const auto& row) { return same_state(observations[i], row); });
+            [&](const auto& row) { return (!membership || (*membership)[i] == (*membership)[&row - observations.data()])
+                && same_state(observations[i], row); });
         const auto j = static_cast<std::size_t>(std::distance(observations.begin(), prior));
         groups.push_back(j == i ? i : groups[j]);
     }
     return groups;
 }
+
+// Statistical membership is declared; equal thermodynamic states never create a measurement.
+struct MeasurementChart final {
+    std::vector<std::size_t> membership, groups, inputs;
+    std::vector<double> measured, sigma, lower, upper;
+    std::vector<std::vector<double>> composition;
+    MeasurementChart() = default;
+
+    explicit MeasurementChart(const FitRequest& request) {
+        if (!request.uncertainty) return;
+        membership.assign(request.observations.size(), request.observations.size());
+        const auto& uncertainty = *request.uncertainty;
+        require(!uncertainty.covariance && !uncertainty.correlation, "correlated measurement declarations are unsupported");
+        require(!request.minimax, "uncertainty with minimax is unsupported");
+        require(uncertainty.output_sigma.size() == membership.size(), "missing output sigma");
+        for (std::size_t i = 0; i < membership.size(); ++i) {
+            const double weight = request.weights.empty() ? 1.0 : request.weights.at(i);
+            require(weight == 0.0 || weight == 1.0, "uncertainty requires unit positive relative weights");
+            require(request.observations[i].form == ResidualForm::Difference, "physical-unit Gaussian errors require Difference, not LogRatio");
+            require(weight == 0.0 || (std::isfinite(uncertainty.output_sigma[i]) && uncertainty.output_sigma[i] > 0.0), "positive finite output sigma");
+        }
+        const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+        const auto& charges = request.parameters.charge_number;
+        const std::size_t count = request.parameters.component_count();
+        for (std::size_t g = 0; g < uncertainty.groups.size(); ++g) {
+            const auto& group = uncertainty.groups[g];
+            require(!group.rows.empty(), "empty measurement group");
+            require(group.rows.front() < membership.size(), "measurement row index");
+            const auto& anchor = request.observations.at(group.rows.front());
+            const bool ionic = electrolyte_observation(anchor.kind), pressure = pressure_closed(anchor.kind);
+            const bool law = anchor.kind == ObservationKind::LogEquilibriumConstant;
+            bool objective = false;
+            for (const auto row : group.rows) {
+                require(row < membership.size() && membership[row] == membership.size(), "overlapping measurement groups");
+                membership[row] = g;
+                const auto& item = request.observations[row];
+                require(item.kind != ObservationKind::AdditionEnthalpy && item.kind != ObservationKind::SolvationGibbsEnergy
+                    && item.kind != ObservationKind::TransferGibbsEnergy && item.kind != ObservationKind::BulkRelativePermittivity
+                    && item.kind != ObservationKind::FeedEnthalpy && item.kind != ObservationKind::SystemEnthalpy
+                    && !item.problem.critical && !item.problem.envelope, "uncertain inputs unsupported for this observation kind");
+                auto a = anchor, b = item;
+                if (law) { a.kind = b.kind = ObservationKind::PhaseDensity; }
+                const bool same = pressure ? pressure_closed(item.kind) && item.temperature == anchor.temperature
+                    && item.pressure == anchor.pressure && item.composition == anchor.composition && item.branch == anchor.branch
+                    : same_state(a, b);
+                require(same && (!law || (item.kind == anchor.kind && item.reaction == anchor.reaction)), "conflicting measurement state declarations");
+                objective |= request.weights.empty() || request.weights[row] > 0.0;
+            }
+            std::vector<double> x;
+            const bool feed = std::any_of(group.inputs.begin(), group.inputs.end(), [](const auto& input) { return input.kind == MeasuredInputKind::MoleFraction; });
+            double total = 1.0;
+            if (feed) {
+                require(!ionic && !law, "composition uncertainty is unsupported for this observation");
+                x = pressure ? anchor.composition : equilibrium::resolve_feed(model, anchor.problem.feed);
+                total = std::accumulate(x.begin(), x.end(), 0.0);
+                if (pressure) { require(std::abs(total - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value, "measured composition sum"); total = 1.0; }
+                require(pressure || (std::isfinite(group.feed_total_mol) && group.feed_total_mol > 0.0
+                    && std::abs(total - group.feed_total_mol) <= policy::COMPOSITION_SUM_TOLERANCE.value * total), "fixed feed total disagrees with resolved amounts");
+                for (auto& value : x) value /= total;
+                require(std::abs(std::inner_product(x.begin(), x.end(), charges.begin(), 0.0))
+                    <= policy::COMPOSITION_SUM_TOLERANCE.value, "measured feed is not charge neutral");
+                require(group.dependent_species.size() == 1 || group.dependent_species.size() == 2, "feed chart needs one or two dependent species");
+                for (std::size_t d = 0; d < group.dependent_species.size(); ++d) {
+                    const auto species = group.dependent_species[d];
+                    require(species < count && x[species] > 0.0, "dependent feed species is absent");
+                    require(std::find(group.dependent_species.begin(), group.dependent_species.begin() + d, species)
+                        == group.dependent_species.begin() + d, "duplicate dependent feed species");
+                }
+            } else require(group.dependent_species.empty(), "dependent species without feed coordinates");
+            std::vector<std::vector<double>> directions;
+            std::vector<double> values;
+            for (std::size_t j = 0; j < group.inputs.size(); ++j) {
+                const auto& input = group.inputs[j];
+                using K = MeasuredInputKind;
+                require(input.kind >= K::Temperature && input.kind <= K::Molality, "unknown measured input");
+                require(std::isfinite(input.sigma) && input.sigma >= 0.0, "input sigma must be finite and nonnegative");
+                require(std::isfinite(input.lower) && std::isfinite(input.upper) && input.lower <= input.upper, "finite physical input bounds");
+                for (std::size_t k = 0; k < j; ++k)
+                    require(input.kind != group.inputs[k].kind || (input.kind == K::MoleFraction && input.species != group.inputs[k].species), "duplicate measured input target");
+                require(input.unit == (input.kind == K::Temperature ? "K" : input.kind == K::Pressure ? "Pa"
+                    : input.kind == K::MoleFraction ? "mol/mol" : "mol/kg"), "unsupported measured input unit");
+                require(anchor.kind != ObservationKind::AdditionEnthalpy && anchor.kind != ObservationKind::SolvationGibbsEnergy
+                    && anchor.kind != ObservationKind::TransferGibbsEnergy && anchor.kind != ObservationKind::BulkRelativePermittivity
+                    && anchor.kind != ObservationKind::FeedEnthalpy && anchor.kind != ObservationKind::SystemEnthalpy
+                    && !anchor.problem.critical && !anchor.problem.envelope, "uncertain inputs unsupported for this observation kind");
+                require(!law || input.kind == K::Temperature, "source ln K admits only uncertain temperature");
+                if (input.kind == K::Temperature || input.kind == K::Pressure) {
+                    const auto& intensive = input.kind == K::Temperature ? anchor.problem.temperature : anchor.problem.pressure;
+                    require(ionic || pressure || (!intensive.free && !intensive.absent), "free or absent intensive is not a measured input");
+                    require(input.lower > 0.0, "positive temperature and pressure domain");
+                    if (law) for (const auto& reaction : anchor.problem.reactions) if (reaction.name == anchor.reaction && reaction.correlation)
+                        require(input.lower >= reaction.correlation->temperature_min && input.upper <= reaction.correlation->temperature_max, "temperature box leaves source-law interval");
+                }
+                require(input.kind != K::Molality || ionic, "molality uncertainty requires an electrolyte observation");
+                require(input.kind != K::Molality || std::all_of(group.rows.begin(), group.rows.end(), [&](const auto row) {
+                    return input.lower >= (request.observations[row].kind == ObservationKind::OsmoticCoefficient
+                        ? policy::OSMOTIC_MOLALITY_FLOOR.value : 0.0);
+                }), "molality box leaves the admitted domain");
+                if (ionic) require(std::count(anchor.composition.begin(), anchor.composition.end(), 1.0) == 1
+                    && (input.kind == K::Temperature || input.kind == K::Pressure || input.kind == K::Molality), "mixed-solvent uncertainty is unsupported");
+                std::vector<double> dx(count, 0.0);
+                double value = input.kind == K::Temperature ? (ionic || pressure ? anchor.temperature : anchor.problem.temperature.value)
+                    : input.kind == K::Pressure ? (ionic || pressure ? anchor.pressure : anchor.problem.pressure.value) : anchor.molality;
+                if (input.kind == K::MoleFraction) {
+                    require(input.species < count && x[input.species] > 0.0
+                        && std::find(group.dependent_species.begin(), group.dependent_species.end(), input.species) == group.dependent_species.end(), "independent feed species is absent or dependent");
+                    value = x[input.species]; dx[input.species] = 1.0;
+                    const auto d = group.dependent_species[0];
+                    if (group.dependent_species.size() == 1) {
+                        require(charges[d] == 0 && charges[input.species] == 0, "charged feed chart needs two distinct dependent charges");
+                        dx[d] = -1.0;
+                    } else {
+                        const auto e = group.dependent_species[1];
+                        require(charges[d] != charges[e], "singular normalization/charge block");
+                        dx[d] = double(charges[e] - charges[input.species]) / double(charges[d] - charges[e]);
+                        dx[e] = -1.0 - dx[d];
+                    }
+                }
+                require(std::isfinite(value) && value >= input.lower && value <= input.upper
+                    && (input.sigma == 0.0 || input.lower < input.upper), "measured input outside its physical box");
+                directions.push_back(dx); values.push_back(value);
+                if (objective && input.sigma > 0.0) {
+                    groups.push_back(g); inputs.push_back(j); measured.push_back(value); sigma.push_back(input.sigma);
+                    lower.push_back((input.lower - value) / input.sigma); upper.push_back((input.upper - value) / input.sigma);
+                    for (auto& v : dx) v *= pressure ? 1.0 : total;
+                    composition.push_back(std::move(dx));
+                }
+            }
+            for (std::size_t i = 0; feed && i < count; ++i) {
+                double lo = x[i], hi = x[i];
+                for (std::size_t j = 0; j < directions.size(); ++j) {
+                    const double a = directions[j][i] * (group.inputs[j].lower - values[j]);
+                    const double b = directions[j][i] * (group.inputs[j].upper - values[j]);
+                    lo += std::min(a, b); hi += std::max(a, b);
+                }
+                // The feed's unit-sum criterion admits roundoff at exact affine faces.
+                require(lo >= -policy::COMPOSITION_SUM_TOLERANCE.value
+                    && hi <= 1.0 + policy::COMPOSITION_SUM_TOLERANCE.value, "nonphysical feed box");
+            }
+        }
+    }
+
+    void apply(const FitRequest& request, const std::vector<double>& point, std::vector<Observation>& observations) const {
+        const auto width = request.coordinates.coordinates.size();
+        for (std::size_t c = 0; c < groups.size(); ++c) {
+            const auto& input = request.uncertainty->groups[groups[c]].inputs[inputs[c]];
+            const double correction = sigma[c] * point[width + c], value = measured[c] + correction;
+            for (const auto row : request.uncertainty->groups[groups[c]].rows) {
+                auto& observation = observations[row];
+                const bool pressure = pressure_closed(observation.kind), direct = pressure || electrolyte_observation(observation.kind);
+                if (input.kind == MeasuredInputKind::Temperature) (direct ? observation.temperature : observation.problem.temperature.value) = value;
+                if (input.kind == MeasuredInputKind::Pressure) (direct ? observation.pressure : observation.problem.pressure.value) = value;
+                if (input.kind == MeasuredInputKind::Molality) observation.molality = value;
+                if (input.kind == MeasuredInputKind::MoleFraction) {
+                    if (!pressure && observation.problem.feed.kind != equilibrium::FeedKind::Amounts) {
+                        const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+                        observation.problem.feed.values = equilibrium::resolve_feed(model, observation.problem.feed);
+                        observation.problem.feed.kind = equilibrium::FeedKind::Amounts;
+                    }
+                    auto& x = pressure ? observation.composition : observation.problem.feed.values;
+                    for (std::size_t i = 0; i < x.size(); ++i) x[i] += composition[c][i] * correction;
+                }
+            }
+        }
+    }
+
+    std::pair<std::vector<ObservationInputDirection>, std::vector<double>> directions(const FitRequest& request, std::size_t row) const {
+        std::vector<ObservationInputDirection> result;
+        std::vector<double> deviations;
+        for (std::size_t c = 0; c < groups.size(); ++c) if (membership[row] == groups[c]) {
+            const auto kind = request.uncertainty->groups[groups[c]].inputs[inputs[c]].kind;
+            ObservationInputDirection d;
+            d.state.feed_amounts_mol = composition[c];
+            d.state.active_parameters.assign(request.coordinates.active_parameters().size() + request.holds.size(), 0.0);
+            d.state.temperature_k = kind == MeasuredInputKind::Temperature ? 1.0 : 0.0;
+            d.state.pressure_pa = kind == MeasuredInputKind::Pressure ? 1.0 : 0.0;
+            d.molality = kind == MeasuredInputKind::Molality ? 1.0 : 0.0;
+            result.push_back(std::move(d)); deviations.push_back(sigma[c]);
+        }
+        return {result, deviations};
+    }
+};
 
 struct Trial final {
     std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
@@ -124,6 +308,10 @@ FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
 FIELDS(HydrationHold, a, b, c, d, e, f)
 FIELDS(Failure, a, b, c, d, e)
+FIELDS(MeasuredInput, a, b, c, d, e, f)
+FIELDS(MeasurementGroup, a, b, c, d)
+FIELDS(MeasurementUncertainty, a, b, c, d)
+FIELDS(MeasurementChart, a, b, c, d, e, f, g, h)
 // Observation validation refuses discovery options (a fit declares its phases), so none are sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
     auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n] = item;
@@ -243,9 +431,20 @@ void set_fit_host(FitHost host, const void* extension) {
 // every process publishes only when the whole evaluation succeeds.
 struct ObservationEvaluator::Impl final {
     Impl(const FitRequest& request, FitResult& result, const std::vector<std::size_t>& groups,
-              const std::vector<double>& sqrt_weights)
-        : request_(request), result_(result), groups_(groups), sqrt_weights_(sqrt_weights),
-          starts_(groups.size()), owner_(groups.size(), 0) {}
+              const std::vector<double>& sqrt_weights, std::optional<MeasurementChart> measurement = {})
+        : request_(request), result_(result), measurement_(measurement ? std::move(*measurement) : MeasurementChart(request)),
+          groups_(request.uncertainty ? state_groups(request.observations, &measurement_.membership) : groups), sqrt_weights_(sqrt_weights),
+          starts_(groups.size()), owner_(groups.size(), 0) {
+        if (request.uncertainty) for (std::size_t i = 0; i < sqrt_weights_.size(); ++i)
+            if (sqrt_weights_[i] > 0.0) sqrt_weights_[i] = request.observations[i].scale / request.uncertainty->output_sigma[i];
+    }
+    std::size_t width() const { return request_.coordinates.coordinates.size() + measurement_.groups.size(); }
+    std::pair<std::vector<double>, std::vector<double>> bounds() const {
+        auto box = request_.coordinates.optimizer_bounds();
+        box.first.insert(box.first.end(), measurement_.lower.begin(), measurement_.lower.end());
+        box.second.insert(box.second.end(), measurement_.upper.begin(), measurement_.upper.end());
+        return box;
+    }
 
     // Fixed partition: worker k evaluates every count-th state group in row order. Electrolyte rows share
     // one reference cache and stay here, as does every row under a trace capture or in a native host.
@@ -285,7 +484,7 @@ struct ObservationEvaluator::Impl final {
         }
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
-                request_.observations, request_.holds, sqrt_weights_);
+                request_.observations, request_.holds, request_.uncertainty, measurement_, sqrt_weights_);
             put(workers_.sockets[k - 1], owner_, k);
         }
     }
@@ -312,16 +511,21 @@ struct ObservationEvaluator::Impl final {
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             std::optional<Failure> theirs;
             ObservationEvaluation part;
-            get(workers_.sockets[k - 1], theirs, part.predictions, part.residuals, part.statuses, part.gradient);
+            get(workers_.sockets[k - 1], theirs, part.predictions, part.residuals, part.statuses, part.gradient, part.input_gradient,
+                part.state_densities, part.reference_values);
             // A trial refused before its rows sends none; any other reply carries every row.
             const bool rows = part.statuses.size() == n && part.predictions.size() == n && part.residuals.size() == n
-                && part.gradient.size() == (jacobian ? n * width : 0);
+                && part.gradient.size() == (jacobian ? n * width : 0)
+                && part.input_gradient.size() == (jacobian ? n * measurement_.groups.size() : 0);
             if (!rows && !(theirs && part.statuses.empty())) throw std::runtime_error("fit worker reply size");
             for (std::size_t i = 0; rows && out.statuses.size() == n && i < n; ++i) if (owner_[i] == k) {
                 out.predictions[i] = part.predictions[i];
                 out.residuals[i] = part.residuals[i];
                 out.statuses[i] = part.statuses[i];
+                if (request_.uncertainty) { out.state_densities[i] = part.state_densities.at(i); out.reference_values[i] = part.reference_values.at(i); }
                 if (jacobian) std::copy_n(part.gradient.begin() + i * width, width, out.gradient.begin() + i * width);
+                if (jacobian && !measurement_.groups.empty()) std::copy_n(part.input_gradient.begin() + i * measurement_.groups.size(),
+                    measurement_.groups.size(), out.input_gradient.begin() + i * measurement_.groups.size());
             }
             if (theirs && (!failure || theirs->row < failure->row)) failure = std::move(theirs);
         }
@@ -348,15 +552,35 @@ struct ObservationEvaluator::Impl final {
                     std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite", jacobian);
         }
         out.cost = 0.5 * sum;
-        const std::size_t columns = request_.coordinates.coordinates.size();
-        if (jacobian) out.optimizer_gradient.resize(n * columns);
+        const std::size_t parameters = request_.coordinates.coordinates.size(), latent = measurement_.groups.size(), columns = this->width();
+        if (jacobian) out.optimizer_gradient.resize((n + latent) * columns);
         for (std::size_t i = 0; jacobian && i < n; ++i) {
             if (sqrt_weights_[i] == 0.0) continue;
             chain(request_, trial.chart.map, i, sqrt_weights_[i], out.predictions[i],
                   out.gradient.data() + i * width, out.optimizer_gradient.data() + i * columns);
+            for (std::size_t c = 0; c < latent; ++c) out.optimizer_gradient[i * columns + parameters + c]
+                = sqrt_weights_[i] * residual_slope(request_.observations[i], out.predictions[i])
+                    * out.input_gradient[i * latent + c] * measurement_.sigma[c];
             if (!Eigen::Map<const Eigen::VectorXd>(out.optimizer_gradient.data() + i * columns,
                 static_cast<Eigen::Index>(columns)).allFinite())
                 return reject(i, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", true);
+        }
+        if (request_.uncertainty) {
+            auto& reconciled = out.reconciliation.emplace();
+            reconciled.output_cost = out.cost;
+            reconciled.row_groups = measurement_.membership;
+            reconciled.column_groups = measurement_.groups; reconciled.column_inputs = measurement_.inputs;
+            for (std::size_t c = 0; c < latent; ++c) {
+                const double u = optimizer[parameters + c];
+                reconciled.values.push_back(measurement_.measured[c] + measurement_.sigma[c] * u);
+                reconciled.corrections.push_back(u); reconciled.penalties.push_back(u*u);
+                reconciled.row_groups.push_back(measurement_.groups[c]);
+                reconciled.input_cost += 0.5 * u*u; out.weighted.push_back(u);
+                if (jacobian) out.optimizer_gradient[(n + c) * columns + parameters + c] = 1.0;
+            }
+            out.cost += reconciled.input_cost;
+            if (!std::isfinite(out.cost)) return reject(n, ObservationStatus::Nonfinite, "input penalty not finite", jacobian);
+            if (jacobian) reconciled.jacobian = out.optimizer_gradient;
         }
         for (const int fd : workers_.sockets) put(fd, true);
         publish(optimizer, jacobian, out, trial, fresh, same_point);
@@ -374,7 +598,8 @@ struct ObservationEvaluator::Impl final {
             Trial& trial = same_point ? *cached_ : fresh;
             ObservationEvaluation out;
             const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
-            put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient);
+            put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient, out.input_gradient,
+                out.state_densities, out.reference_values);
             get(fd, commit);
             if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
         }
@@ -383,7 +608,7 @@ struct ObservationEvaluator::Impl final {
     bool gradient_at(const std::vector<double>& point, std::vector<double>& out) {
         ObservationEvaluation trial;
         if (!evaluate(point, true, trial)) return false;
-        const std::size_t width = request_.coordinates.coordinates.size();
+        const std::size_t width = this->width();
         const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> j(
             trial.optimizer_gradient.data(), static_cast<Eigen::Index>(trial.weighted.size()), static_cast<Eigen::Index>(width));
         const Eigen::Map<const Eigen::VectorXd> r(trial.weighted.data(), static_cast<Eigen::Index>(trial.weighted.size()));
@@ -405,10 +630,13 @@ struct ObservationEvaluator::Impl final {
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         std::size_t i = 0;
         try {
+            require(optimizer.size() == this->width(), "complete optimizer width");
+            const std::vector<double> parameter_point(optimizer.begin(), optimizer.begin() + request_.coordinates.coordinates.size());
             auto observations = request_.observations;
-            auto reaction_laws = request_.coordinates.apply(observations, optimizer);
+            auto reaction_laws = request_.coordinates.apply(observations, parameter_point);
+            measurement_.apply(request_, optimizer, observations);
             if (!same_point) {
-                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, optimizer, request_.holds, request_.thermochemistry);
+                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, parameter_point, request_.holds, request_.thermochemistry);
                 trial.chart.reaction_laws = std::move(reaction_laws);
                 trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry);
                 trial.centers.assign(groups_.size(), Prediction{});
@@ -429,7 +657,9 @@ struct ObservationEvaluator::Impl final {
             out.predictions.assign(n, 0.0);
             out.residuals.assign(n, 0.0);
             out.statuses.assign(n, ObservationStatus::NotEvaluated);
+            if (request_.uncertainty) { out.state_densities.resize(n); out.reference_values.resize(n); }
             if (jacobian) out.gradient.assign(n * width, 0.0);
+            if (jacobian) out.input_gradient.assign(n * measurement_.groups.size(), 0.0);
             std::vector<std::vector<PredictionGradient>> gradients(n);
             std::vector<std::size_t> position(n, 0);
             for (i = 0; i < n; ++i) {
@@ -443,10 +673,14 @@ struct ObservationEvaluator::Impl final {
                     scope.probe("observation", static_cast<double>(i));
                     scope.probe("anchor", static_cast<double>(g));
                     scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                    // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
+                    const auto& prior = seed ? seed->observations[i] : observation;
+                    const bool unchanged = !request_.uncertainty || (pressure_closed(observation.kind)
+                        ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
+                            == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
+                        : same_state(observation, prior));
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
-                        seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
-                        seed && trial.chart.physical == seed->chart.physical);
+                        seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
+                        seed && unchanged && trial.chart.physical == seed->chart.physical);
                     if (prediction.status != ObservationStatus::Available && starts_[g])
                         prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
                 } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
@@ -455,6 +689,17 @@ struct ObservationEvaluator::Impl final {
                     return Failure{i, i, prediction.status, jacobian, prediction.message};
                 out.predictions[i] = *prediction.value;
                 out.residuals[i] = *prediction.residual;
+                if (request_.uncertainty) {
+                    if (prediction.activity) out.state_densities[i].push_back(prediction.activity->state.molar_density);
+                    if (prediction.state) out.state_densities[i].push_back(prediction.state->molar_density);
+                    if (prediction.solved) out.state_densities[i] = prediction.solved->molar_densities;
+                    if (prediction.reference) {
+                        out.reference_values[i].assign(prediction.reference->log_fugacity.begin(), prediction.reference->log_fugacity.end());
+                        if (prediction.reference->pure_solvent_log_fugacity) out.reference_values[i].push_back(*prediction.reference->pure_solvent_log_fugacity);
+                        for (const auto& state : prediction.reference->ladder_states) out.state_densities[i].push_back(state.molar_density);
+                        if (prediction.reference->pure_solvent_state) out.state_densities[i].push_back(prediction.reference->pure_solvent_state->molar_density);
+                    }
+                }
                 if (!jacobian) continue;
                 if (gradients[g].empty()) {
                     core::Scope scope("fit_group_differentiation");
@@ -462,15 +707,19 @@ struct ObservationEvaluator::Impl final {
                     std::vector<const Observation*> rows;
                     for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
-                    gradients[g] = pressure_closed(observation.kind)
+                    const auto [directions, deviations] = measurement_.directions(request_, i);
+                    gradients[g] = pressure_closed(observation.kind) && directions.empty()
                         ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                        : differentiate_group(model, rows, prediction, request_.coordinates);
+                        : differentiate_group(model, rows, prediction, request_.coordinates, directions, deviations);
                 }
                 const auto& gradient = gradients[g][position[g]++];
                 if (gradient.status != ObservationStatus::Available)
                     return Failure{i, i, gradient.status, true, gradient.message};
-                std::copy(gradient.value.begin(), gradient.value.end(),
+                std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
+                std::size_t local = width;
+                for (std::size_t c = 0; c < measurement_.groups.size(); ++c) if (measurement_.membership[i] == measurement_.groups[c])
+                    out.input_gradient[i * measurement_.groups.size() + c] = gradient.value.at(local++);
             }
             return std::nullopt;
         } catch (const std::exception& error) {
@@ -492,10 +741,11 @@ struct ObservationEvaluator::Impl final {
         }
     }
 
-    const FitRequest& request_;
+    const FitRequest request_;
     FitResult& result_;
+    const MeasurementChart measurement_;
     const std::vector<std::size_t> groups_;
-    const std::vector<double> sqrt_weights_;
+    std::vector<double> sqrt_weights_;
     std::vector<std::optional<equilibrium::EquilibriumResult>> starts_;
     std::optional<Trial> cached_;
     std::size_t trials_ = 0;
@@ -514,12 +764,13 @@ void serve_fit(int fd) {
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &fit, &size) != 0 || prctl(PR_SET_PDEATHSIG, SIGKILL) != 0
         || getppid() != fit.pid) _exit(1);
     FitRequest request;
+    MeasurementChart measurement;
     std::vector<double> sqrt_weights;
     get(fd, request.parameters, request.thermochemistry, request.coordinates.coordinates, request.observations,
-        request.holds, sqrt_weights);
+        request.holds, request.uncertainty, measurement, sqrt_weights);
     const auto groups = state_groups(request.observations);
     FitResult result;
-    ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights);
+    ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights, std::move(measurement));
     get(fd, evaluator.owner_, evaluator.process_);
     evaluator.serve(fd);
 }
@@ -532,16 +783,20 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
         }
     std::vector<double> selection(request.observations.size(), 0.0);
     for (const auto row : rows) { require(row < selection.size(), "evaluator row"); selection[row] = 1.0; }
-    impl_ = std::make_shared<Impl>(request, failures, state_groups(request.observations), selection);
+    auto canonical = request;
+    if (canonical.uncertainty && canonical.uncertainty->groups.empty() && canonical.uncertainty->output_sigma.empty()
+        && !canonical.uncertainty->covariance && !canonical.uncertainty->correlation) canonical.uncertainty.reset();
+    impl_ = std::make_shared<Impl>(canonical, failures, state_groups(canonical.observations), selection);
 }
 bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out) {
     out.residual_optimizer_gradient.clear();
     if (!impl_->evaluate(optimizer, columns, out)) return false;
     if (columns) out.residual_optimizer_gradient = out.optimizer_gradient;
     if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
-        const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]);
+        const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]) * impl_->sqrt_weights_[i];
         for (std::size_t c = 0; c < optimizer.size(); ++c) out.optimizer_gradient[i * optimizer.size() + c] /= slope;
     }
+    if (columns) out.optimizer_gradient.resize(out.predictions.size() * optimizer.size());
     return true;
 }
 
@@ -576,6 +831,8 @@ public:
         scope.probe("accepted", summary.step_is_successful ? 1.0 : 0.0, summary.iteration);
         scope.probe("cost", summary.cost, summary.iteration);
         scope.probe("ratio", summary.relative_decrease, summary.iteration);
+        scope.probe("cost_change", summary.cost_change, summary.iteration);
+        if (summary.relative_decrease != 0.0) scope.probe("predicted_cost_change", summary.cost_change / summary.relative_decrease, summary.iteration);
         scope.probe("trust_radius", summary.trust_region_radius, summary.iteration);
         if (summary.iteration > 0 && !summary.step_is_successful) return ceres::SOLVER_CONTINUE;
         std::vector<double> gradient;
@@ -649,12 +906,12 @@ class Cost final : public ceres::CostFunction {
 public:
     Cost(const FitRequest& request, ObservationEvaluator::Impl& evaluator)
         : request_(request), evaluator_(evaluator) {
-        set_num_residuals(static_cast<int>(request.observations.size()));
-        mutable_parameter_block_sizes()->push_back(static_cast<int>(request.coordinates.coordinates.size()));
+        set_num_residuals(static_cast<int>(request.observations.size() + evaluator.measurement_.groups.size()));
+        mutable_parameter_block_sizes()->push_back(static_cast<int>(evaluator.width()));
     }
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override {
-        const std::size_t width = request_.coordinates.coordinates.size();
+        const std::size_t width = evaluator_.width();
         const std::vector<double> optimizer(parameters[0], parameters[0] + width);
         const bool jacobian = jacobians != nullptr && jacobians[0] != nullptr;
         ObservationEvaluation trial;
@@ -680,20 +937,25 @@ const char* termination_name(ceres::TerminationType termination) {
     return "failure";
 }
 
-void covariance(FitResult& result, const FitRequest& request, std::size_t n) {
+void covariance(FitResult& result, const FitRequest& request, std::size_t n,
+    const std::vector<double>& point, const std::vector<double>& lower, const std::vector<double>& upper) {
     auto& cov = result.covariance;
     const auto& set = request.coordinates;
-    const auto width = static_cast<Eigen::Index>(set.coordinates.size());
+    const auto width = static_cast<Eigen::Index>(point.size());
     cov.assumption = "unit-variance weighted residuals, independent errors and a regular local "
                      "linearization at an interior point; multiply by variance_factor for an "
                      "unknown common variance; no claim under bounds, rank deficiency or model discrepancy";
+    if (request.uncertainty) cov.assumption = "known absolute independent Gaussian sigmas; local Gaussian linearization, with reconciled inputs eliminated; no common variance estimate";
     for (std::size_t i = 0; i < n; ++i)
         if (request.weights.empty() || request.weights[i] > 0.0) cov.objective_rows.push_back(i);
+    if (result.reconciliation) for (std::size_t c = 0; c < result.reconciliation->corrections.size(); ++c)
+        cov.objective_rows.push_back(n + c);
     if (cov.objective_rows.empty()) { cov.status = "rank_deficient"; return; }
     Eigen::MatrixXd jacobian(static_cast<Eigen::Index>(cov.objective_rows.size()), width);
     for (Eigen::Index i = 0; i < jacobian.rows(); ++i)
         for (Eigen::Index c = 0; c < width; ++c)
-            jacobian(i, c) = result.optimizer_jacobian[cov.objective_rows[static_cast<std::size_t>(i)] * static_cast<std::size_t>(width) + static_cast<std::size_t>(c)];
+            jacobian(i, c) = (result.reconciliation ? result.reconciliation->jacobian : result.optimizer_jacobian)
+                [cov.objective_rows[static_cast<std::size_t>(i)] * static_cast<std::size_t>(width) + static_cast<std::size_t>(c)];
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
     const auto& singular = svd.singularValues();
     cov.singular_values.assign(singular.data(), singular.data() + singular.size());
@@ -706,21 +968,21 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n) {
     cov.rank = static_cast<std::size_t>(std::count_if(cov.singular_values.begin(), cov.singular_values.end(),
         [&](double value) { return value > floor && value > 0.0; }));
     // A bound is active in optimizer space, within the fit's own active distance of the values it bounds.
-    const auto [lower, upper] = set.optimizer_bounds();
-    for (std::size_t c = 0; c < set.coordinates.size(); ++c)
-        if (std::min(result.optimizer[c] - lower[c], upper[c] - result.optimizer[c]) < policy::FIT_ACTIVE_BOUND_DISTANCE.value)
+    for (std::size_t c = 0; c < point.size(); ++c)
+        if (std::min(point[c] - lower[c], upper[c] - point[c]) < policy::FIT_ACTIVE_BOUND_DISTANCE.value)
             cov.active_bounds.push_back(c);
     // The variance factor counts only rows that enter the objective (w > 0).
-    if (cov.objective_rows.size() > cov.rank) cov.variance_factor = 2.0 * result.final_cost / static_cast<double>(cov.objective_rows.size() - cov.rank);
+    if (!request.uncertainty && cov.objective_rows.size() > cov.rank) cov.variance_factor = 2.0 * result.final_cost / static_cast<double>(cov.objective_rows.size() - cov.rank);
     // An unfinished iterate keeps its rank, singular values and bound diagnostics but is not a
     // parameter-covariance estimate.
     if (result.status != "converged") { cov.status = "not_converged"; cov.variance_factor.reset(); return; }
-    if (cov.rank < set.coordinates.size()) { cov.status = "rank_deficient"; return; }
+    if (cov.rank < point.size()) { cov.status = "rank_deficient"; return; }
     if (!cov.active_bounds.empty()) { cov.status = "active_bound"; return; }
-    const Eigen::MatrixXd optimizer = svd.matrixV() * singular.cwiseAbs2().cwiseInverse().asDiagonal()
+    const Eigen::MatrixXd complete = svd.matrixV() * singular.cwiseAbs2().cwiseInverse().asDiagonal()
         * svd.matrixV().transpose();
+    const Eigen::MatrixXd optimizer = complete.topLeftCorner(set.coordinates.size(), set.coordinates.size());
     const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> map(
-        result.chart.map.data(), static_cast<Eigen::Index>(result.physical.size()), width);
+        result.chart.map.data(), static_cast<Eigen::Index>(result.physical.size()), static_cast<Eigen::Index>(set.coordinates.size()));
     const Eigen::MatrixXd physical = map * optimizer * map.transpose();
     cov.optimizer.assign(optimizer.data(), optimizer.data() + optimizer.size());
     cov.physical.assign(physical.data(), physical.data() + physical.size());
@@ -749,7 +1011,8 @@ void validate_checks(const FitRequest& request) {
 
 }  // namespace
 
-std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final) {
+std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final,
+    const std::vector<Observation>* reconciled) {
     validate_checks(request);
     std::vector<bool> selected(request.observations.size(), false);
     const auto refreshed = [&](std::size_t i) {
@@ -757,23 +1020,25 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     };
     for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
     for (std::size_t i = 0; i < selected.size(); ++i) if (refreshed(i)) selected[i] = true;
-    const auto predictions = [&](const HelmholtzModel& owner) {
+    const auto predictions = [&](const HelmholtzModel& owner, const std::vector<Observation>& observations) {
         std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
         for (std::size_t i = 0; i < selected.size(); ++i) if (selected[i]) {
-            validate(request.observations[i], owner);
-            result[i] = predict(owner, request.observations[i], {}, {}, &references);
+            validate(observations[i], owner);
+            result[i] = predict(owner, observations[i], {}, {}, &references);
         }
         return result;
     };
-    const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
+    const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry), request.observations);
+    const auto reconciled_values = reconciled ? predictions(HelmholtzModel(stored, {}, request.thermochemistry), *reconciled) : std::vector<Prediction>{};
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
     for (std::size_t i = 0; i < candidate.size(); ++i) if (refreshed(i)) {
-        final->predictions[i] = candidate[i].value.value_or(NAN);
-        final->residuals[i] = candidate[i].residual.value_or(NAN);
-        final->statuses[i] = candidate[i].status;
+        const auto& prediction = reconciled ? reconciled_values[i] : candidate[i];
+        final->predictions[i] = prediction.value.value_or(NAN);
+        final->residuals[i] = prediction.residual.value_or(NAN);
+        final->statuses[i] = prediction.status;
     }
-    const auto baseline = request.baseline ? predictions(HelmholtzModel(*request.baseline, {}, request.thermochemistry)) : std::vector<Prediction>{};
+    const auto baseline = request.baseline ? predictions(HelmholtzModel(*request.baseline, {}, request.thermochemistry), request.observations) : std::vector<Prediction>{};
     std::vector<CheckResult> reports;
     for (const auto& group : request.checks) {
         CheckResult out;
@@ -837,6 +1102,14 @@ std::pair<double, double> check_error(CheckMetric metric, const Observation& row
 }
 void publish_candidate(FitResult& result, ObservationEvaluation final, const std::vector<double>& point) {
     result.optimizer = point;
+    result.reconciliation = std::move(final.reconciliation);
+    if (result.reconciliation) {
+        const auto parameters = point.size() - result.reconciliation->corrections.size(), n = final.predictions.size();
+        result.optimizer.resize(parameters);
+        std::vector<double> columns(n * parameters);
+        for (std::size_t i = 0; i < n; ++i) std::copy_n(final.optimizer_gradient.begin() + i * point.size(), parameters, columns.begin() + i * parameters);
+        final.optimizer_gradient = std::move(columns); final.weighted.resize(n);
+    }
     result.chart = std::move(final.chart);
     result.physical = result.chart.physical;
     result.parameters = result.chart.parameters;
@@ -848,10 +1121,10 @@ void publish_candidate(FitResult& result, ObservationEvaluation final, const std
     result.optimizer_jacobian = std::move(final.optimizer_gradient);
     result.final_cost = final.cost;
 }
-void finish_checks(FitResult& result, const FitRequest& request) {
+void finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled) {
     auto check_request = request;
     request.coordinates.apply(check_request.observations, result.optimizer);
-    result.checks = evaluate_checks(check_request, result.parameters, &result);
+    result.checks = evaluate_checks(check_request, result.parameters, &result, reconciled);
     result.acceptance = "pass";
     for (const auto& check : result.checks)
         if (!check.report_only && check.status != "pass" && result.acceptance != "unavailable") result.acceptance = check.status;
@@ -883,23 +1156,31 @@ void validate_fit_request(const FitRequest& request) {
 }
 
 FitResult fit(const FitRequest& request) {
+    if (request.uncertainty && request.uncertainty->groups.empty() && request.uncertainty->output_sigma.empty()
+        && !request.uncertainty->covariance && !request.uncertainty->correlation) {
+        auto canonical = request; canonical.uncertainty.reset(); return fit(canonical);
+    }
+    if (request.uncertainty && request.minimax) { FitResult result; result.message = "fit uncertainty with minimax is unsupported"; return result; }
     if (request.minimax) return fit_minimax(request);
     FitResult result;
     const auto& set = request.coordinates;
     const std::size_t n = request.observations.size();
     std::vector<double> sqrt_weights(n, 1.0);
     const auto groups = state_groups(request.observations);
+    std::unique_ptr<ObservationEvaluator::Impl> owned;
     try {
         validate_fit_request(request);
         for (std::size_t i = 0; i < request.weights.size(); ++i) sqrt_weights[i] = std::sqrt(request.weights[i]);
+        owned = std::make_unique<ObservationEvaluator::Impl>(request, result, groups, sqrt_weights);
     } catch (const std::invalid_argument& error) {
         result.message = error.what();
         return result;
     }
-    const std::size_t width = set.coordinates.size();
-    ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights);
+    auto& evaluator = *owned;
+    const std::size_t width = evaluator.width();
     evaluator.start_workers(request.controls.workers);
     std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
+    optimizer.resize(width, 0.0);
     ObservationEvaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
         result.status = "initial_evaluation_failed";
@@ -912,7 +1193,7 @@ FitResult fit(const FitRequest& request) {
     Cost cost(request, evaluator);
     ceres::Problem::Options problem_options;
     problem_options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-    const auto [lower, upper] = set.optimizer_bounds();
+    const auto [lower, upper] = evaluator.bounds();
     ceres::Solver::Options options;
     options.minimizer_type = ceres::TRUST_REGION;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
@@ -988,7 +1269,8 @@ FitResult fit(const FitRequest& request) {
 
     result.optimizer = optimizer;
     ObservationEvaluation final;
-    if (!set.within_bounds(optimizer) || !evaluator.evaluate(optimizer, true, final)) {
+    if (!set.within_bounds(std::vector<double>(optimizer.begin(), optimizer.begin() + set.coordinates.size()))
+        || !evaluator.evaluate(optimizer, true, final)) {
         result.status = "failed";
         result.message = "the final point could not be evaluated: " + result.message;
         result.statuses = std::move(final.statuses);
@@ -997,8 +1279,13 @@ FitResult fit(const FitRequest& request) {
     publish_candidate(result, std::move(final), optimizer);
     result.usable = result.status != "failed" && finite(result.physical);
     if (result.usable) {
-        covariance(result, request, n);
-        finish_checks(result, request);
+        covariance(result, request, n, optimizer, lower, upper);
+        if (request.uncertainty) {
+            auto reconciled = request.observations;
+            request.coordinates.apply(reconciled, result.optimizer);
+            evaluator.measurement_.apply(request, optimizer, reconciled);
+            finish_checks(result, request, &reconciled);
+        } else finish_checks(result, request);
         // A limit stop leaves the round-start gradient stale; this is a cache hit on the final evaluation.
         if (!evaluator.gradient_at(optimizer, gradient)) result.covariance.projected_gradient_norm = NAN;
         else for (std::size_t c = 0; c < width; ++c)

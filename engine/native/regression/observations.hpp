@@ -111,6 +111,12 @@ struct PredictionGradient final {
     std::vector<double> value;
     ObservationStatus status = ObservationStatus::ActionUnavailable;
     std::string message;
+    std::vector<ElectrolyteInputAction> input_actions;
+    std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
+};
+struct ObservationInputDirection final {
+    equilibrium::SolvedStateActionDirection state;
+    double molality = 0.0;
 };
 
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
@@ -132,7 +138,8 @@ PredictionGradient differentiate(
 );
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction,
-    const CoordinateSet& coordinates = {}
+    const CoordinateSet& coordinates = {},
+    const std::vector<ObservationInputDirection>& inputs = {}, const std::vector<double>& input_sigma = {}
 );
 // r = (y - y_obs) / scale, or ln(y / y_obs) for positive y and y_obs; dr/dy = 1/scale or 1/y.
 std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);

@@ -31,11 +31,19 @@ void check_reactive_cp();
 void check_cp_derivatives();
 void check_cp_recovery();
 void check_r3();
+void check_measurement_columns();
+void check_measurement_fit();
+void check_measurement_reuse();
+void check_measurement_admission();
 }  // namespace regression_checks
 
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.measurement-columns", "measurement-columns"}, check_measurement_columns, "R2"},
+        {{"native.regression.measurement-fit", "measurement-fit"}, check_measurement_fit, "R2"},
+        {{"native.regression.measurement-reuse", "measurement-reuse"}, check_measurement_reuse, "R2"},
+        {{"native.regression.measurement-admission", "measurement-admission"}, check_measurement_admission, "R2"},
         {{"native.regression.inventory-boundary", "inventory-boundary"}, check_propane_inventory_boundary, "R1"},
         {{"native.regression.inventory-face", "inventory-face"}, check_inventory_face, "R1"},
         {{"native.regression.neutral-electrostatics", "neutral-electrostatics"}, check_neutral_electrostatics, "R1"},

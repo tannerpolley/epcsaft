@@ -100,6 +100,24 @@ class WideIonic {
             -2*j[14]+j[15]+j[16]+j[13]*vy,{f[3],f[4],f[5]},f[1]};
     }
 public:
+    // EqIDs: mean_ionic_activity_coefficient, molality_activity_conversion,
+    // practical_osmotic_coefficient. Verification values for the same symmetric
+    // water/Na/Cl fixture, at fixed salt molality, without a reaction solve.
+    std::array<Wide,2> activity_values(double molality, double anchor) {
+        const Wide T=c.problem.temperature.value,P=c.problem.pressure.value;
+        const Wide mass=c.parameters.molar_mass_kg_per_mol[0],s=2*mass*Wide(molality);
+        const Wide epsilon=c.parameters.dispersion_energy_over_k[0];
+        const auto finite=state(fluid,T,P,epsilon,s/(2*(1+s)),Wide(anchor),false);
+        const Wide mr=policy::REFERENCE_MOLALITY_FOUR.value,yr=mass*mr/(1+2*mass*mr);
+        auto terminal_tape=record(double(yr)),pure_tape=record(0);
+        const auto terminal=state(terminal_tape,T,P,epsilon,yr,Wide(anchor),false);
+        const auto pure=state(pure_tape,T,P,epsilon,Wide(0),Wide(anchor),false);
+        const auto log_z=[&](const State& state){return CppAD::log(P*state.v/(Wide(R)*T));};
+        const Wide mean=(finite.mu[1]+finite.mu[2]-terminal.mu[1]-terminal.mu[2])/2
+            -log_z(finite)+log_z(terminal)-CppAD::log(1+s);
+        const Wide solvent=-CppAD::log(1+s)+finite.mu[0]-pure.mu[0]-log_z(finite)+log_z(pure);
+        return {CppAD::exp(mean),-solvent/s};
+    }
     // Solvent molar enthalpy at the declared (T, P): the reference tape at its 1e-14 mol/kg trace state
     // (ion fraction 1.8e-16) with the record's ideal-gas enthalpy.
     Wide solvent_enthalpy(double anchor) {

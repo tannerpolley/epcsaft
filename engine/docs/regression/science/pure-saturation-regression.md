@@ -179,9 +179,16 @@ products. Apparent-Cp fitting consumes Equilibrium H A2(T,coordinate), including
 phase-product terms. Physical increments are divided out once before affine
 ties, residual slopes and weights. No outer coefficient Hessian is consumed.
 
-`regression.reaction_enthalpy_shift(name, pivot_temperature=..., origin=...,
-scale=..., bounds=...)` uses that same native chain for the fixed-pivot direction
-in `reaction_constant_coordinate_derivative`. Pivot temperature is required in K;
+The following declaration uses the same native chain for the fixed-pivot
+direction in `reaction_constant_coordinate_derivative`:
+
+```python
+regression.reaction_enthalpy_shift(
+    name, pivot_temperature=..., origin=..., scale=..., bounds=...
+)
+```
+
+Pivot temperature is required in K;
 origin, scale, bounds and the physical result are in J/mol. Ordinary least squares
 and coordinate-aware `regression.differentiate` admit the declaration; sequence
 starts and minimax refuse it. The point reader's residual columns have unit
@@ -320,6 +327,81 @@ the distinction between measured values, evaluated references and source model
 curves. Historical Ceres callable names and stage line/time budgets are not
 current interfaces or universal acceptance criteria.
 
+
+## Declared measurement uncertainty
+
+`MeasurementUncertainty` selects errors-in-variables estimation within the
+existing native Ceres fit. It declares independent input and output standard
+deviations in physical units; no variance is fitted. The objective and exact
+columns are EqIDs `errors_in_variables_objective` and
+`errors_in_variables_residual_derivative`, specializing Zavala (2008), thesis
+chapter 4, §4.2, Eq. (4.2), printed p. 53. This defines a conditional synthetic
+measurement model and establishes no physical validation or global optimum.
+
+Each `MeasurementGroup` explicitly names output rows sharing one physical input
+measurement. Distinct groups remain independent at equal nominal states. A row
+belongs to at most one group; rows in a group must agree on state, branch and
+reference declarations. One positive-sigma input creates one correction and
+one prior residual, regardless of output count. A group containing only
+zero-weight rows creates neither. Zero input sigma fixes that input exactly.
+An absent or otherwise empty declaration follows the ordinary fit. Supplying
+only output sigmas gives the equivalent fixed-input Difference weights
+$w_i=(a_i/\sigma_{y,i})^2$, retaining absolute-sigma covariance meaning.
+Positive external weights must equal one; arbitrary relative weights and
+LogRatio do not express the selected physical-unit Gaussian likelihood.
+
+Measured T is in K, P in Pa, independent fractions in mol/mol and salt molality
+in mol/kg solvent. Bounds are explicit physical domains, independent of sigma.
+The affine fraction chart, EqID `independent_feed_measurement_coordinates`,
+resolves the original feed basis once and holds its declared total in mol.
+Dependent species solve normalization and charge; the full box is checked
+before fitting. Structural zeros, references, stoichiometry, species identities
+and phase support stay fixed. No trial input is clipped or renormalized.
+Salt molality uses the existing formula-composition owner and a fixed pure
+solvent. Changing m does not change the reference ladder.
+
+| Observations | Admitted uncertain inputs |
+|---|---|
+| Density, IsobaricHeatCapacity | T, P, independent fractions |
+| PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, EquilibriumIsobaricHeatCapacity | Fixed T/P and independent feed fractions of one ordinary equilibrium problem |
+| LogEquilibriumConstant | Fixed source-law T |
+| MeanIonicActivityCoefficient, OsmoticCoefficient | T, P, salt molality in one pure solvent |
+
+Uncertain free solved T/P, compound addition enthalpy, solvation/transfer,
+permittivity, caloric enthalpy rows, critical/envelope declarations, references,
+hydration targets and mixed-solvent ionic inputs are unsupported in this mode.
+Fixed rows can accompany admitted uncertain rows with declared output sigma.
+Missing/nonpositive objective sigma, negative/nonfinite input sigma, unsupported
+units, correlated declarations, overlapping groups, conflicting states and
+nonphysical feed boxes are refused with their cause.
+
+The existing point-local parameter map D, residual slope and weighting act once
+on parameter and input columns. Equilibrium actions share one defining-Jacobian
+factorization. Pressure density actions include the molar-mass composition
+derivative for kg/m³. Ionic T/P actions differentiate finite, terminal and pure
+states; m differentiates only the finite state and molality conversion. Raw
+reference actions are admitted separately for each consuming sigma:
+$\sigma_q\max_i|\Delta(d\ln\phi_i/dq)|\le5\times10^{-5}$, with the existing
+finer witness when needed. Failed actions retain their cause.
+
+`InputReconciliation` returns computed inputs, standardized corrections,
+penalties, separate output/input costs and the complete standardized Jacobian.
+Its first rows are output rows; subsequent rows and columns follow
+`column_groups`/`column_inputs`, after the model-parameter columns. `row_groups`
+uses the observation count for an ungrouped output. The authoritative request
+retains measured values, sigmas, units, bounds and membership. Ordinary model
+parameter vectors and output-row arrays retain their existing order and width.
+Objective predictions use reconciled inputs; stored-parameter checks use the
+original measured inputs. Report-only failures do not change objective acceptance.
+
+At a regular converged interior point the model covariance is the vv block of
+$(J^TJ)^{-1}$ for the full augmented J, then mapped by D. This eliminates input
+directions; using only output parameter columns would condition on fitted
+inputs. Known absolute sigmas have no common variance-factor estimate. Rank
+deficiency, unfinished fitting or any active model/input bound withholds
+covariance. This is a local Gaussian approximation. Ordered starts reset all
+input corrections to zero and keep the shared work budget; minimax with an
+uncertainty declaration is refused.
 
 ## Electrolyte observations and dependent Born coordinates
 

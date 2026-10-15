@@ -771,6 +771,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     std::vector<std::array<double, 2>> previous_columns(columns);
     result.parameter_convergence_error.assign(columns, 0.0);
     result.parameter_derivative.resize(columns);
+    result.parameter_difference.resize(columns); result.witness_parameter_difference.resize(columns);
     const auto values = model.active_parameter_values();
     for (std::size_t index = 0; index < REFERENCE_MOLALITIES.size(); ++index) {
         const bool witness = index + 1 == REFERENCE_MOLALITIES.size();
@@ -787,6 +788,8 @@ InfiniteDilutionReference infinite_dilution_reference(
         const auto current = ion_log_fugacity(state, ion_indices);
         // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
         const double error = std::max(std::abs(current[0] - previous[0]), std::abs(current[1] - previous[1]));
+        if (index) for (std::size_t i = 0; i < 2; ++i)
+            (witness ? result.witness_difference : result.value_difference)[i] = current[i] - previous[i];
         if (witness) {
             scope.probe("reference_witness_error", error);
             if (result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
@@ -802,11 +805,14 @@ InfiniteDilutionReference infinite_dilution_reference(
             std::array<double, 2> column;
             for (std::size_t i = 0; i < 2; ++i) column[i] = state.log_fugacity_parameter_derivative.empty() ? NAN
                 : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
+            if (index) for (std::size_t i = 0; i < 2; ++i)
+                (witness ? result.witness_parameter_difference : result.parameter_difference)[a][i] = column[i] - previous_columns[a][i];
             if (index && (!witness || failed_column(result.parameter_convergence_error[a])))
                 result.parameter_convergence_error[a] = parameter_scale(model, values, a)
                     * std::max(std::abs(column[0] - previous_columns[a][0]), std::abs(column[1] - previous_columns[a][1]));
             if (!witness) previous_columns[a] = column;
         }
+        result.ladder_states.push_back(state);
         if (!witness) {
             previous = current;
             anchor = state.molar_density;
@@ -908,6 +914,89 @@ ElectrolyteActivity electrolyte_activity(
                 / (coefficient_sum * molality * solvent_mass));
         }
     }
+    return result;
+}
+
+ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
+    double molality, const InfiniteDilutionReference& reference, const ElectrolyteActivity& activity,
+    const ElectrolyteInputDirection& direction, double standard_deviation) {
+    ElectrolyteInputAction result;
+    const auto& parameters = model.parameters();
+    const std::size_t count = parameters.component_count();
+    const auto sidx = static_cast<std::size_t>(std::max_element(solvent.begin(), solvent.end()) - solvent.begin());
+    if (std::count(solvent.begin(), solvent.end(), 1.0) != 1) {
+        result.message = "input actions require one pure solvent"; return result;
+    }
+    const double mass = parameters.molar_mass_kg_per_mol[sidx];
+    const double nu = double(stoichiometry[0] + stoichiometry[1]), s = nu * mass * molality;
+    const double ds = nu * mass * direction.molality;
+    auto composition = formula_composition(solvent, parameters, ions, stoichiometry, molality);
+    PressureActionDirection finite{direction.temperature, direction.pressure, std::vector<double>(count, 0.0), {}};
+    finite.composition[sidx] = -nu * mass * direction.molality / ((1.0 + s) * (1.0 + s));
+    for (std::size_t i = 0; i < 2; ++i)
+        finite.composition[ions[i]] = stoichiometry[i] * mass * direction.molality / ((1.0 + s) * (1.0 + s));
+    const auto actions = [&](const std::vector<double>& x, const State& state, const PressureActionDirection& d,
+                             const std::vector<std::size_t>& consumed) {
+        const auto batch = model.pressure_actions(temperature, pressure, x, DensityBranch::Liquid,
+            {PropertyObservable::LogFugacityCoefficient}, {d}, state.molar_density);
+        result.diagnostics.push_back(batch.diagnostics);
+        std::vector<double> columns(count, 0.0);
+        if (batch.density_status != PropertyActionStatus::Available) {
+            result.status = batch.density_status; result.message = batch.density_message; return std::vector<double>{};
+        }
+        for (const auto i : consumed) {
+            const auto found = std::find_if(batch.results.begin(), batch.results.end(), [&](const auto& r) { return r.component == i; });
+            if (found == batch.results.end() || found->status != PropertyActionStatus::Available || !found->action) {
+                result.status = found == batch.results.end() ? PropertyActionStatus::CentralPropertyUnavailable : found->status;
+                result.message = "unavailable electrolyte log-fugacity input action"; return std::vector<double>{};
+            }
+            columns[i] = *found->action;
+        }
+        return columns;
+    };
+    const auto dg = actions(composition, activity.state, finite, {sidx, ions[0], ions[1]});
+    if (dg.empty()) return result;
+    double pure_column = 0.0;
+    if (direction.temperature != 0.0 || direction.pressure != 0.0) {
+        const PressureActionDirection d{direction.temperature, direction.pressure, std::vector<double>(count, 0.0), {}};
+        std::array<double, 2> previous{};
+        for (std::size_t k = 0; k < REFERENCE_MOLALITIES.size(); ++k) {
+            const bool witness = k + 1 == REFERENCE_MOLALITIES.size();
+            const double error = standard_deviation * std::max(std::abs(result.reference_difference[0]), std::abs(result.reference_difference[1]));
+            if (witness && std::isfinite(error) && error <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value) break;
+            if (witness) result.witness_evaluated = true;
+            const auto x = formula_composition(solvent, parameters, ions, stoichiometry, REFERENCE_MOLALITIES[k]);
+            const auto extra = k < reference.ladder_states.size() ? std::optional<State>{}
+                : std::optional<State>{model.state_at_pressure(temperature, pressure, x, DensityBranch::Liquid, reference.ladder_states.back().molar_density)};
+            const auto& state = extra ? *extra : reference.ladder_states[k];
+            if (const auto cause = properties::vapor_side(state)) { result.message = *cause; return result; }
+            const auto column = actions(x, state, d, {ions[0], ions[1]});
+            if (column.empty()) return result;
+            for (std::size_t i = 0; i < 2; ++i) {
+                if (witness) result.witness_difference[i] = column[ions[i]] - previous[i];
+                else {
+                    if (k) result.reference_difference[i] = column[ions[i]] - previous[i];
+                    result.reference_column[i] = previous[i] = column[ions[i]];
+                }
+            }
+            if (witness && standard_deviation * std::max(std::abs(result.witness_difference[0]), std::abs(result.witness_difference[1]))
+                > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+                result.message = "reference input action did not converge at the witness"; return result;
+            }
+        }
+        if (!reference.pure_solvent_state) { result.message = "pure solvent input action unavailable"; return result; }
+        const auto pure = actions(solvent, *reference.pure_solvent_state, d, {sidx});
+        if (pure.empty()) return result;
+        pure_column = pure[sidx];
+    }
+    double mean = -ds / (1.0 + s);
+    for (std::size_t i = 0; i < 2; ++i) mean += stoichiometry[i] * (dg[ions[i]] - result.reference_column[i]) / nu;
+    result.mean_ionic = activity.mean_ionic_molality_scale * mean;
+    if (activity.osmotic_coefficient && std::holds_alternative<double>(*activity.osmotic_coefficient))
+        result.osmotic = -(finite.composition[sidx] / composition[sidx] + dg[sidx] - pure_column
+            + std::get<double>(*activity.osmotic_coefficient) * ds) / s;
+    result.status = std::isfinite(result.mean_ionic) ? PropertyActionStatus::Available : PropertyActionStatus::Nonfinite;
     return result;
 }
 

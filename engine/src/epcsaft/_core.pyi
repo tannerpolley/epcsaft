@@ -1121,7 +1121,43 @@ class MinimaxResult:
     hold_causes: list[str]
     rows: list[MinimaxRow]
     frozen_checks: list[CheckResult]
+class MeasuredInputKind:
+    Temperature: MeasuredInputKind
+    Pressure: MeasuredInputKind
+    MoleFraction: MeasuredInputKind
+    Molality: MeasuredInputKind
+class MeasuredInput:
+    def __init__(self) -> None: ...
+    kind: MeasuredInputKind
+    species: int
+    sigma: float
+    lower: float
+    upper: float
+    unit: str
+class MeasurementGroup:
+    def __init__(self) -> None: ...
+    rows: list[int]
+    inputs: list[MeasuredInput]
+    dependent_species: list[int]
+    feed_total_mol: float
+class MeasurementUncertainty:
+    def __init__(self) -> None: ...
+    groups: list[MeasurementGroup]
+    output_sigma: list[float]
+    covariance: list[float] | None
+    correlation: list[float] | None
+class InputReconciliation:
+    values: list[float]
+    corrections: list[float]
+    penalties: list[float]
+    jacobian: list[float]
+    row_groups: list[int]
+    column_groups: list[int]
+    column_inputs: list[int]
+    output_cost: float
+    input_cost: float
 class FitResult:
+    reconciliation: InputReconciliation | None
     minimax: MinimaxResult | None
     chart: EvaluatedCoordinates
     checks: list[CheckResult]
@@ -1157,7 +1193,8 @@ def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord]
         observations: Sequence[Observation], weights: Sequence[float], controls: FitControls, holds: Sequence[HydrationHold] = ...,
         checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
         starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
-        seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...) -> Union[FitResult, list[FitResult]]: ...
+        seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...,
+        uncertainty: MeasurementUncertainty | None = ...) -> Union[FitResult, list[FitResult]]: ...
 
 class CheckMetric:
     AbsoluteDifference: CheckMetric
@@ -1222,6 +1259,9 @@ def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], o
     thermochemistry: Optional[ThermochemistryRecord] = None) -> list[Observation]: ...
 
 class ObservationEvaluation:
+    reconciliation: InputReconciliation | None
+    state_densities: list[list[float]]
+    reference_values: list[list[float]]
     predictions: list[float]
     gradient: list[float]
     optimizer_gradient: list[float]
@@ -1230,7 +1270,8 @@ class ObservationEvaluation:
     statuses: list[ObservationStatus]
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation],
-    thermochemistry: Optional[ThermochemistryRecord] = None) -> ObservationEvaluation: ...
+    thermochemistry: Optional[ThermochemistryRecord] = None,
+    uncertainty: MeasurementUncertainty | None = ...) -> ObservationEvaluation: ...
 def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
     baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None) -> FitResult: ...

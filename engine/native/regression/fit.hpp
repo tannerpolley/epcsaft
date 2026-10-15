@@ -67,6 +67,29 @@ struct MinimaxResult final {
     std::vector<MinimaxRow> rows;
     std::vector<CheckResult> frozen_checks;
 };
+enum class MeasuredInputKind { Temperature, Pressure, MoleFraction, Molality };
+struct MeasuredInput final {
+    MeasuredInputKind kind = MeasuredInputKind::Temperature;
+    std::size_t species = 0;  // MoleFraction only
+    double sigma = 0.0, lower = 0.0, upper = 0.0;
+    std::string unit;
+};
+struct MeasurementGroup final {
+    std::vector<std::size_t> rows;
+    std::vector<MeasuredInput> inputs;
+    std::vector<std::size_t> dependent_species;
+    double feed_total_mol = 0.0;  // required for an equilibrium feed chart
+};
+struct MeasurementUncertainty final {
+    std::vector<MeasurementGroup> groups;
+    std::vector<double> output_sigma;
+    std::optional<std::vector<double>> covariance, correlation;  // refused even when explicitly empty
+};
+struct InputReconciliation final {
+    std::vector<double> values, corrections, penalties, jacobian;
+    std::vector<std::size_t> row_groups, column_groups, column_inputs;
+    double output_cost = 0.0, input_cost = 0.0;
+};
 struct FitRequest final {
     Parameters parameters;
     std::optional<ThermochemistryRecord> thermochemistry;
@@ -81,6 +104,7 @@ struct FitRequest final {
     std::optional<Parameters> baseline;
     bool singular_vectors = false;
     std::optional<MinimaxRequest> minimax;
+    std::optional<MeasurementUncertainty> uncertainty;
 };
 
 // One rejected trial: the observation that failed, its typed cause and the optimizer point. A
@@ -141,6 +165,7 @@ struct FitResult final {
     std::vector<CheckResult> checks;
     std::string acceptance = "not_evaluated";
     std::optional<MinimaxResult> minimax;
+    std::optional<InputReconciliation> reconciliation;
 };
 
 struct ObservationEvaluation final {
@@ -150,6 +175,9 @@ struct ObservationEvaluation final {
     std::vector<ObservationStatus> statuses;
     double cost = 0.0;
     EvaluatedCoordinates chart;
+    std::optional<InputReconciliation> reconciliation;
+    std::vector<double> input_gradient;
+    std::vector<std::vector<double>> state_densities, reference_values;
 };
 class ObservationEvaluator final {
 public:
@@ -159,7 +187,8 @@ public:
 private:
     std::shared_ptr<Impl> impl_;
 };
-std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr);
+std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr,
+    const std::vector<Observation>* reconciled = nullptr);
 std::vector<Observation> observations_at(const FitRequest& request, const std::vector<double>& optimizer,
     const std::vector<double>& errors);  // signed native differences or decades, for manufactured recovery
 // The Python host's worker command (empty: a fit evaluates every row itself) and cancellation poll; a true
@@ -178,7 +207,7 @@ std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::v
 // Shared unweighted check algebra and final publication, used by both native estimators.
 std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);
 void publish_candidate(FitResult& result, ObservationEvaluation evaluation, const std::vector<double>& point);
-void finish_checks(FitResult& result, const FitRequest& request);
+void finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled = nullptr);
 using ObservationFunction = std::function<bool(const std::vector<double>&, bool, ObservationEvaluation&)>;
 FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);

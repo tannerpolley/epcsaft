@@ -2033,6 +2033,32 @@ An unavailable outer action preserves an independently available Cp value.
 
 ## ALG-FIT
 
+A caller-declared independent measurement-error model augments the existing
+Ceres least-squares fit with standardized physical input corrections (EqIDs
+`errors_in_variables_objective`, `independent_feed_measurement_coordinates`,
+`errors_in_variables_residual_derivative`). Output differences divided by
+declared physical standard deviations and one input penalty per shared
+measurement form the single objective. Exact native state/reference actions
+provide columns. Zero input sigma eliminates that coordinate; absent or empty
+declarations request no input action and retain ordinary fitting work.
+The [formulation](../regression/science/pure-saturation-regression.md#declared-measurement-uncertainty)
+owns admitted observation/input combinations, physical units, Difference-only
+weighting, the per-group reference-action limit and exclusions. Correlated
+errors, unsupported declarations and nonunit positive relative weights are
+refused. All model/input coordinates share Ceres controls, the declared box,
+iteration and elapsed budget. The one admitted measurement-membership map
+supplies allocation, worker partitioning, penalties and result identities;
+equal states do not establish shared measurements. Same-point promotion keeps
+its accepted state. Changed relevant physical inputs withhold optional prior
+density seeds; input movement rebuilds trial state/reference declarations.
+Failures publish no new trial cache or start and preserve their native cause.
+Local covariance uses the complete standardized Jacobian and eliminates input
+directions; it is unavailable at an active bound, deficient rank or unfinished
+fit. Known absolute sigmas supply no estimated common variance factor.
+Reconciled-input predictions and original measured-input checks retain separate
+meanings. Fitted model parameters and inputs remain candidates. The frozen
+synthetic comparison is retained in `analyses/2026-errors-in-variables/` when run.
+
 Optional fitting densities come only from the previous fully successful native
 evaluator trial. Exact closure identity, the complete 10% physical-chart gate,
 and regularity b <= w/100 admit an offer. Changed parameters additionally need

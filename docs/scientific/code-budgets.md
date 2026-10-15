@@ -74,6 +74,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #510 (owner net allowances): Properties **5,395 → 5,535**, parameter Regression **3,279 → 3,812**, Python **2,019 → 2,081**, each changed ceiling the formatted count plus its 1% band. Total **25,014 → 25,749**, the sum of the layer ceilings. Current counts are 5,480, 3,774 and 2,060: growth +139/+505/+61 against the fixed `ae6a8f11` base, within the owner allowances +260/+850/+70. Bindings grows +15 within its existing ceiling and +100 allowance. Equilibrium grows +10 from the separately merged #504 main changes; #510 changes no Equilibrium code. Analysis scripts have the separate owner allowance of 700 net lines.
+
 One line per ceiling change, newest first (hard ceilings). The issue or PR
 holds the requirement, alternatives and measured accounting; Git keeps the
 former per-slice tables and the retired floor and soft ceilings. Entries before

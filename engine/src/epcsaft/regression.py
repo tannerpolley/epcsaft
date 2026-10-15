@@ -11,6 +11,7 @@ from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure, reaction_log10_reciprocal,
+    MeasuredInputKind, MeasuredInput, MeasurementGroup, MeasurementUncertainty, InputReconciliation,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
 from .equilibrium import Discover, Problem
@@ -51,7 +52,35 @@ __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluati
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
-           "CheckGroup", "CheckResult", "electrolyte", "hydration_hold", "evaluate_coordinates", "evaluate_checks")
+           "CheckGroup", "CheckResult", "electrolyte", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
+           "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
+           "measured_input", "measurement_group")
+
+
+def measured_input(parameters: Parameters, kind: str, *, sigma: float, bounds: tuple[float, float],
+                   unit: str, species: str | None = None) -> MeasuredInput:
+    """Declare a physical measured input; native admission owns its domain and independent-error meaning."""
+    kinds = {"temperature": MeasuredInputKind.Temperature, "pressure": MeasuredInputKind.Pressure,
+             "mole_fraction": MeasuredInputKind.MoleFraction, "molality": MeasuredInputKind.Molality}
+    if kind not in kinds or (kind == "mole_fraction") != (species is not None):
+        raise ParameterError("a measured input needs a known kind and only mole_fraction needs a species")
+    result = MeasuredInput()
+    result.kind, result.sigma, result.lower, result.upper, result.unit = kinds[kind], sigma, *bounds, unit
+    if species is not None:
+        result.species = _index(parameters.component_ids, species, "measured component")
+    return result
+
+
+def measurement_group(parameters: Parameters, rows: Sequence[int], inputs: Sequence[MeasuredInput], *,
+                      dependent_species: Sequence[str] | None = None, feed_total_mol: float | None = None) -> MeasurementGroup:
+    """Outputs sharing one input measurement, with caller-named dependent feed species and fixed total."""
+    result = MeasurementGroup()
+    result.rows, result.inputs = list(rows), list(inputs)
+    if dependent_species is not None:
+        result.dependent_species = [_index(parameters.component_ids, name, "dependent component") for name in dependent_species]
+    if feed_total_mol is not None:
+        result.feed_total_mol = feed_total_mol
+    return result
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -214,7 +243,8 @@ def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequen
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
         weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
-        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None, minimax: MinimaxRequest | None = None) -> FitResult: ...
+        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
+        minimax: MinimaxRequest | None = None, uncertainty: MeasurementUncertainty | None = None) -> FitResult: ...
 
 
 @overload
@@ -223,7 +253,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
-        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> list[FitResult]: ...
+        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None,
+        uncertainty: MeasurementUncertainty | None = None) -> list[FitResult]: ...
 
 
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
@@ -231,13 +262,14 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
-        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> FitResult | list[FitResult]:
+        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None,
+        uncertainty: MeasurementUncertainty | None = None) -> FitResult | list[FitResult]:
     """Native least squares, or declared guarded minimax, over the held chart (ALG-FIT)."""
     if controls is None:
         raise ParameterError("fit requires controls: the iteration and time budgets are scientific inputs (ALG-FIT)")
     return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
                      controls, list(holds or ()), list(checks or ()),
-                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax)
+                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
