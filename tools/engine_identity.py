@@ -127,7 +127,7 @@ def _mapped(path, mappings):
         if len(fields) != 6 or fields[5].endswith(" (deleted)"):
             continue
         mapped = Path(fields[5])
-        if mapped.name != path.name:
+        if mapped.resolve() != path:
             continue
         stat = path.stat()
         major, minor = (int(v, 16) for v in fields[3].split(":"))
