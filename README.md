@@ -26,7 +26,7 @@ writes it, `tools/report` rewrites it on demand, and `xdg-open build/report.html
 
 The supported development environment is Linux with Git, Python 3.13, `uv`, a
 C and C++ compiler, Ninja, CMake, pkg-config, and `flock`. The locked root
-environment supplies Meson, meson-python, pybind11, and `patchelf`. The native
+environment supplies Meson, meson-python, nanobind, and `patchelf`. The native
 graph also needs the environment-provided Ipopt and Eigen development
 packages. The first build needs network access for the two
 checksum-pinned Meson subproject archives (CppAD and HiGHS). The native owner checks additionally

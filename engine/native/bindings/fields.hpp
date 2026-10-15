@@ -1,13 +1,13 @@
 // Field lists for bound names equal to their C++ names: EPCSAFT_READONLY(T, a, b) expands to
-// .def_readonly("a", &T::a).def_readonly("b", &T::b), EPCSAFT_READWRITE to .def_readwrite, and EPCSAFT_VALUES(E, X)
-// to .value("X", E::X). Renamed fields, docstrings and other policies stay explicit pybind11 calls.
+// .def_ro("a", &T::a).def_ro("b", &T::b), EPCSAFT_READWRITE to .def_rw, and EPCSAFT_VALUES(E, X)
+// to .value("X", E::X). Renamed fields, docstrings and other policies stay explicit nanobind calls.
 #pragma once
 
 #define EPCSAFT_READONLY(T, ...) EPCSAFT_EACH(EPCSAFT_READONLY_ONE, T, __VA_ARGS__)
 #define EPCSAFT_READWRITE(T, ...) EPCSAFT_EACH(EPCSAFT_READWRITE_ONE, T, __VA_ARGS__)
 #define EPCSAFT_VALUES(E, ...) EPCSAFT_EACH(EPCSAFT_VALUE_ONE, E, __VA_ARGS__)
-#define EPCSAFT_READONLY_ONE(T, name) .def_readonly(#name, &T::name)
-#define EPCSAFT_READWRITE_ONE(T, name) .def_readwrite(#name, &T::name)
+#define EPCSAFT_READONLY_ONE(T, name) .def_ro(#name, &T::name)
+#define EPCSAFT_READWRITE_ONE(T, name) .def_rw(#name, &T::name)
 #define EPCSAFT_VALUE_ONE(E, name) .value(#name, E::name)
 
 // EPCSAFT_EACH(f, T, names...) is f(T, name) for each of 1 to 40 names; a longer list does not compile.

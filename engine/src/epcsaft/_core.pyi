@@ -279,6 +279,7 @@ class DensityBranch:
     Unspecified: DensityBranch
     Vapor: DensityBranch
     Liquid: DensityBranch
+    def __int__(self) -> int: ...
 
 class ThermochemistryStatus:
     MissingRecord: ThermochemistryStatus

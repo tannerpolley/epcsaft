@@ -6,7 +6,7 @@ export MALLOC_PERTURB_="${MALLOC_PERTURB_:-0}"
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
 cd "$workspace_root"
-# Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
+# Meson regeneration finds python3 on PATH; it needs the .venv one with nanobind.
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 [[ -f build/environment-wheel/meson-build-dir ]] || bash .codex/environments/setup.sh
 build_dir="$(<build/environment-wheel/meson-build-dir)"

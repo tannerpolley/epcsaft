@@ -17,7 +17,7 @@ export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 mkdir -p build/engine-meson
 
 # Every CPU, but no more compile jobs than memory holds: a cold build needs about 1 GiB per job
-# and the pybind11 files about 1.4 GiB (#319, #373). Memory is free RAM or, if tighter, the
+# and the binding files about 1.4 GiB (#319, #373). Memory is free RAM or, if tighter, the
 # headroom under the nearest cgroup limit (agent sessions run under one). EPCSAFT_BUILD_JOBS overrides.
 cpus="$(env -u OMP_NUM_THREADS nproc)"
 memory_kib=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)

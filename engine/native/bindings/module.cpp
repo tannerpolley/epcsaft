@@ -1,25 +1,25 @@
 #include "core/convergence.hpp"
 #include "core/declared.hpp"
 
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
 #include <stdexcept>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
-void register_eos(py::module_& module);
-void register_diagnostics(py::module_& module);
+void register_eos(nb::module_& module);
+void register_diagnostics(nb::module_& module);
 namespace epcsaft::equilibrium {
-void register_equilibrium(py::module_& module);
+void register_equilibrium(nb::module_& module);
 }
 namespace epcsaft::regression {
-void register_regression(py::module_& module);
+void register_regression(nb::module_& module);
 }
-PYBIND11_MODULE(_core, module) {
-    py::register_exception<std::invalid_argument>(module, "ParameterError", PyExc_ValueError);
-    py::register_exception<std::runtime_error>(module, "EosError", PyExc_RuntimeError);
-    py::register_exception<epcsaft::core::ConvergenceFailure>(module, "ConvergenceError", module.attr("EosError").ptr());
-    py::register_exception<epcsaft::core::DeclarationError>(module, "DeclarationError", module.attr("ParameterError").ptr());
+NB_MODULE(_core, module) {
+    nb::exception<std::invalid_argument>(module, "ParameterError", PyExc_ValueError);
+    nb::exception<std::runtime_error>(module, "EosError", PyExc_RuntimeError);
+    nb::exception<epcsaft::core::ConvergenceFailure>(module, "ConvergenceError", module.attr("EosError").ptr());
+    nb::exception<epcsaft::core::DeclarationError>(module, "DeclarationError", module.attr("ParameterError").ptr());
     register_eos(module);
     register_diagnostics(module);
     epcsaft::equilibrium::register_equilibrium(module);

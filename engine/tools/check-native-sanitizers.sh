@@ -39,8 +39,7 @@ if [[ ! -f "$ubsan_runtime" ]]; then
 fi
 sanitizer_preload="$asan_runtime:$ubsan_runtime"
 
-# Leak detection stays off in both steps: CPython never unloads _core, so its pybind11 type and enum registrations
-# (every record under pybind11_init__core) are reported as leaks at exit. Address and undefined-behaviour errors halt.
+# Leak detection stays off in both steps. Address and undefined-behaviour errors halt.
 LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \

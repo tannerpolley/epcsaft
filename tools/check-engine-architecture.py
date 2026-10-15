@@ -64,11 +64,11 @@ def rule_one_archive() -> list[str]:
     if not MESON.is_file():
         return [f"{MESON} is missing"]
     text = MESON.read_text()
-    archives = len(re.findall(r"\bstatic_library\s*\(", text))
+    archives = re.findall(r"(\w+)\s*=\s*static_library\s*\(\s*'([^']+)'", text)
     extensions = len(re.findall(r"\bextension_module\s*\(", text))
     bad = []
-    if archives != 1:
-        bad.append(f"meson.build declares {archives} PIC shared/private library pairs, expected 1")
+    if archives != [("nanobind_support", "nanobind_support"), ("epcsaft_private", "epcsaft_native")]:
+        bad.append(f"expected one private native archive and nanobind support, found {archives}")
     if extensions != 1:
         bad.append(f"meson.build declares {extensions} extensions, expected 1")
     return bad
@@ -98,7 +98,7 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
         {
             line.split()[-1]
             for line in out.splitlines()
-            if "PyInit" in line or "pybind11" in line
+            if line.split() and not line.endswith(":") and re.search(r"^_?Py\w*|pybind11|nanobind", line.split()[-1])
         }
     )
     if leaked:
@@ -112,12 +112,17 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
         shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
         if not archive_objects or archive_objects != shared_objects:
             return ["native shared library and private archive do not reuse one PIC object set"], True
+        support_consumers = []
         for line in ninja:
             if line.startswith("build ") and ": cpp_LINKER " in line:
                 output = line.split()[1].removesuffix(":")
                 inputs = line.split()[3:]
+                if "libnanobind_support.a" in inputs:
+                    support_consumers.append(output)
                 if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
                     return [f"private archive used outside ASL: {output}"], True
+        if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
+            return [f"nanobind support must link only into _core: {support_consumers}"], True
         dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
         exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
         if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
@@ -277,7 +282,7 @@ def rule_budget_readers_carry_records() -> list[str]:
 def rule_core_and_trace_boundaries() -> list[str]:
     bad = []
     forbidden = re.compile(
-        r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|pybind11)",
+        r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|pybind11|nanobind|Python\.h)",
         re.IGNORECASE,
     )
     # An explicit operation may own a Capture for observed work counts. It
@@ -287,6 +292,8 @@ def rule_core_and_trace_boundaries() -> list[str]:
         rel = path.relative_to(NATIVE)
         parts = rel.parts
         text = without_comments(path.read_text())
+        if parts[0] != "bindings" and re.search(r'#\s*include\s*[<"](?:nanobind/|pybind11/|Python\.h)', text):
+            bad.append(f"{path.relative_to(ROOT)} includes Python binding headers")
         if parts[0] == "core":
             if path.name != "scalar.hpp" and forbidden.search(text):
                 bad.append(f"{path.relative_to(ROOT)} includes a numerical library")
@@ -493,7 +500,7 @@ def rule_stub_matches_extension() -> list[str]:
     for node in tree.body:
         if isinstance(node, ast.ClassDef) and hasattr(_core, node.name):
             native = getattr(_core, node.name)
-            # pybind11 enums add the name/value accessors to every class.
+            # Enum implementations supply name/value accessors.
             implicit = {"name", "value"} if hasattr(native, "__members__") else set()
             members = {name for name in vars(native) if not name.startswith("_")} - implicit
             findings += mismatch(node.name, declared(node.body), members)

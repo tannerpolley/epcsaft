@@ -25,7 +25,7 @@ plan:
 # Hard ceilings in formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
 # the counting, the band rule and the amendments.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-code_budgets: {"core": 1304, "contributions": 1276, "properties": 5535, "equilibrium": 9422, "regression": 3812, "surface": 577, "bindings": 2050, "python": 2107, "total": 26083}
+code_budgets: {"core": 1304, "contributions": 1276, "properties": 5535, "equilibrium": 9422, "regression": 3812, "surface": 577, "bindings": 2151, "python": 2107, "total": 26083}
 
 property_categories: [Ideal, Residual, Total]
 
@@ -129,7 +129,7 @@ native:
     equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
-    bindings: the only pybind11 includes
+    bindings: the only nanobind includes
   # regression/ may call solve_equilibrium and solve_phase_boundary on a problem
   # with declared phases; it may not reach phase stability, because a fit needs
   # differentiable residuals and a discovered phase count is not one.

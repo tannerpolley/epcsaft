@@ -50,7 +50,7 @@ For a debugger, configure an unstripped debug tree once from the repository root
 (the first build also compiles HiGHS, about 2 minutes) and run the same target:
 
 ```bash
-export PATH="$PWD/.venv/bin:$PATH"   # Meson and the pybind11 it finds live in the .venv
+export PATH="$PWD/.venv/bin:$PATH"   # Meson and the nanobind it finds live in the .venv
 meson setup build/engine-debug engine -Dbuildtype=debug -Dstrip=false
 meson compile -C build/engine-debug surface_example
 gdb --args build/engine-debug/surface_example

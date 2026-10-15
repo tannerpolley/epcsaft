@@ -33,14 +33,32 @@ ceres_dep = dependency(
   version: ['>=2.2.0', '<2.3.0'],
 )
 
-pybind11_include = run_command(
-  py,
-  '-c',
-  'import pybind11; print(pybind11.get_include())',
+nanobind_paths = run_command(
+  py, '-c',
+  '''
+import nanobind
+from pathlib import Path
+import sys, tomllib
+requirements = tomllib.loads(Path(sys.argv[1]).read_text())["project"]["dependencies"]
+requirement = next(d for d in requirements if d.startswith("nanobind=="))
+assert nanobind.__version__ == requirement.split("==")[1]
+for path in (nanobind.include_dir(), nanobind.source_dir(), Path(nanobind.__file__).parent / "ext/robin_map/include"):
+    print(path)
+''',
+  meson.project_source_root() / '../pyproject.toml',
   check: true,
-).stdout().strip()
-pybind11_dep = declare_dependency(
-  include_directories: include_directories(pybind11_include, is_system: true),
+).stdout().strip().split('\n')
+nanobind_dep = declare_dependency(
+  include_directories: include_directories(nanobind_paths[0], is_system: true),
+)
+nanobind_support = static_library(
+  'nanobind_support', nanobind_paths[1] / 'nb_combined.cpp',
+  dependencies: [nanobind_dep, py.dependency()],
+  include_directories: include_directories(nanobind_paths[2], is_system: true),
+  cpp_args: ['-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections'],
+  override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
+  install: false,
 )
 
 cppad_project = subproject('cppad')
@@ -72,7 +90,7 @@ endif
 native_inc = include_directories('native')
 
 # Filled by the build stages; the order is the layer order. Nothing here may
-# include pybind11 — that is bindings/, and it is the only place.
+# include nanobind — that is bindings/, and it is the only place.
 # contributions/ is header-only: the terms are templated so one source both
 # evaluates a double and records a tape, so there is nothing to compile into
 # the archive until the properties layer.
@@ -162,11 +180,10 @@ py.extension_module(
         'native/bindings/equilibrium_bindings.cpp',
         'native/bindings/regression_bindings.cpp'),
   cpp_args: native_warnings,
-  # pybind11 glue only; the calculations are in epcsaft_native at -O3. -O1 cuts the
-  # largest binding file's compile from 37 s to 28 s.
-  override_options: ['optimization=1'],
+  # Keep binding -O1 for the measured framework comparison; native calculations stay at -O3.
+  override_options: ['optimization=1', 'b_lto=false'],
   dependencies: [
-    pybind11_dep,
+    nanobind_dep,
     ipopt_dep,
     eigen_dep,
     ceres_dep,
@@ -175,7 +192,7 @@ py.extension_module(
   include_directories: native_inc,
   install: true,
   link_args: release_link_args,
-  link_with: epcsaft_native,
+  link_with: [epcsaft_native, nanobind_support],
   build_rpath: '$ORIGIN',
   install_rpath: '$ORIGIN',
   subdir: 'epcsaft',

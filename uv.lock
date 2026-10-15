@@ -183,10 +183,10 @@ dependencies = [
     { name = "meson" },
     { name = "meson-python" },
     { name = "mypy" },
+    { name = "nanobind" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "patchelf" },
-    { name = "pybind11" },
     { name = "pyomo" },
     { name = "pytest" },
     { name = "ruff" },
@@ -205,10 +205,10 @@ requires-dist = [
     { name = "meson", specifier = ">=1.8" },
     { name = "meson-python", specifier = ">=0.18" },
     { name = "mypy", specifier = ">=1.17" },
+    { name = "nanobind", specifier = "==2.12.0" },
     { name = "numpy", specifier = ">=2.1,<3" },
     { name = "pandas", specifier = ">=2.3" },
     { name = "patchelf", specifier = ">=0.11" },
-    { name = "pybind11", specifier = ">=3.0" },
     { name = "pyomo", specifier = "==6.10.1" },
     { name = "pytest", specifier = ">=8,<10" },
     { name = "ruff", specifier = ">=0.12" },
@@ -561,6 +561,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nanobind"
+version = "2.12.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c6/5c/3b69bc3933ad3c3668ba029ad410ba8ecfdc8ee7262ff1009f3304f3c562/nanobind-2.12.0.tar.gz", hash = "sha256:0ae77c1a88f27153fa57045ee00f7b0a7b06b1cd3df942e95a34b38c5d0a5bee", size = 1002704, upload-time = "2026-02-25T09:41:54.691Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/bf/1a54e3573736f3ad15fc599c5dde007937234652a1a7efd62573b4ce3a7e/nanobind-2.12.0-py3-none-any.whl", hash = "sha256:a10d3d88e691dcdf22696f9acd893fda3c5a05635763aea238829d274fcad480", size = 249512, upload-time = "2026-02-25T09:41:52.908Z" },
+]
+
+[[package]]
 name = "networkx"
 version = "3.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -773,15 +782,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
-]
-
-[[package]]
-name = "pybind11"
-version = "3.0.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cc/f0/35145a3c3baffeef55d4b8324caa33abaa8fa56ab345ecd4b2211d09163e/pybind11-3.0.4.tar.gz", hash = "sha256:3286b59c8a774b9ee650169302dd5a4eedc30a8617905a0560dd8ee44775130c", size = 589533, upload-time = "2026-04-19T03:08:15.925Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/06/c3a23c9a0263b136c519f033a58d4641e73065fefc7754e9667ec206d992/pybind11-3.0.4-py3-none-any.whl", hash = "sha256:961720ee652da51d531b7b2451a6bd2bc042b0106e6d9baa48ecb7d58034ce63", size = 314166, upload-time = "2026-04-19T03:08:14.091Z" },
 ]
 
 [[package]]
