@@ -3,7 +3,7 @@
 # wheels share build/engine-meson/shared, and two ninjas in one tree corrupt its logs.
 # tools/build-engine.sh sets NINJA to this file; Meson and meson-python both run $NINJA.
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-# ccache hashes paths under the checkout (the .venv's pybind11 headers) relative to the build
+# ccache hashes paths under the checkout (the .venv's binding headers) relative to the build
 # directory, so a new worktree reuses another checkout's objects.
 export CCACHE_BASEDIR="$root"
 # Build output goes to stderr, so an import-time rebuild cannot write into a script's stdout.
