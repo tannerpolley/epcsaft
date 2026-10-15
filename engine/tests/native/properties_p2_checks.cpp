@@ -286,6 +286,21 @@ void p2_decane_fallback() {
         {epcsaft::PressureActionDirection{0.0,1.0,{0.0},{}}});
     CHECK(batch.density_structure_refused && batch.density_status == epcsaft::PropertyActionStatus::DensityUnavailable
         && !batch.molar_density && batch.density_message == cause);
+
+    // #513 R1: the refined crossing can publish a nonzero-residual interval endpoint.
+    constexpr double endpoint_pressure = 118697451.59547403, endpoint_reference = 6744.38451784218;
+    for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
+        const auto root = epcsaft::solve_density(model, 135.0, endpoint_pressure, composition, branch, std::nullopt);
+        recording_support::compare(branch == epcsaft::DensityBranch::Vapor ? "decane/endpoint-vapor" : "decane/endpoint-liquid",
+            "molar_density", "mol/m3", root.molar_density, endpoint_reference,
+            recording_support::fields({model_inputs(parameters, 135.0, 1.0 / root.molar_density, composition),
+                recording_support::field("P_star", endpoint_pressure), recording_support::field("stable_root_count", root.stable_root_count.value_or(0))}),
+            "Relationship", "native-4096-and-16384-cell-diagnostics", "the resolved crossing survives the local and ordinary root merge",
+            "reference_or_one", 0.0, 1e-10, close(root.molar_density, endpoint_reference, 1e-10)
+                && root.stable_root_count == 1 && root.branch == epcsaft::DensityBranch::Unspecified
+                && root.pressure_density_derivative > 0.0,
+            "p2-decane", "endpoint", "rho", "T,P,x,branch", "one positive-slope root", "case");
+    }
 }
 
 void properties_p2() {

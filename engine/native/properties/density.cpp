@@ -547,8 +547,10 @@ std::vector<DensityRoot> scan_roots(
     if (!model.partition) search_slope(model, temperature, pressure, composition, points, scope, evaluations);
     auto roots = partition_roots(model, temperature, pressure, composition, points, scope, evaluations);
     if (model.partition) {
-        // Boundary node roots are owned by the ordinary partition, interior roots by enumeration.
-        for (const auto& root : local) if (root.molar_density > model.partition->lower && root.molar_density < model.partition->upper) roots.push_back(root);
+        // Only exact-zero ordinary nodes already own a local crossing.
+        for (const auto& root : local) if (std::none_of(points.begin(), points.end(), [&](const auto& node) {
+            return node.density == root.molar_density && node.point.residual == 0.0;
+        })) roots.push_back(root);
         const auto witness = std::find_if(model.partition->samples.begin(), model.partition->samples.end(), [](const auto& sample) { return sample.second.slope < 0.0; });
         if (witness != model.partition->samples.end()) for (auto& root : roots) root.negative_slope_density = witness->first;
     }
