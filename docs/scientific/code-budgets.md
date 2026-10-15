@@ -78,7 +78,17 @@ Budget changes must not silently change scientific scope.
   Properties +5 net / 10 gross, other runtime layers zero): parameter Regression
   **3,812 → 3,874**, count 3,835 plus its band 39, for opt-in process CPU timing
   of native fit evaluations. Properties gains two trace observations within its
-  existing ceiling; the total ceiling stays 26,083.
+  existing ceiling; the total ceiling stayed 26,083 on the fixed base
+  `5ad73fb9`. Integration with #505 retains its later total ceiling.
+
+- 2026-10-15, #505: the accepted design's net allowances are Core +25,
+  Equilibrium +380, Properties +10 (entry scopes), other layers zero;
+  total +415, gross additions at most 510. Relative to `5ad73fb9`, the
+  candidate adds 22 Core, 263 Equilibrium and 2 Properties formatted lines,
+  287 total (including the rejected-result tuple reset). Core rises from 1,304 to 1,327, Equilibrium from 9,422 to
+  9,688, and total from 26,083 to 26,473. The layer ceilings are the count plus the 1% band; the
+  total is limited to the sum of layer ceilings.
+  Final delivered review and adoption remain with the lead.
 
 - 2026-10-15, #495 (lead-set allowances under the owner's overnight authority, 2026-10-15): Bindings **2,050 → 2,151**, the count 2,129 plus its band 22 after the nanobind port and delivered-review input corrections, including #486 solver options. The final count is 2,141, within one band of the ceiling. The issue allowance is +115 net / 1,100 gross Bindings lines, raised by the lead from +100 to restore the pybind11 input conversions the delivered review found missing; other runtime layers have zero additions. The total ceiling remains 26,083.
 

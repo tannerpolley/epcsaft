@@ -596,6 +596,7 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
     result.cause_message = attempt.message;
     result.last_result = attempt.result;
     if (attempt.result.has_value()) {
+        result.last_result->optimizer_state.reset();
         result.event_phase = attempt.result->topology_phase;
         result.event_pair = attempt.result->topology_pair;
     }
@@ -607,7 +608,7 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
 Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>()>& tangent_at, double delta,
-                const std::vector<double>& anchors, core::Scope& scope) {
+                const std::vector<double>& anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm) {
     Attempt attempt;
     attempt.terminal = true;
     std::vector<double> tangent;
@@ -635,7 +636,7 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
         std::size_t projected = 0;
         const bool inside = inside_domain(compiled, predicted, projected);
         scope.probe("predictor_projected", static_cast<double>(projected));
-        if (inside) return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted),
+        if (inside) return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted, nullptr, nullptr, std::move(warm)),
                                         anchors, false, scope);
         attempt.terminal = false;
         attempt.stop = ContinuationStop::left_domain;
@@ -743,6 +744,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     double step = options.envelope_max_log_step;
     bool passed = false, closing = false;
     std::size_t local_retries = 0;
+    bool transfer = true;
     while (result.accepted_steps < options.max_steps) {
         const auto at = current.prepare(y);
         auto tangent = envelope_tangent(current, at);
@@ -809,7 +811,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
         CompiledSystem compiled = compile_problem(model, problem);
-        auto attempt = advance(model, start, current, y, compiled, problem, [&] { return tangent; }, s_try - s, expected, attempt_scope);
+        auto attempt = advance(model, start, current, y, compiled, problem, [&] { return tangent; }, s_try - s, expected, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr);
         if (attempt.accepted) {
             const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
             if (pair && !straddle) coalesced(attempt, compiled, *pair);
@@ -840,6 +842,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             closing = passed && (c[1][0] - closing_pressure) * (std::log(attempt.result->pressure[0]) - closing_pressure) <= 0.0;
             ++result.accepted_steps;
             local_retries = 0;
+            transfer = true;
             step = options.envelope_max_log_step;
             motion = heading;
             y = attempt.result->coordinates;
@@ -853,6 +856,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             if (closed) return finish(std::move(result), ContinuationStop::reached_target, "");
             continue;
         }
+        transfer = false;
         reject(result, attempt, s_try);
         // A straddle or closing target cannot change by halving: its refusal ends the trace as a prefix.
         if (attempt.terminal || straddle || closing) return finish(std::move(result), attempt.stop, attempt.message);
@@ -1261,6 +1265,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     double q = 0.0;
     double dq = options.initial_step;
     std::size_t local_retries = 0;
+    bool transfer = true;
     while (true) {
         if (q >= 1.0) return finish(std::move(result), ContinuationStop::reached_target, "");
         if (result.accepted_steps >= options.max_steps)
@@ -1275,7 +1280,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         CompiledSystem compiled = compile_problem(trial, problem);
         Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&] {
             return sensitivity(current, y_current, path.lever(current));
-        }, q_try - q, anchors, attempt_scope);
+        }, q_try - q, anchors, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
         if (!attempt.result.has_value()) attempt_scope.probe("driver_result_present", 0.0);
@@ -1286,6 +1291,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             q = q_try;
             ++result.accepted_steps;
             local_retries = 0;
+            transfer = true;
             result.path_values.push_back(q);
             y_current = attempt.result->coordinates;
             anchors = attempt.result->molar_densities;
@@ -1296,6 +1302,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             result.states.push_back(std::move(*attempt.result));
             continue;
         }
+        transfer = false;
         reject(result, attempt, q_try);
         if (attempt.terminal) return finish(std::move(result), attempt.stop, attempt.message);
         const double halved = dq / 2.0;
