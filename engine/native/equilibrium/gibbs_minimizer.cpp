@@ -25,6 +25,7 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+namespace { constexpr double bound_infinity = 1.0e19; }
 
 // Infinity-norm forward-error estimate in the scaled physical correction chart.
 // Eigen estimates the 1-norm condition of the transpose, hence the infinity norm of J D.
@@ -347,31 +348,13 @@ EquilibriumProblem optimizer_declaration(EquilibriumProblem p) {
     }
     return p;
 }
-std::vector<double> optimizer_identity(const CompiledSystem& c) {
-    const auto& p = c.model->parameters();
-    std::vector<double> id;
-    const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
-    append(p.charge_number); append(p.molar_mass_kg_per_mol); append(p.site_component);
-    append(p.site_multiplicity); append(p.association_active); append(p.sigma_term_component);
-    append(p.permittivity_term_component); append(p.permittivity_term_power);
-    for (const auto form : {p.electrolyte_form.declared() ? static_cast<int>(p.electrolyte_form.require("electrolyte")) : 0,
-                           p.ionic_dispersion.declared() ? static_cast<int>(p.ionic_dispersion.require("dispersion")) : 0,
-                           p.permittivity_form.declared() ? static_cast<int>(p.permittivity_form.require("permittivity")) : 0}) id.push_back(form);
-    append(std::vector<std::size_t>{p.component_count(), c.primal_size, c.rank, c.charge_row_count, c.mode_count,
-                                   c.free_intensive_count, c.pinned_count});
-    id.push_back(c.feasibility_cell()); id.push_back(c.log_packing_unbounded()); id.push_back(c.problem.critical.has_value());
-    id.push_back(c.problem.envelope ? static_cast<int>(c.problem.envelope->kind) : -1);
-    id.push_back(c.problem.envelope ? c.problem.envelope->component : 0);
-    for (const auto& phase : c.problem.phases) append(phase.support);
-    for (const auto& row : c.rows) { id.push_back(static_cast<int>(row.kind)); id.push_back(row.phase); id.push_back(row.index); }
-    return id;
-}
+
 }
 
 bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bool predicted) {
     const auto refuse = [&](const char* cause) { if (scope_) scope_->probe("warm_ineligible", {}, 0, cause); return false; };
     if (!(cap > 0.0)) return refuse("explicit options file or nonpositive effective multiplier cap");
-    if (state.identity != optimizer_identity(compiled_) || state.basis != compiled_.B
+    if (state.identity != compiled_.optimizer_identity() || state.basis != compiled_.B
         || !declaration_difference(state.declaration, optimizer_declaration(compiled_.problem)).empty()) return refuse("layout changed");
     const auto n = chart_.size(), m = constraint_rows().size();
     if (state.point.size() != n || state.lower.size() != n || state.upper.size() != n || state.lambda.size() != m)
@@ -391,7 +374,7 @@ bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bo
     }
     for (std::size_t i = 0; i < n; ++i) {
         double y = start[i] / chart[i];
-        const bool lo = lower[i] > -1.0e19, hi = upper[i] < 1.0e19;
+        const bool lo = lower[i] > -bound_infinity, hi = upper[i] < bound_infinity;
         const double width = hi && lo ? upper[i] - lower[i] : INFINITY;
         if (!(width > 0.0)) return refuse("fixed bound");
         if (lo) y = std::max(y, lower[i] + std::min(push * std::max(1.0, std::abs(lower[i])), push * width));
@@ -449,7 +432,7 @@ bool GibbsMinimizer::get_bounds_info(
     Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u
 ) {
     if (limits_ && limits_->expired()) return false;
-    const double infinity = 1.0e19;
+    const double infinity = bound_infinity;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
     lower_.assign(static_cast<std::size_t>(n), -infinity);  // the amount step rule's bounds, read at each callback
@@ -743,7 +726,7 @@ void GibbsMinimizer::finalize_solution(
     if (status != Ipopt::SUCCESS || restored_) return;
     auto endpoint = std::make_shared<OptimizerState>();
     endpoint->declaration = optimizer_declaration(compiled_.problem);
-    endpoint->basis = compiled_.B; endpoint->identity = optimizer_identity(compiled_);
+    endpoint->basis = compiled_.B; endpoint->identity = compiled_.optimizer_identity();
     endpoint->point = solution_; endpoint->lambda = constraint_multipliers_;
     const double a = 1.0 / compiled_.feed_total;
     for (auto& v : endpoint->lambda) v *= a;
@@ -829,6 +812,11 @@ static EquilibriumResult run_driver_once(
         audit->convergence.residual = audit->classified_residuals.empty()
             ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
     };
+    const std::function<bool(double)> warm_start = warm ? std::function<bool(double)>([&](double cap) {
+        const bool enabled = nlp->initialize_warm(*warm, cap, predicted);
+        if (initialized_warm) *initialized_warm = enabled;
+        return enabled;
+    }) : std::function<bool(double)>{};
     const auto [initialized, returned] = [&] {
         if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
         if (const char* file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) result.diagnostic_options_file = file;
@@ -837,11 +825,7 @@ static EquilibriumResult run_driver_once(
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / compiled.feed_total, &result.solver_settings, row_tolerance,
-            warm ? std::function<bool(double)>([&](double cap) {
-                const bool enabled = nlp->initialize_warm(*warm, cap, predicted);
-                if (initialized_warm) *initialized_warm = enabled;
-                return enabled;
-            }) : std::function<bool(double)>{});
+            warm_start);
         } catch (...) { capture_driver(); throw; }
     }();
     capture_driver();

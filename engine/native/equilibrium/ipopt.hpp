@@ -106,7 +106,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     }
     if (initialized == Ipopt::Solve_Succeeded && warm) {
         double cap = 0.0;
-        admit(options->GetNumericValue("warm_start_mult_init_max", cap, ""));
+        options->GetNumericValue("warm_start_mult_init_max", cap, "");
         if (warm(options_file && *options_file ? 0.0 : cap)) {
             admit(options->SetStringValue("warm_start_init_point", "yes"));
             for (const auto* name : {"warm_start_bound_push", "warm_start_bound_frac", "warm_start_mult_bound_push",

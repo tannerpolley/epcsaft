@@ -77,9 +77,9 @@ Budget changes must not silently change scientific scope.
 - 2026-10-15, #505: the accepted design's net allowances are Core +25,
   Equilibrium +380, Properties +10 (entry scopes), other layers zero;
   total +415, gross additions at most 510. Relative to `5ad73fb9`, the
-  candidate adds 16 Core, 259 Equilibrium and 2 Properties formatted lines,
-  277 total. Core rises from 1,304 to 1,321, Equilibrium from 9,422 to
-  9,685, and total from 26,083 to 26,464. The layer ceilings are the count plus the 1% band; the
+  candidate adds 22 Core, 262 Equilibrium and 2 Properties formatted lines,
+  286 total. Core rises from 1,304 to 1,327, Equilibrium from 9,422 to
+  9,688, and total from 26,083 to 26,473. The layer ceilings are the count plus the 1% band; the
   total is limited to the sum of layer ceilings.
   Final delivered review and adoption remain with the lead.
 

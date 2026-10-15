@@ -260,6 +260,7 @@ struct RowSeries final {
 void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>& support);
 
 struct CompiledSystem final {
+    std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
     std::vector<double> n_feed;
