@@ -87,9 +87,17 @@ def _build_identity(build, source):
              "meson-info/intro-targets.json", "meson-private/cmd_line.txt", "build.ninja", "toolchain-key")
     files = {name: digest(build / name) for name in names if (build / name).is_file()}
     configuration = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
-    check = subprocess.run(["ninja", "-C", str(build), "-n"], capture_output=True, text=True)
-    if check.returncode or "no work to do" not in check.stdout:
-        raise RuntimeError(f"prepared Engine build is stale; finish setup before timing: {build}")
+    objects = [entry["output"] for entry in json.loads((build / "compile_commands.json").read_text())
+               if "engine/native/" in entry["file"]]
+    dependencies = subprocess.check_output(["ninja", "-C", str(build), "-t", "deps", *objects], text=True)
+    object_time = None
+    for line in dependencies.splitlines():
+        if line and not line.startswith(" "):
+            if not line.endswith("(VALID)"):
+                raise RuntimeError(f"stale native dependency record: {line}")
+            object_time = (build / line.split(": #deps", 1)[0]).stat().st_mtime_ns
+        elif line.startswith("    ") and (build / line.strip()).stat().st_mtime_ns > object_time:
+            raise RuntimeError(f"native input changed after compilation: {line.strip()}")
     locks = (source / "uv.lock", source / "engine/build/subprojects/.wraplock") if source else ()
     locked = {str(path.relative_to(source)): digest(path) for path in locks if path.is_file()}
     return build, configuration, hashlib.sha256(json.dumps(locked, sort_keys=True).encode()).hexdigest() if locked else None
