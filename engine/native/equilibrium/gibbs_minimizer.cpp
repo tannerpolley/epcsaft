@@ -471,6 +471,18 @@ bool GibbsMinimizer::get_bounds_info(
     return true;
 }
 
+bool GibbsMinimizer::physical_bounds(std::vector<double>& lower, std::vector<double>& upper) {
+    const auto n = static_cast<Ipopt::Index>(chart_.size());
+    const auto m = static_cast<Ipopt::Index>(constraint_rows().size());
+    std::vector<double> gl(m), gu(m);
+    if (!get_bounds_info(n, lower.data(), upper.data(), m, gl.data(), gu.data())) return false;
+    for (std::size_t i = 0; i < chart_.size(); ++i) {
+        lower[i] = lower[i] <= -bound_infinity ? -INFINITY : lower[i] * chart_[i];
+        upper[i] = upper[i] >= bound_infinity ? INFINITY : upper[i] * chart_[i];
+    }
+    return true;
+}
+
 bool GibbsMinimizer::get_starting_point(
     Ipopt::Index n, bool init_x, Ipopt::Number* x,
     bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
@@ -853,6 +865,26 @@ static EquilibriumResult run_driver_once(
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits || newton ? std::move(fallback) : boundary_start(compiled);
     std::vector<double> full = !compiled.feasibility_cell() ? add_multipliers(compiled, point) : point;
+    const bool free_amount_newton = newton && !compiled.feasibility_cell();
+    std::vector<double> lower(newton ? full.size() : 0, -INFINITY), upper(lower.size(), INFINITY);
+    const auto inside_box = [&](std::vector<double>& candidate) {
+        // The same four-ulp x=1 snap serves both Newton domains.
+        const auto offsets = compiled.phase_offsets();
+        for (std::size_t p = 0; p < offsets.size(); ++p) for (std::size_t j = 0; j < compiled.problem.phases[p].support.size(); ++j) {
+            const auto i = offsets[p] + j;
+            double xmax = 1.0;
+            for (int ulp = 0; ulp < 4; ++ulp) xmax = std::nextafter(xmax, INFINITY);
+            if (candidate[i] > upper[i] && candidate[i] <= std::log(xmax)) candidate[i] = upper[i];
+        }
+        bool inside = true;
+        for (std::size_t i = 0; i < candidate.size(); ++i)
+            inside = inside && (!free_amount_newton || std::isfinite(candidate[i])) && candidate[i] >= lower[i] && candidate[i] <= upper[i];
+        return inside;
+    };
+    if (free_amount_newton && (!nlp->physical_bounds(lower, upper) || !inside_box(full)
+        || check_topology(compiled, full).event != TopologyEvent::None)) {
+        result.message = "Newton seed bounds/topology"; return result;
+    }
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows at any positive supported composition.
     // Curvature may raise classified rows temporarily; return the best classified
@@ -897,9 +929,13 @@ static EquilibriumResult run_driver_once(
             if (expired()) { stop("elapsed budget"); return limited_result(); }
             const auto n = static_cast<Eigen::Index>(full.size());
             if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) { stop("Jacobian shape"); break; }
+            if (free_amount_newton && !std::all_of(jacobian.begin(), jacobian.end(),
+                [](double value) { return std::isfinite(value); })) { stop("nonfinite Jacobian"); break; }
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
+            if (free_amount_newton && lu.rank() != n) { stop("Jacobian rank"); break; }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            if (free_amount_newton && !delta.allFinite()) { stop("nonfinite direction"); break; }
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
             bool positive = true;
             for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
@@ -964,6 +1000,10 @@ static EquilibriumResult run_driver_once(
                 std::vector<double> candidate = full;
                 for (Eigen::Index i = 0; i < n; ++i)
                     candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
+                if (free_amount_newton && !inside_box(candidate)) {
+                    if (detailed) scope.probe("polish_trial_bounds", candidate, static_cast<std::uint32_t>(step));
+                    continue;
+                }
                 PhasePoint at_candidate;
                 std::vector<double> rows_after;
                 try {
@@ -981,7 +1021,8 @@ static EquilibriumResult run_driver_once(
                 }
                 const double after = maximum_abs(rows_after);
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
-                const bool admit = final_correction || after < (extension ? ratio : 1.0) * defect;
+                const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
+                    || after < (extension ? ratio : 1.0) * defect;
                 if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
                     after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,
                     static_cast<double>(trial_index)}, step,
@@ -1011,18 +1052,12 @@ static EquilibriumResult run_driver_once(
     }
     if (expired()) return limited_result();
     if (newton) {
-        std::vector<double> lower(full.size()), upper(full.size()), row_lower(compiled.rows.size()), row_upper(compiled.rows.size());
-        in_bounds = nlp->get_bounds_info(static_cast<Ipopt::Index>(full.size()), lower.data(), upper.data(),
-            static_cast<Ipopt::Index>(compiled.rows.size()), row_lower.data(), row_upper.data());
-        // Snap log-composition round-off on the physical x=1 scale before checking the exact box.
-        const auto offsets = compiled.phase_offsets();
-        for (std::size_t p = 0; p < offsets.size(); ++p) for (std::size_t j = 0; j < compiled.problem.phases[p].support.size(); ++j) {
-            const auto i = offsets[p] + j;
-            double xmax = 1.0;
-            for (int ulp = 0; ulp < 4; ++ulp) xmax = std::nextafter(xmax, INFINITY);
-            if (full[i] > upper[i] && full[i] <= std::log(xmax)) full[i] = upper[i];
+        if (!free_amount_newton) {
+            std::vector<double> row_lower(compiled.rows.size()), row_upper(compiled.rows.size());
+            in_bounds = nlp->get_bounds_info(static_cast<Ipopt::Index>(full.size()), lower.data(), upper.data(),
+                static_cast<Ipopt::Index>(compiled.rows.size()), row_lower.data(), row_upper.data());
         }
-        for (std::size_t i = 0; i < full.size(); ++i) in_bounds = in_bounds && full[i] >= lower[i] && full[i] <= upper[i];
+        in_bounds = inside_box(full) && in_bounds;
     }
     PhasePoint prepared;
     try {
@@ -1131,7 +1166,7 @@ static EquilibriumResult run_driver_once(
             + " not met by an available floor-limited state";
     }
     result.success = true;
-    if (newton) result.solver_status = "NEWTON_CONVERGED";
+    if (newton && !free_amount_newton) result.solver_status = "NEWTON_CONVERGED";
     result.temperature = {temperature};
     result.pressure = {prepared.pressure};
     if (!prepared.standard.reference_diagnostics.empty()) {
@@ -1427,6 +1462,22 @@ static bool newton_eligible(const CompiledSystem& compiled) {
     return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));
 }
 
+static bool free_amount_newton_eligible(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    if (compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
+        || compiled.free_intensive_count != 0 || !p.temperature.is_positive() || !p.pressure.is_positive()
+        || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery || p.source_reference
+        || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2) return false;
+    if (std::any_of(compiled.model->parameters().charge_number.begin(), compiled.model->parameters().charge_number.end(),
+        [](double z) { return z != 0.0; })) return false;
+    const auto& a = p.phases[0]; const auto& b = p.phases[1];
+    if (!a.is_free() || !b.is_free() || a.support != b.support || a.support.size() < 2
+        || (a.kind == PhaseKind::Vapor && b.kind == PhaseKind::Vapor)) return false;
+    for (std::size_t i = 0; i < compiled.n_feed.size(); ++i)
+        if ((compiled.n_feed[i] > 0.0) != (std::find(a.support.begin(), a.support.end(), i) != a.support.end())) return false;
+    return true;
+}
+
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
                                  core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm) {
     std::optional<core::Scope> own;
@@ -1451,7 +1502,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied, limits, &stages);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
-        if (newton_eligible(compiled)) {
+        if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
             core::Scope fast_scope("newton_fast_path");
             auto fast = structural;
             try {

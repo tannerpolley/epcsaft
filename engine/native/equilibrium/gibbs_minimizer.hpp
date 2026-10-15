@@ -238,6 +238,7 @@ public:
                            Ipopt::IpoptCalculatedQuantities* ip_cq) override;
 
     bool initialize_warm(const OptimizerState&, double cap, bool predicted);
+    bool physical_bounds(std::vector<double>& lower, std::vector<double>& upper);
     std::shared_ptr<const OptimizerState> optimizer_state() const { return endpoint_; }
     const std::vector<double>& solution() const noexcept { return solution_; }
     const std::vector<double>& constraint_multipliers() const noexcept {
