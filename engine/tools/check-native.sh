@@ -44,7 +44,7 @@ for entry in json.load(open(sys.argv[1])):
     if re.search(sys.argv[2], entry["file"]): print(entry["output"])' "$build_root/compile_commands.json" "$all_units")"
 [[ -n "$object_list" ]] || { echo "no native unit in compile_commands.json" >&2; exit 1; }
 mapfile -t objects <<<"$object_list"
-# Each record lists the object's source first, then every file it includes, relative to the build directory.
+# Each record identifies an object and lists its dependencies relative to the build directory.
 deps="$(ninja -C "$build_root" -t deps "${objects[@]}")" || { echo "reading Ninja dependency records failed" >&2; exit 1; }
 current="$(grep -c ' (VALID)$' <<<"$deps" || true)"
 ((current == ${#objects[@]})) || { echo "$current current dependency records for ${#objects[@]} native units" >&2; exit 1; }
@@ -73,18 +73,19 @@ fi
 files=("$all_units")
 printf '%s\n' "${objects[@]}" >"$results/lint-objects.txt"
 if [[ "$selective" == true ]]; then
-    selected="$(CHANGED="$changed" python - "$build_root" "$workspace_root" <<'SELECT'
-import os, pathlib, re, subprocess, sys
-build, source = map(pathlib.Path, sys.argv[1:])
+    selected="$(CHANGED="$changed" python - "$build_root" "$workspace_root" "$all_units" <<'SELECT'
+import json, os, pathlib, re, subprocess, sys
+build, source = map(pathlib.Path, sys.argv[1:3])
+units = {entry['output']: (pathlib.Path(entry['directory']) / entry['file']).resolve()
+         for entry in json.loads((build / 'compile_commands.json').read_text())
+         if re.search(sys.argv[3], entry['file'])}
 changed = set(os.environ['CHANGED'].splitlines())
 selected, unit = set(), None
 for line in subprocess.check_output(['ninja', '-C', str(build), '-t', 'deps'], text=True).splitlines():
     if not line.startswith('    '):
-        unit = None
-    else:
+        unit = units.get(line.split(': #deps ', 1)[0])
+    elif unit is not None:
         path = (build / line.strip()).resolve()
-        if unit is None:
-            unit = path
         if path.is_relative_to(source) and path.relative_to(source).as_posix() in changed:
             selected.add(str(unit))
 print('\n'.join('^' + re.escape(path) + '$' for path in sorted(selected)))
@@ -97,6 +98,13 @@ SELECT
 fi
 
 printf '%s\n' "${files[@]}" >"$results/lint-selection.txt"
+python - "$build_root/compile_commands.json" "${files[@]}" <<'MATCH'
+import json, os, re, sys
+selection = re.compile('|'.join(sys.argv[2:]))
+if not any(selection.search(os.path.normpath(os.path.join(entry['directory'], entry['file'])))
+           for entry in json.load(open(sys.argv[1]))):
+    sys.exit('lint selection matches no compile entry in compile_commands.json')
+MATCH
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
