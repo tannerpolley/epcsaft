@@ -39,6 +39,12 @@ commit tag and local per-commit copy is retained forever. `tools/refresh-main-wh
 is the only publisher; an application selects a qualified commit under its own
 adoption authority.
 
+Publisher retries reuse the retained wheel and resume missing assets in the same
+draft after an interruption before an upload. A failed transfer can leave an
+incomplete `starter` asset ([GitHub upload behavior](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)).
+Incomplete, unequal or unreadable existing assets stop for owner diagnosis;
+the publisher never deletes or replaces assets.
+
 Authenticate with `gh auth login`, then download into the application's persistent
 wheel directory before `uv sync --locked`. Replace the commit below with the
 selected full revision. Keep credentials out of dependency URLs and logs.

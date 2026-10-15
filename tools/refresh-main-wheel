@@ -105,6 +105,8 @@ while ref and ref['object']['type'] == 'tag':
     ref = api(f'git/tags/{ref["object"]["sha"]}')
 if ref and (ref['object']['type'] != 'commit' or ref['object']['sha'] != commit):
     conflict(dict(commit=commit), ref)
+if ref is None and release is not None and not release['draft']:
+    conflict(dict(commit=commit, tag=tag), dict(tag=tag, state='absent'))
 if release is None:
     release = api('releases', dict(tag_name=tag, target_commitish=commit, name=tag,
                   draft=True, prerelease=True, make_latest='false', body=f'Engine wheel for {commit}; retained forever.'))
@@ -114,7 +116,7 @@ assets = {path.name: path for path in (wheel, checksum, record_path)}
 remote = {asset['name']: asset for asset in release['assets']}
 if remote.keys() - assets.keys():
     conflict(list(assets), list(remote))
-# Verify every existing asset before adding anything to a resumable draft.
+# Resume missing draft assets only; incomplete, unequal or unreadable assets stop.
 for name, asset in remote.items():
     data = subprocess.check_output(['gh', 'api', '-H', 'Accept: application/octet-stream',
                                     f'repos/{repo}/releases/assets/{asset["id"]}'])
