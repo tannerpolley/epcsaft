@@ -139,14 +139,14 @@ void register_regression(nb::module_& module) {
                 bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, value, 63, true);
             new (self) FitControls(std::move(c));
         }, nb::kw_only(), nb::arg("maximum_iterations"), nb::arg("maximum_elapsed_time_seconds"),
-            nb::arg("function_tolerance") = 0.0, nb::arg("gradient_tolerance") = 0.0, nb::arg("parameter_tolerance") = 0.0,
+            nb::arg("function_tolerance").none() = 0.0, nb::arg("gradient_tolerance").none() = 0.0, nb::arg("parameter_tolerance").none() = 0.0,
             nb::arg("workers") = 0, nb::arg("solver_options") = nb::none())
         EPCSAFT_SOLVER_OPTIONS(FitControls, 63)
         EPCSAFT_READWRITE(FitControls, maximum_iterations, maximum_elapsed_time_seconds, workers);
     for (const auto& [name, i] : {std::pair{"function_tolerance", policy::function}, {"gradient_tolerance", policy::gradient}, {"parameter_tolerance", policy::parameter}})
         controls.def_prop_rw(name, [i](const FitControls& c) { return c.solver_options.value(i); }, [i](FitControls& c, nb::object v) {
             bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
-        });
+        }, nb::for_setter(nb::arg("v").none()));
     nb::class_<TrialFailure>(module, "TrialFailure")
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian);
     nb::class_<FitCovariance>(module, "FitCovariance")

@@ -94,7 +94,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_rw("solver_options", [](const EquilibriumProblem& v) { return bindings::solver_options_view(v.solver_options, 4); },
             [](EquilibriumProblem& v, nb::object mapping) { v.solver_options = bindings::solver_options(mapping, 4); }, nb::for_setter(nb::arg("mapping").none()))
         .def_prop_rw("row_tolerance", [](const EquilibriumProblem& v) { return v.solver_options.value(policy::row); },
-            [](EquilibriumProblem& v, nb::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, 4); })
+            [](EquilibriumProblem& v, nb::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, 4); }, nb::for_setter(nb::arg("value").none()))
         .def(nb::init<>())
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
