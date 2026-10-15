@@ -75,7 +75,6 @@ def worker():
     kh_model = epcsaft.Mixture(epcsaft.Parameters.from_json(b.KH_PACKET, components=fixed.COMPONENTS))
     sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])) for i in range(1, 9)]
     unloaded = unloaded_declaration()
-    print(json.dumps({'identity': loaded_identity()}), file=replies, flush=True)
     for line in sys.stdin:
         request = json.loads(line)
         if request['case'] == '__identity__':
@@ -280,8 +279,7 @@ def main():
             processes[label] = subprocess.Popen(['taskset', '-c', str(cpu), 'nice', '-n', str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))),
                                                   str(python), str(Path(__file__).resolve()), '--worker'],
                                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=selected_env)
-            started = json.loads(processes[label].stdout.readline())
-            if started.get('identity') != identity:
+            if call(label, '__identity__') != identity:
                 raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
         starts = call('A', 'starts')
         start_rows = [dict(case=case, coordinate=i, value=value) for case, values in starts.items() for i, value in enumerate(values)]
