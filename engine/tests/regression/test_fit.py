@@ -362,3 +362,79 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     )
     assert len(sequence) == 2 and all(candidate.status == "converged" for candidate in sequence)
     assert all(candidate.final_cost <= 1e-24 for candidate in sequence)
+
+
+def test_density_options_reach_fit_worker(evidence: Any) -> None:
+    """Two EOS state groups distinguish lower-model options from restored defaults (#486 R3)."""
+    source = parameters((ETHANE,))
+    model = Pure(source)
+    observations = [regression.density(source, 180.0, P, {"s0": 1.0}, phase="liquid", observed=1.0,
+        form="log_ratio", mass_basis=False) for P in (1e5, 1e6)]
+    for observation in observations:
+        value = regression.predict(model, observation).value
+        assert value is not None
+        observation.observed = value
+    permittivity = regression.Observation()
+    permittivity.kind = regression.ObservationKind.BulkRelativePermittivity
+    permittivity.temperature, permittivity.pressure = 180.0, 1e5
+    permittivity.composition, permittivity.branch = [1.0], _core.DensityBranch.Liquid
+    permittivity.observed, permittivity.scale = 0.0, 1.0
+    observations.append(permittivity)
+    check = regression.CheckGroup()
+    check.name, check.rows, check.maximum = "permittivity", [2], 1e-12
+    check.baseline = True
+    chart = [regression.coordinate(source, [("dispersion_energy_over_k", "s0", 1.0)], origin=191.42,
+        scale=10.0, bounds=(180.0, 210.0))]
+    def run(workers: int, options: dict[str, float]) -> Any:
+        return regression.fit(source, chart, observations, weights=[1.0, 1.0, 0.0], checks=[check], baseline=source, controls=regression.FitControls(
+            maximum_iterations=1, maximum_elapsed_time_seconds=60, workers=workers,
+            gradient_tolerance=1e100, solver_options=options))
+    default = run(1, {})
+    single, parallel = (run(workers, {"DENSITY_ROOT_RESIDUAL": 1e-5}) for workers in (1, 2))
+    assert default.usable and single.usable and parallel.usable, (default.message, single.message, parallel.message)
+    # Row 1 belongs to the child; the default restoration exceeds the 1e-10 equivalence limit.
+    assert abs(single.predictions[1] / default.predictions[1] - 1.0) > 1e-10
+    evidence.observe("worker/default-control", default=default.predictions, nondefault=single.predictions,
+        solver_options=single.solver_options, workers=2)
+    assert single.optimizer == parallel.optimizer and single.solver_options == parallel.solver_options
+    assert single.status == parallel.status and single.statuses == parallel.statuses
+    assert [(f.status, f.message) for f in single.failures] == [(f.status, f.message) for f in parallel.failures] == []
+    for field in ("predictions", "residuals", "weighted_residuals", "physical_jacobian", "optimizer_jacobian"):
+        for i, (a, b) in enumerate(zip(getattr(single, field), getattr(parallel, field), strict=True)):
+            assert math.isclose(a, b, rel_tol=1e-10, abs_tol=1e-12), (field, i, a, b)
+            evidence.compare(f"worker/{field}/{i}", model=b, reference=a, unit="field units",
+                criterion={"rule": "symmetric_close", "rtol": 1e-10, "atol": 1e-12})
+    for a, b in zip(single.checks, parallel.checks, strict=True):
+        assert a.status == b.status == "pass" and a.errors == b.errors
+        assert a.baseline_maximum == b.baseline_maximum and a.failed_rows == b.failed_rows
+        evidence.observe("worker/final-check", maximum=b.maximum, mean=b.mean, baseline=b.baseline_maximum, status=b.status)
+    point = regression.differentiate(source, chart, observations[:2], optimizer=single.optimizer,
+        solver_options={"DENSITY_ROOT_RESIDUAL": 1e-5})
+    assert point.predictions == single.predictions[:2]
+    with pytest.raises(ParameterError, match="outside owner scope"):
+        regression.differentiate(source, chart, observations[:2], optimizer=single.optimizer,
+            solver_options={"FIT_FUNCTION_TOLERANCE": 1e-8})
+    assert point.solver_options == single.solver_options or all(
+        entry["name"].startswith("FIT_") or entry in point.solver_options for entry in single.solver_options)
+
+
+def test_solver_option_defaults_and_model_isolation() -> None:
+    source = parameters((ETHANE,))
+    defaults = {entry.name: entry.value for entry in _core.tolerances()}
+    names = ("ASSOCIATION_RESIDUAL", "DENSITY_ROOT_RESIDUAL", "EQUILIBRIUM_ROW_RESIDUAL")
+    def state(model: Pure) -> Any:
+        return model.state(180.0, P=1e5, phase="liquid")
+    records = [state(Pure(source, solver_options=options)) for options in (None, {}, {name: defaults[name] for name in names})]
+    for result in records[1:]:
+        assert result.molar_density == records[0].molar_density and result.pressure == records[0].pressure
+        assert result.residual_helmholtz == records[0].residual_helmholtz
+        assert result.density_convergence.evaluations == records[0].density_convergence.evaluations
+        assert result.density_convergence.iterations == records[0].density_convergence.iterations
+    ordinary = Pure(source)
+    loose = Pure(source, solver_options={"DENSITY_ROOT_RESIDUAL": 1e-5})
+    saved = state(loose).density_convergence
+    assert state(ordinary).molar_density == records[0].molar_density
+    assert state(loose).density_convergence.criterion.value == 1e-5
+    del loose
+    assert saved.criterion.value == 1e-5 and saved.criterion.upstream is None
+    assert {entry.name: entry.value for entry in _core.tolerances()} == defaults

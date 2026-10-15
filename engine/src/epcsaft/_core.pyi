@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 EOS_STANDARD_STATE_ID: str
@@ -305,6 +305,7 @@ class PropertyActionDiagnostics:
     stable_root_count: Optional[int]
 
 class PropertyActionBatch:
+    solver_options: list[dict[str, Any]]
     results: list[PropertyActionResult]
     maximum_energy_order: int
     diagnostics: PropertyActionDiagnostics
@@ -316,6 +317,7 @@ class PropertyActionBatch:
     density_convergence: Optional[Convergence]
 
 class State:
+    solver_options: list[dict[str, Any]]
     """One homogeneous state in SI molar units at the given T (K) and x (component_ids order).
     The contribution names through residual_helmholtz are A_res/(nRT), dimensionless."""
     hard_chain: float
@@ -380,6 +382,7 @@ class DensityDiagnosticBracket:
     upper_residual: float
 
 class DensityDiagnostics:
+    solver_options: list[dict[str, Any]]
     samples: list[DensityDiagnosticPoint]
     pressure_roots: list[DensityDiagnosticPoint]
     spinodals: list[DensityDiagnosticPoint]
@@ -399,8 +402,9 @@ class SweepCounters:
     recordings: int
 
 class HelmholtzModel:
+    solver_options: list[dict[str, Any]]
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
-                 thermochemistry: Optional[ThermochemistryRecord] = None) -> None: ...
+                 thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> None: ...
     def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> State: ...
     def neutral_property(self, temperature: float, molar_density: float, property: NeutralProperty, order: DerivativeOrder) -> NeutralPropertyDerivatives: ...
     def density_actions(self, temperature: float, molar_density: float,
@@ -500,6 +504,7 @@ class NeutralReferenceStatus:
     TerminalChangeExceeded: NeutralReferenceStatus
 
 class NeutralReferenceReactionDiagnostic:
+    solver_options: list[dict[str, Any]]
     reaction_index: int
     terminal_contraction: Optional[float]
     observed_terminal_change: Optional[float]
@@ -600,6 +605,10 @@ class CriticalRecord:
     rank: int
 
 class EquilibriumProblem:
+    @property
+    def solver_options(self) -> list[dict[str, Any]]: ...
+    @solver_options.setter
+    def solver_options(self, value: Mapping[str, float] | None) -> None: ...
     discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
     temperature: FreeValue
@@ -685,6 +694,9 @@ class CompiledSystem:
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
+    solver_settings: dict[str, float]
+    diagnostic_options_file: str
+    solver_options: list[dict[str, Any]]
     """Solved phases in declared order (with Discover(): discovery.declaration.phases). Units: K, Pa, mol, mol/m^3.
     Per-phase-per-component lists are phase-major: entry p*n + i is phase p, component i of component_ids
     (n components). State lists are empty when success is False."""
@@ -908,6 +920,7 @@ def solve_equilibrium(
 ) -> EquilibriumResult: ...
 
 class InfiniteDilutionReference:
+    solver_options: list[dict[str, Any]]
     """Ion reference fugacities at infinite dilution in the declared solvent (T in K, P in Pa)."""
     parameter_derivative: list[tuple[Optional[float], Optional[float]]]
     parameter_convergence_error: list[float]
@@ -917,6 +930,7 @@ class InfiniteDilutionReference:
     pure_solvent_log_fugacity: Optional[float]
 
 class ElectrolyteActivity:
+    solver_options: list[dict[str, Any]]
     """Activity of one salt at molality m (mol per kg solvent), unsymmetric (infinite-dilution) convention."""
     single_ion: tuple[float, float]  # mole-fraction-scale coefficients of (cation, anion), the ions= order
     mean_ionic_mole_fraction_scale: float
@@ -988,6 +1002,7 @@ class Observation:
     scale: float
 
 class Prediction:
+    solver_options: list[dict[str, Any]]
     value: Optional[float]
     unit: str
     status: ObservationStatus
@@ -1035,6 +1050,7 @@ class CoordinateSet:
     def start(self, parameters: Parameters, observations: list[Observation] = ..., thermochemistry: Optional[ThermochemistryRecord] = ...) -> list[float]: ...
 
 class FitControls:
+    solver_options: list[dict[str, Any]]
     function_tolerance: float
     gradient_tolerance: float
     parameter_tolerance: float
@@ -1042,7 +1058,7 @@ class FitControls:
     maximum_elapsed_time_seconds: float
     workers: int
     def __init__(self, *, maximum_iterations: int, maximum_elapsed_time_seconds: float, function_tolerance: float = 0.0,
-                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0, workers: int = 0) -> None: ...
+                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0, workers: int = 0, solver_options: Mapping[str, float] | None = None) -> None: ...
 
 class TrialFailure:
     trial: int
@@ -1157,6 +1173,7 @@ class InputReconciliation:
     output_cost: float
     input_cost: float
 class FitResult:
+    solver_options: list[dict[str, Any]]
     reconciliation: InputReconciliation | None
     minimax: MinimaxResult | None
     chart: EvaluatedCoordinates
@@ -1252,13 +1269,14 @@ class CheckResult:
     baseline_mean: float
     report_only: bool
 
-def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ...) -> EvaluatedCoordinates: ...
-def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
+def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ..., solver_options: Mapping[str, float] | None = None) -> EvaluatedCoordinates: ...
+def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ..., solver_options: Mapping[str, float] | None = None) -> list[CheckResult]: ...
 
 def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float],
-    thermochemistry: Optional[ThermochemistryRecord] = None) -> list[Observation]: ...
+    thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> list[Observation]: ...
 
 class ObservationEvaluation:
+    solver_options: list[dict[str, Any]]
     reconciliation: InputReconciliation | None
     state_densities: list[list[float]]
     reference_values: list[list[float]]
@@ -1271,10 +1289,10 @@ class ObservationEvaluation:
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation],
     thermochemistry: Optional[ThermochemistryRecord] = None,
-    uncertainty: MeasurementUncertainty | None = ...) -> ObservationEvaluation: ...
+    uncertainty: MeasurementUncertainty | None = ..., solver_options: Mapping[str, float] | None = None) -> ObservationEvaluation: ...
 def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
-    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None) -> FitResult: ...
+    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> FitResult: ...
 def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
     stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
 

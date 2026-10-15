@@ -564,7 +564,7 @@ Attempt admit_result(
     if (!result.has_state()) return refuse(stop_of(result, outcome.terminal), result.message);
     const double recomputed = supplied ? compiled.classified_residual_norm(result.coordinates)
         : maximum_abs(result.classified_residuals);
-    if (!(result.requested_tolerance_met.value_or(false)) || !(recomputed <= compiled.problem.row_tolerance))
+    if (!(result.requested_tolerance_met.value_or(false)) || !(recomputed <= compiled.problem.solver_options.value(policy::row)))
         return refuse(ContinuationStop::stalled, "available state misses the caller row tolerance: " + result.message);
     const auto topology = check_topology(compiled, result.coordinates);
     if (topology.event != TopologyEvent::None) {
@@ -1057,7 +1057,7 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     if (a.feed.kind != b.feed.kind || a.feed.solvent != b.feed.solvent
         || a.feed.solvent_mass_kg != b.feed.solvent_mass_kg || a.feed.values.size() != b.feed.values.size())
         return "feed basis, solvent set or component count differs";
-    if (endpoint && a.row_tolerance != b.row_tolerance) return "row_tolerance differs";
+    if (endpoint && a.solver_options.value(policy::row) != b.solver_options.value(policy::row)) return "row_tolerance differs";
     if (!same_intensive(a.temperature, b.temperature, endpoint)) return "temperature free/fixed declaration differs";
     if (!same_intensive(a.pressure, b.pressure, endpoint)) return "pressure free/fixed declaration differs";
     return "";
@@ -1127,7 +1127,7 @@ BranchCheck check_density_branches(
         scope.probe("density_residual", root.convergence.residual, static_cast<std::uint32_t>(phase));
         const bool ok = std::isfinite(corrected) && corrected > 0.0
             && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0
-            && root.convergence.residual <= policy::DENSITY_ROOT_RESIDUAL.value
+            && root.convergence.residual <= root.convergence.criterion->value
             && displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value
             && selected_displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;
         if (!ok) {
@@ -1170,7 +1170,10 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         || options.minimum_step > options.initial_step || options.max_steps == 0) {
         throw std::invalid_argument("invalid continuation options");
     }
-    const std::string declared = declaration_difference(request.start_problem, request.target_problem);
+    auto a = request.start_problem, b = request.target_problem;
+    a.solver_options = a.solver_options.resolved(model.solver_options());
+    b.solver_options = b.solver_options.resolved(model.solver_options());
+    const std::string declared = declaration_difference(a, b);
     if (!declared.empty()) return finish(std::move(result), ContinuationStop::invalid_path, declared);
     CompiledSystem start = compile_problem(model, request.start_problem);
     const bool parameter_path = !request.parameter_targets.empty();
@@ -1186,7 +1189,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             for (const auto index : coordinate.indices)
                 detail::family_values(parameters, coordinate.family).first[index] = (1.0 - s) * parameter_start[i] + s * request.parameter_targets[i];
         }
-        return std::make_unique<HelmholtzModel>(std::move(parameters), model.active_parameters(), model.thermochemistry());
+        return std::make_unique<HelmholtzModel>(std::move(parameters), model.active_parameters(), model.thermochemistry(), model.solver_options());
     };
     auto target_model = parameter_model(1.0);
     CompiledSystem target = compile_problem(target_model ? *target_model : model, request.target_problem);

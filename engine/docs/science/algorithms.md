@@ -928,8 +928,8 @@ the experiment. Iterate logging can use `output_file <log-path>` and
 The caller supplies one dimensionless row tolerance per solve request; the
 named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That value alone
 classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
-`constr_viol_tol` settings are the smaller of the request
-and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
+`constr_viol_tol` settings are the resolved request
+times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
 hair when both coincide. A feasibility cell (pinned amount, caloric or critical
 condition: constant objective, followed by the exact Newton polish) stops at the criterion itself; the polish, not an
@@ -940,7 +940,12 @@ that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
 existing objective factor $1/N_{\mathrm{feed}}$; the scaled overall `tol`
 and material-row tolerance retain their values. The parameter-fitting call's
 objective factor is one, so its dual stop retains its value. Ipopt's
-counter-based acceptable stop remains disabled (`acceptable_iter=0`). No starts, bounds,
+counter-based acceptable stop remains disabled (`acceptable_iter=0`).
+Both the inner target and its feed-scaled dual target must be finite and positive;
+an unrepresentable combined request is rejected before Ipopt initialization.
+The result's `solver_settings` reports consumed `tol`, `acceptable_tol`,
+`constr_viol_tol` and `dual_inf_tol`, after the diagnostic file has been read;
+Newton-only results have no consumed Ipopt settings. No starts, bounds,
 barrier settings, complementarity tolerance or iteration budget change.
 A caller-valued criterion is owned
 by the convergence record so copies into results, traces and exceptions keep

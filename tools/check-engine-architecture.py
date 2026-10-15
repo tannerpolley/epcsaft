@@ -248,6 +248,10 @@ def rule_policy_entries_name_themselves() -> list[str]:
             bad.append(f"{path.relative_to(ROOT)}: {identifier} names itself {name}")
     listed = set(re.findall(r"&(\w+)", text.split("ENTRIES[]", 1)[1])) if "ENTRIES[]" in text else set()
     consumers = "\n".join(without_comments(source.read_text()) for source in sources() if source != path)
+    # The six-option owner consumes policies through its indexed default table.
+    options = re.search(r"SOLVER_POLICIES = \{([^}]+)\}", text)
+    if options and "value_or(SOLVER_POLICIES.at(i)->value)" in text:
+        consumers += options.group(1)
     for identifier in re.findall(r"inline\s+constexpr\s+Tolerance\s+(\w+)\s*[{=]", text):
         if identifier not in listed:
             bad.append(f"{path.relative_to(ROOT)}: {identifier} is missing from ENTRIES")
@@ -463,7 +467,7 @@ def rule_exact_hessian_callback() -> list[str]:
         bad.append("equilibrium/gibbs_minimizer.cpp has no eval_h callback")
     options = without_comments((NATIVE / "equilibrium" / "ipopt.hpp").read_text())
     call = re.search(r"run_ipopt\((.*?)\);", text, re.S)
-    if call is None or call.group(1).rsplit(",", 2)[-2].strip() != "true" or not re.search(
+    if call is None or call.group(1).rsplit(",", 4)[-4].strip() != "true" or not re.search(
         r'"hessian_approximation",\s*exact\s*\?\s*"exact"\s*:\s*"limited-memory"', options
     ):
         bad.append("solve_equilibrium must request exact curvature from the common Ipopt owner")

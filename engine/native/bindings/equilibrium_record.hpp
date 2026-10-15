@@ -87,7 +87,7 @@ inline void put_document(AslRecordWriter& w, const ParameterDocument& d) {
 }
 
 inline std::string asl_record(const ParameterDocument& d, const EquilibriumProblem& p,
-                              const ContinuationOptions& options, const AslFeedMap& map) {
+                              const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options = {}) {
     AslRecordWriter w;
     w.put("epcsaft.asl.equilibrium.v3");
     put_document(w, d);
@@ -107,7 +107,9 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
         w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);
     }
     w.put("standard_gibbs_j_per_mol"); w.vector(p.standard_gibbs_j_per_mol);
-    w.put("topology_declared"); w.put(p.topology_declared); w.put("row_tolerance"); w.put(p.row_tolerance);
+    w.put("topology_declared"); w.put(p.topology_declared); w.put("solver_options");
+    const auto effective = p.solver_options.resolved(solver_options);
+    for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));
     w.put("continuation_options"); w.put(options.initial_step); w.put(options.minimum_step);
     w.put(options.max_steps); w.put(options.max_retries_per_step);
     w.put("feed_offset"); w.vector(map.offset); w.put("feed_matrix"); w.put(map.matrix.size());
@@ -118,10 +120,12 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
 }
 
 // Property callbacks: the parameter document and a NASA9 thermochemistry record, no state.
-inline std::string asl_property_record(const ParameterDocument& d, const ThermochemistryRecord& t) {
+inline std::string asl_property_record(const ParameterDocument& d, const ThermochemistryRecord& t, const policy::SolverOptions& solver_options = {}) {
     AslRecordWriter w;
     w.put("epcsaft.asl.property.v1");
     put_document(w, d);
+    w.put("solver_options");
+    for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
     w.put("standard_pressure"); w.put(t.standard_pressure); w.put("component_intervals"); w.put(t.component_intervals.size());
     for (const auto& intervals : t.component_intervals) {
         w.put(intervals.size());

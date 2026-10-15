@@ -115,6 +115,58 @@ def test_caller_row_tolerance_maps_and_reports_its_outcome() -> None:
     assert criterion.value == 1.0e-8
     with pytest.raises(ParameterError):
         solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1.0e5, feed=feed, row_tolerance=-1.0))
+
+    defaults = {entry.name: entry.value for entry in _core.tolerances()}
+    inherited = Mixture(model.parameters, solver_options={"EQUILIBRIUM_ROW_RESIDUAL": 1e-7})
+    inherited_result = solve_equilibrium(inherited, problem(feed))
+    assert inherited_result.convergence.criterion is not None
+    assert inherited_result.convergence.criterion.value == 1e-7
+    action = equilibrium.SolvedStateActionRequest(
+        [equilibrium.SolvedStateObservable(equilibrium.SolvedStateObservableKind.Pressure)],
+        [equilibrium.SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])])
+    with pytest.raises(ParameterError, match="central solver options"):
+        equilibrium.solved_state_actions(equilibrium.compile_problem(inherited, problem(feed)), default, action)
+    for tolerance in (defaults["EQUILIBRIUM_ROW_RESIDUAL"], 1e-8, 1e-12):
+        ordinary = Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5,
+            feed=Amounts({"methane": 50.0, "ethane": 50.0}), solver_options={"EQUILIBRIUM_ROW_RESIDUAL": tolerance})
+        solved = solve_equilibrium(inherited, ordinary)
+        assert solved.convergence.criterion is not None
+        assert solved.convergence.criterion.value == tolerance
+        inner = tolerance * defaults["EQUILIBRIUM_INNER_TOLERANCE_FACTOR"]
+        for name in ("tol", "acceptable_tol", "constr_viol_tol"):
+            assert math.isclose(solved.solver_settings[name], inner, rel_tol=1e-15)
+        assert math.isclose(solved.solver_settings["dual_inf_tol"], 100.0 * inner, rel_tol=1e-15)
+        # The declared-start route always runs Ipopt even on a square bubble cell.
+        bubble = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=equilibrium.Pinned(0.0))],
+            T=180.0, P=Free(1e5), feed=feed, solver_options={"EQUILIBRIUM_ROW_RESIDUAL": tolerance})
+        starts = equilibrium.solve_equilibrium_starts(inherited, bubble, [equilibrium.EquilibriumStart()], equilibrium.EquilibriumWorkLimits())
+        candidate = starts.results[0]
+        assert candidate is not None, starts.causes
+        for name in ("tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"):
+            assert math.isclose(candidate.solver_settings[name], tolerance, rel_tol=1e-15)
+    for options in ({"unknown": 1.0}, {"CLOSE_PACKING_FRACTION": 0.7}, {"DENSITY_ROOT_RESIDUAL": 0.0},
+                    {"DENSITY_ROOT_RESIDUAL": -1.0}, {"DENSITY_ROOT_RESIDUAL": math.inf},
+                    {"ASSOCIATION_RESIDUAL": math.nan}, {"ASSOCIATION_RESIDUAL": True},
+                    {"ASSOCIATION_RESIDUAL": "bad"}, {"FIT_FUNCTION_TOLERANCE": 1e-8}):
+        with pytest.raises(ParameterError, match=next(iter(options))):
+            Mixture(model.parameters, solver_options=options)  # type: ignore[arg-type]
+    with pytest.raises(ParameterError, match="outside owner scope"):
+        Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5, feed=feed,
+            solver_options={"DENSITY_ROOT_RESIDUAL": 1e-8})._native(model)
+    with pytest.raises(ParameterError, match="duplicate"):
+        Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5, feed=feed,
+            row_tolerance=1e-8, solver_options={"EQUILIBRIUM_ROW_RESIDUAL": 1e-8})._native(model)
+    with pytest.raises(ParameterError, match="EQUILIBRIUM_ROW_RESIDUAL"):
+        Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5, feed=feed, row_tolerance=True)._native(model)
+    with pytest.raises(ParameterError, match="FIT_FUNCTION_TOLERANCE"):
+        _core.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10, function_tolerance=True)
+    for tolerance in (math.ulp(0.0), float.fromhex("0x1.fffffffffffffp+1023")):
+        with pytest.raises(ParameterError, match="EQUILIBRIUM_ROW_RESIDUAL.*dual_inf_tol"):
+            solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5,
+                feed=Amounts({"methane": 50.0, "ethane": 50.0}), solver_options={"EQUILIBRIUM_ROW_RESIDUAL": tolerance}))
+    with pytest.raises(ParameterError, match="duplicate"):
+        _core.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10,
+            function_tolerance=1e-8, solver_options={"FIT_FUNCTION_TOLERANCE": 1e-8})
     mapped = problem_from_mapping({
         "phases": [{"name": "L", "kind": "liquid"}], "T": 300.0, "P": 1.0e5,
         "feed": {"basis": "amounts", "values": {"methane": 1.0}}, "row_tolerance": 1.0e-9,

@@ -249,7 +249,7 @@ void check_f7_f8() {
     may.temperature = FreeValue::fixed(243.58);
     may.pressure = FreeValue::fixed(3.949e6);
     may.feed.values = {0.5 * (retained[0] + retained[2]), 0.5 * (retained[1] + retained[3])};
-    may.row_tolerance = 1.0e-10;
+    may.solver_options.values[epcsaft::policy::row] = 1.0e-10;
     const auto may_inputs = fields({field("T_K", 243.58), field("P_Pa", 3.949e6), field("z", may.feed.values)});
     const auto both = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 0, {0, 1}));
     CHECK(both.status == ObservationStatus::Available);
@@ -305,7 +305,7 @@ void check_f7_f8() {
 void check_f9_f10() {
     const HelmholtzModel model(properties_support::neutral_binary());
     auto unattainable = equilibrium_support::bubble_at(180.0);
-    unattainable.row_tolerance = 1.0e-18;
+    unattainable.solver_options.values[epcsaft::policy::row] = 1.0e-18;
     const auto floor = predict(model, solved(ObservationKind::EquilibriumPressure, unattainable));
     truth("r1-f9/unmet_tolerance", "a floor-limited rejected solve keeps its cause and returns no value",
           floor.status == ObservationStatus::CentralSolveUnavailable && !floor.value.has_value()
@@ -566,8 +566,8 @@ void check_coupled_recovery() {
     request.holds = {coupled_hold()}; request.observations = coupled_observations();
     const HelmholtzModel truth_model(coupled_lengths(3.2));
     for (auto& ob : request.observations) ob.observed = *predict(truth_model,ob).value;
-    request.controls.function_tolerance = 1e-15; request.controls.gradient_tolerance = 1e-14;
-    request.controls.parameter_tolerance = 1e-14;
+    request.controls.solver_options.values[epcsaft::policy::function] = 1e-15; request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-14;
+    request.controls.solver_options.values[epcsaft::policy::parameter] = 1e-14;
     const auto result = fit(request);
     CHECK(result.usable);
     agree("affine-recovery/sigma", "sigma", "angstrom",result.parameters.sigma_constant[1],3.2,1e-6,0,

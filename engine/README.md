@@ -370,3 +370,46 @@ permanent equations and methods. The
 [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 records implementation gaps. Do not infer
 availability from historical usage examples or a registered equation.
+
+## Solver stopping tolerances
+
+`Mixture` and `Pure` accept `solver_options={name: value}` for association,
+density and equilibrium rows. `Problem` accepts the row option as a declaration
+override; `row_tolerance` writes that same slot. `FitControls` accepts all six
+options, and its existing `function_tolerance`, `gradient_tolerance` and
+`parameter_tolerance` arguments write the corresponding slots (zero means
+omitted). Declaring the same slot by both spellings is an error. Point readers
+(`differentiate` with parameters, `evaluate_coordinates`, `evaluate_checks`, and
+the native point readers) accept the association, density and row names.
+
+| Name | Default | Unit and stopping meaning |
+|---|---:|---|
+| `ASSOCIATION_RESIDUAL` | `2e-13` | Dimensionless mass-action infinity norm. |
+| `DENSITY_ROOT_RESIDUAL` | `1e-12` | Dimensionless reduced pressure residual `(P_calc-P)/(rho R T)`, with a bracket-width check. |
+| `EQUILIBRIUM_ROW_RESIDUAL` | `1e-10` | Dimensionless classified equilibrium-row infinity norm. |
+| `FIT_FUNCTION_TOLERANCE` | `1e-12` | Relative least-squares cost decrease. |
+| `FIT_GRADIENT_TOLERANCE` | `1e-12` | Projected gradient infinity norm, scaled objective per dimensionless optimizer coordinate. |
+| `FIT_PARAMETER_TOLERANCE` | `1e-10` | Relative optimizer-coordinate step. |
+
+For example, `Pure(parameters, solver_options={"DENSITY_ROOT_RESIDUAL": 1e-8})`
+requests less density refinement. Model settings are immutable. A declaration
+inherits its model's row setting; an explicit default value resets an inherited
+custom value. Fit settings reach every constructed model and worker process;
+individual observation declarations can still override their own row target.
+Changing association stopping does not change the independent density default.
+
+Values must be finite positive numbers, at most the largest representable
+`double`. Unknown or fixed policies, names outside the owning input's scope,
+booleans and nonnumeric values are rejected. A derived Ipopt target that
+underflows or overflows is also rejected. There is no universal observable-error
+bound or guaranteed speedup: reduced pressure error can amplify near a spinodal,
+and loose central equilibrium states can fail the fixed derivative-admission
+check. Search geometry, physical admission and derivative checks stay fixed.
+
+`epcsaft.tolerances()` reports immutable source defaults. Each owning result's
+`solver_options` lists effective names, values, units and defaults. Equilibrium
+results also report consumed Ipopt `solver_settings` (empty for Newton-only
+solves) and the diagnostic options-file path when supplied. Fit results' common
+options do not replace heterogeneous row overrides retained by observations.
+Achieved residuals, numerical floors and conditioning remain the evidence for
+assessing a returned value; requested tolerances alone are not error estimates.

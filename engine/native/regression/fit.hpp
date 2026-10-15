@@ -11,13 +11,11 @@
 
 namespace epcsaft::regression {
 
-// Ceres trust-region controls; a zero tolerance selects its named policy default. The
+// Ceres trust-region controls; omitted tolerances select their named policies. The
 // iteration and time budgets are caller inputs with no default (ALG-FIT): a fit refuses its
 // request until the caller sets both.
 struct FitControls final {
-    double function_tolerance = 0.0;
-    double gradient_tolerance = 0.0;
-    double parameter_tolerance = 0.0;
+    policy::SolverOptions solver_options;
     int maximum_iterations = 0;
     double maximum_elapsed_time_seconds = 0.0;
     int workers = 0;  // processes evaluating state groups, this one included; 0: one per hardware thread
@@ -135,6 +133,7 @@ struct FitCovariance final {
 };
 
 struct FitResult final {
+    policy::SolverOptions solver_options;
     // Ceres: converged | limit_reached | initial_evaluation_failed | failed | invalid_setup;
     // minimax: converged | limit_or_failure | point_evaluated | invalid_setup.
     std::string status = "invalid_setup";
@@ -169,6 +168,7 @@ struct FitResult final {
 };
 
 struct ObservationEvaluation final {
+    policy::SolverOptions solver_options;
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
     // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight.
     std::vector<double> residual_optimizer_gradient;

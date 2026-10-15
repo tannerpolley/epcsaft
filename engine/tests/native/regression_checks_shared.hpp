@@ -92,7 +92,7 @@ inline EquilibriumProblem pure_saturation(double temperature, double guess, bool
     problem.pressure = FreeValue::variable(guess);
     problem.feed.kind = equilibrium::FeedKind::Amounts;
     problem.feed.values = {1.0};
-    problem.row_tolerance = 1.0e-10;
+    problem.solver_options.values[epcsaft::policy::row] = 1.0e-10;
     return problem;
 }
 

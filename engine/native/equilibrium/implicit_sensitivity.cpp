@@ -237,6 +237,9 @@ bool state_dependent(const SolvedStateObservable& observable, const EquilibriumP
 void validate_request(const CompiledSystem& compiled, const EquilibriumResult& central,
                       const SolvedStateActionRequest& request) {
     const auto& problem = compiled.problem;
+    if (central.has_state() && (!central.declaration ||
+        !(central.declaration->solver_options == problem.solver_options)))
+        throw std::invalid_argument("central solver options do not match the compiled system");
     const std::size_t components = compiled.model->parameters().component_count();
     const std::size_t actives = compiled.model->active_parameters().size();
     if (request.observables.empty()) throw std::invalid_argument("no solved-state observables");
@@ -1063,7 +1066,7 @@ static SolvedStateActionBatch evaluate_action(
     }
     // Admission of the central state, in the owner's precedence.
     if (!shared->topology_checked) {
-        if (!(shared->classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
+        if (!(shared->classified_residual <= std::min(problem.solver_options.value(policy::row), policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
             shared->central_gate = SolvedStateActionStatus::DefiningEquationsNotSatisfied;
         } else {
             const auto topology = check_topology(compiled, central.coordinates);

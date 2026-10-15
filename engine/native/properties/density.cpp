@@ -59,6 +59,7 @@ public:
             pairs_ = pairs_ && std::count_if(parameters_.association_active.begin() + static_cast<std::ptrdiff_t>(a * sites),
                 parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
+    const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
     // Coefficients of A_res/(RT) in t at V = 1/density + t, and the association gradient floor. `start` begins the
@@ -85,7 +86,7 @@ public:
         core::Convergence record;
         const auto sites = strength.empty() ? std::vector<double>{}
             : solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record,
-                !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr, &strength, true);
+                !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr, &strength, true, solver_options());
         site_series.assign(sites.begin(), sites.end());
         floor = 0.0;
         if (!sites.empty()) {
@@ -160,8 +161,7 @@ double residual_derivative(
         / (density * density * GAS_CONSTANT_J_PER_MOL_K * temperature);
 }
 
-bool bracket_closed(const PressurePoint& point, double derivative, double width) {
-    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+bool bracket_closed(const PressurePoint& point, double derivative, double width, double tolerance) {
     return point.residual == 0.0 || (std::abs(point.residual) <= tolerance && std::isfinite(derivative)
         && derivative != 0.0 && width * std::abs(derivative) <= tolerance);
 }
@@ -171,7 +171,7 @@ bool association_failure(const std::exception& error) {
     // Who threw, not how it stopped. Enumerating stops silently narrowed this when
     // `classify` gained `stalled`: the scan propagated instead of skipping the point.
     return failure != nullptr
-        && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
+        && failure->record.criterion && std::string_view(failure->record.criterion->name) == policy::ASSOCIATION_RESIDUAL.name;
 }
 
 // Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.
@@ -183,7 +183,7 @@ DensityRoot refine(
     double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations
 ) {
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
-    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    const double tolerance = model.solver_options().value(policy::density);
     const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);
     double density = from_lower ? lower : upper;
     PressurePoint point = from_lower ? low : high;
@@ -193,7 +193,7 @@ DensityRoot refine(
     for (; iterations < maximum; ++iterations) {
         const double derivative = residual_derivative(point, density, pressure, temperature);
         const bool residual_met = std::abs(point.residual) <= tolerance;
-        if (bracket_closed(point, derivative, upper - lower)) break;
+        if (bracket_closed(point, derivative, upper - lower, tolerance)) break;
         // Once the residual passes, the bracket must still witness the tolerance/amplification
         // radius: step a quarter radius past the Newton root toward the far end (bisection fallback).
         double candidate = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
@@ -226,11 +226,11 @@ DensityRoot refine(
     const double derivative = residual_derivative(point, density, pressure, temperature);
     parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
     core::Convergence record{
-        std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
+        std::abs(point.residual), model.solver_options().criterion(policy::density),
         point.gradient_floor / density,
         std::isfinite(derivative) && derivative != 0.0
             ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
-        history.contraction(), iterations + 1, evaluations, core::Stop::stalled
+        history.contraction(), iterations + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
     };
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
@@ -287,7 +287,7 @@ void scan_cell(
         PressurePoint pa = low, pb = high;
         // The stable side's pressure runs monotonically from its cell end toward the fold, so a
         // cell end already past the target leaves that side rootless without locating the fold.
-        const double margin = policy::DENSITY_ROOT_RESIDUAL.value * GAS_CONSTANT_J_PER_MOL_K * temperature * upper;
+        const double margin = model.solver_options().value(policy::density) * GAS_CONSTANT_J_PER_MOL_K * temperature * upper;
         bool bracketed = stable_left ? low.pressure > pressure + margin : high.pressure < pressure - margin;
         for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
                  && !bracketed && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
@@ -300,7 +300,7 @@ void scan_cell(
             else { b = density; pb = point; }
             // P rises across the stable side: a stable point past the target already
             // brackets the unique root; only a rootless side needs the spinodal itself.
-            bracketed = point.slope > 0.0 && std::abs(point.residual) > policy::DENSITY_ROOT_RESIDUAL.value
+            bracketed = point.slope > 0.0 && std::abs(point.residual) > model.solver_options().value(policy::density)
                 && (stable_left ? low.residual < 0.0 : high.residual > 0.0) && (point.residual > 0.0) == stable_left;
         }
         if (!bracketed && pa.slope != 0.0 && pb.slope != 0.0 && std::nextafter(a, b) < b)
@@ -308,7 +308,7 @@ void scan_cell(
         const bool use_a = pa.slope == 0.0 || (pb.slope != 0.0 && stable_left);
         const double density = use_a ? a : b;
         const auto point = use_a ? pa : pb;
-        if (std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value)
+        if (std::abs(point.residual) <= model.solver_options().value(policy::density))
             throw std::runtime_error("density branch unresolved at spinodal pressure within residual tolerance");
         if (stable_left) { upper = density; high = point; }
         else { lower = density; low = point; }
@@ -466,6 +466,7 @@ public:
         throw StructureBroken{};
     }
 
+    const policy::SolverOptions& solver_options() const { return series_.solver_options(); }
     void at(double density) {
         if (!(density > lower_ && density < upper_)) broken("outside the domain", density);
         if (samples_.size() == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) broken("sample budget", density);
@@ -590,9 +591,9 @@ double step_toward(const Isotherm& iso, const Sample& from) {
 // refine), so the next sample brackets it. `past` points from the sample toward the root.
 double approach(const Isotherm& iso, const Sample& from, double past) {
     const double derivative = residual_derivative(from.point, from.density, iso.pressure(), iso.temperature());
-    if (std::abs(from.point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value && std::isfinite(derivative) && derivative != 0.0)
+    if (std::abs(from.point.residual) <= iso.solver_options().value(policy::density) && std::isfinite(derivative) && derivative != 0.0)
         return from.density - from.point.residual / derivative
-            + std::copysign(0.25 * policy::DENSITY_ROOT_RESIDUAL.value / std::abs(derivative), past);
+            + std::copysign(0.25 * iso.solver_options().value(policy::density) / std::abs(derivative), past);
     return step_toward(iso, from);
 }
 
@@ -612,9 +613,9 @@ std::optional<double> converge(const Isotherm& iso, const Sample& lower, const S
     const bool from_lower = std::abs(lower.point.pressure - iso.pressure()) < std::abs(upper.point.pressure - iso.pressure());
     const Sample& near = from_lower ? lower : upper;
     const double derivative = residual_derivative(near.point, near.density, iso.pressure(), iso.temperature());
-    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    const double tolerance = iso.solver_options().value(policy::density);
     const bool met = std::abs(near.point.residual) <= tolerance;
-    if (bracket_closed(near.point, derivative, upper.density - lower.density)) return std::nullopt;
+    if (bracket_closed(near.point, derivative, upper.density - lower.density, tolerance)) return std::nullopt;
     double x = !(near.point.slope > 0.0) ? 0.5 * (lower.density + upper.density)
         : met && std::isfinite(derivative) && derivative != 0.0
         ? near.density - near.point.residual / derivative
@@ -629,7 +630,7 @@ std::optional<double> converge(const Isotherm& iso, const Sample& lower, const S
 // P - P_t - P_rho^2 / (2 P_rhorho) (a loop sample by P - P_t): within the tolerance, the request goes to the scan,
 // which applies the rule at its located spinodal. The tolerance in pressure at a density.
 double tolerance_pressure(const Isotherm& iso, double density) {
-    return policy::DENSITY_ROOT_RESIDUAL.value * density * GAS_CONSTANT_J_PER_MOL_K * iso.temperature();
+    return iso.solver_options().value(policy::density) * density * GAS_CONSTANT_J_PER_MOL_K * iso.temperature();
 }
 
 const Sample& decided(const Isotherm& iso, const Sample& s) {
@@ -843,11 +844,11 @@ DensityRoot anchor(
         anchor_scope.probe("density_newton_step", {density, point.residual, derivative, candidate},
                            static_cast<std::uint32_t>(iteration));
         anchor_record = {
-            std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
+            std::abs(point.residual), model.solver_options().criterion(policy::density),
             point.gradient_floor / density,
             std::isfinite(derivative) && derivative != 0.0
                 ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
-            history.contraction(), iteration + 1, evaluations, core::Stop::stalled
+            history.contraction(), iteration + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
@@ -935,6 +936,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         || !std::isfinite(max_seconds) || max_seconds <= 0.0 || max_evaluations == 0)
         throw std::invalid_argument("invalid density diagnostic inputs or budget");
     DensityDiagnostics result;
+    result.solver_options = solver_options();
     result.evaluation_order = evaluation_order;
     result.geometric_cap = molar_density_upper_bound(temperature, composition);
     if (nodes.size() < 2) throw std::invalid_argument("density diagnostics require at least two declared nodes");
@@ -1082,7 +1084,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         if (adaptive) crossings(partitions);
         result.stop = result.pressure_roots.empty() ? "no_sampled_crossing" : "resolved_crossings";
         for (const auto& fold : result.spinodals)
-            if (std::abs(fold.pressure - pressure) <= policy::DENSITY_ROOT_RESIDUAL.value
+            if (std::abs(fold.pressure - pressure) <= solver_options().value(policy::density)
                 * fold.molar_density * GAS_CONSTANT_J_PER_MOL_K * temperature)
                 result.stop = "unresolved_tangent_pressure_root";
         if (finite_anchor) {
@@ -1130,12 +1132,12 @@ Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double 
 
 bool properties::regular_density(double density, double slope, const std::optional<core::Convergence>& record) {
     if (!(density > 0.0) || !std::isfinite(density) || !(slope > 0.0) || !std::isfinite(slope)
-        || !record || !record->floor || !record->amplification) return false;
+        || !record || !record->criterion || !record->floor || !record->amplification) return false;
     const auto& c = *record;
-    return std::isfinite(c.residual) && c.residual <= policy::DENSITY_ROOT_RESIDUAL.value
+    return std::isfinite(c.residual) && c.residual <= c.criterion->value
         && *c.floor >= 0.0 && std::isfinite(*c.floor)
         && *c.amplification > 0.0 && std::isfinite(*c.amplification)
-        && (policy::DENSITY_ROOT_RESIDUAL.value + *c.floor) * *c.amplification / density
+        && (c.criterion->value + *c.floor) * *c.amplification / density
             <= policy::DENSITY_ANCHOR_REGULARITY.value;
 }
 
@@ -1178,8 +1180,8 @@ DensityRoot solve_density(
                 throw std::invalid_argument("invalid density anchor");
             }
             if (!(*anchor_density > lower && *anchor_density < upper)) {
-                core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
-                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
+                core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
+                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
                 throw core::ConvergenceFailure(record);
             }
             result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
@@ -1226,7 +1228,7 @@ DensityRoot solve_density(
                                            side.upper->density, side.upper->point, scope, evaluations);
                         // The same root when the two lie within their tolerance radii, (tolerance + floor) / |dr/drho|.
                         const auto radius = [](const DensityRoot& r) {
-                            return (policy::DENSITY_ROOT_RESIDUAL.value + r.convergence.floor.value_or(0.0)) * r.convergence.amplification.value_or(0.0); };
+                            return (r.convergence.criterion->value + r.convergence.floor.value_or(0.0)) * r.convergence.amplification.value_or(0.0); };
                         if (std::abs(root.molar_density - stable.front().molar_density) <= radius(root) + radius(stable.front())) {
                             root.negative_slope_density = stable.front().negative_slope_density;
                             stable.front() = root;

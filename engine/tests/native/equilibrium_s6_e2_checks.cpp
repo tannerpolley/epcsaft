@@ -1213,16 +1213,23 @@ void check_e2_solve() {
         "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
         vapor_result.success && largest_row(vapor_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
         "e2-7-criterion", "pure-vapor", "|r|", "T,P", "|r|\\leq10^{-10}", "case");
-    for (const double tolerance : {epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 1.0e-8, 1.0e-12}) {
+    std::size_t default_evaluations = 0;
+    for (const double tolerance : {epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 1.0e-8, 1.0e-12, 1.0e-5}) {
         auto request = equilibrium_support::flash(2);
         request.feed.values = {0.5, 0.5};
-        request.row_tolerance = tolerance;
+        request.solver_options.values[epcsaft::policy::row] = tolerance;
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, request);
+        const double inner = tolerance * epcsaft::policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value;
+        // Ipopt's numeric option storage round-trips decimal text (one ulp here).
+        for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"})
+            CHECK(std::abs(result.solver_settings.at(name) - inner) <= 4 * std::numeric_limits<double>::epsilon() * inner);
         const bool default_request = tolerance == epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+        if (default_request) default_evaluations = result.evaluations;
+        if (tolerance == 1.0e-5) CHECK(result.evaluations < default_evaluations && result.convergence.residual <= tolerance);
         const bool criterion_ok = result.convergence.criterion != nullptr
             && result.convergence.criterion->value == tolerance
             && (default_request ? result.convergence.criterion == &epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL
-                                : std::string(result.convergence.criterion->name) == "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL");
+                                : std::string(result.convergence.criterion->name) == "EQUILIBRIUM_ROW_RESIDUAL");
         const bool flag_ok = std::isfinite(result.convergence.residual)
             ? (result.requested_tolerance_met.has_value()
                && *result.requested_tolerance_met == (result.convergence.residual <= tolerance))
@@ -1233,7 +1240,8 @@ void check_e2_solve() {
         recording_support::compare(id.c_str(), "requested_tolerance_met", "bool",
             result.requested_tolerance_met.has_value() ? (*result.requested_tolerance_met ? 1.0 : 0.0) : std::numeric_limits<double>::quiet_NaN(),
             std::isfinite(result.convergence.residual) ? (result.convergence.residual <= tolerance ? 1.0 : 0.0) : std::numeric_limits<double>::quiet_NaN(),
-            recording_support::fields({solve_inputs(request, result), recording_support::field("row_tolerance", tolerance),
+            recording_support::fields({solve_inputs(request, result), recording_support::field("row_tolerance", tolerance), recording_support::field("inner_tol", result.solver_settings.at("tol")),
+                recording_support::field("evaluations", result.evaluations), recording_support::field("iterations", result.iterations),
                 recording_support::field("criterion", result.convergence.criterion == nullptr ? "absent" : result.convergence.criterion->name),
                 recording_support::field("floor", epcsaft::core::optional_number(result.convergence.floor)),
                 recording_support::field("success", result.success ? 1U : 0U), recording_support::field("message", result.message)}),
@@ -1250,7 +1258,7 @@ void check_e2_solve() {
         auto request = equilibrium_support::flash(3);
         request.feed.values = {0.98, 0.01, 0.01};
         request.temperature.value = 298.15;
-        request.row_tolerance = 1.0e-8;
+        request.solver_options.values[epcsaft::policy::row] = 1.0e-8;
         {
             const auto result = epcsaft::equilibrium::solve_equilibrium(salt, request);
             CHECK(result.success && result.convergence.floor.has_value());
@@ -1261,7 +1269,7 @@ void check_e2_solve() {
     const bool lifetime_ok = copied.has_value() && copied->criterion != nullptr && copied->criterion_owner
         && copied->floor.has_value() && std::isfinite(*copied->floor)
         && copied->criterion == copied->criterion_owner.get() && copied->criterion->value == 1.0e-8
-        && std::string(copied->criterion->name) == "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL"
+        && std::string(copied->criterion->name) == "EQUILIBRIUM_ROW_RESIDUAL"
         && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
                                    copied->amplification) == copied->stop;
     record_bool("e2-7/owned-criterion-lifetime", "e2-7-criterion",

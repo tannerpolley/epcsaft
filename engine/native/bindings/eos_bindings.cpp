@@ -2,6 +2,7 @@
 #include "surface/parameter_builder.hpp"
 
 #include "fields.hpp"
+#include "solver_options.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -124,11 +125,13 @@ void register_eos(py::module_& module) {
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
             forward_sweeps, branch, stable_root_count);
     py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, 7)
         EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
             density_action, density_mixed_action, density_message, density_convergence, density_status);
     py::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
         EPCSAFT_VALUES(epcsaft::ThermochemistryStatus, MissingRecord, Available, OutsideInterval, Nonfinite);
     py::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
         EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
             // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
@@ -147,15 +150,19 @@ void register_eos(py::module_& module) {
     py::class_<epcsaft::DensityDiagnosticBracket>(module, "DensityDiagnosticBracket")
         EPCSAFT_READONLY(epcsaft::DensityDiagnosticBracket, lower, upper, lower_residual, upper_residual);
     py::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, 7)
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
             evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop);
     py::class_<epcsaft::SweepCounters>(module, "SweepCounters")
         EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings);
     py::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
-        .def(py::init<epcsaft::Parameters, std::vector<epcsaft::ActiveParameter>,
-                      std::optional<epcsaft::ThermochemistryRecord>>(),
+        .def(py::init([](epcsaft::Parameters p, std::vector<epcsaft::ActiveParameter> a,
+                         std::optional<epcsaft::ThermochemistryRecord> t, py::object options) {
+            return std::make_unique<epcsaft::HelmholtzModel>(std::move(p), std::move(a), std::move(t), epcsaft::bindings::solver_options(options, 7));
+        }),
              py::arg("parameters"), py::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
-             py::arg("thermochemistry") = std::nullopt)
+             py::arg("thermochemistry") = std::nullopt, py::arg("solver_options") = py::none())
+        .def_property_readonly("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
         .def("state", &epcsaft::HelmholtzModel::state)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
@@ -198,9 +205,11 @@ void register_eos(py::module_& module) {
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
     py::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, 7)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
             parameter_derivative, parameter_convergence_error, pure_solvent_log_fugacity);
     py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, 7)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
             mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient);
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,

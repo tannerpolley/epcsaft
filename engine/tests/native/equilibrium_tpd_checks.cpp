@@ -20,7 +20,7 @@ void check_phase_removal_inventory() {
     auto one = equilibrium_support::flash(2);
     one.phases[0].kind = PhaseKind::Vapor;
     one.phases[0].support = {0, 1};
-    one.row_tolerance = 1e-10;
+    one.solver_options.values[epcsaft::policy::row] = 1e-10;
     const auto reference = solve_equilibrium(model, one);
     CHECK(reference.success);
     auto two = one;
@@ -308,14 +308,14 @@ void check_tangent_plane_admission() {
         tpd_compare("support/reconstruction-rejected/" + std::to_string(support.size()), rejected ? 1.0 : 0.0, 1.0, 0.0);
     }
     auto problem = equilibrium_support::flash(3); problem.feed.values = {0.98, 0.01, 0.01};
-    problem.temperature = FreeValue::fixed(298.15); problem.row_tolerance = 1e-10;
+    problem.temperature = FreeValue::fixed(298.15); problem.solver_options.values[epcsaft::policy::row] = 1e-10;
     const auto candidate = solve_equilibrium(model, problem); CHECK(candidate.success);
     const auto compiled = compile_problem(model, problem);
     const auto report = stability_test(compiled, candidate);
     check_supplied_tangent_plane(compiled, candidate, report, "supplied/charged");
     // One declared-state owner (#341): a changed row tolerance and phase name leave the state and its rows
     // unchanged, so stability admits them and reports the same trials; a changed feed is another state.
-    auto relabeled = problem; relabeled.row_tolerance = 1e-9; relabeled.phases[0].name = "L2";
+    auto relabeled = problem; relabeled.solver_options.values[epcsaft::policy::row] = 1e-9; relabeled.phases[0].name = "L2";
     const auto relabeled_report = stability_test(compile_problem(model, relabeled), candidate);
     double report_difference = relabeled_report.trials.size() == report.trials.size() ? 0.0 : 1.0;
     const auto widen = [&](const std::vector<double>& x, const std::vector<double>& y) {
@@ -421,7 +421,7 @@ void check_normalized_reaction_affinity() {
     parameters.segment_count = {1.0, 1.0}; parameters.sigma_constant = {3.0, 3.0};
     parameters.dispersion_energy_over_k = {200.0, 200.0}; parameters.molar_mass_kg_per_mol = {0.030, 0.015};
     const epcsaft::HelmholtzModel model(parameters);
-    auto problem = equilibrium_support::flash(2); problem.feed.values = {1.0, 0.0}; problem.row_tolerance = 1e-10;
+    auto problem = equilibrium_support::flash(2); problem.feed.values = {1.0, 0.0}; problem.solver_options.values[epcsaft::policy::row] = 1e-10;
     problem.reactions = {{"A=2B", {-1.0, 2.0}, 1.0, std::nullopt}};
     const auto candidate = solve_equilibrium(model, problem); CHECK(candidate.success);
     const auto compiled = compile_problem(model, problem);
@@ -505,7 +505,7 @@ epcsaft::equilibrium::EquilibriumProblem ascani_2023_problem(int system, double 
     const double T = system == 1 ? 318.15 : 353.6;
     auto problem = equilibrium_support::flash(4);
     problem.temperature = FreeValue::fixed(T); problem.pressure = FreeValue::fixed(1e5);
-    problem.feed.values = {z, 1.0 - z, 0.0, 0.0}; problem.row_tolerance = 1e-10;
+    problem.feed.values = {z, 1.0 - z, 0.0, 0.0}; problem.solver_options.values[epcsaft::policy::row] = 1e-10;
     ReactionSpec reaction; reaction.name = "esterification"; reaction.stoichiometry = {-1, -1, 1, 1};
     reaction.correlation = ReactionLogPolynomial{std::log(system == 1 ? 43.99 : 22.92), 0, 0, 0, T, T, T, "ascani-2023"};
     reaction.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
@@ -611,7 +611,7 @@ void check_gross_2002_bubble() {
     const HelmholtzModel model(build_parameters(d));
     auto problem = equilibrium_support::boundary();
     problem.temperature = FreeValue::fixed(473.15); problem.pressure = FreeValue::variable(3.9e6);
-    problem.feed.values = {0.42, 0.58}; problem.row_tolerance = 1e-8;
+    problem.feed.values = {0.42, 0.58}; problem.solver_options.values[epcsaft::policy::row] = 1e-8;
     const auto result = solve_equilibrium(model, problem);
     CHECK(result.success); CHECK(result.convergence.residual <= 1e-8);
     tpd_compare("gross-2002-bubble/P", result.pressure.at(0), 3842628.8934729425, 1e-10 * 3842628.8934729425, {}, "Pa");
@@ -678,7 +678,7 @@ void check_gross_2002_cooling_onset() {
         problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.0)),
                           equilibrium_support::phase("V", PhaseKind::Vapor)};
         problem.temperature = FreeValue::variable(start); problem.pressure = FreeValue::fixed(pressure);
-        problem.feed.kind = FeedKind::Amounts; problem.feed.values = {first, 1.0 - first}; problem.row_tolerance = 1e-8;
+        problem.feed.kind = FeedKind::Amounts; problem.feed.values = {first, 1.0 - first}; problem.solver_options.values[epcsaft::policy::row] = 1e-8;
         return cooling_onset(compile_problem(system, problem));
     };
     const auto onset = [&](double water, double start) {

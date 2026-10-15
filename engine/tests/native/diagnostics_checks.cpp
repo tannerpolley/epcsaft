@@ -196,6 +196,27 @@ void check_density_record(
 }
 
 void density_records() {
+    using namespace epcsaft;
+    const HelmholtzModel reference_model(properties_support::ethane());
+    const auto reference = reference_model.state_at_pressure(180.0, 1e5, {1.0}, DensityBranch::Liquid);
+    std::size_t default_work = 0;
+    for (const double tolerance : {policy::DENSITY_ROOT_RESIDUAL.value, 1e-5}) {
+        policy::SolverOptions options; options.set(policy::density, tolerance);
+        const HelmholtzModel model(properties_support::ethane(), {}, {}, options);
+        const auto state = model.state_at_pressure(180.0, 1e5, {1.0}, DensityBranch::Liquid);
+        const auto& c = *state.density_convergence;
+        const double r = std::abs(state.pressure - 1e5) / (state.molar_density * GAS_CONSTANT_J_PER_MOL_K * 180.0);
+        const double error = std::abs(state.molar_density / reference.molar_density - 1.0);
+        const bool strict = tolerance == policy::DENSITY_ROOT_RESIDUAL.value;
+        if (strict) default_work = c.evaluations;
+        recording_support::compare("density-options", "relative_density_error", "1", error, 0.0,
+            recording_support::fields({recording_support::field("criterion", c.criterion->value),
+                recording_support::field("rho", state.molar_density), recording_support::field("residual", r),
+                recording_support::field("evaluations", c.evaluations), recording_support::field("iterations", c.iterations)}),
+            "Relationship", "pressure-closure", "same stable root at the requested reduced residual", "absolute", 1e-7, 0.0,
+            r <= tolerance && error <= 1e-7 && (strict || c.evaluations < default_work), "d4-density-options", strict ? "default" : "loose");
+    }
+
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     for (const auto& row : std::array<std::tuple<double, double>, 2>{
              std::tuple{200.0, 217800.69494692178},
@@ -283,6 +304,34 @@ void association_record(
 }
 
 void association_records() {
+    using namespace epcsaft;
+    auto parameters = properties_support::associating_binary();
+    parameters.site_component = {0}; parameters.site_multiplicity = {1};
+    const double rho = 1.0e4, delta = 1.0 / (rho * NUMBER_DENSITY_PER_ANGSTROM3);
+    const double q = rho * NUMBER_DENSITY_PER_ANGSTROM3 * delta;
+    const double reference = 2.0 / (1.0 + std::sqrt(1.0 + 4.0 * q));
+    const std::vector<double> start{0.625}, strength{delta};
+    std::size_t default_work = 0;
+    for (const double tolerance : {policy::ASSOCIATION_RESIDUAL.value, 1e-8}) {
+        policy::SolverOptions request; request.set(policy::association, tolerance);
+        const auto options = request.resolved({}); core::Convergence record;
+        const auto x = solve_site_fractions(300.0, rho, {1.0, 0.0}, parameters, {}, {}, &record,
+            &start, &strength, false, options).at(0);
+        const double residual = std::abs(x * (1.0 + q * x) - 1.0);
+        const bool strict = tolerance == policy::ASSOCIATION_RESIDUAL.value;
+        if (strict) default_work = record.evaluations;
+        const double bound = strict ? 1e-12 : 1e-8;
+        recording_support::compare("association-options", "X", "1", x, reference,
+            recording_support::fields({recording_support::field("criterion", record.criterion->value),
+                recording_support::field("q", q), recording_support::field("start", start),
+                recording_support::field("residual", residual), recording_support::field("error", std::abs(x-reference)),
+                recording_support::field("iterations", record.iterations), recording_support::field("evaluations", record.evaluations),
+                recording_support::field("stop", core::stop_name(record.stop))}),
+            "Relationship", "scalar-mass-action", "positive analytic root", "absolute", bound, 0.0,
+            x > 0.0 && x <= 1.0 && std::abs(x-reference) <= bound && residual <= record.criterion->value
+                && (strict || record.evaluations < default_work), "d5-association-options", strict ? "default" : "loose");
+    }
+
     association_record(properties_support::associating_binary(), 1.0e4, {0.1385, 0.8615}, "associating");
     association_record(properties_support::nine_species(), 1.2e4,
                       {0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001},

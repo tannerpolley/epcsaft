@@ -1,7 +1,10 @@
 #pragma once
+#include "core/convergence.hpp"
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
 #include <algorithm>
+#include <cmath>
+#include <map>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -62,7 +65,13 @@ inline std::string application_return_name(Ipopt::ApplicationReturnStatus code) 
 // One checked option/lifecycle owner for exact curvature and estimation's BFGS.
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
-    double seconds, bool exact, double objective_factor) {
+    double seconds, bool exact, double objective_factor, std::map<std::string, double>* consumed = nullptr,
+    double requested_row = 0.0) {
+    const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
+    if (!(tolerance > 0.0) || !std::isfinite(tolerance) || !(dual_tolerance > 0.0) || !std::isfinite(dual_tolerance))
+        throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
+            + " objective_factor=" + core::optional_number(objective_factor) + " produces invalid inner target="
+            + core::optional_number(tolerance) + " or dual_inf_tol=" + core::optional_number(dual_tolerance));
     auto app = Ipopt::SmartPtr<Ipopt::IpoptApplication>(::IpoptApplicationFactory());
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
@@ -74,7 +83,6 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol"})
         admit(options->SetNumericValue(name, tolerance));
     // ALG-EQUILIBRIUM: the absolute dual stop follows the extensive objective basis.
-    const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
     admit(options->SetNumericValue("dual_inf_tol", dual_tolerance));
     admit(options->SetIntegerValue("acceptable_iter", 0));
     admit(options->SetIntegerValue("max_iter", iterations));
@@ -91,6 +99,9 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
             throw std::invalid_argument(std::string("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: ") + options_file);
     }
     const auto initialized = app->Initialize(options_file ? options_file : "");
+    if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
+        double value = 0.0; admit(options->GetNumericValue(name, value, "")); (*consumed)[name] = value;
+    }
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};
 }
 }  // namespace epcsaft::equilibrium

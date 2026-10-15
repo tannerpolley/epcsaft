@@ -227,13 +227,14 @@ def predict(model: Mixture | Pure, item: Observation) -> Prediction:
 def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequence[Coordinate],
                   observations: Sequence[Observation] | None = None, *, optimizer: Sequence[float] | None = None,
                   thermochemistry: ThermochemistryRecord | None = None,
-                  holds: Sequence[HydrationHold] | None = None) -> Any:
+                  holds: Sequence[HydrationHold] | None = None,
+                  solver_options: Mapping[str, float] | None = None) -> Any:
     """Exact native columns; coordinate-aware residual columns have unit observation weights."""
     if isinstance(model, Parameters):
         if isinstance(item, Observation) or observations is None or optimizer is None:
             raise ParameterError("coordinate differentiation needs coordinates and observations")
         return _core.evaluate_observations(model._native, list(item), list(optimizer), list(holds or ()),
-                                           list(observations), thermochemistry)
+                                           list(observations), thermochemistry, solver_options=solver_options)
     if not isinstance(item, Observation):
         raise ParameterError("model differentiation needs one observation")
     return _core.differentiate(model._model, item)
@@ -308,14 +309,15 @@ def hydration_hold(reference: Observation, *, bracket: tuple[float, float], ener
 
 
 def evaluate_coordinates(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
-                         holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = None) -> EvaluatedCoordinates:
+                         holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = None,
+                         solver_options: Mapping[str, float] | None = None) -> EvaluatedCoordinates:
     """Evaluate the native physical chart and exact D at one declared optimizer point."""
     chart = CoordinateSet()
     chart.coordinates = list(coordinates)
-    return _core.evaluate_coordinates(parameters._native, chart, list(optimizer), list(holds), thermochemistry)
+    return _core.evaluate_coordinates(parameters._native, chart, list(optimizer), list(holds), thermochemistry, solver_options)
 
 
 def evaluate_checks(parameters: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup],
-                    baseline: Parameters | None = None) -> list[CheckResult]:
+                    baseline: Parameters | None = None, solver_options: Mapping[str, float] | None = None) -> list[CheckResult]:
     """Native unweighted final metrics on stored parameters, without re-solving holds."""
-    return _core.evaluate_checks(parameters._native, list(observations), list(checks), None if baseline is None else baseline._native)
+    return _core.evaluate_checks(parameters._native, list(observations), list(checks), None if baseline is None else baseline._native, solver_options)

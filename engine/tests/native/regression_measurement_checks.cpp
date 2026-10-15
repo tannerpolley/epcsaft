@@ -67,8 +67,8 @@ void derivative_probe(const std::string& id, const FitRequest& request, const st
 FitRequest linear_measurements(bool shared = false) {
     FitRequest request;
     request.parameters = properties_support::neutral_ternary(); request.controls = budgeted_controls();
-    request.controls.function_tolerance = request.controls.gradient_tolerance = 1e-12;
-    request.controls.parameter_tolerance = 1e-10;
+    request.controls.solver_options.values[epcsaft::policy::function] = request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-12;
+    request.controls.solver_options.values[epcsaft::policy::parameter] = 1e-10;
     Coordinate slope; slope.reaction = ReactionCoordinate{"reaction_a", ReactionCoefficient::D};
     slope.origin = 0.0; slope.scale = 0.001; slope.lower = 0.001; slope.upper = 0.01;
     request.coordinates.coordinates = {slope}; request.uncertainty.emplace();
@@ -128,8 +128,8 @@ void check_measurement_fit() {
     for (const bool shared : {false, true}) for (const auto& controls :
         std::vector<std::array<double,3>>{{1e-12,1e-12,1e-10}, {1e-13,1e-13,1e-11}, {1e-14,1e-14,1e-12}, {1e-16,1e-14,1e-12}}) {
         auto request = linear_measurements(shared);
-        request.controls.function_tolerance = controls[0]; request.controls.gradient_tolerance = controls[1];
-        request.controls.parameter_tolerance = controls[2];
+        request.controls.solver_options.values[epcsaft::policy::function] = controls[0]; request.controls.solver_options.values[epcsaft::policy::gradient] = controls[1];
+        request.controls.solver_options.values[epcsaft::policy::parameter] = controls[2];
         const bool verify = controls[0] == (shared ? 1e-16 : 1e-14);
         core::Capture capture;
         const auto result = fit(request);

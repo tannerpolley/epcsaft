@@ -1012,13 +1012,11 @@ static CompiledSystem compile_with_basis(
     if (request.phases.empty()) throw std::invalid_argument("no phases declared");
     validate_intensive_seed(request.temperature, "temperature");
     validate_intensive_seed(request.pressure, "pressure");
-    if (!std::isfinite(request.row_tolerance) || request.row_tolerance <= 0.0) {
-        throw std::invalid_argument("invalid row tolerance");
-    }
     const std::size_t components = model.parameters().component_count();
     CompiledSystem compiled;
     compiled.model = &model;
     compiled.problem = request;
+    compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
     compiled.n_feed = resolve_feed(model, request.feed);
     compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
@@ -1263,7 +1261,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.feed.values = w;
     request.phases = {phase};
     request.phases[0].amount = AmountSpec::free();
-    request.row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    request.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
     return compile_with_basis(model, request, &B);
 }

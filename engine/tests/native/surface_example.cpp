@@ -208,7 +208,7 @@ int main() {
     std::printf("  admission: %s\n", message.c_str());
     expect(message.find("mole fractions must sum to one") != std::string::npos, "a fraction feed that does not sum to one is rejected, not renormalized");
     EquilibriumProblem unattainable = bubble;
-    unattainable.row_tolerance = 1.0e-18;
+    unattainable.solver_options.values[epcsaft::policy::row] = 1.0e-18;
     const EquilibriumResult floor = solve_equilibrium(model, unattainable);
     std::printf("  unmet tolerance: success = %d, stop = %s, achieved |r| = %.2e\n  %s\n", floor.success, core::stop_name(floor.convergence.stop), floor.convergence.residual, floor.message.c_str());
     row("floor/residual", "1", floor.convergence.residual);

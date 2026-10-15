@@ -222,7 +222,7 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
         CHECK(std::abs(phases.back().rho-rho)<=1e-6+1e-10*rho);
     }
     sample.phase=phases.front();
-    CHECK(solved.residual_norm()<=compiled.problem.row_tolerance);
+    CHECK(solved.residual_norm()<=compiled.problem.solver_options.value(epcsaft::policy::row));
     for(const auto& item:q) {
         const auto& o=item.observable;const auto phase=o.phase;
         const double n=solved.amounts[phase],rho=solved.molar_densities[phase];

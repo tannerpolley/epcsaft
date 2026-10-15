@@ -139,7 +139,7 @@ struct EquilibriumProblem final {
     std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
     // Caller row criterion for the solve; the named policy value is the only default.
-    double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    policy::SolverOptions solver_options;
 };
 
 enum class RowKind {
@@ -395,6 +395,8 @@ struct CriticalRecord final {
 };
 
 struct EquilibriumResult final {
+    std::map<std::string, double> solver_settings;
+    std::string diagnostic_options_file;
     const HelmholtzModel* model_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;

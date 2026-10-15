@@ -123,7 +123,7 @@ bool same_state(const Observation& left, const Observation& right) {
     };
     if (intensive(a.temperature) != intensive(b.temperature) || intensive(a.pressure) != intensive(b.pressure)
         || feed(a.feed) != feed(b.feed) || a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol
-        || a.topology_declared != b.topology_declared || a.row_tolerance != b.row_tolerance
+        || a.topology_declared != b.topology_declared || a.solver_options.value(policy::row) != b.solver_options.value(policy::row)
         || a.phases.size() != b.phases.size() || a.reactions.size() != b.reactions.size()
         || !(a.source_reference == b.source_reference)) return false;
     for (std::size_t i = 0; i < a.phases.size(); ++i)
@@ -227,7 +227,7 @@ Prediction predict(
 ) {
     core::Scope density_scope("fit_density_anchor");
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
-        if (!old || !previous_model || x != old_x || branch == DensityBranch::Unspecified
+        if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || x != old_x || branch == DensityBranch::Unspecified
             || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
         if (!same_parameters) {
             const auto witness = old->negative_slope_density;
@@ -263,6 +263,7 @@ Prediction predict(
     };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
+        result.solver_options = observation.problem.solver_options.resolved(model.solver_options());
         try {
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
                 result.state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
@@ -341,6 +342,7 @@ Prediction predict(
         return initial;
     }
     Prediction result;
+    result.solver_options = observation.problem.solver_options.resolved(model.solver_options());
     result.compiled = std::move(prepared);
     const auto& parameters = model.parameters();
     bool missing_mass = false;
