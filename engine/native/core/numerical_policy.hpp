@@ -167,8 +167,15 @@ inline constexpr Tolerance DENSITY_ANCHOR_REGULARITY{"DENSITY_ANCHOR_REGULARITY"
     "admitted relative density error of an anchored root, one hundredth of DENSITY_ANCHOR_LOG_WINDOW"};
 // The structured search's checks of the single mechanical loop (ALG-DENSITY).
 inline constexpr Tolerance DENSITY_SLOPE_SEPARATION{"DENSITY_SLOPE_SEPARATION", 1.0e-6, Category::AlgorithmTolerance,
-    "relative density separation above which two samples' P_rho order is checked against the single loop; "
-    "closer samples, such as a root bracket, differ by less than the slope's rounding"};
+    "relative density separation above which two samples' P_rho order is inspected; not a rounding bound"};
+// ALG-DENSITY: q=RT(1+u), c=-RT(v+w), w=2u/rho imply slope norm <= 2RT+|q|
+// and curvature norm <= |c|+4(RT+|q|)/rho. Higham (1993), pp. 784-785, gamma_n:
+// 9 local conversion factors + 5 norm/bound factors + 2 comparison factors, using epsilon
+// conservatively in place of unit roundoff. Conditional on Taylor coefficients and normal arithmetic;
+// this does not bound the complete EOS or implicit association error.
+inline constexpr Tolerance DENSITY_STRUCTURE_ROUNDOFF{"DENSITY_STRUCTURE_ROUNDOFF",
+    16.0 * std::numeric_limits<double>::epsilon() / (1.0 - 16.0 * std::numeric_limits<double>::epsilon()),
+    Category::AlgorithmTolerance, "ALG-DENSITY local derivative assembly and comparison gamma_16"};
 
 
 inline constexpr Tolerance COMPOSITION_SUM_TOLERANCE{"COMPOSITION_SUM_TOLERANCE",
@@ -441,7 +448,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
-    &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &DENSITY_ANCHOR_REGULARITY, &DENSITY_SLOPE_SEPARATION,
+    &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &DENSITY_ANCHOR_REGULARITY, &DENSITY_SLOPE_SEPARATION, &DENSITY_STRUCTURE_ROUNDOFF,
     &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
     &OSMOTIC_MOLALITY_FLOOR, &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
     &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,

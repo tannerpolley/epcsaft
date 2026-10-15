@@ -599,6 +599,7 @@ PredictionGradient differentiate(
             std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
             return batch.density_message.empty() ? name : name + ": " + batch.density_message;
         };
+        if (batch.density_structure_refused) return unavailable(cause());
         if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
             || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
             if (batch.density_convergence) scope.finish(*batch.density_convergence);

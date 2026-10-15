@@ -1692,6 +1692,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.solver_options = solver_options_;
         batch.density_message = error.what();
+        batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
         return batch;

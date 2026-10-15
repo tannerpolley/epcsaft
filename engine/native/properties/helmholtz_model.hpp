@@ -11,6 +11,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <stdexcept>
 #include <tuple>
 #include <variant>
 #include <vector>
@@ -111,6 +112,9 @@ struct PropertyActionResult final {
 };
 
 enum class DensityBranch { Unspecified, Vapor, Liquid };
+struct DensityStructureError final : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 struct PropertyActionDiagnostics final {
     std::size_t site_rank = 0, site_factorizations = 0, site_solves = 0;
     double site_pivot_ratio = 0.0, association_residual = 0.0;
@@ -132,6 +136,7 @@ struct PropertyActionBatch final {
     std::optional<double> density_mixed_action;  // d^k rho over all k >= 2 directions, when observables are requested
     PropertyActionStatus density_status = PropertyActionStatus::CentralPropertyUnavailable;
     std::string density_message;
+    bool density_structure_refused = false;
     std::optional<core::Convergence> density_convergence;
 };
 struct ResidualEnergyAction final {

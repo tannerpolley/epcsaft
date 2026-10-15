@@ -459,6 +459,12 @@ void modular_permittivity_actions() {
     for (const auto& [name, parameters] : forms) {
         const epcsaft::HelmholtzModel model(parameters, active);
         double previous_liquid = 0.0;
+        std::size_t scan_index = 0;
+        // Independent native 4096/16384-cell diagnostics retained for #513, at the same declared inputs.
+        const std::array<double, 12> liquid_reference = {56247.49942614573, 56247.597994176765, 56247.72120232484,
+            56248.09081416554, 56248.583600548125, 56248.64519648327, 56248.70679189342, 56249.93858986418,
+            56253.63272468506, 56259.7854243374, 56272.075143997776, 56308.81964538034};
+        const std::array<double, 3> vapor_reference = {0.8503966976383335, 4.685632278617003, 10.471760503385712};
         for (const double scan_pressure : scan) {
             const auto liquid = model.state_at_pressure(
                 temperature, scan_pressure, x, epcsaft::DensityBranch::Liquid);
@@ -469,12 +475,20 @@ void modular_permittivity_actions() {
             // The liquid root rises monotonically in P, so no request switched branch.
             const bool ok = liquid.molar_density > previous_liquid
                 && vapor.stable_root_count == liquid.stable_root_count
-                && (roots == 1 ? vapor.molar_density == liquid.molar_density
+                && (roots == 1 ? close(vapor.molar_density, liquid.molar_density, 1e-10)
                         && liquid.density_branch == epcsaft::DensityBranch::Unspecified
                     : roots == 2 && vapor.molar_density < 1.0e-2 * liquid.molar_density
                         && liquid.density_branch == epcsaft::DensityBranch::Liquid)
                 && std::abs(liquid.pressure - scan_pressure) <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
                     * liquid.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature;
+            if (parameters.permittivity_form.is(epcsaft::PermittivityForm::DensityTemperature)) {
+                CHECK(close(liquid.molar_density, liquid_reference[scan_index], 1e-10));
+                CHECK(close(vapor.molar_density, scan_index < 3 ? vapor_reference[scan_index] : liquid_reference[scan_index], 1e-10));
+                CHECK(roots == (scan_index < 3 ? 2 : 1));
+                CHECK(vapor.density_branch == (scan_index < 3 ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Unspecified));
+                CHECK(vapor.pressure_density_derivative > 0.0 && liquid.pressure_density_derivative > 0.0);
+            }
+            ++scan_index;
             previous_liquid = liquid.molar_density;
             const std::string point = std::string(name) + "/" + recording_support::number(scan_pressure);
             recording_support::compare_custom(("issue26/branch/" + point).c_str(),

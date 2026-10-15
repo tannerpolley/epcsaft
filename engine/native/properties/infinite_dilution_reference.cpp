@@ -24,6 +24,7 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
             if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
             if (state.density_convergence) scope.finish(*state.density_convergence);
             scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
+        } catch (const DensityStructureError&) { throw;
         } catch (const std::runtime_error& error) {
             if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
             scope.probe("anchor_failure", {*prior_density}, 0, error.what());
@@ -243,8 +244,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         trace.pressure = pressure;
         trace.solvent_mass = solvent_mass;
         trace.solvent_index = *declaration.solvent_index;
-        // A known liquid solvent density is tried first as a locally unique anchor; any failure
-        // falls back to the cold scan and its branch admission.
+        // A known liquid solvent density is tried first; unresolved failures retry cold.
         std::optional<double> anchor = solvent_anchor;
         for (std::size_t point = 0; point < REFERENCE_MOLALITIES.size(); ++point) {
             trace.composition[point] = neutral_reference_composition(
@@ -253,6 +253,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 try {
                     trace.state[point] = model.state_at_pressure(
                         temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
+                } catch (const DensityStructureError&) { throw;
                 } catch (const std::exception& error) {
                     if (point != 0 || !anchor) throw;
                     if (scope.diagnostics_on()) scope.probe("anchor_cold_retry",
@@ -320,7 +321,8 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                             ? state.molar_density > loop.spinodals.front().upper
                             : state.molar_density < loop.spinodals.back().lower)))
                             throw std::runtime_error(std::string(gas ? "vapor" : "liquid")
-                                + " branch absent: the single stable root lies across the mechanical loop");
+                                + " branch not established by the finite search: " + (loop.unresolved.empty()
+                                    ? "single stable root across the mechanical loop" : loop.unresolved.front().cause));
                     }
                     trace.pure_state[i] = std::move(state);
                 } catch (const std::exception& error) {

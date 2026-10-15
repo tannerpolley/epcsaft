@@ -6,13 +6,17 @@
 #include "core/trace.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <chrono>
 #include <cstddef>
 #include <iterator>
 #include <functional>
+#include <iomanip>
 #include <limits>
+#include <map>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -33,6 +37,23 @@ struct PressurePoint final {
     double pressure;
     double slope;
     double gradient_floor;
+};
+
+// Request-local state exists only after a resolved sampled contradiction.
+struct ScanPoint final { double density; PressurePoint point; bool linked; };
+struct DensityPartition final {
+    static constexpr auto cap = policy::DENSITY_BRACKET_INTERVALS.value * policy::DENSITY_MAX_ITERATIONS.value;
+    double lower, upper;
+    std::string cause;
+    std::map<double, PressurePoint> samples;
+    std::size_t evaluations = 0, intervals = 0, stable = 0;
+    bool active = false;
+    DensityStructureError refused(const std::string& cause_now) const {
+        return DensityStructureError(cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
+            + "] mol/m3; cells=" + std::to_string(intervals) + "; stable=" + std::to_string(stable)
+            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now);
+    }
+
 };
 
 // P(rho) at fixed T and amounts: the shared residual Helmholtz templates as a Taylor series in volume
@@ -59,6 +80,7 @@ public:
             pairs_ = pairs_ && std::count_if(parameters_.association_active.begin() + static_cast<std::ptrdiff_t>(a * sites),
                 parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
+    mutable std::optional<DensityPartition> partition;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
@@ -134,6 +156,13 @@ private:
 PressurePoint at_density(const PressureSeries& series, double temperature, double pressure,
                          const std::vector<double>& composition, double density,
                          std::size_t& evaluations, DerivativeOrder order) {
+    auto* partition = series.partition ? &*series.partition : nullptr;
+    if (partition) if (const auto at = partition->samples.find(density); at != partition->samples.end()) return at->second;
+    if (partition && partition->active) {
+        if (partition->evaluations == DensityPartition::cap)
+            throw std::runtime_error("enumeration evaluation cap exhausted");
+        ++partition->evaluations;
+    }
     ++evaluations;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     const double scale = density * GAS_CONSTANT_J_PER_MOL_K * temperature;  // z - P/(rho R T), as recorded
@@ -143,8 +172,13 @@ PressurePoint at_density(const PressureSeries& series, double temperature, doubl
         if (!std::all_of(energy.c.begin(), energy.c.end(), [](double v) { return std::isfinite(v); }))
             throw std::runtime_error("nonfinite density derivatives");
         const double calculated = rt * (density - energy.c[1]);
-        return {calculated / scale - pressure / scale, calculated,
+        const PressurePoint point{calculated / scale - pressure / scale, calculated,
                 rt * (1.0 + 2.0 * energy.c[2] / (density * density)), floor};
+        if (partition && partition->active) {
+            if (!std::isfinite(point.residual) || !std::isfinite(point.slope)) throw std::runtime_error("nonfinite enumeration sample");
+            partition->samples.emplace(density, point);
+        }
+        return point;
     }
     const auto derivatives = series.model().evaluate(temperature, 1.0 / density, composition, order);
     if (!std::all_of(derivatives.gradient.begin(), derivatives.gradient.end(), [](double v) { return std::isfinite(v); })
@@ -258,10 +292,14 @@ void scan_cell(
     const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& scope, std::size_t& evaluations,
-    std::vector<DensityRoot>& roots
+    std::vector<DensityRoot>& roots, std::vector<std::pair<std::size_t, int>>* pattern = nullptr, std::size_t owner = 0
 ) {
+    std::size_t crossing_position = pattern ? pattern->size() : 0;
     if (low.slope <= 0.0 && high.slope <= 0.0) {
-        if (!(low.residual < 0.0 && high.residual > 0.0)) return;
+        if (pattern && low.residual < 0.0 && high.residual > 0.0)
+            throw std::runtime_error("enumeration negative-slope cell hides an upward crossing");
+        if (pattern && low.residual > 0.0 && high.residual < 0.0) pattern->emplace_back(owner, -1);
+        if (pattern || !(low.residual < 0.0 && high.residual > 0.0)) return;
         for (std::size_t i = 0;; ++i) {
             const double density = lower + policy::DENSITY_BISECTION_FRACTION.value * (upper - lower);
             if (i == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value) || !(density > lower && density < upper))
@@ -288,7 +326,7 @@ void scan_cell(
         // The stable side's pressure runs monotonically from its cell end toward the fold, so a
         // cell end already past the target leaves that side rootless without locating the fold.
         const double margin = model.solver_options().value(policy::density) * GAS_CONSTANT_J_PER_MOL_K * temperature * upper;
-        bool bracketed = stable_left ? low.pressure > pressure + margin : high.pressure < pressure - margin;
+        bool bracketed = !pattern && (stable_left ? low.pressure > pressure + margin : high.pressure < pressure - margin);
         for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
                  && !bracketed && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
             const double density = a + policy::DENSITY_BISECTION_FRACTION.value * (b - a);
@@ -300,7 +338,7 @@ void scan_cell(
             else { b = density; pb = point; }
             // P rises across the stable side: a stable point past the target already
             // brackets the unique root; only a rootless side needs the spinodal itself.
-            bracketed = point.slope > 0.0 && std::abs(point.residual) > model.solver_options().value(policy::density)
+            bracketed = !pattern && point.slope > 0.0 && std::abs(point.residual) > model.solver_options().value(policy::density)
                 && (stable_left ? low.residual < 0.0 : high.residual > 0.0) && (point.residual > 0.0) == stable_left;
         }
         if (!bracketed && pa.slope != 0.0 && pb.slope != 0.0 && std::nextafter(a, b) < b)
@@ -310,18 +348,24 @@ void scan_cell(
         const auto point = use_a ? pa : pb;
         if (std::abs(point.residual) <= model.solver_options().value(policy::density))
             throw std::runtime_error("density branch unresolved at spinodal pressure within residual tolerance");
+        if (pattern && low.slope != 0.0 && high.slope != 0.0) {
+            if (!stable_left && low.residual > 0.0 && point.residual < 0.0) pattern->emplace_back(owner, -1);
+            pattern->emplace_back(owner, stable_left ? -2 : 2);
+            if (stable_left && point.residual > 0.0 && high.residual < 0.0) pattern->emplace_back(owner, -1);
+            if (!stable_left) crossing_position = pattern->size();
+        }
         if (stable_left) { upper = density; high = point; }
         else { lower = density; low = point; }
     }
+    if (pattern && low.residual > 0.0 && high.residual < 0.0) pattern->emplace_back(owner, -1);
     if (low.residual < 0.0 && high.residual > 0.0) {
+        if (pattern) pattern->insert(pattern->begin() + static_cast<std::ptrdiff_t>(crossing_position), {owner, 1});
         scope.probe("density_bracket", {lower, upper, low.residual, high.residual});
         roots.push_back(refine(model, temperature, pressure, composition, lower, low,
             upper, high, scope, evaluations));
     }
 }
 
-// linked: the cell ending at this point has no skipped predecessor.
-struct ScanPoint final { double density; PressurePoint point; bool linked; };
 
 void search_slope(
     const PressureSeries& model, double temperature, double pressure,
@@ -377,6 +421,45 @@ void search_slope(
     }
 }
 
+std::vector<DensityRoot> partition_roots(
+    const PressureSeries& model, double temperature, double pressure, const std::vector<double>& composition,
+    const std::vector<ScanPoint>& points, core::Scope& scope, std::size_t& evaluations,
+    std::vector<std::pair<std::size_t, int>>* events = nullptr
+) {
+    std::vector<DensityRoot> roots;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        const auto& node = points[i];
+        if (i != 0 && points[i].linked) {
+            scan_cell(model, temperature, pressure, composition, points[i - 1].density,
+                      points[i - 1].point, points[i].density, points[i].point, scope, evaluations,
+                      roots, events, 2 * i - 1);
+        }
+        if (events && node.point.residual == 0.0) events->emplace_back(2 * i, node.point.slope > 0.0 ? 1 : -1);
+        if (events && node.point.slope == 0.0) {
+            if (std::abs(node.point.residual) <= model.solver_options().value(policy::density))
+                throw std::runtime_error("enumeration target unresolved at an exact spinodal");
+            events->emplace_back(2 * i, 4);
+        }
+        if (node.point.residual == 0.0 && node.point.slope > 0.0)
+            roots.push_back(refine(model, temperature, pressure, composition, node.density,
+                node.point, node.density, node.point, scope, evaluations));
+
+    }
+    const auto witness = std::find_if(points.begin(), points.end(), [](const auto& node) {
+        return std::isfinite(node.point.slope) && node.point.slope < 0.0;
+    });
+    if (witness != points.end())
+        for (auto& root : roots) root.negative_slope_density = witness->density;
+    return roots;
+}
+
+std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t intervals) {
+    std::vector<double> nodes;
+    for (std::size_t i = 0; i <= intervals; ++i)
+        nodes.push_back(std::exp(log_lower + static_cast<double>(i) / intervals * (log_upper - log_lower)));
+    return nodes;
+}
+
 // Deterministic log-density grid, then the cells. A loop with positive slopes at both ends
 // of its cell is invisible to the cells; with one mechanical loop P_rho has one interior
 // minimum, so a positive grid minimum of the slope is bracketed and searched by golden
@@ -386,15 +469,59 @@ std::vector<DensityRoot> scan_roots(
     const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, double log_lower, double log_upper,
     std::size_t intervals, core::Scope& scope, std::size_t& evaluations
-) {
+) try {
+    std::vector<DensityRoot> local;
+    if (model.partition) {
+        auto& part = *model.partition;
+        part.lower = std::max(std::exp(log_lower), part.lower); part.upper = std::min(std::exp(log_upper), part.upper);
+        part.active = true;
+        if (part.lower < part.upper) {
+            auto nodes = log_nodes(std::log(part.lower), std::log(part.upper), static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value));
+            nodes.front() = part.lower; nodes.back() = part.upper;
+            for (const auto& [rho, point] : part.samples) if (rho > part.lower && rho < part.upper) nodes.push_back(rho);
+            std::sort(nodes.begin(), nodes.end()); nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
+            std::vector<std::pair<std::size_t, int>> previous;
+            for (bool first = true;; first = false) {
+                const auto missing = std::count_if(nodes.begin(), nodes.end(), [&](double rho) {
+                    return part.samples.find(rho) == part.samples.end(); });
+                if (part.evaluations + missing > DensityPartition::cap)
+                    throw std::runtime_error("enumeration finer mesh cannot fit within evaluation cap");
+                std::vector<ScanPoint> points;
+                for (double rho : nodes) points.push_back({rho, at_density(model, temperature, pressure, composition, rho, evaluations, DerivativeOrder::PressureSlope), true});
+                std::vector<std::pair<std::size_t, int>> events;
+                part.intervals = nodes.size() - 1;
+                local = partition_roots(model, temperature, pressure, composition, points, scope, evaluations, &events);
+                part.stable = local.size();
+                if (std::any_of(local.begin(), local.end(), [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }))
+                    throw std::runtime_error("enumeration crossing has nonpositive pressure slope");
+                auto parents = events;
+                for (auto& event : parents) event.first = event.first % 2 == 0 ? event.first / 2 : 2 * (event.first / 4) + 1;
+                scope.probe("density_enumeration", {part.lower, part.upper, static_cast<double>(part.intervals), static_cast<double>(local.size()), static_cast<double>(part.evaluations)});
+                if (!first && parents == previous) break;
+                previous = std::move(events);
+                for (std::size_t i = nodes.size() - 1; i != 0; --i) {
+                    const double mid = std::exp(0.5 * (std::log(nodes[i - 1]) + std::log(nodes[i])));
+                    if (!(mid > nodes[i - 1] && mid < nodes[i])) throw std::runtime_error("enumeration mesh reached floating-point adjacency before agreement");
+                    nodes.insert(nodes.begin() + static_cast<std::ptrdiff_t>(i), mid);
+                }
+            }
+        }
+        part.active = false;
+    }
     std::vector<ScanPoint> points;
     std::string interruptions;
     bool linked = false;
     if (scope.diagnostics_on()) scope.probe("density_scan_input",
         {temperature, pressure, std::exp(log_lower), std::exp(log_upper), static_cast<double>(intervals)});
-    for (std::size_t index = 0; index <= intervals; ++index) {
-        const double density = std::exp(log_lower + static_cast<double>(index) / intervals
-                                        * (log_upper - log_lower));
+    auto nodes = log_nodes(log_lower, log_upper, intervals);
+    if (model.partition && model.partition->lower < model.partition->upper) {
+        nodes.insert(nodes.end(), {model.partition->lower, model.partition->upper});
+        std::sort(nodes.begin(), nodes.end()); nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
+    }
+    for (std::size_t index = 0; index < nodes.size(); ++index) {
+        const double density = nodes[index];
+        if (model.partition && density > model.partition->lower && density < model.partition->upper) continue;
+        if (model.partition && density == model.partition->upper) linked = false;
         try {
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
@@ -416,25 +543,18 @@ std::vector<DensityRoot> scan_roots(
     }
     if (!interruptions.empty())
         throw std::runtime_error("density scan interrupted by association: " + interruptions);
-    search_slope(model, temperature, pressure, composition, points, scope, evaluations);
-    std::vector<DensityRoot> roots;
-    for (std::size_t i = 0; i < points.size(); ++i) {
-        const auto& node = points[i];
-        if (node.point.residual == 0.0 && node.point.slope > 0.0)
-            roots.push_back(refine(model, temperature, pressure, composition, node.density,
-                node.point, node.density, node.point, scope, evaluations));
-        if (i != 0 && points[i].linked) {
-            scan_cell(model, temperature, pressure, composition, points[i - 1].density,
-                      points[i - 1].point, points[i].density, points[i].point, scope, evaluations,
-                      roots);
-        }
+    if (!model.partition) search_slope(model, temperature, pressure, composition, points, scope, evaluations);
+    auto roots = partition_roots(model, temperature, pressure, composition, points, scope, evaluations);
+    if (model.partition) {
+        // Boundary node roots are owned by the ordinary partition, interior roots by enumeration.
+        for (const auto& root : local) if (root.molar_density > model.partition->lower && root.molar_density < model.partition->upper) roots.push_back(root);
+        const auto witness = std::find_if(model.partition->samples.begin(), model.partition->samples.end(), [](const auto& sample) { return sample.second.slope < 0.0; });
+        if (witness != model.partition->samples.end()) for (auto& root : roots) root.negative_slope_density = witness->first;
     }
-    const auto witness = std::find_if(points.begin(), points.end(), [](const auto& node) {
-        return std::isfinite(node.point.slope) && node.point.slope < 0.0;
-    });
-    if (witness != points.end())
-        for (auto& root : roots) root.negative_slope_density = witness->density;
     return roots;
+} catch (const std::exception& error) {
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    throw;
 }
 
 // ------------------------------------------------------------- single-loop structure
@@ -445,14 +565,15 @@ struct Sample final {
     PressurePoint point;
     double curvature;
     std::vector<double> sites;  // site fractions' coefficients in volume (three per site): a neighbour's site-solve start
+    bool normal_conversion;
 };
 
-// A sample contradicts the single slope minimum, or a step left its budget: the caller scans instead.
+// Unresolved structure or an exhausted step budget: the caller scans instead.
 struct StructureBroken final {};
 
 // ALG-DENSITY's single mechanical loop, sampled: P_rho has one interior minimum rho_m, so P is concave below rho_m
 // (P_rhorho < 0, P_rho falling) and convex above it (P_rhorho > 0, P_rho rising). Each sample is checked against
-// that order; a contradiction throws StructureBroken. Tangents then bound P: from above on the concave side, from
+// that order; a resolved contradiction retains its local partition; both exits throw StructureBroken. Tangents bound P from above on the concave side, from
 // below on the convex side.
 class Isotherm final {
 public:
@@ -490,22 +611,26 @@ public:
         catch (const std::exception& error) { broken(error.what(), density); }
         const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature_, scale = density * rt, squared = density * density;
         const double calculated = rt * (density - energy.c[1]), avv = 2.0 * energy.c[2], avvv = 6.0 * energy.c[3];
-        Sample sample{density, {calculated / scale - pressure_ / scale, calculated, rt * (1.0 + avv / squared), floor},
-                      -rt * (avvv / (squared * squared) + 2.0 * avv / (squared * density)), std::move(sites)};
+        const double fourth = squared * squared, cubed = squared * density, u = avv / squared, one_plus_u = 1.0 + u;
+        const double v = avvv / fourth, twice_avv = 2.0 * avv, w = twice_avv / cubed, v_plus_w = v + w;
+        const std::array conversion{temperature_, density, rt, energy.c[2], energy.c[3], avv, avvv, squared, fourth, cubed,
+                                    u, one_plus_u, v, twice_avv, w, v_plus_w, rt * one_plus_u, -rt * v_plus_w};
+        Sample sample{density, {calculated / scale - pressure_ / scale, calculated, rt * one_plus_u, floor},
+                      -rt * v_plus_w, std::move(sites), std::all_of(conversion.begin(), conversion.end(), [](double value) { return std::isnormal(value); })};
         if (!std::isfinite(sample.point.residual) || !std::isfinite(sample.point.slope)
             || !std::isfinite(sample.curvature) || sample.curvature == 0.0 || sample.point.slope == 0.0) broken("degenerate sample", density);
         const auto at = std::upper_bound(samples_.begin(), samples_.end(), density,
                                          [](double d, const Sample& s) { return d < s.density; });
         // Concave samples lie below convex ones; P_rho falls across concave samples and rises across convex ones
-        // (compared only between samples a millionth apart, beyond the slope's rounding).
+        // The spacing filter controls slope inspection; order_failure owns rounding resolution.
         const bool concave = sample.curvature < 0.0;
         const auto apart = [&](const Sample& s) { return std::abs(s.density - density) > policy::DENSITY_SLOPE_SEPARATION.value * density; };
         for (auto it = at; it != samples_.end(); ++it)
             if ((concave && it->curvature < 0.0 && apart(*it) && !(it->point.slope < sample.point.slope))
-                || (!concave && (it->curvature < 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) broken("curvature or slope order", density);
+                || (!concave && (it->curvature < 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) order_failure(sample, *it, density, apart(*it));
         for (auto it = samples_.begin(); it != at; ++it)
             if ((!concave && it->curvature > 0.0 && apart(*it) && !(it->point.slope < sample.point.slope))
-                || (concave && (it->curvature > 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) broken("curvature or slope order", density);
+                || (concave && (it->curvature > 0.0 || (apart(*it) && !(it->point.slope > sample.point.slope))))) order_failure(*it, sample, density, apart(*it));
         samples_.insert(at, std::move(sample));
     }
     const std::vector<Sample>& samples() const { return samples_; }
@@ -561,6 +686,40 @@ public:
     }
 
 private:
+    [[noreturn]] void order_failure(const Sample& a, const Sample& b, double density, bool apart) const {
+        const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature_, g = policy::DENSITY_STRUCTURE_ROUNDOFF.value;
+        const auto radii = [&](const Sample& s) {
+            const double q = std::abs(s.point.slope), c = std::abs(s.curvature);
+            const double twice_rt = 2.0 * rt, slope_norm = twice_rt + q, sum = rt + q, four_sum = 4.0 * sum;
+            const double divided = four_sum / s.density, curvature_norm = c + divided;
+            const double eq = g * slope_norm, ec = g * curvature_norm;
+            const std::array operands{rt, q, c, twice_rt, slope_norm, sum, four_sum, divided, curvature_norm, eq, ec};
+            const bool normal = s.normal_conversion && std::all_of(operands.begin(), operands.end(), [](double value) { return std::isnormal(value); });
+            return std::tuple{eq, ec, normal};
+        };
+        const auto [eq_a, ec_a, normal_a] = radii(a);
+        const auto [eq_b, ec_b, normal_b] = radii(b);
+        const bool convex_a = a.curvature > ec_a, convex_b = b.curvature > ec_b;
+        const bool concave_a = a.curvature < -ec_a, concave_b = b.curvature < -ec_b;
+        const double reversal = concave_a && concave_b ? b.point.slope - a.point.slope : a.point.slope - b.point.slope;
+        const double radius_sum = eq_a + eq_b;
+        const bool curvature_order = convex_a && concave_b;
+        const bool slope_order = apart && ((concave_a && concave_b) || (convex_a && convex_b))
+            && std::isnormal(reversal) && std::isnormal(radius_sum) && reversal > radius_sum;
+        if (!(normal_a && normal_b && (curvature_order || slope_order))) broken("curvature or slope order", density);
+        scope_.probe("structured_broken", {density}, 0, "curvature or slope order");
+        std::ostringstream message;
+        message << std::setprecision(17) << "density structure contradiction: " << (curvature_order ? "curvature order" : "slope order")
+                << "; T=" << temperature_ << " K; P=" << pressure_ << " Pa; rho_a=" << a.density << "; rho_b=" << b.density
+                << " mol/m3; q_a=" << a.point.slope << "; q_b=" << b.point.slope << " Pa m3/mol; c_a=" << a.curvature
+                << "; c_b=" << b.curvature << " Pa m6/mol2; E_q_a=" << eq_a << "; E_q_b=" << eq_b
+                << " Pa m3/mol; E_c_a=" << ec_a << "; E_c_b=" << ec_b << " Pa m6/mol2";
+        series_.partition = DensityPartition{a.density, b.density, message.str(), {}};
+        for (const auto& sample : samples_) series_.partition->samples.emplace(sample.density, sample.point);
+        for (const auto& sample : {a, b}) series_.partition->samples.emplace(sample.density, sample.point);
+        throw StructureBroken{};
+    }
+
     const PressureSeries& series_;
     double temperature_, pressure_, lower_, upper_;
     std::size_t& evaluations_;
@@ -815,7 +974,7 @@ DensityRoot anchor(
     const PressureSeries& model, double temperature, double pressure,
     const std::vector<double>& composition, DensityBranch branch, double lower, double upper,
     double density, std::size_t& evaluations
-) {
+) try {
     core::Scope anchor_scope("density_anchor");
     const double window = policy::DENSITY_ANCHOR_LOG_WINDOW.value, log_anchor = std::log(density);
     const double local_lower = std::exp(std::max(std::log(lower), log_anchor - window));
@@ -853,12 +1012,12 @@ DensityRoot anchor(
                 ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
             history.contraction(), iteration + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
         };
-        if (anchor_record.residual <= anchor_record.criterion->value
-            && point.slope > 0.0) {
+        if (model.partition || (anchor_record.residual <= anchor_record.criterion->value
+            && point.slope > 0.0)) {
             // A positive edge slope certifies the local window only under the single slope minimum.
             // Every unproved case uses the inherited local scan, without restarting Newton.
             const auto certificate = [&]() -> std::optional<DensityRoot> {
-                if (!current || !std::isfinite(derivative) || derivative == 0.0) return std::nullopt;
+                if (model.partition || !current || !std::isfinite(derivative) || derivative == 0.0) return std::nullopt;
                 try {
                     const Sample edge = sample(current->curvature > 0.0 ? local_lower : local_upper);
                     if ((edge.curvature > 0.0) != (current->curvature > 0.0) || !(edge.point.slope > 0.0)) return std::nullopt;
@@ -887,6 +1046,7 @@ DensityRoot anchor(
                     [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
                 anchor_record.evaluations = evaluations;
                 if (roots.size() == 1) selected = roots.front();
+
             }
             if (selected) {
                 auto result = *selected;
@@ -921,6 +1081,9 @@ DensityRoot anchor(
     }
     anchor_scope.finish(anchor_record);
     throw core::ConvergenceFailure(anchor_record);
+} catch (const std::exception& error) {
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    throw;
 }
 
 }  // namespace
@@ -1151,7 +1314,7 @@ DensityBranch properties::density_side(DensityBranch branch, double density, std
 
 std::optional<std::string> properties::vapor_side(const State& state) {
     if (density_side(state.density_branch, state.molar_density, state.negative_slope_density) != DensityBranch::Vapor) return std::nullopt;
-    return "liquid branch absent: the sole stable root " + core::optional_number(state.molar_density)
+    return "liquid branch not admitted by the finite search: the sole stable root " + core::optional_number(state.molar_density)
         + " mol/m3 lies below the negative-slope sample " + core::optional_number(state.negative_slope_density) + " mol/m3";
 }
 
@@ -1219,7 +1382,7 @@ DensityRoot solve_density(
             });
             count = stable.size();
             // A sole root takes its own side's value from no samples, as the structured search returns it.
-            if (stable.size() == 1) {
+            if (stable.size() == 1 && !series.partition) {
                 for (const bool vapor : {true, false}) {
                     try {
                         Isotherm fresh = iso.empty();
@@ -1238,11 +1401,18 @@ DensityRoot solve_density(
                         }
                         break;
                     } catch (const StructureBroken&) {
+                        if (series.partition) {
+                            stable = scan_roots(series, temperature, pressure, mole_fractions, std::log(lower), std::log(upper),
+                                static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value), scope, evaluations);
+                            count = stable.size(); break;
+                        }
                     }
                 }
             }
         }
         scope.probe("stable_root_count", static_cast<double>(count));
+        if (series.partition && (stable.empty() || (count > 1 && branch == DensityBranch::Unspecified)))
+            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count));
         if (count > 1 && branch == DensityBranch::Unspecified)
             throw std::runtime_error("density root is ambiguous (stable count "
                                      + std::to_string(count) + ")");
@@ -1261,9 +1431,14 @@ DensityRoot solve_density(
                 : branch == DensityBranch::Vapor ? DensityBranch::Liquid : DensityBranch::Vapor;
         }
     }
+    if (series.partition) {
+        result.convergence.evaluations = evaluations;
+        if (sibling_root) sibling_root->convergence.evaluations = evaluations;
+    }
     scope.probe("density_root", result.molar_density);
     scope.finish(result.convergence);
     return result;
+
 }
 
 }  // namespace epcsaft

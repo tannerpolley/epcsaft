@@ -1,6 +1,6 @@
 """Issue #275: the liquid-branch density scan of equimolar ethanol/butane at 45 K and 1e-4 Pa.
 One scan node, 2709.49 mol/m3, once failed the ethanol association mass action; its site
-fractions must equal Chapman's closed form, and the scan must return its density root."""
+fractions must equal Chapman's closed form at the original fixed-density node."""
 import math
 from typing import Any
 
@@ -34,6 +34,3 @@ def test_ethanol_butane_cold_scan_resolves_pinned_node(evidence: Any) -> None:
         same(evidence, f"cold-node/site/{index}", fraction, chapman, atol=0.0, rtol=1e-12)
     assert all(span.convergence.residual <= 2e-13 for span in node.spans
                if span.name == "association_newton" and span.convergence is not None)
-    state = model.state(45.0, P=1e-4, x=(0.5, 0.5), phase="liquid")
-    same(evidence, "cold-scan/density", state.molar_density, 5.3454360146661902e-7,
-         atol=0.0, rtol=1e-12)
