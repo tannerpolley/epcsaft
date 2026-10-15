@@ -882,7 +882,8 @@ void liquid_reference_branch_evidence() {
     CHECK(ethane(310.0).status == epcsaft::NeutralReferenceStatus::Available);  // no sample: sole root kept
     const auto pure = epcsaft::reaction_reference(neutral, 300.0, 100.0,
         {0, {0.0, 1.0}, 1.0, {epcsaft::SpeciesReference::PureLiquid, epcsaft::SpeciesReference::PureLiquid}}, {1.0, -1.0}, {});
-    CHECK(pure.message == "pure reference species 1: liquid branch absent: the single stable root lies across the mechanical loop");
+    CHECK(pure.status == epcsaft::NeutralReferenceStatus::DensityUnavailable
+          && pure.message.find("pure reference species 1: liquid branch not established by the finite search") != std::string::npos);
     // Delivered-review case: 2A <=> B, identical ethane EOS species, both referenced to pure gas.
     auto identical_ethane = properties_support::parameters(2);
     identical_ethane.segment_count = {1.6069, 1.6069};

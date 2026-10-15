@@ -282,10 +282,114 @@ On a concave pressure interval, the pressure tangents bound pressure from above;
 on a convex interval they bound it from below. Their envelope can exclude the
 corresponding crossing only with the existing pressure separation. A negative
 slope is a loop witness. A positive intersection of tangents to the slope cannot
-exclude a negative dip: this unresolved exit, any structure contradiction,
-degenerate or failed sample, and an exhausted budget hand the request to the
-inherited scan below. The original evaluation failure remains in the observation;
-the scan retains its association-connectivity and failure rules.
+exclude a negative dip. This unresolved exit, unresolved order comparisons,
+degenerate or failed samples, and an exhausted structured-search budget hand the
+request to the inherited scan. A resolved sampled contradiction instead abandons
+the shape inference and inserts a finite local subdivision into that scan.
+The original evaluation failure remains in the observation; the scan retains
+its association-connectivity and failure rules.
+
+For density-ordered samples $a,b$, let $r=RT$, $q=P_\rho$ and $c=P_{\rho\rho}$.
+The single `DENSITY_STRUCTURE_ROUNDOFF` policy owns
+$g=16\epsilon/(1-16\epsilon)$, using binary64 epsilon conservatively in place of
+unit roundoff. At an existing order exit, compute
+
+$$E_q=g(2r+|q|),\qquad E_c=g\left(|c|+\frac{4(r+|q|)}{\rho}\right).$$
+
+A contradiction is resolved when $c_a>E_{c,a}$ and $c_b<-E_{c,b}$, or when both
+curvatures have the same resolved sign and the existing density-spacing filter
+applies: $q_b-q_a>E_{q,a}+E_{q,b}$ on the concave side, or
+$q_a-q_b>E_{q,a}+E_{q,b}$ on the convex side. Equality, overlapping intervals,
+unresolved curvature signs and arithmetic outside the finite normal range
+remain recoverable at that same exit; structured inference does not continue.
+The unchanged `DENSITY_SLOPE_SEPARATION` controls slope inspection, not resolution.
+
+With $a_2=2\,\mathrm{energy.c[2]}$, $a_3=6\,\mathrm{energy.c[3]}$,
+$u=a_2/\rho^2$, $v=a_3/\rho^4$ and $w=2a_2/\rho^3$, the existing conversion is
+$q=r(1+u)$, $c=-r(v+w)$. Its cancellation-aware norms satisfy
+$r(1+|u|)\le2r+|q|$ and
+$r(|v|+|w|)\le|c|+2r|w|\le|c|+4(r+|q|)/\rho$.
+The rounding-factor count reserves nine for conversion, five for replacing and
+evaluating norms, and two for comparison. The arithmetic model and product
+bound $\gamma_n=nu/(1-nu)$ follow
+[Higham (1993), pp. 784–785, Eq. (1.2) and the bound preceding Eq. (2.3)](https://nhigham.com/wp-content/uploads/2023/10/high93s.pdf);
+these norm inequalities and their application here are the #513 derivation.
+The lead's 2026-10-15 build amendment permits one `Sample` boolean, set from the
+existing conversion intermediates only when all are finite and normal. Only
+order-exit classification reads it; false keeps the recoverable scan fallback.
+No coefficients are reconstructed and no additional pressure evaluation occurs.
+The radii concern local assembly conditional on the returned Taylor
+coefficients; they do not enclose complete EOS or implicit association error.
+
+After a resolved contradiction, retain its density-ordered sample pair and all
+already evaluated samples. Intersect that interval with the admitted cold domain
+or the anchor's original local window. An empty intersection still abandons the
+shape inference and scans the unchanged window. Otherwise start with
+`DENSITY_BRACKET_INTERVALS` equal log-density cells, including the exact interval
+ends and existing samples, then bisect each cell geometrically. Old nodes are
+reused exactly. No enumeration cache, subdivision or pressure evaluation is
+added before a resolved contradiction.
+
+Evaluate all local mesh nodes before processing cells. Reuse the same scan-node
+ownership, fold bisection and safeguarded Newton refinement. Local fold bisection
+finishes the sampled slope transition, retaining its final endpoints and stable
+side, rather than stopping after a pressure bracket. Retain signed pressure
+crossings, signed slope transitions and exact-node owners in density order;
+negative-slope pressure crossings are evidence only. A negative-slope cell that
+rises through the target remains unresolved. Exact positive-slope node roots and
+strict upward crossings use the existing closure criterion. Do not use the
+single-minimum quadratic exclusion or the exact-midpoint shortcut locally.
+
+Require agreement on two successive nested partitions, first possible at the
+40/80-cell levels before inserted existing samples. Each fine crossing or fold
+must have the same coarse parent cell or exact boundary owner, with the same
+ordered signs and multiplicity. Counts or nearby root densities alone do not
+establish identity. If the partitions disagree, subdivide again. A resolved
+zero-crossing interval may agree. Keep the ordinary cold/local mesh outside the
+interval, insert the exact interval ends, and process each complementary cell
+once. Boundary-node roots have one owner; approximate density merging is not
+used. Keep a negative-slope witness from the combined finite search.
+
+Enumeration has a chosen aggregate cap of
+`DENSITY_BRACKET_INTERVALS * DENSITY_MAX_ITERATIONS` = 2,400 **new pressure
+evaluations**, checked before every uncached evaluation in the shared evaluator,
+including fold and Newton helpers and unsuccessful attempts. A finer mesh is not
+started unless all missing nodes can fit in the remainder. Existing per-bracket
+limits also apply. This resource cap is composed from existing policy values;
+it is neither a convergence guarantee nor a bound on pre-contradiction work,
+complementary scanning, association iterations or wall time.
+
+Unresolved helper work, cap exhaustion, adjacency before agreement or pressure
+closure, nonfinite evaluations, association interruptions, tangent-pressure
+ambiguity, or nonunique anchor admission raises `DensityStructureError`. It
+retains the original T/P/sample operands and rounding radii, intersected interval,
+last attempted cell count, resolved stable count, enumeration evaluations and
+remaining cause. A successful local partition never erases an unresolved
+complement. There is no cold retry or conditional single-loop polishing after
+contradicted enumeration. Ordinary rows retain the sole-root polishing path.
+
+Cold Vapor and Liquid requests select the lowest and highest resolved stable
+roots; multiple stable roots make Unspecified ambiguous. A sole root retains
+count one and Unspecified. A requested actual sibling contains the opposite
+resolved root and its own convergence record. An anchor requires exactly one
+stable root in its whole original window, keeps its requested branch and has no
+global root count. Required species/reference admission retains its existing
+witness decisions, stated as admission by a finite search rather than proof of
+branch absence.
+
+This is finite-search numerical resolution. Two nested meshes can both miss an
+arbitrarily narrow pair of folds or crossings; exact point derivatives do not
+bound derivatives between samples. Root counts describe the resolved stable
+roots within the admitted bounds and inherited complementary scan. They do not
+certify all EOS roots, Gibbs stability, composition stability, or physical phase
+validity for cold decane or any additional phase.
+
+Required shared density closure, the first neutral-reference anchor, a
+parameter-observation column and a required boundary-phase vapor anchor retain
+the complete typed refusal before any cold retry. Pressure-action batches carry
+one native boolean derived from the exception's C++ type beside the complete
+cause. Optional initializers and the Newton attempt retain their existing
+fallback and mandatory final admission.
 
 Under the same conditional shape, an anchored root's window edge facing the
 slope minimum certifies positive slope throughout the window when that edge
@@ -296,12 +400,13 @@ admission and corrected-density checks still apply. The existence count and an
 actually located sibling are separate: an existence-only result never invents
 another root density. Sole-root metadata and the scan's negative-slope witness
 retain their existing meanings. Finite sampling cannot certify arbitrary
-multi-loop completeness, including cold n-decane outside the assumed shape.
+multi-loop completeness; resolved contradictions use the local subdivision above.
 
 A neutral reference trace at system pressure first tries the compile-time
 pure-solvent liquid density as an anchor for its pure-solvent point: the
-anchored solve must find a locally unique stable root in its window. Any anchored
-failure falls back to the cold scan and its branch admission; later trace points
+anchored solve must find a locally unique stable root in its window. An anchored
+failure other than `DensityStructureError` falls back to the cold scan and its
+branch admission; later trace points
 anchor on the previous point as before. Like those points, an anchored success is
 admitted by local uniqueness and skips the global scan and its failure checks.
 
@@ -334,7 +439,7 @@ trim the cell to its positive-slope side and refine each strict pressure
 select by declared branch policy and return the stable-root count
 ```
 
-The supported shape is one mechanical loop per isotherm, with one interior
+Outside a resolved contradicted interval, the inherited scan assumes one mechanical loop per isotherm, with one interior
 minimum of `P_rho`. A second high-density loop can leave the stable liquid
 interval inside one cell whose end slopes are both negative, as for cold
 propylene (#391). When that cell's pressure rises through the target, the mean

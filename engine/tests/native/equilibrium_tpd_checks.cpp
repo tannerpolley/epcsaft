@@ -101,7 +101,7 @@ void check_phase_removal_inventory() {
     std::string cause;
     try { (void)remove_discovery_phase(system, point); } catch (const std::exception& error) { cause = error.what(); }
     tpd_compare("removal/contradicted-recipient-refused",
-        cause.find("liquid branch absent: the sole stable root 0.04009108") != std::string::npos
+        cause.find("liquid branch not admitted by the finite search: the sole stable root 0.04009108") != std::string::npos
             && cause.find("below the negative-slope sample 7087.88") != std::string::npos ? 1.0 : 0.0, 1.0, 0.0,
         recording_support::fields({recording_support::field("dropped", system.problem.phases[1].name),
             recording_support::field("cause", cause)}));
@@ -695,7 +695,7 @@ void check_gross_2002_cooling_onset() {
     tpd_compare("gross-2002-cooling-onset/T-475", metastable.temperature.at(0), 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
     CHECK(!refused.success); CHECK(refused.temperature.empty() && refused.molar_densities.empty());
-    CHECK(refused.message.find("vapor branch absent: the sole stable root 10325.2153") != std::string::npos);
+    CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root 10325.2153") != std::string::npos);
 }
 
 // #423: a sole cold root lies on the other side of its negative-slope sample from the declared phase.
@@ -717,8 +717,8 @@ void check_density_branch_admission() {
         const auto result = solve_equilibrium(model, p);
         CHECK(!result.success); CHECK(result.molar_densities.empty()); CHECK(result.message.find(cause) != std::string::npos);
     };
-    refused(water_pentanol, liquid, PhaseKind::Vapor, "vapor branch absent: the sole stable root 35911.87");
-    refused(methane_ethane, gas, PhaseKind::Liquid, "liquid branch absent: the sole stable root 0.04009108");
+    refused(water_pentanol, liquid, PhaseKind::Vapor, "vapor branch not admitted by the finite search: the sole stable root 35911.87");
+    refused(methane_ethane, gas, PhaseKind::Liquid, "liquid branch not admitted by the finite search: the sole stable root 0.04009108");
     const auto discover = [](const HelmholtzModel& model, EquilibriumProblem p) {
         auto trial = equilibrium_support::phase("trial-V", PhaseKind::Vapor); trial.support = {0, 1};
         StabilityOptions options; options.trials = std::vector<PhaseSpec>{trial}; options.declaration_budget = 4;
@@ -750,7 +750,7 @@ void check_density_branch_admission() {
                 1e-10 * 0.11623984312000767, {}, "mol");
     CHECK(donor->resolved_descent && donor->split_checks.size() == 3);
     CHECK(donor->split_checks[0].at("admitted") == 0.0 && donor->split_checks[0].at("component_error_mol") <= 1e-12);
-    CHECK(donor->message.find("finite split: liquid branch absent: the sole stable root 2124.87") != std::string::npos
+    CHECK(donor->message.find("finite split: liquid branch not admitted by the finite search: the sole stable root 2124.87") != std::string::npos
           && donor->message.find("below the negative-slope sample 8026.59") != std::string::npos);
 }
 

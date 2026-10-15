@@ -1003,6 +1003,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             const auto unanchored = [&] { return solve_density(*compiled.model, t, p, composition, branch, std::nullopt); };
             if (start->vapor_density > 0.0 && branch == DensityBranch::Vapor) try {  // the phi^V estimate's root continues
                 root = solve_density(*compiled.model, t, p, composition, branch, start->vapor_density);
+            } catch (const DensityStructureError&) { throw;
             } catch (const std::exception&) { root = unanchored(); }
             else root = unanchored();
         } catch (const std::runtime_error& error) {
@@ -1081,7 +1082,7 @@ DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const
     const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
     const bool liquid = side == DensityBranch::Liquid;
     if (side != DensityBranch::Unspecified && side != branch)
-        throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch absent: the sole stable root "
+        throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch not admitted by the finite search: the sole stable root "
             + core::optional_number(root.molar_density) + " mol/m3 lies " + (liquid ? "above" : "below")
             + " the negative-slope sample " + core::optional_number(root.negative_slope_density) + " mol/m3");
     return root;

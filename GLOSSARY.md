@@ -47,8 +47,8 @@ A recorded identity of parameter, topology or installed wheel contents; not scie
 Source: [packet requirements](data/docs/packet-contract.md) and root `AGENTS.md`
 
 **Typed failure**:
-An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value.
-Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination), fix before a negative disposition
+An unavailable result carrying a specific cause after diagnosis. A finite density search that cannot establish the requested branch after a resolved sampled contradiction retains its cause without asserting physical nonexistence. No physical value is invented.
+Source: [ALG-TERMINATION](engine/docs/science/algorithms.md#alg-termination), fix before a negative disposition; [ALG-DENSITY](engine/docs/science/algorithms.md#alg-density).
 
 **Claim boundary**:
 Observable, domain, evidence and uncertainty to which a scientific conclusion applies.

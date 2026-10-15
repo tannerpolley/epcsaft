@@ -244,14 +244,14 @@ void p2_density_series() {
     }
 }
 
-// The inherited scan is deliberately incomplete for this out-of-shape isotherm.
+// The finer native diagnostic resolves two positive-slope roots on this isotherm.
 void p2_decane_fallback() {
     auto parameters=properties_support::parameters(1);
     parameters.segment_count={4.6627}; parameters.sigma_constant={3.8384};
     parameters.dispersion_energy_over_k={243.87}; parameters.molar_mass_kg_per_mol={0.142286};
     epcsaft::HelmholtzModel model(parameters);
     const std::vector<double> composition{1.0};
-    constexpr double reference=0.9036845021232373, dense_reference=6174.391235069097;
+    constexpr double reference=0.9036845021232383, dense_reference=6174.3912350690825;
     CHECK(model.state(135.0,dense_reference,composition).pressure_density_derivative>0.0);
     for(const auto branch : {epcsaft::DensityBranch::Vapor,epcsaft::DensityBranch::Liquid}) {
         for (const bool request_sibling : {false, true}) {
@@ -261,19 +261,45 @@ void p2_decane_fallback() {
             const auto trace=capture.take();
             bool fallback=false;
             for(const auto& e:trace.events) fallback=fallback||(std::string(e.name)=="structured_broken"&&e.reason=="curvature or slope order");
-            const bool ok=close(root.molar_density,reference,1e-10)&&root.stable_root_count==1
-                &&root.branch==epcsaft::DensityBranch::Unspecified
-                &&(!request_sibling || (sibling.branch==root.branch && close(sibling.molar_density,reference,1e-10)))&&fallback;
+            const double expected = branch == epcsaft::DensityBranch::Vapor ? reference : dense_reference;
+            const double other = branch == epcsaft::DensityBranch::Vapor ? dense_reference : reference;
+            const bool ok=close(root.molar_density,expected,1e-10)&&root.stable_root_count==2
+                &&root.branch==branch && root.pressure_density_derivative > 0.0
+                &&(!request_sibling || (sibling.branch!=root.branch && sibling.stable_root_count==2
+                    && sibling.pressure_density_derivative > 0.0 && close(sibling.molar_density,other,1e-10)))&&fallback;
             recording_support::compare(branch==epcsaft::DensityBranch::Vapor
                     ? (request_sibling ? "decane/vapor-sibling" : "decane/vapor")
                     : (request_sibling ? "decane/liquid-sibling" : "decane/liquid"),
-                "molar_density","mol/m3",root.molar_density,reference,recording_support::fields({
+                "molar_density","mol/m3",root.molar_density,expected,recording_support::fields({
                     model_inputs(parameters,135.0,1.0/root.molar_density,composition),recording_support::field("P_star",1000.0),
                     recording_support::field("dense_diagnostic_root",dense_reference),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
                     recording_support::field("fallback",fallback), recording_support::field("request_sibling",request_sibling)}),"Relationship","current-main-scan",
-                "both requests preserve the inherited dilute sole root after a structure contradiction", "reference_or_one",0.0,1e-10,ok,
-                "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","scan-selected sole root","case");
+                "both branches and the actual sibling recover the diagnostic roots", "reference_or_one",0.0,1e-10,ok,
+                "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","resolved positive-slope roots","case");
         }
+    }
+    std::string cause;
+    try { epcsaft::solve_density(model,135.0,1000.0,composition,epcsaft::DensityBranch::Unspecified,std::nullopt); }
+    catch (const epcsaft::DensityStructureError& error) { cause = error.what(); }
+    CHECK(cause.find("ambiguous") != std::string::npos);
+    const auto batch = model.pressure_actions(135.0,1000.0,composition,epcsaft::DensityBranch::Unspecified, {},
+        {epcsaft::PressureActionDirection{0.0,1.0,{0.0},{}}});
+    CHECK(batch.density_structure_refused && batch.density_status == epcsaft::PropertyActionStatus::DensityUnavailable
+        && !batch.molar_density && batch.density_message == cause);
+
+    // #513 R1: the refined crossing can publish a nonzero-residual interval endpoint.
+    constexpr double endpoint_pressure = 118697451.59547403, endpoint_reference = 6744.38451784218;
+    for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
+        const auto root = epcsaft::solve_density(model, 135.0, endpoint_pressure, composition, branch, std::nullopt);
+        recording_support::compare(branch == epcsaft::DensityBranch::Vapor ? "decane/endpoint-vapor" : "decane/endpoint-liquid",
+            "molar_density", "mol/m3", root.molar_density, endpoint_reference,
+            recording_support::fields({model_inputs(parameters, 135.0, 1.0 / root.molar_density, composition),
+                recording_support::field("P_star", endpoint_pressure), recording_support::field("stable_root_count", root.stable_root_count.value_or(0))}),
+            "Relationship", "native-4096-and-16384-cell-diagnostics", "the resolved crossing survives the local and ordinary root merge",
+            "reference_or_one", 0.0, 1e-10, close(root.molar_density, endpoint_reference, 1e-10)
+                && root.stable_root_count == 1 && root.branch == epcsaft::DensityBranch::Unspecified
+                && root.pressure_density_derivative > 0.0,
+            "p2-decane", "endpoint", "rho", "T,P,x,branch", "one positive-slope root", "case");
     }
 }
 

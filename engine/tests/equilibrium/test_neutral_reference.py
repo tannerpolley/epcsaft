@@ -101,7 +101,7 @@ def test_pure_gas_reference_refuses_compressed_liquid_ethane() -> None:
                       reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
                           math.log(0.3), 0.0, 0.0, 0.0, 180.0, 170.0, 200.0, "manufactured-compressed-liquid"),
                           reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))])
-    with pytest.raises(_core.ParameterError, match="pure reference species 1: vapor branch absent"):
+    with pytest.raises(_core.ParameterError, match="pure reference species 1: vapor branch not established by the finite search"):
         solve_equilibrium(model, problem)
 
 

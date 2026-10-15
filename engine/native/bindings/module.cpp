@@ -1,5 +1,6 @@
 #include "core/convergence.hpp"
 #include "core/declared.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include <nanobind/nanobind.h>
 
@@ -18,6 +19,7 @@ void register_regression(nb::module_& module);
 NB_MODULE(_core, module) {
     nb::exception<std::invalid_argument>(module, "ParameterError", PyExc_ValueError);
     nb::exception<std::runtime_error>(module, "EosError", PyExc_RuntimeError);
+    nb::exception<epcsaft::DensityStructureError>(module, "DensityStructureError", module.attr("EosError").ptr());
     nb::exception<epcsaft::core::ConvergenceFailure>(module, "ConvergenceError", module.attr("EosError").ptr());
     nb::exception<epcsaft::core::DeclarationError>(module, "DeclarationError", module.attr("ParameterError").ptr());
     register_eos(module);
