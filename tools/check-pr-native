@@ -81,8 +81,11 @@ def main():
         checks = dict(current, base=base, checks=args.checks, full=args.full)
         pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
         suffix = output(str(python), '-c', 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
+        package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
         images = [build / ('_core' + suffix)] + [build / name for name in ('libepcsaft_native.so', 'libepcsaft_asl.so', 'compile_commands.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')]
-        intact = (root / 'build.sha256').exists() and (root / 'build.sha256').read_text() == digest(images)
+        linked = all((package / library.name).is_symlink() and (package / library.name).resolve() == library
+                     for library in images[:3])
+        intact = linked and (root / 'build.sha256').exists() and (root / 'build.sha256').read_text() == digest(images + list(package.rglob('*.py')))
         if prepared == current and intact and pass_file.exists():
             print(f'reused passing checks: {pass_file}', flush=True)
             return
@@ -101,7 +104,6 @@ def main():
         current = identity()
         prepared_file.write_text(json.dumps(current, indent=2))
         run('meson', 'install', '-C', str(build), '--no-rebuild', env=env)
-        package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
         for library in [build / ('_core' + suffix), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']:
             (package / library.name).unlink(missing_ok=True)
             (package / library.name).symlink_to(library)
@@ -112,7 +114,7 @@ def main():
         results = root / 'results' / pass_file.stem
         results.mkdir(parents=True, exist_ok=True)
         env['EPCSAFT_GATE_RESULTS'] = str(results)
-        (root / 'build.sha256').write_text(digest(images))
+        (root / 'build.sha256').write_text(digest(images + list(package.rglob('*.py'))))
         for check in args.checks.split(','):
             passed_check = results / f'{check}.passed'
             if intact and passed_check.exists():
