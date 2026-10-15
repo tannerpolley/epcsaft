@@ -260,6 +260,7 @@ struct RowSeries final {
 void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>& support);
 
 struct CompiledSystem final {
+    std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
     std::vector<double> n_feed;
@@ -394,9 +395,11 @@ struct CriticalRecord final {
     std::size_t rank = 0;
 };
 
+struct OptimizerState;
 struct EquilibriumResult final {
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file;
+    std::shared_ptr<const OptimizerState> optimizer_state;
     const HelmholtzModel* model_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
@@ -490,7 +493,8 @@ EquilibriumResult solve_equilibrium(
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
-                                 core::Scope* outer = nullptr, const DriverLimits* limits = nullptr);
+                                 core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
+                                 std::shared_ptr<const OptimizerState> warm = {});
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

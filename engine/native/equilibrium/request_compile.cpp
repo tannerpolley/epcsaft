@@ -15,6 +15,25 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+std::vector<double> CompiledSystem::optimizer_identity() const {
+    const auto& c = *this;
+    const auto& p = c.model->parameters();
+    std::vector<double> id;
+    const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
+    append(p.charge_number); append(p.molar_mass_kg_per_mol); append(p.site_component);
+    append(p.site_multiplicity); append(p.association_active); append(p.sigma_term_component);
+    append(p.permittivity_term_component); append(p.permittivity_term_power);
+    append(p.form_identity());
+    append(std::vector<std::size_t>{p.component_count(), c.primal_size, c.rank, c.charge_row_count, c.mode_count,
+                                   c.free_intensive_count, c.pinned_count});
+    id.push_back(c.feasibility_cell()); id.push_back(c.log_packing_unbounded()); id.push_back(c.problem.critical.has_value());
+    id.push_back(c.problem.envelope ? static_cast<int>(c.problem.envelope->kind) : -1);
+    id.push_back(c.problem.envelope ? c.problem.envelope->component : 0);
+    for (const auto& phase : c.problem.phases) append(phase.support);
+    for (const auto& row : c.rows) { id.push_back(static_cast<int>(row.kind)); id.push_back(row.phase); id.push_back(row.index); }
+    return id;
+}
+
 namespace {
 
 std::vector<Layout> layouts(const CompiledSystem& compiled) {

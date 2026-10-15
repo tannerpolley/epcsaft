@@ -71,6 +71,12 @@ struct FixedParameters {
     std::vector<double> dipole_moment_debye;
     std::vector<double> dipole_count;
 
+    std::vector<int> form_identity() const {
+        return {electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,
+                ionic_dispersion.declared() ? static_cast<int>(ionic_dispersion.require("dispersion")) : 0,
+                permittivity_form.declared() ? static_cast<int>(permittivity_form.require("permittivity")) : 0};
+    }
+
 };
 
 // Active parameter families; topology and source conventions remain fixed.
