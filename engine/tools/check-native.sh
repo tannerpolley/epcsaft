@@ -16,7 +16,7 @@ export PATH="$run_root/venv/bin:$PATH"
 # --changed [base] checks only the native translation units changed since base (default: the merge base
 # with origin/main) or including a changed file, by the lint build's own dependency records. Every unit is
 # checked with no argument, after a change to any .clang-tidy, a Meson file, the subprojects, the Python
-# environment files or this script, and while no full sweep has passed with the current toolchain.
+# environment files, and while no full sweep has passed with the current toolchain.
 all_units='engine/(native|tests/native)/.*\.cpp$'
 selective=false
 if [[ "${1:-}" == --changed ]]; then
@@ -28,7 +28,7 @@ if [[ "${1:-}" == --changed ]]; then
     untracked="$(git ls-files --full-name --others --exclude-standard -- :/)" \
         || { echo "--changed: listing untracked files failed" >&2; exit 1; }
     changed="$changed"$'\n'"$untracked"
-    if grep -Eq '(^|/)\.clang-tidy$|^engine/((.*/)?meson(\.build|\.options|_options\.txt)|build/subprojects/.*|tools/check-native\.sh)$|^((engine/)?pyproject\.toml|uv\.lock|\.codex/environments/.*)$' <<<"$changed"; then
+    if grep -Eq '(^|/)\.clang-tidy$|^engine/((.*/)?meson(\.build|\.options|_options\.txt)|build/subprojects/.*)$|^((engine/)?pyproject\.toml|uv\.lock|\.codex/environments/.*)$' <<<"$changed"; then
         echo "lint configuration, build or environment files changed since $base: full sweep"
     else
         selective=true
@@ -48,9 +48,23 @@ mapfile -t objects <<<"$object_list"
 deps="$(ninja -C "$build_root" -t deps "${objects[@]}")" || { echo "reading Ninja dependency records failed" >&2; exit 1; }
 current="$(grep -c ' (VALID)$' <<<"$deps" || true)"
 ((current == ${#objects[@]})) || { echo "$current current dependency records for ${#objects[@]} native units" >&2; exit 1; }
-# The toolchain includes the Clang binaries and every consumed header, including downloaded subprojects;
-# a marker records that a full sweep passed with it.
-toolchain="$(python -c 'import hashlib,json,sys; d=json.load(open(sys.argv[1])); d.pop("head"); print(hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest())' "$run_root/prepared.json")"
+# Sweep identity excludes tracked inputs and the generated HiGHS header embedding the Git revision.
+# The complete compile-input identity still owns prepared-pass invalidation.
+toolchain="$(python - "$run_root" <<'IDENTITY'
+import hashlib, json, pathlib, runpy, subprocess, sys
+root = pathlib.Path(sys.argv[1])
+source = root / 'source'
+tracked = {(source / path).resolve() for path in subprocess.check_output(
+    ['git', 'ls-files', '-z'], cwd=source, text=True).split('\0') if path}
+revision_header = root / 'meson/build/subprojects/HiGHS-1.15.1/highs/HConfig.h'
+external = [pathlib.Path(path) for path in json.loads((root / 'external-headers.json').read_text())]
+digest = runpy.run_path(str(source / 'tools/check-pr-native'))['digest']
+identity = json.loads((root / 'prepared.json').read_text())
+identity.pop('head')
+identity['external'] = digest(path for path in external if path not in tracked and path != revision_header)
+print(hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest())
+IDENTITY
+)"
 swept="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/clang-tidy-swept/$toolchain"
 if [[ "$selective" == true && ! -f "$swept" ]]; then
     echo "no full sweep has passed with toolchain $toolchain: full sweep"
