@@ -527,6 +527,25 @@ void properties_p2() {
     const auto liquid_root = epcsaft::solve_density(
         ethane, temperature, pressure, composition, epcsaft::DensityBranch::Liquid, std::nullopt
     );
+    epcsaft::DensityRoot sibling;
+    const auto paired_vapor = epcsaft::solve_density(
+        ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, std::nullopt, &sibling
+    );
+    const auto sibling_state = ethane.state(temperature, sibling.molar_density, composition);
+    const double sibling_residual = std::abs(sibling_state.pressure - pressure)
+        / (sibling.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature);
+    const bool sibling_refined = close(paired_vapor.molar_density, vapor_root.molar_density, 1e-10)
+        && close(sibling.molar_density, liquid_root.molar_density, 1e-10)
+        && sibling.branch == epcsaft::DensityBranch::Liquid && sibling.stable_root_count == 2
+        && paired_vapor.branch == epcsaft::DensityBranch::Vapor && paired_vapor.stable_root_count == 2
+        && sibling_state.pressure_density_derivative > 0.0 && sibling_residual <= 1e-12;
+    recording_support::compare("root-sibling/liquid", "molar_density", "mol/m3",
+        sibling.molar_density, liquid_root.molar_density, recording_support::fields({
+            model_inputs(ethane.parameters(), temperature, 1.0 / sibling.molar_density, composition),
+            recording_support::field("P_star", pressure), recording_support::field("reduced_residual", sibling_residual)}),
+        "Relationship", "pressure-closure", "an actual sibling is the refined opposite stable root",
+        "reference_or_one", 0.0, 1e-10, sibling_refined, "p2-root-sibling", "liquid", "rho", "T,P,x,branch",
+        "rho_sibling=rho_liquid", "case");
     const auto vapor_state = ethane.state_at_pressure(
         temperature, pressure, composition, epcsaft::DensityBranch::Vapor
     );

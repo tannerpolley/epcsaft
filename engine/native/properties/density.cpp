@@ -676,6 +676,7 @@ SideRoot vapor_side(Isotherm& iso, double start, bool locate) {
 }
 
 // The convex side mirrored: its stable root is the up-crossing above its pressure minimum, the largest stable root.
+// Without full location, retain a stable convex bracket as existence evidence, never a published root density.
 SideRoot liquid_side(Isotherm& iso, double start, bool locate) {
     for (;;) {
         const auto& samples = iso.samples();
@@ -686,9 +687,10 @@ SideRoot liquid_side(Isotherm& iso, double start, bool locate) {
         for (auto it = samples.rbegin(); it != samples.rend(); ++it)
             if (it->point.residual > 0.0 && it->curvature > 0.0 && it->point.slope > 0.0 && (!below || it->density > below->density)) above = &*it;
         if (below && below->point.residual == 0.0 && below->point.slope > 0.0) return {true, decided(iso, *below), *below};
-        if (below && !locate) return {true, decided(iso, *below), std::nullopt};
         double x = start;
         if (below && above) {
+            if (!locate && below->point.slope > 0.0 && below->curvature > 0.0)
+                return {true, decided(iso, *below), *above};
             const auto next = converge(iso, *below, *above);
             if (!next) return {true, decided(iso, *below), *above};
             x = *next;
@@ -700,9 +702,7 @@ SideRoot liquid_side(Isotherm& iso, double start, bool locate) {
             if (bound > iso.pressure() + tolerance_pressure(iso, trough)) return {};
             if (!above) x = 0.5 * (samples.back().density + iso.upper());
             // P_rho grows steeply above the liquid spinodal, so its Newton step creeps: no further than the log midpoint.
-            else x = inside(iso, locate ? std::max(approach(iso, *above, -1.0), trough)
-                                        : std::min(above->density - above->point.slope / above->curvature,
-                                                   std::sqrt(begin * above->density)), begin, above->density);
+            else x = inside(iso, std::max(approach(iso, *above, -1.0), trough), begin, above->density);
         }
         iso.at(x);
     }
@@ -787,11 +787,14 @@ std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, b
             if (!iso.witness()) iso.at(loop_start);
         };
         // Every request checks the liquid structure first, including vapor requests.
-        result.liquid = liquid_side(iso, liquid_start, true);
+        const bool locate_liquid = branch != DensityBranch::Vapor || sibling;
+        result.liquid = liquid_side(iso, liquid_start, locate_liquid);
         loop_sample();
         const bool locate_vapor = branch != DensityBranch::Liquid || sibling;
         result.vapor = vapor_side(iso, locate_vapor ? vapor_start
             : std::min(2.0 * ideal, structured_start(iso, 0.037)), locate_vapor);
+        if (!result.vapor.exists && result.liquid.exists && !locate_liquid)
+            result.liquid = liquid_side(iso, liquid_start, true);
         if (result.vapor.exists && !result.liquid.exists) {
             Isotherm fresh = iso.empty();
             result.vapor = vapor_side(fresh, vapor_start, true);
