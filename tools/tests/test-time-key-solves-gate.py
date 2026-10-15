@@ -20,8 +20,8 @@ def rows(counts_b=(10, 15, 11), fractions_b=X, case=CASE, empty_b=(), skip_b=())
             planted = wheel == 'B' and name == case
             c = counts_b if planted else (10, 15, 11)
             work.append(dict(wheel=wheel, case=name, sample='warmup', point=name,
-                             iterations=c[0], evaluations=c[1], hessian_calls=c[2]))
-            for quantity in tool.PHYSICAL:
+                             **dict(zip(tool.count_keys(name), (*c, 12) if name == tool.F1 else c, strict=True))))
+            for quantity in tool.quantities(name):
                 values = fractions_b if planted and quantity == 'mole_fractions' else X
                 if wheel == 'B' and (name, quantity) in empty_b:
                     values = []
@@ -46,3 +46,22 @@ for label, (work, states), expect_change, fails in (
         ('wheel B case not solved', rows(skip_b=[CASE]), False, True)):
     assert bool(tool.gate(work, states, expect_change)) is fails, label
 print('time-key-solves gate plants: ok')
+
+# The F1 performance claim is no increased work, rather than exact equality.
+for key in tool.F1_COUNTS:
+    work, states = rows()
+    planted = next(row for row in work if row['wheel'] == 'B' and row['case'] == tool.F1)
+    planted[key] += 1
+    assert tool.gate(work, states), key
+    assert not tool.gate(work, states, expect_change=True), key
+    planted[key] -= 2
+    assert not tool.gate(work, states), f'{key} decrease'
+
+ceiling = 1.25 * tool.F1_IDENTITY['frozen']['serial_cpu_seconds']
+evaluation = dict(cpu_seconds=ceiling, seconds=ceiling, reference_taylor_evaluations=664)
+fit = dict(seconds=120, critical_cpu_seconds=10)
+assert not tool.f1_ceilings({'A': evaluation, 'B': evaluation}, [('A', fit), ('B', fit)])
+assert tool.f1_ceilings({'B': dict(evaluation, cpu_seconds=ceiling * 1.001)})
+assert tool.f1_ceilings({}, [('B', dict(fit, seconds=120.001))])
+assert tool.gate(*rows(skip_b=[tool.F1]), expect_change=True)
+print('F1 A=A, planted work increases, fixed ceilings and missing evidence: ok')

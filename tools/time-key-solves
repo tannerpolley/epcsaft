@@ -3,12 +3,14 @@
 import argparse
 import ast
 import csv
+import gzip
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import platform
+import resource
 import statistics
 import subprocess
 import sys
@@ -20,8 +22,97 @@ ORDINARY = ('case-6/figure-2-point-7', 'case-7/flash-5918.5286-Pa')
 COUNTS = ('iterations', 'evaluations', 'hessian_calls')
 PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
 STATE_TOLERANCE = 1e-10
+F1 = 'mea-f1/residual-jacobian'
+F1_COUNTS = ('reference_computations', 'reference_columns', 'density_solves', 'equilibrium_iterations')
+F1_VALUES = ('predictions', 'gradient', 'optimizer_gradient', 'residual_optimizer_gradient')
+FIT_VALUES = ('predictions', 'physical', 'physical_jacobian', 'optimizer_jacobian', 'residuals')
+F1_INPUT = ROOT / 'tools/fixtures/mea-f1.json.gz'
+F1_IDENTITY = json.loads((ROOT / 'tools/fixtures/mea-f1-identity.json').read_text())
+F1_RAW = gzip.decompress(F1_INPUT.read_bytes())
+if hashlib.sha256(F1_RAW).hexdigest() != F1_IDENTITY['packet_sha256']:
+    raise RuntimeError('F1 packet hash differs')
+F1_DATA = json.loads(F1_RAW)
+F1_ROWS, F1_WIDTH = len(F1_DATA['observations']), len(F1_DATA['coordinates'])
 CASES = tuple(f'{case}/{mode}' for case in ORDINARY for mode in ('cold', 'accepted')) + (
-    'khudaida/sequential-8', 'mea-nominally-unloaded/353.15-K')
+    'khudaida/sequential-8', 'mea-nominally-unloaded/353.15-K', F1)
+
+
+def count_keys(case):
+    return F1_COUNTS if case == F1 else COUNTS
+
+
+def quantities(case):
+    return F1_VALUES if case == F1 else PHYSICAL
+
+
+def f1_result(operation):
+    import epcsaft
+    from epcsaft import _core
+    data = F1_DATA
+
+    def decode(value):
+        if isinstance(value, list):
+            return [decode(v) for v in value]
+        if not isinstance(value, dict):
+            return value
+        if 'enum' in value:
+            return getattr(getattr(_core, value['enum']), value['name'])
+        cls = getattr(_core, value['type'])
+        fields = {k: decode(v) for k, v in value['fields'].items()}
+        try:
+            obj = cls()
+        except TypeError:
+            return cls(**fields)
+        for key, field in fields.items():
+            setattr(obj, key, field)
+        return obj
+
+    parameters = epcsaft.Parameters.from_mapping(data['parameters'])
+    coordinates, observations, thermal = (decode(data[k]) for k in ('coordinates', 'observations', 'thermochemistry'))
+    if operation == 'fit':
+        controls = _core.FitControls(maximum_iterations=40, maximum_elapsed_time_seconds=120, workers=0)
+        children = resource.getrusage(resource.RUSAGE_CHILDREN)
+        child_cpu = children.ru_utime + children.ru_stime
+        clock, cpu = time.perf_counter(), time.process_time()
+        result = _core.fit(parameters._native, thermal, coordinates, observations, data['weights'], controls)
+        seconds = time.perf_counter() - clock
+        children = resource.getrusage(resource.RUSAGE_CHILDREN)
+        cpu_seconds = time.process_time() - cpu + children.ru_utime + children.ru_stime - child_cpu
+        if result.status != 'converged' or not result.usable or result.trial_failures or len(result.statuses) != F1_ROWS or any(
+                s != _core.ObservationStatus.Available for s in result.statuses):
+            raise RuntimeError(f'F1 fit: {result.message}; trial failures {result.trial_failures}')
+        reply = {k: getattr(result, k) for k in ('iterations', 'residual_evaluations', 'jacobian_evaluations',
+                                               'initial_cost', 'final_cost', 'status', 'message')}
+        reply.update(seconds=seconds, cpu_seconds=cpu_seconds, workers=os.cpu_count(),
+                     rows=[dict(point=F1, **{k: getattr(result, k) for k in FIT_VALUES})])
+        return reply
+    chart = _core.CoordinateSet()
+    chart.coordinates = coordinates
+    point = chart.start(parameters._native, observations, thermal)
+    clock, cpu = time.perf_counter(), time.process_time()
+    with epcsaft.trace(diagnostics=False) as capture:
+        result = _core.evaluate_observations(parameters._native, coordinates, point, [], observations, thermal)
+    cpu_seconds, seconds = time.process_time() - cpu, time.perf_counter() - clock
+    trace = capture.trace
+    if trace.incomplete or any(s != _core.ObservationStatus.Available for s in result.statuses):
+        raise RuntimeError('F1 evaluation incomplete or unavailable')
+    spans = trace.spans
+    counts = dict(reference_computations=sum(e.name == 'reference_cache_miss' for e in trace.events),
+                  reference_columns=sum(s.name == 'reference_column' for s in spans),
+                  density_solves=sum(s.name == 'solve_density' for s in spans),
+                  equilibrium_iterations=sum(s.convergence.iterations for s in spans
+                                             if s.name == 'solve_equilibrium' and s.convergence is not None))
+    if not all(counts.values()):
+        raise RuntimeError(f'F1 work observations missing: {counts}')
+    row = dict(point=F1, **counts, **{k: getattr(result, k) for k in F1_VALUES},
+               raw_rows=0, classified_rows=0, success=True, criterion_met=True)
+    if len(row['predictions']) != F1_ROWS or any(len(row[k]) != F1_ROWS * F1_WIDTH for k in F1_VALUES[1:]):
+        raise RuntimeError('F1 output dimensions differ')
+    if not all(math.isfinite(v) for key in F1_VALUES for v in row[key]):
+        raise RuntimeError('F1 output nonfinite')
+    central = sum(s.name == 'evaluate' and s.parent is not None and spans[s.parent].name == 'reference_column'
+                  for s in spans)
+    return dict(seconds=seconds, cpu_seconds=cpu_seconds, reference_taylor_evaluations=central, rows=[row])
 
 
 def unloaded_declaration():
@@ -79,6 +170,9 @@ def worker():
         request = json.loads(line)
         if request['case'] == '__identity__':
             reply = loaded_identity()
+        elif request['case'] == F1:
+            reply = f1_result(request.get('operation', 'evaluation'))
+            reply.update(nice=os.getpriority(os.PRIO_PROCESS, 0), affinity=sorted(os.sched_getaffinity(0)))
         elif request['case'] == 'starts':
             reply = {}
             for name, (model, problem) in declarations.items():
@@ -88,9 +182,9 @@ def worker():
                 reply[name] = result.coordinates
         else:
             name = request['case']
-            if name == CASES[-2]:
+            if name == 'khudaida/sequential-8':
                 calls = sequence
-            elif name == CASES[-1]:
+            elif name == 'mea-nominally-unloaded/353.15-K':
                 calls = [(name, *unloaded)]
             else:
                 base, mode = name.rsplit('/', 1)
@@ -132,25 +226,40 @@ def digest(path):
 
 def write_csv(path, rows):
     with path.open('w', newline='') as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+        writer = csv.DictWriter(stream, fieldnames=list(dict.fromkeys(k for row in rows for k in row)), lineterminator='\n')
         writer.writeheader()
         writer.writerows(rows)
 
 
-def scaled_differences(a, b):
+def scaled_differences(a, b, case=None, quantity=None):
     """abs(A-B) over the quantity's largest magnitude in this state: 1e-10 relative at its scale,
     with that scale as the absolute floor for near-zero entries (CODING_STANDARDS.md)."""
+    if case == F1:
+        floors = [1.0] * len(a)
+        for i in range(len(a)):
+            if quantity == 'physical':
+                floors[i] = F1_DATA['coordinates'][i]['fields']['scale']
+            elif quantity in (*F1_VALUES, 'physical_jacobian'):
+                row, column = (i, 0) if quantity == 'predictions' else divmod(i, F1_WIDTH)
+                floors[i] = F1_DATA['observations'][row]['fields']['scale']
+                if quantity in ('gradient', 'physical_jacobian'):
+                    floors[i] /= F1_DATA['coordinates'][column]['fields']['scale']
+                if quantity == 'residual_optimizer_gradient':
+                    floors[i] = 1.0
+        return [abs(x-y) / max(abs(x), abs(y), floor) for x, y, floor in zip(a, b, floors, strict=True)]
     scale = max(map(abs, (*a, *b)), default=0.0)
     return [abs(x - y) / scale if scale else 0.0 for x, y in zip(a, b, strict=True)]
 
 
-def physical_difference(a, b):
+def physical_difference(a, b, keys=PHYSICAL):
     maximum = 0.0
     for left, right in zip(a['rows'], b['rows'], strict=True):
         if left['point'] != right['point']:
             raise RuntimeError('physical-state point order differs')
-        for key in PHYSICAL:
-            maximum = max([maximum, *scaled_differences(left[key], right[key])])
+        for key in keys:
+            if not left[key] or not right[key] or not all(math.isfinite(v) for v in (*left[key], *right[key])):
+                raise RuntimeError(f'{left["point"]}: empty or nonfinite {key}')
+            maximum = max([maximum, *scaled_differences(left[key], right[key], left['point'], key)])
     return maximum
 
 
@@ -162,12 +271,16 @@ def gate(work_rows, state_rows, expect_change=False):
     counts, failures = {}, []
     for row in work_rows:
         counts.setdefault((row['case'], row['point']), {'A': set(), 'B': set()})[row['wheel']].add(
-            tuple(int(row[k]) for k in COUNTS))
+            tuple(int(row[k]) for k in count_keys(row['case'])))
     for (case, point), seen in counts.items():
         if len(seen['A'] | seen['B']) > 1:
-            line = f"WORK CHANGE {point}: A {sorted(seen['A'])} B {sorted(seen['B'])} ({'/'.join(COUNTS)})"
+            keys = count_keys(case)
+            line = f"WORK CHANGE {point}: A {sorted(seen['A'])} B {sorted(seen['B'])} ({'/'.join(keys)})"
             print(line, flush=True)
             if case.rsplit('/', 1)[0] in ORDINARY and not expect_change:
+                failures.append(line)
+            if case == F1 and not expect_change and (len(seen['A']) != 1 or len(seen['B']) != 1
+                    or any(b > a for a, b in zip(next(iter(seen['A'])), next(iter(seen['B'])), strict=True))):
                 failures.append(line)
     values = {}
     for row in state_rows:
@@ -179,12 +292,12 @@ def gate(work_rows, state_rows, expect_change=False):
     for row in work_rows:
         points.setdefault((row['case'], row['sample']), {'A': [], 'B': []})[row['wheel']].append(row['point'])
     for case in CASES:
-        for sample in {'warmup'} | {sample for _, sample in points}:
+        for sample in {'warmup'} | {sample for name, sample in points if (name == F1) == (case == F1)}:
             seen = points.get((case, sample), {'A': [], 'B': []})
             if not seen['A'] or seen['A'] != seen['B']:
                 missing.append(f"MISSING STATE {case} {sample}: points A {seen['A']} B {seen['B']}")
             missing.extend(f'MISSING STATE {case} {sample} {point} {quantity}'
-                           for point in seen['A'] for quantity in PHYSICAL if (case, sample, point, quantity) not in values)
+                           for point in seen['A'] for quantity in quantities(case) if (case, sample, point, quantity) not in values)
     missing.extend(f"MISSING STATE {key}: A {len(pair['A'])} B {len(pair['B'])} entries"
                    for key, pair in values.items() if len(pair['A']) != len(pair['B']))
     for line in missing:
@@ -194,7 +307,7 @@ def gate(work_rows, state_rows, expect_change=False):
     for key, pair in values.items():
         if len(pair['A']) != len(pair['B']):
             continue
-        for index, difference in enumerate(scaled_differences(pair['A'], pair['B'])):
+        for index, difference in enumerate(scaled_differences(pair['A'], pair['B'], key[0], key[3])):
             if difference > worst[0]:
                 worst = (difference, (*key, index, pair['A'][index], pair['B'][index]))
     line = f'WORST STATE ROW {worst[0]:.3g} (case, sample, point, quantity, index, A, B): {worst[1]}'
@@ -205,7 +318,38 @@ def gate(work_rows, state_rows, expect_change=False):
 
 
 def work(result):
-    return {key: sum(row[key] for row in result['rows']) for key in COUNTS}
+    keys = F1_COUNTS if result['rows'][0]['point'] == F1 else COUNTS
+    return {key: sum(row[key] for row in result['rows']) for key in keys}
+
+
+def f1_ceilings(evaluations, fits=()):
+    failures = []
+    ceiling = 1.25 * F1_IDENTITY['frozen']['serial_cpu_seconds']
+    for label, result in evaluations.items():
+        print(f'F1 {label}: serial CPU {result["cpu_seconds"]:.6f} s / ceiling {ceiling:.6f} s; '
+              f'wall {result["seconds"]:.6f} s; central Taylor {result["reference_taylor_evaluations"]}', flush=True)
+        if not 0 < result['cpu_seconds'] <= ceiling:
+            failures.append(f'F1 {label} serial CPU exceeds {ceiling:.6f} s or is invalid')
+    for label, result in fits:
+        print(f'F1 {label}: fit wall {result["seconds"]:.6f} s / ceiling 120 s; '
+              f'critical-path CPU {result["critical_cpu_seconds"]:.6f} s', flush=True)
+        if not 0 < result['seconds'] <= 120:
+            failures.append(f'F1 {label} fit wall exceeds 120 s or is invalid')
+    return failures
+
+
+def fit_cpu(directory, result):
+    rows = [dict(zip(('evaluation', 'worker', 'jacobian', 'cpu_seconds'), row, strict=True))
+            for path in directory.glob('*.csv') for row in csv.reader(path.open())]
+    expected = result['residual_evaluations'] + result['jacobian_evaluations']
+    seen = {(int(r['evaluation']), int(r['worker'])) for r in rows}
+    if len(seen) != len(rows) or seen != {(e, w) for e in range(1, expected + 1) for w in range(result['workers'])}:
+        raise RuntimeError('F1 fit CPU records missing or duplicated')
+    if any(not math.isfinite(float(r['cpu_seconds'])) or float(r['cpu_seconds']) <= 0 for r in rows):
+        raise RuntimeError('F1 fit CPU record invalid')
+    result['critical_cpu_seconds'] = sum(max(float(r['cpu_seconds']) for r in rows if int(r['evaluation']) == e)
+                                         for e in range(1, expected + 1))
+    result['total_compute_cpu_seconds'] = sum(float(r['cpu_seconds']) for r in rows)
 
 
 def main():
@@ -214,7 +358,7 @@ def main():
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
         'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
         'Exit is nonzero when a case-6 or case-7 work count changes (unless --expect-change) or a state '
-        'differs beyond 1e-10 of its quantity scale; wall times are information only. '
+        'differs beyond 1e-10 of its quantity scale. F1 work increases and absolute CPU/wall ceilings also fail. '
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
     parser.add_argument('prepared_A', type=Path, help='prepared interpreter, virtual environment, or build-tree root')
     parser.add_argument('prepared_B', type=Path)
@@ -222,7 +366,9 @@ def main():
     parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
                         help='new or empty result directory (default: timestamped under build/time-key-solves)')
     parser.add_argument('--expect-change', action='store_true',
-                        help='report case-6/case-7 work-count changes without failing; states still gate')
+                        help='report intended work changes without failing; numerical values and ceilings still gate')
+    parser.add_argument('--fit', action='store_true', help='also run one F1 fit per environment with native default workers')
+    parser.add_argument('--control', type=Path, help='passing A=A --fit summary from this host and prepared A image')
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
@@ -237,6 +383,7 @@ def main():
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     processes, environments, identities = {}, {}, {}
+    interpreters = {}
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
     summary = dict(environments={},
                    source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
@@ -247,9 +394,9 @@ def main():
                    evaluation_meaning='native Engine evaluations, including exact polish; not every EOS evaluation',
                    limits='shared-host timing; declared local states only; no physical validation or global stability')
 
-    def call(label, case, starts=None):
+    def call(label, case, starts=None, operation='evaluation'):
         process = processes[label]
-        process.stdin.write(json.dumps(dict(case=case, starts=starts)) + '\n')
+        process.stdin.write(json.dumps(dict(case=case, starts=starts, operation=operation)) + '\n')
         process.stdin.flush()
         line = process.stdout.readline()
         if not line:
@@ -257,16 +404,41 @@ def main():
         return json.loads(line)
 
     def retain(label, case, sample, result):
-        if result['nice'] != 10 or result['affinity'] != [cpu]:
+        if result['nice'] != 10 or (sample != 'timer' and result['affinity'] != [cpu]):
             raise RuntimeError(f'{label}: timing controls differ: {result}')
         for row in result['rows']:
             work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
-                                  **{key: row[key] for key in COUNTS}, raw_rows=row['raw_rows'],
+                                  **{key: row[key] for key in count_keys(case)}, raw_rows=row['raw_rows'],
                                   classified_rows=row['classified_rows'], success=row['success'],
                                   criterion_met=row['criterion_met']))
-            for key in PHYSICAL:
+            for key in quantities(case):
                 state_rows.extend(dict(wheel=label, case=case, sample=sample, point=row['point'],
                                        quantity=key, index=i, value=value) for i, value in enumerate(row[key]))
+
+    def stop(label):
+        process = processes[label]
+        process.stdin.close()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            process.wait(timeout=10)
+        process.stdout.close()
+
+    def launch(label, profile=None):
+        selected_env = dict(environments[label])
+        selected_env.pop('EPCSAFT_FIT_CPU_PROFILE', None)
+        affinity = [cpu]
+        if profile is not None:
+            profile.mkdir()
+            selected_env['EPCSAFT_FIT_CPU_PROFILE'] = str(profile)
+            affinity = sorted(os.sched_getaffinity(0))
+        processes[label] = subprocess.Popen(['taskset', '-c', ','.join(map(str, affinity)), 'nice', '-n',
+            str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))), str(interpreters[label]),
+            str(Path(__file__).resolve()), '--worker'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            text=True, cwd=ROOT, env=selected_env)
+        if call(label, '__identity__') != identities[label]:
+            raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
 
     try:
         for label, selected in (('A', args.prepared_A), ('B', args.prepared_B)):
@@ -275,12 +447,9 @@ def main():
             if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
                 parser.error(f'{label} must identify its prepared source, Meson build, and lock')
             identities[label], environments[label] = identity, selected_env
+            interpreters[label] = python
             summary['environments'][label] = dict(path=str(selected), **identity)
-            processes[label] = subprocess.Popen(['taskset', '-c', str(cpu), 'nice', '-n', str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))),
-                                                  str(python), str(Path(__file__).resolve()), '--worker'],
-                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=selected_env)
-            if call(label, '__identity__') != identity:
-                raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
+            launch(label)
         starts = call('A', 'starts')
         start_rows = [dict(case=case, coordinate=i, value=value) for case, values in starts.items() for i, value in enumerate(values)]
         baseline = {}
@@ -291,18 +460,18 @@ def main():
             a, b = baseline[case]['A'], baseline[case]['B']
             for label in ('A', 'B'):
                 retain(label, case, 'warmup', baseline[case][label])
-            equal = all(tuple(left[k] for k in COUNTS) == tuple(right[k] for k in COUNTS)
+            equal = all(tuple(left[k] for k in count_keys(case)) == tuple(right[k] for k in count_keys(case))
                         for left, right in zip(a['rows'], b['rows'], strict=True))
             comparisons[case] = dict(work_A=work(a), work_B=work(b), work_identical=equal,
-                                     max_state_difference=physical_difference(a, b))
+                                     max_state_difference=physical_difference(a, b, quantities(case)))
             print(f'{case}: {tuple(work(a).values())} vs {tuple(work(b).values())} '
                   f'{"IDENTICAL" if equal else "WORK DIFFERENCE"}', flush=True)
-            if case == CASES[-2]:
+            if case == 'khudaida/sequential-8':
                 for left, right in zip(a['rows'], b['rows'], strict=True):
                     print(f"  {left['point']}: {tuple(left[k] for k in COUNTS)} vs {tuple(right[k] for k in COUNTS)}", flush=True)
         print('PAIRED WALL TIME: each pair contains AB and BA; fixed CPU and niceness', flush=True)
         for pair in range(1, args.pairs + 1):
-            for case in CASES:
+            for case in CASES[:-1]:
                 # Alternate which block comes first, even when --pairs is odd.
                 orders = ('AB', 'BA') if pair % 2 else ('BA', 'AB')
                 for order in orders:
@@ -328,6 +497,8 @@ def main():
         same_image = (identities['A']['extension_sha256'], identities['A']['native_library_sha256']) == \
                      (identities['B']['extension_sha256'], identities['B']['native_library_sha256'])
         for case, comparison in comparisons.items():
+            if case == F1:
+                continue
             rows = [row for row in pair_rows if row['case'] == case]
             # Each balanced observation is the mean of its AB and BA relative changes.
             changes = [statistics.mean(row['change_percent'] for row in rows if row['pair'] == pair)
@@ -342,24 +513,68 @@ def main():
                   f"MAD {comparison['mad_percent']:.3f}%; state Δ={comparison['max_state_difference']:.3g}", flush=True)
         summary.update(cases=comparisons, identical_engine_images=same_image, expect_change=args.expect_change,
                        gate_failures=gate(work_rows, state_rows, args.expect_change))
+        same_prepared = identities['A'] == identities['B']
+        summary['same_prepared_environment'] = same_prepared
+        f1 = comparisons[F1]
+        f1.update(median_A_seconds=baseline[F1]['A']['seconds'], median_B_seconds=baseline[F1]['B']['seconds'])
+        f1['evaluations'] = {label: {k: result[k] for k in ('seconds', 'cpu_seconds', 'reference_taylor_evaluations')}
+                             for label, result in baseline[F1].items()}
+        summary['gate_failures'].extend(f1_ceilings(baseline[F1]))
+        if args.fit:
+            control = json.loads(args.control.read_text()) if args.control else None
+            if (control or not same_prepared) and (not control or control.get('gate_failures') != [] or control.get('error')
+                    or not control.get('identical_engine_images') or control.get('host') != summary['host']
+                    or any(control['environments']['A'][key] != control['environments']['B'][key]
+                           for key in ('source_root', 'source_revision', 'source_diff_sha256', 'interpreter',
+                                       'extension_sha256', 'native_library_sha256'))
+                    or any(control['environments']['A'][key] != identities['A'][key]
+                           for key in ('extension_sha256', 'native_library_sha256'))
+                    or control.get('f1_packet_sha256') != F1_IDENTITY['packet_sha256']):
+                raise RuntimeError('--fit comparison needs a passing same-host, same-A-image A=A --control')
+            if control and f1_ceilings(control['cases'][F1]['evaluations'], control['cases'][F1]['fits'].items()):
+                raise RuntimeError('A=A control breaks a fixed ceiling')
+            fits = {}
+            for label in ('A', 'B'):
+                stop(label)
+                directory = out / f'fit-cpu-{label}'
+                launch(label, directory)
+                # The serial timer-on sample verifies that profiling preserves the work and numerical values.
+                timer_sample = call(label, F1)
+                retain(label, F1, 'timer', timer_sample)
+                if physical_difference(timer_sample, baseline[F1][label], F1_VALUES) > STATE_TOLERANCE:
+                    summary['gate_failures'].append(f'F1 {label} timer changed numerical values')
+                for path in directory.glob('*.csv'):
+                    path.rename(out / f'timer-{label}-{path.name}')
+                fits[label] = call(label, F1, operation='fit')
+                fit_cpu(directory, fits[label])
+            if control and any(control['cases'][F1]['fits'][label]['workers'] != fits[label]['workers'] for label in 'AB'):
+                raise RuntimeError('A=A control worker count differs')
+            f1['fits'] = fits
+            f1['control_wall_seconds'] = ([control['cases'][F1]['fits'][label]['seconds'] for label in 'AB']
+                                         if control else [fits[label]['seconds'] for label in 'AB'])
+            print(f'F1 A=A control wall range: {min(f1["control_wall_seconds"]):.6f}–'
+                  f'{max(f1["control_wall_seconds"]):.6f} s', flush=True)
+            difference = physical_difference(fits['A'], fits['B'], FIT_VALUES)
+            f1['fit_max_state_difference'] = difference
+            if difference > STATE_TOLERANCE:
+                summary['gate_failures'].append(f'F1 fit numerical difference {difference}')
+            summary['gate_failures'].extend(f1_ceilings({}, fits.items()))
+            summary['gate_failures'].extend(gate(work_rows, state_rows, args.expect_change))
+        summary['f1_packet_sha256'] = F1_IDENTITY['packet_sha256']
     except Exception as error:
         summary['error'] = f'{type(error).__name__}: {error}'
         raise
     finally:
-        for process in processes.values():
-            process.stdin.close()
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                process.terminate()
-                process.wait(timeout=10)
-            process.stdout.close()
+        for label in processes:
+            if processes[label].stdin and not processes[label].stdin.closed:
+                stop(label)
         for filename, rows in (('work.csv', work_rows), ('states.csv', state_rows), ('pairs.csv', pair_rows), ('starts.csv', start_rows)):
             if rows:
                 write_csv(out / filename, rows)
         summary['runtime_seconds'] = time.perf_counter() - begun
         summary['input_sha256'] = {str(path.relative_to(ROOT)): digest(path) for path in (
-            Path(__file__).resolve(), ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
+            Path(__file__).resolve(), F1_INPUT, ROOT / 'tools/fixtures/mea-f1-identity.json',
+            ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
             ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',
             ROOT / 'analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv',
             ROOT / 'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',

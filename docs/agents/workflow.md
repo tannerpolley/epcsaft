@@ -60,8 +60,9 @@ historical studies and merged-main delivery, outside these candidate checks.
 | Every delivery state | `bash tools/check-affected.sh origin/main` and `bash tools/check-all.sh` |
 | Native C++ change, final delivery state only | `nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>` (clang-tidy on the native units changed since the merge base and every unit that includes a changed file, read from the lint build's dependency records; any `.clang-tidy`, Meson, subproject, `pyproject.toml`, `uv.lock` or `.codex/environments/` change sweeps every unit, as does `--full` or a Clang or external-header change since the last passing full sweep; plus the existing ASan/UBSan cases in one instrumented tree) |
 | Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main environment> <slice environment> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
-| Before handoff of a change to native equilibrium or regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
-| Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>` and an A=A control (two workers from the same prepared main environment). Exit 0 is the gate: identical ionic LLE and MEA flash work counts and returned states within 1e-10 of each quantity's scale. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner |
+| Before handoff of a change to native equilibrium or parameter regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
+| Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>` and an A=A control (two workers from the same prepared main environment). Exit 0 is the gate: identical ionic LLE and MEA flash work counts, no increase in the frozen F1 evaluation's reference computations/columns, density solves or equilibrium iterations, numerical values within 1e-10 of each quantity's scale, and F1 serial CPU at most 1.25 times its frozen value. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner; this never waives ceilings or missing evidence |
+| Change to fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work, or density algorithms | Add `--fit --control <main-A=A-summary.json>` to the same key-solve command. First run main A=A with `--fit` to retain the same-host control. Every F1 fit must finish within 120 s wall using native default workers (32 on the reference host). The report includes the control's wall spread and C_fit = sum over evaluations of the slowest worker's compute CPU. See `tools/time-key-solves.md` for measurement boundaries and fixed values |
 
 Run checks that share the ordinary editable Meson tree sequentially; independent
 checks can use `tools/run-together.sh`. After freezing a local candidate commit,
@@ -85,6 +86,12 @@ Work counts are the key-solve gate; `--pairs` above 1 is only for a timing
 claim, run back to back with the A=A control and judged against its spread.
 After merging main, gate again only when the merge touched code the slice
 depends on. Reporting-only fixes get focused checks.
+
+F1 runs once per environment in the default command. Full fits are explicit
+because they repeat residual and Jacobian evaluations across optimizer steps;
+input-mapping-only edits use the default command unless they change this work.
+The fixed fixture, CPU ceiling and full-fit measurements are owned by the
+key-solve command's manual and `tools/fixtures/mea-f1-identity.json`.
 
 ## Acceptance
 

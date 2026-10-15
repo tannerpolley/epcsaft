@@ -145,6 +145,14 @@ and shared-derivative qualification readers use the same prepared-image identity
 Historical study readers remain wheel-only: the Khudaida `run_fixed_settler.py`
 campaign and TPD `feos_compare.py` and `asl_native_trace.py`. These are outside the
 current corpus command's case selection.
+The [key-solve command](tools/time-key-solves.md) includes the frozen 149-row MEA
+F1 residual-plus-Jacobian evaluation: no increased reference computations,
+reference columns, density solves or equilibrium iterations, and serial CPU
+at most 1.25 times its frozen value. Add `--fit` for the 120 s full-fit wall
+ceiling and slowest-worker critical-path CPU; an A/B full fit needs the same-host
+A=A `--fit` summary via `--control <summary.json>`. Full fits use native default
+workers (32 on the reference host); the default command runs one serial F1
+evaluation per environment. The Gates table owns when the full fit is required.
 After merges, `tools/refresh-main-wheel` compares retained previous/candidate
 prepared environments before packaging main. Select the retained baseline with
 `EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
