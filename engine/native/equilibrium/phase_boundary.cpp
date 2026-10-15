@@ -596,6 +596,7 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
     result.cause_message = attempt.message;
     result.last_result = attempt.result;
     if (attempt.result.has_value()) {
+        result.last_result->optimizer_state.reset();
         result.event_phase = attempt.result->topology_phase;
         result.event_pair = attempt.result->topology_pair;
     }
