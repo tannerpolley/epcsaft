@@ -1,70 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-workspace_root="$(dirname "$engine_root")"
-cd "$engine_root"
-export PATH="$workspace_root/.venv/bin:$PATH"
+[[ "${1:-}" == --prepared && -d "${2:-}" ]] || {
+    echo 'use tools/check-pr-native --pr N --head <full-sha> --base <full-sha> to prepare the shared tree' >&2; exit 2;
+}
+run_root="$(realpath "$2")"
+results="${EPCSAFT_GATE_RESULTS:-$run_root}"
+workspace_root="$run_root/source"
+cd "$workspace_root/engine"
+export PATH="$run_root/venv/bin:$PATH"
+export EPCSAFT_SOURCE_ROOT="$workspace_root" EPCSAFT_BUILD_DIR="$run_root/meson"
 
-for required_command in uv meson cmake ninja clang-18 clang++-18 file nm; do
-    if ! command -v "$required_command" >/dev/null 2>&1; then
-        echo "missing required command: $required_command" >&2
-        exit 1
-    fi
-done
-if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
-    echo "missing root environment; run bash .codex/environments/setup.sh" >&2
-    exit 1
-fi
-
-run_root="$workspace_root/build/native-sanitizers"
-mkdir -p "$run_root"
-uv venv --allow-existing --python 3.13 "$run_root/venv"
-uv export --locked --all-packages --no-emit-workspace --no-hashes \
-    --output-file "$run_root/constraints.txt" >/dev/null
-uv pip install --python "$run_root/venv/bin/python" \
-    --constraint "$run_root/constraints.txt" pytest meson meson-python pybind11 numpy
-
-# ccache and the build-job count as in check-native.sh; Ninja's default would start a job per CPU.
-export CCACHE_BASEDIR="$workspace_root" CCACHE_NOHASHDIR=1
-jobs="${EPCSAFT_BUILD_JOBS:-$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)}"
-[[ "$jobs" =~ ^[1-9][0-9]*$ ]] || { echo "build-job count must be a positive integer (got $jobs)" >&2; exit 2; }
-CC="ccache clang-18" CXX="ccache clang++-18" \
-    uv pip install --python "$run_root/venv/bin/python" --no-deps --no-build-isolation \
-        --reinstall-package epcsaft -e . \
-        --config-setting="build-dir=$run_root/build" \
-        --config-setting="compile-args=-j$jobs" \
-        --config-setting="setup-args=-Dbuildtype=debug" \
-        --config-setting="setup-args=-Db_ndebug=false" \
-        --config-setting="setup-args=-Db_lundef=false" \
-        --config-setting="setup-args=-Db_sanitize=address,undefined" \
-        --config-setting="setup-args=-Db_lto=false" \
-        --config-setting="setup-args=-Dstrip=false"
-
-if grep -Fq -- '-DNDEBUG' "$run_root/build/compile_commands.json"; then
+if grep -Fq -- '-DNDEBUG' "$run_root/meson/compile_commands.json"; then
     echo "sanitizer compile commands unexpectedly define NDEBUG" >&2
     exit 1
 fi
 echo "sanitizer compile commands: NDEBUG absent"
 
 uv pip check --python "$run_root/venv/bin/python"
-mapfile -t installed_extensions < <(find "$run_root/build" -maxdepth 1 -type f -name '_core*.so')
-if ((${#installed_extensions[@]} != 1)); then
-    echo "expected one prepared sanitizer extension, found ${#installed_extensions[@]}" >&2
-    exit 1
-fi
-for extension in "${installed_extensions[@]}"; do
-    if ! file "$extension" | grep -Fq 'not stripped'; then
-        echo "sanitizer extension lacks useful symbols: $extension" >&2
-        exit 1
-    fi
-    nm --defined-only "$extension" >"$run_root/defined-symbols.txt"
-    if [[ ! -s "$run_root/defined-symbols.txt" ]]; then
-        echo "sanitizer extension has no defined symbols: $extension" >&2
-        exit 1
-    fi
+for library in "$run_root/meson"/_core*.so "$run_root/meson/libepcsaft_native.so" "$run_root/meson/libepcsaft_asl.so"; do
+    file "$library" | grep -Fq 'not stripped' || { echo "stripped or missing library: $library" >&2; exit 1; }
+    nm --defined-only "$library" >"$results/$(basename "$library").symbols"
+    [[ -s "$results/$(basename "$library").symbols" ]] || { echo "no symbols: $library" >&2; exit 1; }
+    nm -D "$library" | grep '__asan_init' > /dev/null || { echo "uninstrumented library: $library" >&2; exit 1; }
+    nm -D "$library" | grep '__ubsan_handle' > /dev/null || { echo "missing UBSan: $library" >&2; exit 1; }
 done
-echo "sanitizer extensions: installed with symbols retained"
+echo "sanitizer extension, native library and ASL: instrumentation and symbols retained"
 
 asan_runtime="$(clang++-18 -print-file-name=libclang_rt.asan-x86_64.so)"
 if [[ ! -f "$asan_runtime" ]]; then
@@ -84,14 +45,14 @@ LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
-    "$run_root/venv/bin/python" "$workspace_root/tools/engine_identity.py" >"$run_root/prepared-identity.json"
+    "$run_root/venv/bin/python" "$workspace_root/tools/engine_identity.py" >"$results/prepared-identity.json"
 
 LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
-EPCSAFT_PYTEST_RESULTS="$run_root/pytest-results.json" \
-    "$run_root/venv/bin/python" -m pytest -q \
+EPCSAFT_PYTEST_RESULTS="$results/pytest-results.json" \
+    "$run_root/venv/bin/python" -m pytest -q --junitxml="$results/sanitizers.xml" \
         tests/eos/test_activity.py \
         tests/eos/test_diagnostics.py \
         tests/eos/test_state.py::test_density_anchor_outside_domain_keeps_native_convergence_failure \

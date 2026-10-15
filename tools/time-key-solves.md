@@ -1,9 +1,11 @@
 # `time-key-solves`: native work and paired solve time
 
-`tools/time-key-solves wheel-A.whl wheel-B.whl [--pairs N] [--expect-change] --out <new dir>`
-compares deterministic native work before reporting wall time. Each wheel is
-installed with `uv` into a throwaway environment under `build/time-key-solves/`;
-the checkout's `.venv` supplies only the Python version and is never modified.
+`tools/time-key-solves <prepared-A> <prepared-B> [--pairs N] [--expect-change] --out <new dir>`
+compares deterministic native work before reporting wall time. Each input selects
+an existing Python interpreter, virtual environment, or prepared build root with
+a `python` marker. Prepare both environments before invoking the command; it
+verifies their loaded Engine identities without installing packages or building
+wheels. Use the same prepared environment twice for an A=A control.
 
 **Cases.** The declarations are reused, not selected here: the ordinary cases
 from `analyses/2026-tpd-phase-discovery/scripts/baseline.py`, the eight ordered
@@ -12,13 +14,13 @@ feeds and previous-result sequence from
 unloaded-MEA declaration in `engine/tests/equilibrium/test_trace_reliability.py`.
 Ionic liquid–liquid equilibrium is Khudaida Figure 2 point 7 (293.15 K,
 100000 Pa); the reacting MEA flash is at 318.15 K and 5918.5286 Pa. Each runs
-cold and from a common accepted coordinate vector taken from wheel A and given
-to both wheels as one declared native start. The Khudaida sequence starts cold
-at point 1 and passes each wheel's previous result to its next solve through
+cold and from a common accepted coordinate vector taken from environment A and given
+to both environments as one declared native start. The Khudaida sequence starts cold
+at point 1 and passes each environment's previous result to its next solve through
 point 8. Unloaded MEA is at 353.15 K and 101325 Pa with its existing composition
 guess, reactions and neutral reference.
 
-**Timing.** Every case has one complete warmup per wheel. Each pair holds an AB
+**Timing.** Every case has one complete warmup per environment. Each pair holds an AB
 and a BA block, alternating which comes first. Workers share one CPU
 (`taskset`), one numerical thread and niceness 10 (inherited niceness above 10
 is rejected). Times sum equilibrium-call wall times only, excluding imports,
@@ -32,18 +34,19 @@ work, not every equation-of-state evaluation), Hessian calls and achieved
 raw/classified residuals per solve and sample. `states.csv`: returned T (K),
 P (Pa), phase amounts (mol), mole fractions and molar densities (mol/m³).
 `starts.csv`: the common accepted coordinates. `pairs.csv`: block times, load
-averages and scaled state differences. `summary.json`: wheel and input hashes and the
-comparison summary. Analyses retain `summary.json` only.
+averages and scaled state differences. `summary.json`: prepared identities under
+`environments` (source revision, configuration and loaded-image paths and hashes),
+input hashes and the comparison summary. Analyses retain `summary.json` only.
 
 **Comparison and exit.** Zero exit is the no-slowdown gate. The tool exits
 nonzero when any iteration, evaluation or Hessian-call count of ionic LLE
 (case-6/figure-2-point-7) or the MEA flash (case-7/flash-5918.5286-Pa), cold or
 accepted start, differs between A and B or between repeated samples, printing
-each `WORK CHANGE` with both wheels' counts. `--expect-change` prints the same
+each `WORK CHANGE` with both environments' counts. `--expect-change` prints the same
 lines and does not fail on them, for a slice that intends a work change; the
 other two cases' work changes are always printed only. It also exits nonzero
 when any returned state value differs by more than 1e-10 of that quantity's
-largest magnitude in the same returned state (both wheels), in the declared
+largest magnitude in the same returned state (both environments), in the declared
 phase order: 1e-10 relative at the quantity's scale, with that scale as the
 absolute floor for near-zero entries such as trace mole fractions. The worst
 row is printed as `WORST STATE ROW`; `--expect-change` does not waive it.

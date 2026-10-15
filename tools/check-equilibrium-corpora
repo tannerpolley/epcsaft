@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Equilibrium acceptance corpora on two wheels; one table (docs/agents/workflow.md "Gates").
+"""Equilibrium acceptance corpora on two prepared environments; one table (docs/agents/workflow.md "Gates").
 
-Runs, in a throwaway environment per wheel, the Cameretti 2005 bubble states (default start), the
+Runs, in each selected environment, the Cameretti 2005 bubble states (default start), the
 Gross 2002 declarations (default start), the 70-case neutral methane/ethane sweep, the #243 42-row
 matrix and the four-section replay, then compares B with A. Cases a gate already runs (the #390 and
 #407 pins, e4-d, the Gross pins in equilibrium/Automatic*) are omitted. Work counts, timings,
@@ -24,13 +24,13 @@ import json
 import math
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
 TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
@@ -56,11 +56,6 @@ ACCEPTED = dict(
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
                 fitting=dict(rows=211, cases=3, success=0, requested_tolerance_met=0, keys='ba2b694ad19d2fe8'),
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
-
-
-def wheel_file(path):
-    path = Path(path).resolve()
-    return next(path.glob('*.whl')) if path.is_dir() else path
 
 
 def values(text):
@@ -126,9 +121,10 @@ def unmet(name, rows, success, residual, criterion):
 
 
 def main():
+    from engine_identity import prepared_python
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('wheel_a', help='wheel file, or a directory holding one (e.g. build/wheels/main-current)')
-    parser.add_argument('wheel_b')
+    parser.add_argument('prepared_a', help='prepared interpreter, virtual environment, or build-tree root')
+    parser.add_argument('prepared_b')
     parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
     args = parser.parse_args()
     out = args.out.resolve()
@@ -138,23 +134,14 @@ def main():
     began = time.perf_counter()
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
-    wheels = {label: Path(value).absolute() if Path(value).is_file() and Path(value).suffix != '.whl' else wheel_file(value)
-              for label, value in (('A', args.wheel_a), ('B', args.wheel_b))}
-    interpreters, identities = {}, {}
-    for label, wheel in wheels.items():
+    selections, interpreters, environments, identities = {}, {}, {}, {}
+    for label, value in (('A', args.prepared_a), ('B', args.prepared_b)):
         (out / label).mkdir()
-        if wheel.suffix != '.whl':
-            interpreters[label] = wheel
-            identities[label] = json.loads(subprocess.check_output([str(wheel), str(ROOT / 'tools/engine_identity.py')], env=env))
-        else:
-            venv = out / label / 'venv'
-            subprocess.run(['uv', 'venv', '-q', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
-            subprocess.run(['uv', 'pip', 'install', '-q', '--python', str(venv / 'bin/python'), str(wheel),
-                            'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
-            subprocess.run([str(venv / 'bin/python'), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)],
-                           check=True, env=env, stdout=subprocess.DEVNULL)
-            interpreters[label] = venv / 'bin/python'
-            identities[label] = json.loads(subprocess.check_output([str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=env))
+        python, selected_env = prepared_python(value, env)
+        identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
+        if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
+            parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+        selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
     (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
 
     # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
@@ -162,13 +149,13 @@ def main():
 
     def run(label, name, *command):
         with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
-            code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=env,
+            code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=environments[label],
                                   stdout=log, stderr=subprocess.STDOUT).returncode
         return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
 
     reference = out / 'A/matrix-reference'
     jobs = []
-    for label in wheels:
+    for label in selections:
         d = out / label
         jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
                  (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
@@ -180,17 +167,20 @@ def main():
         failures = [f.result() for f in [matrix, *futures]]
         if matrix.result() is None:
             failures += pool.map(lambda label: run(label, 'matrix', TPD / 'physical_comparison.py', out / label / 'matrix',
-                                                   '--reference', reference / 'original-states.json'), wheels)
+                                                   '--reference', reference / 'original-states.json'), selections)
     failures = [f for f in failures if f]
-    for venv in (out / label / 'venv' for label in wheels):
-        if venv.is_dir():
-            shutil.rmtree(venv)
+    for label in selections:
+        current = json.loads(subprocess.check_output(
+            [str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=environments[label]
+        ))
+        if current != identities[label]:
+            failures.append(f'{label} Engine identity changed during corpora runs')
 
     rows, found = [], {}
 
     def corpus(name, count, compare):
         try:
-            counts = [count(out / label) for label in wheels]
+            counts = [count(out / label) for label in selections]
             found[name] = compare()
             rows.append((name, *counts, str(len(found[name]))))
         except (OSError, ValueError, KeyError, StopIteration) as error:
@@ -203,7 +193,7 @@ def main():
 
     def cameretti_problems():
         found = []
-        for label in wheels:
+        for label in selections:
             d = out / label / 'cameretti'
             summary = table(d / 'default-start-summary.csv')
             states = sum(int(r['states']) for r in summary)
@@ -227,7 +217,7 @@ def main():
 
     def gross_problems():
         found = []
-        for label in wheels:
+        for label in selections:
             tolerance = json.loads((out / label / 'gross/calculation.json').read_text())['row_tolerance']
             found += accepted(f'{label} Gross', dict(rows=len(gross(out / label)), failed_lines=[
                 i + 2 for i, r in enumerate(gross(out / label)) if r['success'] != 'True']), ACCEPTED['gross'])
@@ -240,7 +230,7 @@ def main():
 
     def neutral_problems():
         found = []
-        for label in wheels:
+        for label in selections:
             successes = {}
             for r in neutral(out / label):
                 if r['success'] is True:
@@ -255,8 +245,8 @@ def main():
 
     def matrix_problems():
         found = []
-        keys = {label: [(r['case'], r['lane'], r['N']) for r in matrix(out / label)] for label in wheels}
-        for label in wheels:
+        keys = {label: [(r['case'], r['lane'], r['N']) for r in matrix(out / label)] for label in selections}
+        for label in selections:
             found += accepted(f'{label} matrix', dict(rows=len(set(keys[label])), passes=sum(
                 r['passes'] == 'True' for r in matrix(out / label))), ACCEPTED['matrix'])
             found += [dict(corpus=f'{label} matrix', key=k, reason='duplicate') for k in set(keys[label])
@@ -271,7 +261,7 @@ def main():
                            out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
             raise ValueError('replay_compare.py failed')
         found = [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
-        for label in wheels:
+        for label in selections:
             for s in SECTIONS:
                 rows = table(out / label / f'replay/{s}.csv')
                 true = lambda q: sum(r['quantity'] == q and r['value'] == 'True' for r in rows)
@@ -290,7 +280,7 @@ def main():
         print('  '.join(str(c).ljust(w) for c, w in zip(r, widths)))
     for failure in failures:
         print('FAILED', failure)
-    print(f'wheels A={wheels["A"]} B={wheels["B"]}; details {out}/differences.json; {time.perf_counter() - began:.0f} s')
+    print(f'prepared A={selections["A"]} B={selections["B"]}; details {out}/differences.json; {time.perf_counter() - began:.0f} s')
     return 1 if failures or any(found.get(r[0]) for r in rows) or any(r[1] == '-' for r in rows) else 0
 
 

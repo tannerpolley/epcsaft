@@ -4,7 +4,7 @@
 #   (no argument)    install engine/ editable into .venv: the next `import epcsaft` rebuilds
 #                    changed native sources, and Python edits need no rebuild
 #   --wheel DIR      build one wheel into DIR (new or empty) and print its path: application
-#                    pins (tools/refresh-main-wheel) and A/B timing (tools/time-key-solves)
+#                    pins (tools/refresh-main-wheel); comparisons use prepared environments
 #   --install-wheel  build a wheel into build/environment-wheel/, install it non-editably and
 #                    record wheel.sha256 and preparation.json, for an analysis that records a
 #                    wheel; rerunning setup restores the editable install
@@ -127,3 +127,4 @@ PY
     ;;
 esac
 printf '%s\n' "$highs_key" >"$build_dir/toolchain-key"
+printf '%s\n' "$python" >"$build_dir/python"
