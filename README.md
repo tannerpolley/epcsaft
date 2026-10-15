@@ -60,7 +60,7 @@ from epcsaft import equilibrium
 
 `tools/build-engine.sh` owns every Engine build. Wheels exist only where an exact
 wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
-and A/B timing, and `tools/build-engine.sh --install-wheel` for an analysis that
+and merged-main delivery, and `tools/build-engine.sh --install-wheel` for an analysis that
 records an installed wheel (re-run setup afterwards to return to the editable
 install). `epcsaft.provenance()` identifies the running Engine: the commit and
 whether `engine/` is clean for the editable install, the wheel path and SHA-256
@@ -123,23 +123,32 @@ tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only 
 tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
 ```
 
-`engine/tools/check-native.sh` builds the native extension with Clang and runs the
-full clang-tidy sweep; `--changed` lints only the units a change reaches. `engine/tools/check-native-sanitizers.sh` builds a separate
-debug ASan/UBSan editable environment and runs its compact numerical tests.
-`tools/check-equilibrium-corpora <A> <B>` accepts retained wheels or prepared Python interpreters and runs the Equilibrium
-acceptance corpora in both environments and prints one table (`--help`). Run slow Engine
-tests or an analysis reproduction only when the changed scientific claim requires
-that evidence.
+Freeze a candidate commit, then run
+`nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>`.
+It shares one locked Clang debug ASan/UBSan Meson tree and environment under the
+main checkout's `build/pr-gates/pr-N/<head>/`, including GCC's binary128 headers.
+`engine/tools/check-native.sh --prepared <root> --changed <base>` owns lint selection;
+`engine/tools/check-native-sanitizers.sh --prepared <root>` owns instrumented checks.
+Both consume the prepared tree. Identical inputs reuse passing evidence without
+compiling; toolchain/header/environment changes replace stale objects, while a
+changed base or check selection reruns the checks. Logs and test records stay
+beside that frozen source. See the [development method](docs/agents/workflow.md#development-method).
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
-Builds and Engine calculations run directly, with no thread, slot or memory limits.
-`tools/time-key-solves <A> <B>` accepts retained wheels or prepared Python interpreters and reports work counts,
-the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; use the
-checkout's prepared `.venv/bin/python` for development comparisons against the retained main wheel.
-After merges, `tools/refresh-main-wheel` builds main's
-wheel in the main checkout, compares its key-solve work with the previous
-`build/wheels/main-current/`, replaces that directory and its README, and keeps
-`build/wheels/main-<commit>/`, the applications' stable pin.
+`tools/check-equilibrium-corpora <A> <B>` and `tools/time-key-solves <A> <B>` select
+prepared Python interpreters or build/environment directories, verify loaded
+Engine identities before calculations, and retain the existing corpus rows,
+work counts, states and paired wall times. Use the same prepared environment for
+both sides of an A=A control. The TPD baseline/replay, IDAES-ASL, density benchmark
+and shared-derivative qualification readers use the same prepared-image identity.
+Historical study readers remain wheel-only: the Khudaida `run_fixed_settler.py`
+campaign and TPD `feos_compare.py` and `asl_native_trace.py`. These are outside the
+current corpus command's case selection.
+After merges, `tools/refresh-main-wheel` compares retained previous/candidate
+prepared environments before packaging main. Select the retained baseline with
+`EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
+It then retains the wheel in
+`build/wheels/main-current/` and `build/wheels/main-<commit>/` for application pins.
 There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:

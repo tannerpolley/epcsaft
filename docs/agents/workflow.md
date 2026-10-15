@@ -38,35 +38,48 @@ checkout.
 
 Reviewers apply `CODING_STANDARDS.md`.
 
+## Development method
+
+Develop with `nice -n 10 tools/native-run <program> [case]`, the native test
+programs, or small C++ drivers that write CSV. Python declares inputs and reads
+results. The runner prepares missing dependencies automatically; native iteration
+needs no wheel or binding management. Builds use explicit `-j` parallelism sized
+from CPUs and available memory; `EPCSAFT_BUILD_JOBS` can select it for a measured
+run. Use one-thread numerical pools only for timing measurements.
+
 ## Gates
 
-This is the only gate list. "Main wheel" is `build/wheels/main-current/` in the
-main checkout; build the slice's wheel with `bash tools/build-engine.sh --wheel
-build/wheels/<name>`.
+This is the only gate list. Comparisons select prepared Python interpreters or
+build/environment directories, with verified source and loaded-library identities.
+Use the main checkout's prepared environment for A and the slice's for B; retain
+an unchanged baseline environment before changing its source. Wheels serve
+historical studies and merged-main delivery, outside these candidate checks.
 
 | When | Run |
 |---|---|
 | Every delivery state | `bash tools/check-affected.sh origin/main` and `bash tools/check-all.sh` |
-| Native C++ change, final delivery state only | `bash engine/tools/check-native.sh --changed` (clang-tidy on the native units changed since the merge base and every unit that includes a changed file, read from the lint build's dependency records; any `.clang-tidy`, Meson, subproject, `pyproject.toml`, `uv.lock` or `.codex/environments/` change sweeps every unit, as does running it with no argument or a Clang or external-header change since the last passing full sweep) and `bash engine/tools/check-native-sanitizers.sh` |
-| Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main wheel> <slice wheel> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
+| Native C++ change, final delivery state only | `nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>` (clang-tidy on the native units changed since the merge base and every unit that includes a changed file, read from the lint build's dependency records; any `.clang-tidy`, Meson, subproject, `pyproject.toml`, `uv.lock` or `.codex/environments/` change sweeps every unit, as does `--full` or a Clang or external-header change since the last passing full sweep; plus the existing ASan/UBSan cases in one instrumented tree) |
+| Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main environment> <slice environment> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
 | Before handoff of a change to native equilibrium or regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
-| Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main wheel> <slice wheel> --pairs 1 --out build/<dir>` and an A=A control (the main wheel against a copy of itself). Exit 0 is the gate: identical ionic LLE and MEA flash work counts and returned states within 1e-10 of each quantity's scale. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner |
+| Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>` and an A=A control (two workers from the same prepared main environment). Exit 0 is the gate: identical ionic LLE and MEA flash work counts and returned states within 1e-10 of each quantity's scale. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner |
 
-Run the checks of one delivery state together with `tools/run-together.sh`, one
-argument per build directory. `check-affected.sh`, `check-all.sh`, `run-native-tests.sh`
-and `build-engine.sh` share the Engine tree, so they chain inside one argument;
-`check-native.sh` and `check-native-sanitizers.sh` have their own trees, and the
-wheel-only gates can start once the slice wheel exists. For a native change:
+Run checks that share the ordinary editable Meson tree sequentially; independent
+checks can use `tools/run-together.sh`. After freezing a local candidate commit,
+the lead runs the heavy gate, including before publication approval with the
+candidate's eventual PR number. The gate locks
+`build/pr-gates/pr-N/<head>/` in the main checkout and prepares one detached source,
+one locked environment and one Clang debug ASan/UBSan Meson tree. The existing
+`check-native.sh --prepared <root> [--changed <base>]` and
+`check-native-sanitizers.sh --prepared <root>` own their checks and never build.
+The combined command owns preparation and retains their logs and test records.
 
-```bash
-bash tools/run-together.sh \
-    'bash tools/check-affected.sh origin/main && bash tools/check-all.sh' \
-    'bash engine/tools/check-native.sh --changed' \
-    'bash engine/tools/check-native-sanitizers.sh'
-```
-
-Native tests run with `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to bring back the random heap
-fill. `EPCSAFT_BUILD_JOBS` caps the compile jobs of setup, `check-native.sh` and `check-native-sanitizers.sh`.
+Passing evidence is reused only for the same head, base, check selection,
+toolchain, external headers, locked environment and build flags. Compiler,
+header, environment or flag changes replace stale Meson objects; base/selection
+changes rerun checks with reusable objects. Failed checks resume incomplete work.
+Native tests use `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to restore
+random heap fill. Ordinary setup and the shared heavy gate both honor
+`EPCSAFT_BUILD_JOBS` with explicit Ninja parallelism.
 
 Work counts are the key-solve gate; `--pairs` above 1 is only for a timing
 claim, run back to back with the A=A control and judged against its spread.

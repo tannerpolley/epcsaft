@@ -11,12 +11,20 @@ cd "$(git -C "$(dirname "${BASH_SOURCE[0]}")" worktree list --porcelain | sed -n
     || { echo "the main checkout must be a clean main branch: $PWD" >&2; exit 1; }
 bash .codex/environments/setup.sh
 commit="$(git rev-parse --short=8 HEAD)"
+current=build/wheels/main-current
+previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
+out=""
+if [[ -n "$previous" ]]; then
+    : "${EPCSAFT_PREVIOUS_PREPARED:?set the retained previous prepared Engine environment}"
+    candidate="${EPCSAFT_CANDIDATE_PREPARED:-build/engine-meson/shared}"
+    out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
+    tools/time-key-solves "$EPCSAFT_PREVIOUS_PREPARED" "$candidate" --pairs 1 --out "$out" \
+        || grep -q '"gate_failures"' "$out/summary.json"
+fi
 staging="build/wheels/.staging-$commit"
 rm -rf "$staging"
 wheel="$(bash tools/build-engine.sh --wheel "$staging")"
 trap 'rm -rf "$staging"' EXIT
-current=build/wheels/main-current
-previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
 sha="$(sha256sum "$wheel" | cut -d ' ' -f 1)"
 # The per-commit copy is the stable pin for applications; no refresh replaces or deletes it.
 mkdir -p "build/wheels/main-$commit" && cp --update=none "$wheel" "build/wheels/main-$commit/"
@@ -24,12 +32,7 @@ if [[ -n "$previous" && "$(sha256sum "$previous" | cut -d ' ' -f 1)" == "$sha" ]
     echo "main-current unchanged: main $commit builds the same wheel, sha256 $sha"
     exit 0
 fi
-out=""
 if [[ -n "$previous" ]]; then
-    out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
-    # Merged main is the record, so its work or state changes are reported, not refused; a crash still stops.
-    tools/time-key-solves "$previous" "$wheel" --pairs 1 --out "$out" \
-        || grep -q '"gate_failures"' "$out/summary.json"
     # The previous wheel stays with the comparison that used it.
     mv "$current" "$out/previous-main-current"
 fi
@@ -43,8 +46,8 @@ if not out:
     print("No previous main-current wheel; key-solve work not compared.")
     raise SystemExit
 summary = json.load(open(f"{out}/summary.json"))
-a = summary["wheels"]["A"]
-print(f"Key-solve work (iterations/evaluations/Hessian calls) from time-key-solves --pairs 1 against sha256 {a['sha256']}:")
+a = summary["environments"]["A"]
+print(f"Key-solve work (iterations/evaluations/Hessian calls) against {a['source_revision']} / {a['native_library_sha256']}:")
 for case, row in summary["cases"].items():
     note = "identical" if row["work_identical"] else f"WORK DIFFERENCE from {'/'.join(map(str, row['work_A'].values()))}"
     print(f"- {case}: {'/'.join(map(str, row['work_B'].values()))} ({note}; max scaled state difference {row['max_state_difference']:.3g})")

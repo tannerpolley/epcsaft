@@ -9,13 +9,13 @@ import math
 import os
 from pathlib import Path
 import platform
-import shutil
 import statistics
 import subprocess
 import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tools'))
 ORDINARY = ('case-6/figure-2-point-7', 'case-7/flash-5918.5286-Pa')
 COUNTS = ('iterations', 'evaluations', 'hessian_calls')
 PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
@@ -67,6 +67,7 @@ def worker():
     os.dup2(2, 1)
     import epcsaft
     from epcsaft import equilibrium as eq
+    from engine_identity import loaded_identity
     sys.path.insert(0, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'))
     import baseline as b
     declarations = {name: (model, problem) for name, model, problem in b.declared_cases() if name in ORDINARY}
@@ -74,9 +75,12 @@ def worker():
     kh_model = epcsaft.Mixture(epcsaft.Parameters.from_json(b.KH_PACKET, components=fixed.COMPONENTS))
     sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])) for i in range(1, 9)]
     unloaded = unloaded_declaration()
+    print(json.dumps({'identity': loaded_identity()}), file=replies, flush=True)
     for line in sys.stdin:
         request = json.loads(line)
-        if request['case'] == 'starts':
+        if request['case'] == '__identity__':
+            reply = loaded_identity()
+        elif request['case'] == 'starts':
             reply = {}
             for name, (model, problem) in declarations.items():
                 result = eq.solve_equilibrium(model, problem)
@@ -206,14 +210,15 @@ def work(result):
 
 
 def main():
+    from engine_identity import prepared_python
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
         'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
         'Exit is nonzero when a case-6 or case-7 work count changes (unless --expect-change) or a state '
         'differs beyond 1e-10 of its quantity scale; wall times are information only. '
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
-    parser.add_argument('wheel_A', type=Path)
-    parser.add_argument('wheel_B', type=Path)
+    parser.add_argument('prepared_A', type=Path, help='prepared interpreter, virtual environment, or build-tree root')
+    parser.add_argument('prepared_B', type=Path)
     parser.add_argument('--pairs', type=int, default=1, help='counterbalanced pairs per case; more only for timing claims (default: 1)')
     parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
                         help='new or empty result directory (default: timestamped under build/time-key-solves)')
@@ -222,9 +227,6 @@ def main():
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
-    wheels = {label: path.absolute() for label, path in (('A', args.wheel_A), ('B', args.wheel_B))}
-    if any(not path.is_file() for path in wheels.values()):
-        parser.error('inputs must be wheel files or prepared Python interpreters')
     out = args.out.resolve()
     if out.exists() and any(out.iterdir()):
         parser.error('--out must be new or empty')
@@ -235,9 +237,9 @@ def main():
     cpu = min(os.sched_getaffinity(0))
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
-    processes, venvs = {}, []
+    processes, environments, identities = {}, {}, {}
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
-    summary = dict(wheels={label: dict(path=str(path), sha256=digest(path) if path.suffix == ".whl" else None) for label, path in wheels.items()},
+    summary = dict(environments={},
                    source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                    cpu=cpu, nice=10, threads=1, host=platform.node(), pairs=args.pairs, warmups=1,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
@@ -252,12 +254,12 @@ def main():
         process.stdin.flush()
         line = process.stdout.readline()
         if not line:
-            raise RuntimeError(f'wheel {label} worker exited while running {case}')
+            raise RuntimeError(f'{label} worker exited while running {case}')
         return json.loads(line)
 
     def retain(label, case, sample, result):
         if result['nice'] != 10 or result['affinity'] != [cpu]:
-            raise RuntimeError(f'wheel {label}: timing controls differ: {result}')
+            raise RuntimeError(f'{label}: timing controls differ: {result}')
         for row in result['rows']:
             work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
                                   **{key: row[key] for key in COUNTS}, raw_rows=row['raw_rows'],
@@ -268,25 +270,19 @@ def main():
                                        quantity=key, index=i, value=value) for i, value in enumerate(row[key]))
 
     try:
-        for label, wheel in wheels.items():
-            if wheel.suffix != '.whl':
-                python = wheel
-                identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=env))
-                summary['wheels'][label].update(identity)
-                summary['wheels'][label]['sha256'] = identity['native_library_sha256']
-            else:
-                venv = ROOT / 'build/time-key-solves' / label
-                if venv.exists():
-                    raise RuntimeError(f'throwaway environment already exists: {venv}')
-                venvs.append(venv)
-                subprocess.run(['uv', 'venv', '--python', str(ROOT / '.venv/bin/python'), str(venv)], check=True, env=env)
-                python = venv / 'bin/python'
-                subprocess.run(['uv', 'pip', 'install', '--python', str(python), str(wheel),
-                                'idaes-pse==2.12.0', 'pyomo==6.10.1', 'numpy==2.5.1'], check=True, env=env)
-                subprocess.run([str(python), str(ROOT / 'tools/verify-installed-wheel.py'), '--wheel', str(wheel)], check=True, env=env)
+        for label, selected in (('A', args.prepared_A), ('B', args.prepared_B)):
+            python, selected_env = prepared_python(selected, env)
+            identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
+            if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
+                parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+            identities[label], environments[label] = identity, selected_env
+            summary['environments'][label] = dict(path=str(selected), **identity)
             processes[label] = subprocess.Popen(['taskset', '-c', str(cpu), 'nice', '-n', str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))),
                                                   str(python), str(Path(__file__).resolve()), '--worker'],
-                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=env)
+                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, cwd=ROOT, env=selected_env)
+            started = json.loads(processes[label].stdout.readline())
+            if started.get('identity') != identity:
+                raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
         starts = call('A', 'starts')
         start_rows = [dict(case=case, coordinate=i, value=value) for case, values in starts.items() for i, value in enumerate(values)]
         baseline = {}
@@ -320,7 +316,7 @@ def main():
                         ref = baseline[case][label]
                         if [tuple(r[k] for k in COUNTS) for r in results[label]['rows']] != [tuple(r[k] for k in COUNTS) for r in ref['rows']]:
                             comparisons[case]['work_identical'] = False
-                            print(f'WORK DIFFERENCE: {case} wheel {label} sample {pair}-{order}', flush=True)
+                            print(f'WORK DIFFERENCE: {case} environment {label} sample {pair}-{order}', flush=True)
                     a, b = results['A'], results['B']
                     difference = physical_difference(a, b)
                     comparisons[case]['max_state_difference'] = max(comparisons[case]['max_state_difference'], difference)
@@ -328,7 +324,11 @@ def main():
                                           change_percent=100 * (b['seconds'] / a['seconds'] - 1),
                                           load_1=load[0], load_5=load[1], load_15=load[2], max_state_difference=difference))
                 print(f'pair {pair}/{args.pairs} {case}: AB/BA complete; load={load}', flush=True)
-        same_wheel = summary['wheels']['A']['sha256'] == summary['wheels']['B']['sha256']
+        for label in ('A', 'B'):
+            if call(label, '__identity__') != identities[label]:
+                raise RuntimeError(f'{label} Engine image changed during key-solve comparison')
+        same_image = (identities['A']['extension_sha256'], identities['A']['native_library_sha256']) == \
+                     (identities['B']['extension_sha256'], identities['B']['native_library_sha256'])
         for case, comparison in comparisons.items():
             rows = [row for row in pair_rows if row['case'] == case]
             # Each balanced observation is the mean of its AB and BA relative changes.
@@ -342,7 +342,7 @@ def main():
             comparison['zero_within_spread'] = abs(median) <= max(abs(value - median) for value in changes)
             print(f'{case}: median {median:+.3f}%, range [{min(changes):+.3f}, {max(changes):+.3f}]%, '
                   f"MAD {comparison['mad_percent']:.3f}%; state Δ={comparison['max_state_difference']:.3g}", flush=True)
-        summary.update(cases=comparisons, identical_wheels=same_wheel, expect_change=args.expect_change,
+        summary.update(cases=comparisons, identical_engine_images=same_image, expect_change=args.expect_change,
                        gate_failures=gate(work_rows, state_rows, args.expect_change))
     except Exception as error:
         summary['error'] = f'{type(error).__name__}: {error}'
@@ -356,8 +356,6 @@ def main():
                 process.terminate()
                 process.wait(timeout=10)
             process.stdout.close()
-        for venv in venvs:
-            shutil.rmtree(venv)
         for filename, rows in (('work.csv', work_rows), ('states.csv', state_rows), ('pairs.csv', pair_rows), ('starts.csv', start_rows)):
             if rows:
                 write_csv(out / filename, rows)
