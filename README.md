@@ -148,8 +148,13 @@ current corpus command's case selection.
 After merges, `tools/refresh-main-wheel` compares retained previous/candidate
 prepared environments before packaging main. Select the retained baseline with
 `EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
-It then retains the wheel in
-`build/wheels/main-current/` and `build/wheels/main-<commit>/` for application pins.
+Set `EPCSAFT_NUMERICAL_EVIDENCE` to space-separated existing evidence paths.
+It retains the wheel in `build/wheels/main-<short-commit>/`, verifies a draft's
+uploaded bytes and full commit tag, then publishes the private prerelease
+`main-<full-commit>` with `latest=false`. Retries reuse the retained wheel and
+resume the same draft; a different identity stops without replacing anything.
+`build/wheels/main-current/` is updated after confirmed publication. The
+[downstream guide](downstream/README.md) owns authenticated download and file pins.
 There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:

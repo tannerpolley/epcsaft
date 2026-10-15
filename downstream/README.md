@@ -33,7 +33,50 @@ An input-requirements checkpoint does not authorize numerical-kernel implementat
 application adoption or qualification.
 
 All numerical work consumes one explicitly identified, non-editable Engine wheel.
-Record its path and SHA-256 with `epcsaft.provenance()`, and retain the inputs and claim limits. Pin
-`build/wheels/main-<commit>/epcsaft-*.whl` in the main Engine checkout:
-`tools/refresh-main-wheel` keeps one copy per refreshed main commit and never
-replaces it. Never pin `~/.cache/epcsaft` or `build/<task>/`; both are scratch.
+The private GitHub prerelease `main-<full-40-character-commit>` supplies the wheel,
+its `<wheel-name>.sha256` checksum and `release.json`. Each published release,
+commit tag and local per-commit copy is retained forever. `tools/refresh-main-wheel`
+is the only publisher; an application selects a qualified commit under its own
+adoption authority.
+
+Authenticate with `gh auth login`, then download into the application's persistent
+wheel directory before `uv sync --locked`. Replace the commit below with the
+selected full revision. Keep credentials out of dependency URLs and logs.
+
+```bash
+commit=<full-40-character-commit>
+tag="main-$commit"
+wheel_dir="build/engine-wheels/$tag"
+mkdir -p "$wheel_dir"
+gh release download "$tag" --repo tannerpolley/ePC-SAFT --dir "$wheel_dir" \
+    --pattern 'epcsaft-*.whl' --pattern '*.sha256' --pattern release.json
+(cd "$wheel_dir" && sha256sum --check --strict ./*.sha256)
+gh api "repos/tannerpolley/ePC-SAFT/git/ref/tags/$tag" --jq .object.sha
+```
+
+The returned tag target must equal the selected full commit. Check that
+`release.json` records that commit, the downloaded wheel name and its SHA-256.
+It also records the Python/platform tags, toolchain identity and paths to existing
+numerical evidence; the record itself makes no physical-validation claim. A
+failed checksum or mismatched identity stops adoption. Download retries use a new
+empty directory and compare bytes before retaining a file; never overwrite an
+existing pin with different bytes.
+
+Pin the exact saved filename in the application's `pyproject.toml`, for example:
+
+```toml
+[project]
+dependencies = ["epcsaft"]
+
+[tool.uv.sources]
+epcsaft = { path = "build/engine-wheels/main-<full-commit>/epcsaft-<version>-<python>-<abi>-<platform>.whl" }
+```
+
+Each application's own thread edits its dependency declaration, regenerates its
+lock with `uv lock`, and runs its existing acceptance checks. Subsequent setup
+obtains and verifies this exact file before `uv sync --locked`; it does not compile
+the Engine. Keep the wheel after installation because `epcsaft.provenance()` reads
+and hashes its `file:` installation source. Record the release tag, full commit,
+local path and SHA-256 in the application's existing numerical evidence, with
+its inputs and claim limits. Never pin `~/.cache/epcsaft` or an Engine task's
+scratch directory.
