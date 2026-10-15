@@ -1,7 +1,7 @@
 {
   "rows": 359,
-  "recorded_at_revision": "1b3927351c4735fc6760f002de3051baeb3f2c21",
-  "engine_clean": true,
+  "recorded_at_revision": "0bec2bdf42e31bf37e8d4679169c8174b580408f",
+  "engine_clean": false,
   "commands": [
     {
       "command": "properties_checks P3",

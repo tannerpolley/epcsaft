@@ -370,7 +370,11 @@ bool qualify(const Fixture& fixture, const char* group) {
                     || (item.observable.kind == Kind::PhaseComponentAmount && occupied_phases == 1));
             const bool affine_ideal = order > 1 && fixture.constant_ideal_cp && item.observable.kind == Kind::PhaseProperty
                 && item.observable.property == PropertyObservable::IdealEnthalpy;
-            const bool affine = affine_pressure || affine_amount || affine_ideal;
+            const bool constant_amount = order == 1 && fixture.problem.reactions.empty()
+                && item.observable.kind == Kind::PhaseAmount
+                && (free_amounts <= 1 || fixture.problem.phases[item.observable.phase].amount.kind == epcsaft::equilibrium::AmountKind::Pinned)
+                && std::accumulate(fixture.directions[0].feed_amounts_mol.begin(), fixture.directions[0].feed_amounts_mol.end(), 0.0) == 0.0;
+            const bool affine = affine_pressure || affine_amount || affine_ideal || constant_amount;
             if (affine) for (auto& rung : ladder) if (rung.value[i]) { rung.value[i] = 0.0; rung.rounding[i] = 0.0; }
             const auto id = std::string(group) + "/" + fixture.label + "/" + epcsaft::equilibrium::solved_state_observable_id(item.observable)
                 + "/A" + std::to_string(order);
@@ -413,7 +417,7 @@ bool qualify(const Fixture& fixture, const char* group) {
             // Pressure is checked in reduced units P/P*, amount on the feed
             // basis; retain the existing dimensionless structural-zero criterion.
             const double affine_scale = affine_pressure ? fixture.problem.pressure.value
-                : affine_amount ? compiled.feed_total : 1.0;
+                : affine_amount || constant_amount ? compiled.feed_total : 1.0;
             const double criterion = structural ? STRUCTURAL_ZERO * affine_scale : CRITERION[order - 1] * scales[i];
             const double ratio_coarse = h1 * h1 / (h2 * h2), ratio_fine = h2 * h2 / (h3 * h3);
             double reference_uncertainty = nan;

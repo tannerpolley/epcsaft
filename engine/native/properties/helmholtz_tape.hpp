@@ -216,6 +216,7 @@ struct HelmholtzTape final {
         }
         auto result = std::make_unique<HelmholtzTape>();
         result->function = CppAD::ADFun<double>(independent, dependent);
+        result->function.optimize("no_cumulative_sum_op");
         result->predicates = std::move(predicates);
         result->regular_count = point_size;
         result->site_count = sites_count;

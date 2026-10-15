@@ -74,6 +74,10 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #543, tape optimization: one added runtime line in Properties
+  against `0bec2bdf`; existing ceilings remain in force. Zeroth-order reuse
+  retains its existing owner and implementation.
+
 - 2026-10-15, #541, zeroth-order reuse: the selected prototype adds 16 and
   removes 6 runtime lines in Properties against `7029597d`. Tape-local reuse
   replaces the three unconditional order-zero sweeps. Existing ceilings remain
