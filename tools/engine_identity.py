@@ -129,7 +129,7 @@ def _mapped(path, mappings):
         mapped = Path(fields[5])
         if mapped.name != path.name:
             continue
-        stat = mapped.stat()
+        stat = path.stat()
         major, minor = (int(v, 16) for v in fields[3].split(":"))
         if stat.st_ino != int(fields[4]) or (os.major(stat.st_dev), os.minor(stat.st_dev)) != (major, minor):
             raise RuntimeError(f"loaded Engine image was replaced; identify it in a fresh interpreter: {path}")
@@ -207,4 +207,12 @@ def asl_library(identity=None):
 
 
 if __name__ == "__main__":
-    print(json.dumps(loaded_identity(), sort_keys=True))
+    saved_stdout = os.dup(1)
+    os.dup2(2, 1)
+    try:
+        identity = loaded_identity()
+        sys.stdout.flush()
+    finally:
+        os.dup2(saved_stdout, 1)
+        os.close(saved_stdout)
+    print(json.dumps(identity, sort_keys=True))

@@ -100,9 +100,9 @@ def main():
         deps = output('ninja', '-C', str(build), '-t', 'deps', *objects, env=env)
         if len(re.findall(r' \(VALID\)$', deps, re.M)) != len(objects):
             raise RuntimeError('not every native/test object has a current dependency record')
+        deps = output('ninja', '-C', str(build), '-t', 'deps', env=env)
         (root / 'dependencies.txt').write_text(deps)
-        external = [str(path) for path in {(build / line.strip()).resolve() for line in deps.splitlines() if line.startswith('    ')}
-                    if not path.is_relative_to(source) and not path.is_relative_to(build)]
+        external = [str(path) for path in {(build / line.strip()).resolve() for line in deps.splitlines() if line.startswith('    ')}]
         external_file.write_text(json.dumps(sorted(external)))
         current = identity()
         prepared_file.write_text(json.dumps(current, indent=2))

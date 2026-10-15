@@ -58,7 +58,8 @@ import epcsaft
 from epcsaft import equilibrium
 ```
 
-`tools/build-engine.sh` owns every Engine build. Wheels exist only where an exact
+`tools/build-engine.sh` owns ordinary editable and wheel builds;
+`tools/check-pr-native` owns frozen instrumented preparation. Wheels exist only where an exact
 wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
 and merged-main delivery, and `tools/build-engine.sh --install-wheel` for an analysis that
 records an installed wheel (re-run setup afterwards to return to the editable

@@ -48,8 +48,8 @@ mapfile -t objects <<<"$object_list"
 deps="$(ninja -C "$build_root" -t deps "${objects[@]}")" || { echo "reading Ninja dependency records failed" >&2; exit 1; }
 current="$(grep -c ' (VALID)$' <<<"$deps" || true)"
 ((current == ${#objects[@]})) || { echo "$current current dependency records for ${#objects[@]} native units" >&2; exit 1; }
-# The toolchain is the Clang binaries and the content of every header outside the repository that a unit
-# includes (system, Python and pybind11 headers); a marker records that a full sweep passed with it.
+# The toolchain includes the Clang binaries and every consumed header, including downloaded subprojects;
+# a marker records that a full sweep passed with it.
 toolchain="$(python -c 'import hashlib,json,sys; d=json.load(open(sys.argv[1])); d.pop("head"); print(hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest())' "$run_root/prepared.json")"
 swept="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/clang-tidy-swept/$toolchain"
 if [[ "$selective" == true && ! -f "$swept" ]]; then
