@@ -917,7 +917,9 @@ satisfies it.
 The shared Ipopt driver ignores an incidental `ipopt.opt` in the working directory.
 For deliberate diagnostics, set `EPCSAFT_IPOPT_OPTIONS_FILE` to an options-file path;
 the driver passes that path to `Initialize` for both exact-Hessian equilibrium and
-limited-memory parameter fitting. An unset or empty variable disables file loading.
+limited-memory parameter fitting. A nonempty path must name a readable regular
+file; otherwise the driver reports an error naming the variable and path before
+initialization. An unset or empty variable disables file loading.
 Relative paths resolve from the working directory. The named file can override
 the driver's solver options, including iteration limits; unset the variable after
 the experiment. Iterate logging can use `output_file <log-path>` and

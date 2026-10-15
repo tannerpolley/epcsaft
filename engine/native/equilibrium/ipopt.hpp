@@ -3,6 +3,8 @@
 #include <IpTNLP.hpp>
 #include <algorithm>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -83,6 +85,11 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    if (options_file && *options_file) {
+        std::error_code error;
+        if (!std::filesystem::is_regular_file(options_file, error) || !std::ifstream(options_file).good())
+            throw std::invalid_argument(std::string("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: ") + options_file);
+    }
     const auto initialized = app->Initialize(options_file ? options_file : "");
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};
 }
