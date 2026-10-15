@@ -16,9 +16,8 @@ previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || tru
 out=""
 if [[ -n "$previous" ]]; then
     : "${EPCSAFT_PREVIOUS_PREPARED:?set the retained previous prepared Engine environment}"
-    candidate="${EPCSAFT_CANDIDATE_PREPARED:-build/engine-meson/shared}"
     out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
-    tools/time-key-solves "$EPCSAFT_PREVIOUS_PREPARED" "$candidate" --pairs 1 --out "$out" \
+    tools/time-key-solves "$EPCSAFT_PREVIOUS_PREPARED" build/engine-meson/shared --pairs 1 --out "$out" \
         || grep -q '"gate_failures"' "$out/summary.json"
 fi
 staging="build/wheels/.staging-$commit"
