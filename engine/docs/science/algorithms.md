@@ -218,6 +218,13 @@ gradient and Hessian, and each Hessian entry contracts the row coordinate's
 site tangent in O(sites). The association gradient floor is the maximum over
 the requested columns only, so it bounds exactly the gradient entries computed.
 
+Reuse order-zero Taylor coefficients only on the same tape at a byte-identical
+full input, including site fractions and active parameters. A changed input
+recomputes order zero; a replacement tape starts without cached coefficients.
+Positive-order sweeps recompute the requested directions while preserving order
+zero. This changes neither the implicit derivative equations nor their admission
+criteria.
+
 ## ALG-DENSITY
 
 Detailed capture emits `density_scan_input` (T/K, P/Pa, lower/upper density in

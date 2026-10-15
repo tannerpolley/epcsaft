@@ -962,8 +962,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
     std::vector<double> full_point = point;
     full_point.insert(full_point.end(), sites.begin(), sites.end());
-    const auto values = tape_->function.Forward(0, full_point);
-    ++counters_.forward;
+    const auto values = tape_->forward_zero(full_point, &counters_.forward);
     tape_->site_values = sites;
     HelmholtzDerivatives result;
     result.site_fractions = sites;
@@ -1777,8 +1776,7 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     auto third = [&](std::size_t direction) {
         core::Scope scope("pressure_third_derivative"), evaluation("evaluate");
         scope.probe("direction", static_cast<double>(direction));
-        tape_->function.Forward(0, point);
-        ++counters_.forward;
+        tape_->forward_zero(point, &counters_.forward);
         std::vector<double> first(3, 0.0);
         first[direction] = 1.0;
         tape_->function.Forward(1, first);
