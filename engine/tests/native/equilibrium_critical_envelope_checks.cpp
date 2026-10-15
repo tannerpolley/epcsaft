@@ -8,7 +8,7 @@ using namespace epcsaft;
 using namespace epcsaft::equilibrium;
 using caloric_specification_checks::compare;
 inline EquilibriumProblem critical_cell(const std::vector<double>& z, double t, double rho) {
-    auto p=equilibrium_support::flash(z.size());p.feed.values=z;p.row_tolerance=1e-11;
+    auto p=equilibrium_support::flash(z.size());p.feed.values=z;p.solver_options.values[epcsaft::policy::row] = 1e-11;
     p.temperature=FreeValue::variable(t);p.pressure=FreeValue::variable(1e6);p.critical=CriticalDeclaration{rho,{}};
     return p;
 }
@@ -24,7 +24,7 @@ inline EquilibriumResult solved(const HelmholtzModel& m,const EquilibriumProblem
     return r;
 }
 inline EquilibriumProblem envelope_cell(const std::vector<double>& z,double t,double pressure,EnvelopeCondition condition) {
-    auto p=equilibrium_support::flash(z.size());p.feed.values=z;p.row_tolerance=1e-11;
+    auto p=equilibrium_support::flash(z.size());p.feed.values=z;p.solver_options.values[epcsaft::policy::row] = 1e-11;
     p.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
     p.temperature=FreeValue::variable(t);p.pressure=FreeValue::variable(pressure);p.envelope=condition;
     return p;

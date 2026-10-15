@@ -74,6 +74,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #486: lead-set allowances under the owner's overnight authority, 2026-10-15; Core 1,229 → 1,304, Equilibrium 9,316 → 9,422, Bindings 1,923 → 2,050, Python 2,081 → 2,107, each measured count plus its 1% band; total 25,749 → 26,083 (sum of layer ceilings).
+
 - 2026-10-15, #510 (owner net allowances): Properties **5,395 → 5,535**, parameter Regression **3,279 → 3,812**, Python **2,019 → 2,081**, each changed ceiling the formatted count plus its 1% band. Total **25,014 → 25,749**, the sum of the layer ceilings. Current counts are 5,480, 3,776 and 2,060: growth +139/+507/+61 against the fixed `ae6a8f11` base, within the owner allowances +260/+850/+70. Bindings grows +15 within its existing ceiling and +100 allowance. Equilibrium grows +10 from the separately merged #504 main changes; #510 changes no Equilibrium code. Analysis scripts have the separate owner allowance of 700 net lines.
 
 One line per ceiling change, newest first (hard ceilings). The issue or PR

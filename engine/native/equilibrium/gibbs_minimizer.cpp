@@ -643,19 +643,9 @@ void GibbsMinimizer::finalize_solution(
 
 namespace {
 
-void row_criterion(core::Convergence& record, double tolerance) {
-    if (tolerance == policy::EQUILIBRIUM_ROW_RESIDUAL.value) record.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
-    else {
-        record.criterion_owner = std::make_shared<const policy::Tolerance>(policy::Tolerance{
-            "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL", tolerance,
-            policy::Category::AlgorithmTolerance, "caller-supplied equilibrium row tolerance"});
-        record.criterion = record.criterion_owner.get();
-    }
-}
-
 void reject_elapsed(EquilibriumResult& result, core::Scope& scope) {
     auto& record = result.convergence;
-    if (!record.criterion) row_criterion(record, result.declaration->row_tolerance);
+    if (!record.criterion) core::stopping_criterion(record, result.declaration->solver_options, policy::row);
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                 record.contraction, true, record.amplification);
     result.success = false; clear_state(result); scope.finish(record);
@@ -691,10 +681,10 @@ EquilibriumResult run_driver(
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton
 ) {
-    const double row_tolerance = compiled.problem.row_tolerance;
+    const double row_tolerance = compiled.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
     // A feasibility cell has a constant objective and is Newton-polished below, so it stops there.
-    const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+    const double inner_tolerance = row_tolerance
         * (compiled.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
@@ -721,11 +711,12 @@ EquilibriumResult run_driver(
     };
     const auto [initialized, returned] = [&] {
         if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
+        if (const char* file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) result.diagnostic_options_file = file;
         try { return run_ipopt(nlp, inner_tolerance,
             static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
-            true, 1.0 / compiled.feed_total);
+            true, 1.0 / compiled.feed_total, &result.solver_settings, row_tolerance);
         } catch (...) { capture_driver(); throw; }
     }();
     capture_driver();
@@ -951,7 +942,7 @@ EquilibriumResult run_driver(
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.classified_residuals);
-    row_criterion(convergence, row_tolerance);
+    core::stopping_criterion(convergence, compiled.problem.solver_options, policy::row);
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
     result.iterations = convergence.iterations = nlp->iterations();

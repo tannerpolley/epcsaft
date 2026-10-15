@@ -87,7 +87,7 @@ struct MeasurementChart final {
             require(request.observations[i].form == ResidualForm::Difference, "physical-unit Gaussian errors require Difference, not LogRatio");
             require(weight == 0.0 || (std::isfinite(uncertainty.output_sigma[i]) && uncertainty.output_sigma[i] > 0.0), "positive finite output sigma");
         }
-        const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+        const HelmholtzModel model(request.parameters, {}, request.thermochemistry, request.controls.solver_options);
         const auto& charges = request.parameters.charge_number;
         const std::size_t count = request.parameters.component_count();
         for (std::size_t g = 0; g < uncertainty.groups.size(); ++g) {
@@ -221,7 +221,7 @@ struct MeasurementChart final {
                 if (input.kind == MeasuredInputKind::Molality) observation.molality = value;
                 if (input.kind == MeasuredInputKind::MoleFraction) {
                     if (!pressure && observation.problem.feed.kind != equilibrium::FeedKind::Amounts) {
-                        const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+                        const HelmholtzModel model(request.parameters, {}, request.thermochemistry, request.controls.solver_options);
                         observation.problem.feed.values = equilibrium::resolve_feed(model, observation.problem.feed);
                         observation.problem.feed.kind = equilibrium::FeedKind::Amounts;
                     }
@@ -338,6 +338,8 @@ struct Wire final {
         if constexpr (std::is_trivially_copyable_v<T>) bytes(&value, sizeof(T));
         else std::apply(*this, fields(value));
     }
+    void one(policy::SolverOptions& options) { for (auto& v : options.values) one(v); }
+    template <class T, std::size_t N> void one(std::array<T, N>& values) { for (auto& v : values) one(v); }
     template <class T> void one(std::optional<T>& value) {
         bool present = value.has_value();
         one(present);
@@ -430,10 +432,14 @@ void set_fit_host(FitHost host, const void* extension) {
 // Worker processes each evaluate a fixed share of the rows and keep that share's starts and centers;
 // every process publishes only when the whole evaluation succeeds.
 struct ObservationEvaluator::Impl final {
-    Impl(const FitRequest& request, FitResult& result, const std::vector<std::size_t>& groups,
+    Impl(FitRequest request, FitResult& result, const std::vector<std::size_t>& groups,
               const std::vector<double>& sqrt_weights, std::optional<MeasurementChart> measurement = {})
-        : request_(request), result_(result), measurement_(measurement ? std::move(*measurement) : MeasurementChart(request)),
-          groups_(request.uncertainty ? state_groups(request.observations, &measurement_.membership) : groups), sqrt_weights_(sqrt_weights),
+        : request_([&] { request.controls.solver_options = request.controls.solver_options.resolved({});
+            for (auto& o : request.observations) {
+                o.problem.solver_options = o.problem.solver_options.resolved(request.controls.solver_options);
+                o.final_problem.solver_options = o.final_problem.solver_options.resolved(request.controls.solver_options);
+            } return request; }()), result_(result), measurement_(measurement ? std::move(*measurement) : MeasurementChart(request_)),
+          groups_(state_groups(request_.observations, request_.uncertainty ? &measurement_.membership : nullptr)), sqrt_weights_(sqrt_weights),
           starts_(groups.size()), owner_(groups.size(), 0) {
         if (request.uncertainty) for (std::size_t i = 0; i < sqrt_weights_.size(); ++i)
             if (sqrt_weights_[i] > 0.0) sqrt_weights_[i] = request.observations[i].scale / request.uncertainty->output_sigma[i];
@@ -484,7 +490,7 @@ struct ObservationEvaluator::Impl final {
         }
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
-                request_.observations, request_.holds, request_.uncertainty, measurement_, sqrt_weights_);
+                request_.observations, request_.holds, request_.uncertainty, request_.controls.solver_options.values, measurement_, sqrt_weights_);
             put(workers_.sockets[k - 1], owner_, k);
         }
     }
@@ -501,6 +507,7 @@ struct ObservationEvaluator::Impl final {
             return true;
         }
         out = ObservationEvaluation{};
+        out.solver_options = request_.controls.solver_options;
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         for (const int fd : workers_.sockets) put(fd, optimizer, jacobian);
@@ -636,9 +643,9 @@ struct ObservationEvaluator::Impl final {
             auto reaction_laws = request_.coordinates.apply(observations, parameter_point);
             measurement_.apply(request_, optimizer, observations);
             if (!same_point) {
-                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, parameter_point, request_.holds, request_.thermochemistry);
+                trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, parameter_point, request_.holds, request_.thermochemistry, request_.controls.solver_options);
                 trial.chart.reaction_laws = std::move(reaction_laws);
-                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry);
+                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
                 trial.centers.assign(groups_.size(), Prediction{});
             }
             trial.observations = std::move(observations);
@@ -767,9 +774,9 @@ void serve_fit(int fd) {
     MeasurementChart measurement;
     std::vector<double> sqrt_weights;
     get(fd, request.parameters, request.thermochemistry, request.coordinates.coordinates, request.observations,
-        request.holds, request.uncertainty, measurement, sqrt_weights);
+        request.holds, request.uncertainty, request.controls.solver_options.values, measurement, sqrt_weights);
     const auto groups = state_groups(request.observations);
-    FitResult result;
+    FitResult result; result.solver_options = request.controls.solver_options.resolved({});
     ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights, std::move(measurement));
     get(fd, evaluator.owner_, evaluator.process_);
     evaluator.serve(fd);
@@ -1029,8 +1036,8 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
         }
         return result;
     };
-    const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry), request.observations);
-    const auto reconciled_values = reconciled ? predictions(HelmholtzModel(stored, {}, request.thermochemistry), *reconciled) : std::vector<Prediction>{};
+    const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry, request.controls.solver_options), request.observations);
+    const auto reconciled_values = reconciled ? predictions(HelmholtzModel(stored, {}, request.thermochemistry, request.controls.solver_options), *reconciled) : std::vector<Prediction>{};
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
     for (std::size_t i = 0; i < candidate.size(); ++i) if (refreshed(i)) {
         const auto& prediction = reconciled ? reconciled_values[i] : candidate[i];
@@ -1038,7 +1045,7 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
         final->residuals[i] = prediction.residual.value_or(NAN);
         final->statuses[i] = prediction.status;
     }
-    const auto baseline = request.baseline ? predictions(HelmholtzModel(*request.baseline, {}, request.thermochemistry), request.observations) : std::vector<Prediction>{};
+    const auto baseline = request.baseline ? predictions(HelmholtzModel(*request.baseline, {}, request.thermochemistry, request.controls.solver_options), request.observations) : std::vector<Prediction>{};
     std::vector<CheckResult> reports;
     for (const auto& group : request.checks) {
         CheckResult out;
@@ -1135,7 +1142,7 @@ void validate_fit_request(const FitRequest& request) {
     const auto n = request.observations.size();
     validate_checks(request);
     validate(set, request.parameters, request.observations, request.thermochemistry);
-    const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
+    const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry, request.controls.solver_options);
     require(n > 0, "needs observations");
     core::Scope validation("fit_validation");
     for (const auto& observation : request.observations) {
@@ -1147,9 +1154,7 @@ void validate_fit_request(const FitRequest& request) {
         require(std::isfinite(request.weights[i]) && request.weights[i] >= 0.0, "weight");
     }
     const auto& controls = request.controls;
-    require(std::isfinite(controls.function_tolerance) && controls.function_tolerance >= 0.0
-        && std::isfinite(controls.gradient_tolerance) && controls.gradient_tolerance >= 0.0
-        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0, "controls");
+    (void)controls.solver_options.resolved({});
     require(controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
         && controls.maximum_elapsed_time_seconds > 0.0,
         "controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
@@ -1160,9 +1165,9 @@ FitResult fit(const FitRequest& request) {
         && !request.uncertainty->covariance && !request.uncertainty->correlation) {
         auto canonical = request; canonical.uncertainty.reset(); return fit(canonical);
     }
-    if (request.uncertainty && request.minimax) { FitResult result; result.message = "fit uncertainty with minimax is unsupported"; return result; }
+    if (request.uncertainty && request.minimax) { FitResult result; result.solver_options = request.controls.solver_options.resolved({}); result.message = "fit uncertainty with minimax is unsupported"; return result; }
     if (request.minimax) return fit_minimax(request);
-    FitResult result;
+    FitResult result; result.solver_options = request.controls.solver_options.resolved({});
     const auto& set = request.coordinates;
     const std::size_t n = request.observations.size();
     std::vector<double> sqrt_weights(n, 1.0);
@@ -1203,9 +1208,9 @@ FitResult fit(const FitRequest& request) {
     options.logging_type = ceres::SILENT;
     options.minimizer_progress_to_stdout = false;
     const auto& controls = request.controls;
-    options.function_tolerance = controls.function_tolerance > 0.0 ? controls.function_tolerance : policy::FIT_FUNCTION_TOLERANCE.value;
-    options.gradient_tolerance = controls.gradient_tolerance > 0.0 ? controls.gradient_tolerance : policy::FIT_GRADIENT_TOLERANCE.value;
-    options.parameter_tolerance = controls.parameter_tolerance > 0.0 ? controls.parameter_tolerance : policy::FIT_PARAMETER_TOLERANCE.value;
+    options.function_tolerance = controls.solver_options.value(policy::function);
+    options.gradient_tolerance = controls.solver_options.value(policy::gradient);
+    options.parameter_tolerance = controls.solver_options.value(policy::parameter);
     options.update_state_every_iteration = true;
     // Bounds as an active set (a projected step alone stalls against a bound it wants to cross): a
     // coordinate on a bound (within FIT_ACTIVE_BOUND_DISTANCE) whose objective gradient points out of the
@@ -1311,11 +1316,11 @@ std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::v
         trial.controls.maximum_iterations = std::min(controls.maximum_iterations, iterations);
         trial.controls.maximum_elapsed_time_seconds = std::min(controls.maximum_elapsed_time_seconds, remaining);
         try {
-            trial.parameters = evaluate_coordinates(request.parameters, request.coordinates, start, request.holds, request.thermochemistry).parameters;
+            trial.parameters = evaluate_coordinates(request.parameters, request.coordinates, start, request.holds, request.thermochemistry, request.controls.solver_options).parameters;
             request.coordinates.apply(trial.observations, start);
             results.push_back(fit(trial));
         } catch (const std::invalid_argument& error) {
-            FitResult failed; failed.optimizer = start; failed.message = error.what(); results.push_back(std::move(failed));
+            FitResult failed; failed.solver_options = request.controls.solver_options.resolved({}); failed.optimizer = start; failed.message = error.what(); results.push_back(std::move(failed));
         }
         iterations -= static_cast<int>(results.back().iterations);
     }

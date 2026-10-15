@@ -174,13 +174,14 @@ inline std::vector<double> solve_site_fractions(
     core::Convergence* record = nullptr,
     const std::vector<double>* start = nullptr,
     const std::vector<double>* strength = nullptr,
-    bool pair_start = false
+    bool pair_start = false,
+    const policy::SolverOptions& options = {}
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         if (record != nullptr) {
             *record = {};
-            record->criterion = &policy::ASSOCIATION_RESIDUAL;
+            core::stopping_criterion(*record, options, policy::association);
             record->floor = 0.0;
             record->amplification = 1.0;
             record->stop = core::classify(
@@ -205,7 +206,7 @@ inline std::vector<double> solve_site_fractions(
                            core::Stop stop, bool classify) {
         core::Convergence result;
         result.residual = residual;
-        result.criterion = &policy::ASSOCIATION_RESIDUAL;
+        core::stopping_criterion(result, options, policy::association);
         result.floor = std::numeric_limits<double>::epsilon() * sites;
         result.amplification = last_pivot;
         result.contraction = history.contraction();
@@ -219,7 +220,7 @@ inline std::vector<double> solve_site_fractions(
     };
     const auto max_iterations = static_cast<std::size_t>(
         policy::ASSOCIATION_MAX_ITERATIONS.value);
-    const double tolerance = policy::ASSOCIATION_RESIDUAL.value;
+    const double tolerance = options.value(policy::association);
     // Hybrid Newton / damped successive substitution (Kakalis et al.; cited by
     // Pereira2012 for this system). A damped Newton step is taken when some step
     // length inside the physical domain reduces the residual; otherwise the damped

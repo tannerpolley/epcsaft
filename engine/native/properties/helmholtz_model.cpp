@@ -678,9 +678,9 @@ PropertyActionBatch evaluate_actions(
 HelmholtzModel::HelmholtzModel(
     Parameters parameters,
     std::vector<detail::ActiveParameter> active,
-    std::optional<ThermochemistryRecord> thermochemistry
+    std::optional<ThermochemistryRecord> thermochemistry, policy::SolverOptions solver_options
 )
-    : parameters_(std::move(parameters)), active_(std::move(active)),
+    : solver_options_(solver_options.resolved({})), parameters_(std::move(parameters)), active_(std::move(active)),
       thermochemistry_(std::move(thermochemistry)) {
     const std::size_t components = parameters_.component_count();
     const std::size_t sites = parameters_.site_count();
@@ -933,7 +933,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     require(positive_vector(diameter), "segment diameter");
     core::Convergence site_record;
     const auto sites = solve_site_fractions(
-        temperature, density, composition, parameters_, sigma, diameter, &site_record
+        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_
     );
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1428,7 +1428,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require(positive_vector(diameter), "segment diameter");
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter);
+                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_);
         } catch (const core::ConvergenceFailure&) {
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
@@ -1646,6 +1646,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     counters_.forward += context.forward_sweeps;
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order,
         result.maximum_energy_order);
+    result.solver_options = solver_options_;
     return result;
 }
 
@@ -1688,6 +1689,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     } catch (const std::runtime_error& error) {
         auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size(), mole_fractions.size());
         batch.density_status = PropertyActionStatus::DensityUnavailable;
+        batch.solver_options = solver_options_;
         batch.density_message = error.what();
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
@@ -1843,6 +1845,7 @@ State HelmholtzModel::state(
     const double cv_over_r = -2.0 * temperature * phi_t
         - temperature * temperature * derivatives.hessian[0];
     State result;
+    result.solver_options = solver_options_;
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
     result.association = terms.association;

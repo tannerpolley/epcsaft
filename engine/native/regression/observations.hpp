@@ -83,9 +83,10 @@ struct EvaluatedCoordinates final {
 };
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
     const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,
-    const std::optional<ThermochemistryRecord>& thermochemistry = {});
+    const std::optional<ThermochemistryRecord>& thermochemistry = {}, const policy::SolverOptions& solver_options = {});
 
 struct Prediction final {
+    policy::SolverOptions solver_options;
     std::optional<InfiniteDilutionReference> reference, second_reference;
     std::optional<ElectrolyteActivity> activity;
     std::optional<State> state, reference_state;

@@ -278,7 +278,7 @@ private:
 
 FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate) {
-    FitResult result;
+    FitResult result; result.solver_options = request.controls.solver_options.resolved({});
     try {
         require(request.minimax.has_value(), "missing minimax declaration");
         SmartPtr<Minimax> nlp = new Minimax(request, result, evaluate, start, frozen);
@@ -293,7 +293,7 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
     return result;
 }
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
-    FitResult failures;
+    FitResult failures; failures.solver_options = request.controls.solver_options.resolved({});
     try {
         for (const auto& coordinate : request.coordinates.coordinates)
             require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
@@ -305,7 +305,7 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         ObservationEvaluator evaluator(request, failures, selected);
         const auto point = request.coordinates.start(request.parameters, request.observations, request.thermochemistry);
         const ObservationFunction callback = [&](const auto& u, bool columns, auto& out) { return evaluator.evaluate(u, columns, out); };
-        FitResult result;
+        FitResult result; result.solver_options = request.controls.solver_options.resolved({});
         if (evaluation_point) {
             Minimax nlp(request, result, callback, *evaluation_point, frozen);
             nlp.point_values();

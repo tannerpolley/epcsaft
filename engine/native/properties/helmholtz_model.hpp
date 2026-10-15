@@ -121,6 +121,7 @@ struct PropertyActionDiagnostics final {
     std::optional<std::size_t> stable_root_count;
 };
 struct PropertyActionBatch final {
+    policy::SolverOptions solver_options;
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
@@ -146,6 +147,7 @@ inline double require_component_property(const std::optional<double>& value) {
     return *value;
 }
 struct State final {
+    policy::SolverOptions solver_options;
     double hard_chain = 0.0;
     double dispersion = 0.0;
     double association = 0.0;
@@ -211,6 +213,7 @@ struct DensityDiagnosticBracket final {
     double lower = 0.0, upper = 0.0, lower_residual = 0.0, upper_residual = 0.0;
 };
 struct DensityDiagnostics final {
+    policy::SolverOptions solver_options;
     std::vector<DensityDiagnosticPoint> samples, pressure_roots, spinodals;
     std::vector<DensityDiagnosticBracket> declared_brackets;
     std::vector<DensityDiagnosticPoint> unresolved;
@@ -262,6 +265,7 @@ enum class NeutralReferenceStatus {
 };
 
 struct NeutralReferenceReactionDiagnostic final {
+    policy::SolverOptions solver_options;
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
     std::optional<double> observed_terminal_change;
@@ -331,7 +335,8 @@ public:
     explicit HelmholtzModel(
         Parameters parameters,
         std::vector<ActiveParameter> active = {},
-        std::optional<ThermochemistryRecord> thermochemistry = std::nullopt
+        std::optional<ThermochemistryRecord> thermochemistry = std::nullopt,
+        policy::SolverOptions solver_options = {}
     );
 
     ~HelmholtzModel();
@@ -396,6 +401,7 @@ public:
     std::optional<std::vector<NeutralReferenceReactionDiagnostic>> stored_references(const std::vector<double>& inputs) const;
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
+    const policy::SolverOptions& solver_options() const { return solver_options_; }
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;
@@ -425,6 +431,7 @@ private:
         DerivativeOrder order
     ) const;
 
+    const policy::SolverOptions solver_options_;
     Parameters parameters_;
     std::vector<ActiveParameter> active_;
     std::optional<ThermochemistryRecord> thermochemistry_;
@@ -486,6 +493,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
 );
 
 struct InfiniteDilutionReference final {
+    policy::SolverOptions solver_options;
     std::array<double, 2> log_fugacity{};
     double molality = 0.0;
     double convergence_error = 0.0;
@@ -500,6 +508,7 @@ struct InfiniteDilutionReference final {
 };
 
 struct ElectrolyteActivity final {
+    policy::SolverOptions solver_options;
     std::array<double, 2> single_ion{};
     double mean_ionic_mole_fraction_scale = 0.0;
     double mean_ionic_log_molality_scale = 0.0;
@@ -513,6 +522,7 @@ struct ElectrolyteInputDirection final {
     double temperature = 0.0, pressure = 0.0, molality = 0.0;
 };
 struct ElectrolyteInputAction final {
+    policy::SolverOptions solver_options;
     double mean_ionic = NAN, osmotic = NAN;
     std::array<double, 2> reference_column{}, reference_difference{}, witness_difference{};
     std::vector<PropertyActionDiagnostics> diagnostics;

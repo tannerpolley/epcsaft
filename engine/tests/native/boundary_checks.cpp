@@ -608,7 +608,7 @@ void branch_rows(const char* group, const char* label, const epcsaft::HelmholtzM
                 && root.convergence.residual <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
                 && displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
                 && selected_displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
-                && pressure_row <= problem.row_tolerance && state.requested_tolerance_met.value_or(false);
+                && pressure_row <= problem.solver_options.value(epcsaft::policy::row) && state.requested_tolerance_met.value_or(false);
             const auto id = std::string(group) + "/branch/" + label + "/" + std::to_string(k) + "/" + std::to_string(phase);
             recording_support::compare_custom(id.c_str(), "corrected_displacement", "1", displacement,
                 epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value,
@@ -873,7 +873,7 @@ void check_e4_e() {
         recording_support::fields({recording_support::field("solver_status", first.solver_status),
             recording_support::field("stop", epcsaft::core::stop_name(first.convergence.stop)),
             recording_support::field("floor", epcsaft::core::optional_number(first.convergence.floor)),
-            recording_support::field("row_tolerance", problem.row_tolerance),
+            recording_support::field("row_tolerance", problem.solver_options.value(epcsaft::policy::row)),
             recording_support::field("requested_tolerance_met", first.requested_tolerance_met.has_value() ? (*first.requested_tolerance_met ? "true" : "false") : "absent"),
             recording_support::field("message", first.message)}),
         "Relationship", "reactive-continuation", "accepted reactive two-liquid start at the caller criterion", "e4-e", "start");
@@ -962,7 +962,7 @@ void check_e4_paths() {
     expect_invalid("e4-paths/amount-kind", amount, "amount declaration differs");
     auto flags = base; flags.target_problem.temperature = FreeValue::variable(181.0); flags.target_problem.pressure = FreeValue::fixed(1.0e5);
     expect_invalid("e4-paths/intensive-flags", flags, "temperature free/fixed declaration differs");
-    auto tolerance = base; tolerance.target_problem.row_tolerance = 1.0e-8;
+    auto tolerance = base; tolerance.target_problem.solver_options.values[epcsaft::policy::row] = 1.0e-8;
     expect_invalid("e4-paths/row-tolerance", tolerance, "row_tolerance differs");
     auto noop = base; noop.target_problem = noop.start_problem;
     expect_invalid("e4-paths/no-op", noop, "no fixed intensive or resolved feed differs");

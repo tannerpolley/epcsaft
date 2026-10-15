@@ -713,6 +713,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         || request.temperature.free || request.pressure.free)
         throw std::invalid_argument("discovery requires explicit unknown topology at fixed positive T/P");
     core::Capture capture;
+    const double row_tolerance = request.solver_options.resolved(model.solver_options()).value(policy::row);
     const auto& options = *request.discovery;
     if (options.evaluate_supplied_trials) throw std::invalid_argument("supplied trial evaluation is not phase discovery");
     const auto feed = resolve_feed(model, request.feed);
@@ -842,7 +843,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 trial.quantities["addition_root_log_displacement"] = std::abs(std::log(root.molar_density * volume));
                 trial.quantities["addition_root_residual"] = root.convergence.residual;
                 if (!std::isfinite(root.convergence.residual) || !std::isfinite(trial.quantities.at("addition_root_log_displacement"))
-                    || root.convergence.residual > policy::DENSITY_ROOT_RESIDUAL.value
+                    || root.convergence.residual > root.convergence.criterion->value
                     || trial.quantities.at("addition_root_log_displacement") > policy::DENSITY_ANCHOR_LOG_WINDOW.value)
                     throw std::runtime_error("descending trial has no admitted density branch");
                 if (const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
@@ -868,7 +869,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 } catch (const std::exception& error) {
                     trial.message += "; removal of " + removed.back().first.name + ": " + error.what(); break; }
             }
-            if (!result.success || result.convergence.residual > request.row_tolerance) continue;
+            if (!result.success || result.convergence.residual > row_tolerance) continue;
             double error_estimate = 0.0;
             for (std::size_t p = 0; p < current.present_phases.size(); ++p)
                 error_estimate += best.amounts[p] * energy_estimate(current.present_phases[p]);

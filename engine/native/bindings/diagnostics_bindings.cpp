@@ -3,6 +3,7 @@
 #include "core/trace.hpp"
 
 #include "fields.hpp"
+#include "solver_options.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -43,7 +44,7 @@ void register_diagnostics(py::module_& module) {
         py::list entries;
         for (const auto* entry : policy::ENTRIES) entries.append(py::cast(entry, py::return_value_policy::reference));
         return entries;
-    }, "Every named numerical policy entry (read-only); values change only in numerical_policy.hpp.");
+    }, "Immutable source defaults for every numerical policy; result.solver_options reports effective stopping settings.");
     py::class_<core::Convergence>(module, "Convergence")
         .def_property_readonly("criterion", [](const core::Convergence& record) -> py::object {
             if (record.criterion == nullptr) return py::none();

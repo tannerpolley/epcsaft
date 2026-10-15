@@ -65,6 +65,7 @@ class Mixture:
         *,
         thermochemistry: ThermochemistryRecord | None = None,
         active_parameters: Sequence[ActiveParameter] | None = None,
+        solver_options: Mapping[str, float] | None = None,
     ) -> None:
         """Thermal intervals follow component_ids order; the native model copies every input."""
         if len(parameters.component_ids) < 2 and type(self) is Mixture:
@@ -72,7 +73,7 @@ class Mixture:
         self.parameters = parameters
         self.component_ids = parameters.component_ids
         self.site_ids = parameters.site_ids
-        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry)
+        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
 
     def state(
         self,
@@ -179,10 +180,11 @@ class Pure(Mixture):
         *,
         thermochemistry: ThermochemistryRecord | None = None,
         active_parameters: Sequence[ActiveParameter] | None = None,
+        solver_options: Mapping[str, float] | None = None,
     ) -> None:
         if len(parameters.component_ids) != 1:
             raise ParameterError("Pure requires exactly one component")
-        super().__init__(parameters, thermochemistry=thermochemistry, active_parameters=active_parameters)
+        super().__init__(parameters, thermochemistry=thermochemistry, active_parameters=active_parameters, solver_options=solver_options)
 
     def density_actions(
         self,

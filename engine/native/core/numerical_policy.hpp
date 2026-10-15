@@ -3,6 +3,13 @@
 #include "core/physical_constants.hpp"
 
 #include <limits>
+#include <array>
+#include <cmath>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 
 // Every number in the engine that is not a physical constant, with the reason it
 // has the value it has. Four categories:
@@ -335,7 +342,7 @@ inline constexpr Tolerance EQUILIBRIUM_ACTION_FORWARD_ERROR{"EQUILIBRIUM_ACTION_
 // The optimizer works below the caller's row criterion: the recomputed row maximum tracks
 // the Ipopt tolerance and overshoots it by a hair (measured 1.0002-1.02x), so classifying
 // at the same value is systematically marginal. Inner Ipopt tolerances are
-// min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL) times this factor; the caller criterion alone
+// the requested row tolerance times this factor; the caller criterion alone
 // classifies rows. Owner decision 2026-09-16 (E4); provisional, not an accuracy bound. Pinned
 // square systems use the caller criterion itself; their Newton polish absorbs the overshoot
 // (owner decision 2026-09-23).
@@ -444,5 +451,58 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
     &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
     &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
+
+// Six stopping controls; defaults remain the policies above. Presence survives inheritance.
+enum SolverOption : std::size_t { association, density, row, function, gradient, parameter };
+inline constexpr std::array<const Tolerance*, 6> SOLVER_POLICIES = {&ASSOCIATION_RESIDUAL,
+    &DENSITY_ROOT_RESIDUAL, &EQUILIBRIUM_ROW_RESIDUAL, &FIT_FUNCTION_TOLERANCE,
+    &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE};
+inline constexpr std::array<const char*, 6> SOLVER_UNITS = {"1 (mass action)", "1 (reduced pressure)",
+    "1 (classified rows)", "1 (relative cost)", "scaled objective / optimizer coordinate", "1 (relative step)"};
+
+struct SolverOptions final {
+    std::array<std::optional<double>, 6> values{};
+    std::array<std::shared_ptr<const Tolerance>, 6> owners{};
+
+    double value(std::size_t i) const { return values.at(i).value_or(SOLVER_POLICIES.at(i)->value); }
+    const Tolerance* criterion(std::size_t i) const { return owners.at(i) ? owners[i].get() : SOLVER_POLICIES.at(i); }
+    static void validate(std::size_t i, double v) {
+        if (!std::isfinite(v) || !(v > 0.0))
+            throw std::invalid_argument(std::string(SOLVER_POLICIES.at(i)->name) + "=" + std::to_string(v)
+                + " [" + SOLVER_UNITS.at(i) + "] requires 0 < value <= double max, finite");
+    }
+    void set(std::size_t i, double v) {
+        validate(i, v);
+        if (values.at(i)) throw std::invalid_argument(std::string("duplicate ") + SOLVER_POLICIES[i]->name);
+        values[i] = v;
+    }
+    void set(std::string_view name, double v, unsigned scope = 63) {
+        for (std::size_t i = 0; i < values.size(); ++i) if (name == SOLVER_POLICIES[i]->name) {
+            if (!(scope & (1u << i))) throw std::invalid_argument(std::string(name) + " outside owner scope");
+            set(i, v); return;
+        }
+        throw std::invalid_argument(std::string(name) + " is unknown or fixed");
+    }
+    SolverOptions resolved(const SolverOptions& inherited) const {
+        SolverOptions result = inherited;
+        for (std::size_t i = 0; i < values.size(); ++i) {
+            if (values[i]) result.values[i] = values[i];
+            const double v = result.value(i);
+            validate(i, v);
+            if (v == SOLVER_POLICIES[i]->value) result.owners[i].reset();
+            else if (!result.owners[i] || result.owners[i]->value != v) {
+                auto criterion = *SOLVER_POLICIES[i];
+                criterion.value = v; criterion.source = "caller-supplied stopping tolerance";
+                criterion.upstream = nullptr; criterion.factor = 1.0;
+                result.owners[i] = std::make_shared<const Tolerance>(criterion);
+            }
+        }
+        return result;
+    }
+    bool operator==(const SolverOptions& other) const {
+        for (std::size_t i = 0; i < values.size(); ++i) if (value(i) != other.value(i)) return false;
+        return true;
+    }
+};
 
 }  // namespace epcsaft::policy

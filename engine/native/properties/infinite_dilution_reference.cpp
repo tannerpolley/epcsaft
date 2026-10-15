@@ -435,6 +435,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     // EqID: reference_single_insertion_taylor
     // Raw lower T/P/EOS partials reuse each resolved terminal state; admission stays below.
     NeutralReferenceReactionDiagnostic result;
+    result.solver_options = model.solver_options();
     result.reference_pressure_pa = trace.pressure;
     try {
         std::array<double, REFERENCE_MOLALITIES.size()> contractions{};
@@ -663,6 +664,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     };
     std::vector<CachedTrace> cache;
     std::vector<NeutralReferenceReactionDiagnostic> result(stoichiometries.size());
+    for (auto& diagnostic : result) diagnostic.solver_options = model.solver_options();
     if (!std::isfinite(temperature) || temperature <= 0.0
         || !std::isfinite(system_pressure) || system_pressure <= 0.0) {
         for (auto& diagnostic : result) {
@@ -765,6 +767,7 @@ InfiniteDilutionReference infinite_dilution_reference(
 ) {
     core::Scope scope("infinite_dilution_reference");
     InfiniteDilutionReference result;
+    result.solver_options = model.solver_options();
     std::optional<double> anchor;
     std::array<double, 2> previous{};
     const std::size_t columns = model.active_parameters().size();
@@ -847,6 +850,8 @@ ElectrolyteActivity electrolyte_activity(
     const InfiniteDilutionReference& reference, std::optional<double> finite_density
 ) {
     core::Scope scope("electrolyte_activity");
+    if (!(reference.solver_options == model.solver_options()))
+        throw std::invalid_argument("electrolyte reference solver options do not match the model");
     const auto composition = formula_composition(
         solvent_fractions,
         model.parameters(),
@@ -855,6 +860,7 @@ ElectrolyteActivity electrolyte_activity(
         molality
     );
     ElectrolyteActivity result;
+    result.solver_options = model.solver_options();
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
     if (const auto cause = properties::vapor_side(result.state)) throw std::runtime_error(*cause);
     const auto& state = result.state;
@@ -922,6 +928,9 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, dou
     double molality, const InfiniteDilutionReference& reference, const ElectrolyteActivity& activity,
     const ElectrolyteInputDirection& direction, double standard_deviation) {
     ElectrolyteInputAction result;
+    if (!(reference.solver_options == model.solver_options()) || !(activity.solver_options == model.solver_options()))
+        throw std::invalid_argument("electrolyte input solver options do not match the model");
+    result.solver_options = model.solver_options();
     const auto& parameters = model.parameters();
     const std::size_t count = parameters.component_count();
     const auto sidx = static_cast<std::size_t>(std::max_element(solvent.begin(), solvent.end()) - solvent.begin());

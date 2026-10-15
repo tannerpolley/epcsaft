@@ -38,6 +38,11 @@ struct Convergence final {
     std::shared_ptr<const policy::Tolerance> criterion_owner;
 };
 
+inline void stopping_criterion(Convergence& record, const policy::SolverOptions& options, std::size_t i) {
+    record.criterion_owner = options.owners.at(i);
+    record.criterion = options.criterion(i);
+}
+
 inline Stop classify(
     double residual,
     const policy::Tolerance& criterion,

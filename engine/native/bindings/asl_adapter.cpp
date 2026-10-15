@@ -419,8 +419,8 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
     reader.field("topology_declared");
     problem.topology_declared = reader.integer(1) != 0;
-    reader.field("row_tolerance");
-    problem.row_tolerance = reader.number();
+    reader.field("solver_options");
+    for (auto& value : problem.solver_options.values) value = reader.number();
     reader.field("continuation_options");
     context->options.initial_step = reader.number();
     context->options.minimum_step = reader.number();
@@ -436,7 +436,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     context->map.identity_component = reader.integer();
     context->map.minimum_gap = reader.number();
     reader.finish();
-    context->model = std::make_unique<epcsaft::HelmholtzModel>(epcsaft::build_parameters(document));
+    context->model = std::make_unique<epcsaft::HelmholtzModel>(epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, std::nullopt, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
     const auto rows = 2 * document.component_ids.size(), n = context->map.anchor.size();
     context->values.resize(rows);
@@ -599,6 +599,9 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
     reader.field("epcsaft.asl.property.v1");
     const auto document = read_document(reader);
+    epcsaft::policy::SolverOptions solver_options;
+    reader.field("solver_options");
+    for (auto& value : solver_options.values) value = reader.number();
     epcsaft::ThermochemistryRecord thermochemistry;
     reader.field("standard_pressure");
     thermochemistry.standard_pressure = reader.number();
@@ -616,7 +619,7 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     reader.finish();
     auto context = std::make_unique<PropertyContext>();
     context->model = std::make_unique<epcsaft::HelmholtzModel>(
-        epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry);
+        epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry, solver_options);
     context->record = raw;
     return context;
 }

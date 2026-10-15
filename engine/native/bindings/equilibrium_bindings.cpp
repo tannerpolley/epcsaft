@@ -3,6 +3,7 @@
 #include "equilibrium_record.hpp"
 
 #include "fields.hpp"
+#include "solver_options.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -18,7 +19,7 @@ void register_equilibrium(py::module_& module) {
         const auto& native = native_owner.cast<const HelmholtzModel&>();
         if (document.is_none() || !native.active_parameters().empty() || !native.thermochemistry())
             throw std::invalid_argument("ASL property record requires document parameters, inactive and with thermochemistry");
-        return asl_property_record(document.cast<ParameterDocument>(), *native.thermochemistry());
+        return asl_property_record(document.cast<ParameterDocument>(), *native.thermochemistry(), native.solver_options());
     }, py::arg("model"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     py::enum_<PhaseKind>(module, "PhaseKind")
@@ -58,6 +59,7 @@ void register_equilibrium(py::module_& module) {
             UnsupportedSourceBasis, FreeTemperature, FreePressure, DensityUnavailable, BranchChange, Nonfinite,
             TerminalChangeExceeded);
     py::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
+        EPCSAFT_SOLVER_OPTIONS(NeutralReferenceReactionDiagnostic, 7)
         EPCSAFT_READONLY(NeutralReferenceReactionDiagnostic, reaction_index, terminal_contraction,
             observed_terminal_change, terminal_contraction_pressure_derivative,
             terminal_contraction_pressure_second_derivative, reference_pressure_pa, status, message);
@@ -83,10 +85,14 @@ void register_equilibrium(py::module_& module) {
         .def(py::init<>())
         EPCSAFT_READWRITE(EnvelopeCondition, kind, component, target);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
+        .def_property("solver_options", [](const EquilibriumProblem& v) { return bindings::solver_options_view(v.solver_options, 4); },
+            [](EquilibriumProblem& v, py::object mapping) { v.solver_options = bindings::solver_options(mapping, 4); })
+        .def_property("row_tolerance", [](const EquilibriumProblem& v) { return v.solver_options.value(policy::row); },
+            [](EquilibriumProblem& v, py::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, 4); })
         .def(py::init<>())
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_readwrite("neutral_reference", &EquilibriumProblem::source_reference)
-        EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, row_tolerance, enthalpy_j,
+        EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
             entropy_j_per_k, critical, envelope, discovery);
     py::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
@@ -113,6 +119,8 @@ void register_equilibrium(py::module_& module) {
             return system.hessian(point, multipliers); },
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
+        .def_property_readonly("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : py::list(); })
+        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file)
         .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
@@ -249,7 +257,7 @@ void register_equilibrium(py::module_& module) {
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
         compile_problem(native, p);
-        return asl_record(document.cast<ParameterDocument>(), p, continuation, map);
+        return asl_record(document.cast<ParameterDocument>(), p, continuation, map, native.solver_options());
     }, py::arg("model"), py::arg("problem"), py::arg("continuation"), py::arg("feed_offset"),
        py::arg("feed_matrix"), py::arg("anchor_controls"), py::arg("identity_component"), py::arg("minimum_gap"));
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());

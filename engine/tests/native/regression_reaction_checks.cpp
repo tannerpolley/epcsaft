@@ -776,7 +776,7 @@ EquilibriumProblem addition_problem(double temperature, double pressure, std::ve
     result.source_reference = NeutralReferenceDeclaration{0, {0.0, 1.0}, 1.0};
     result.reactions = {{"2A=B", {-2.0, 1.0}, std::nullopt, std::nullopt, addition_law(),
         ReactionReference{reference_pressure, ReferenceSourceBasis::RawMoleFractionInfiniteDilution}}};
-    result.row_tolerance = 1.0e-10;
+    result.solver_options.values[epcsaft::policy::row] = 1.0e-10;
     return result;
 }
 

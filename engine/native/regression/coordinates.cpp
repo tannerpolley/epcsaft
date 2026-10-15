@@ -254,7 +254,7 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
 
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
     const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,
-    const std::optional<ThermochemistryRecord>& thermochemistry) {
+    const std::optional<ThermochemistryRecord>& thermochemistry, const policy::SolverOptions& solver_options) {
     core::Scope scope("evaluate_coordinates");
     EvaluatedCoordinates out;
     require(set.within_bounds(optimizer), "evaluated point outside bounds");
@@ -298,7 +298,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
         const std::size_t row = independent + h, active_row = set.active_parameters().size() + h;
         const auto evaluate = [&](double diameter) {
             out.parameters.born_diameter_angstrom.at(ion) = diameter;
-            HelmholtzModel model(out.parameters, out.active, thermochemistry);
+            HelmholtzModel model(out.parameters, out.active, thermochemistry, solver_options);
             validate(hold.reference, model);
             const auto prediction = predict(model, hold.reference);
             const auto gradient = differentiate(model, hold.reference, prediction);

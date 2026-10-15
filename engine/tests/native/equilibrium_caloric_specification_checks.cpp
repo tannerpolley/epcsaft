@@ -15,7 +15,7 @@ inline double total(const HelmholtzModel& m, const EquilibriumResult& r, bool h)
     return value;
 }
 inline EquilibriumProblem condition(EquilibriumProblem p, bool h, double target, double seed) {
-    p.temperature=FreeValue::variable(seed); p.row_tolerance=1e-11;
+    p.temperature=FreeValue::variable(seed); p.solver_options.values[epcsaft::policy::row] = 1e-11;
     if(h) p.enthalpy_j=target; else p.entropy_j_per_k=target;
     return p;
 }
@@ -31,7 +31,7 @@ inline void recovered(const HelmholtzModel& m,const EquilibriumProblem& p,const 
 }
 inline EquilibriumProblem binary() {
     auto p=equilibrium_support::flash(2); p.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor));
-    p.temperature=FreeValue::fixed(180);p.pressure=FreeValue::fixed(1e6);p.row_tolerance=1e-11;
+    p.temperature=FreeValue::fixed(180);p.pressure=FreeValue::fixed(1e6);p.solver_options.values[epcsaft::policy::row] = 1e-11;
     return p;
 }
 void roundtrips() {
@@ -45,12 +45,12 @@ void roundtrips() {
     const HelmholtzModel pure(propane_parameters(),{},records(true));
     for(bool vapor:{false,true}) {
         auto q=equilibrium_support::flash(1);q.phases[0].kind=vapor?PhaseKind::Vapor:PhaseKind::Liquid;
-        q.temperature=FreeValue::fixed(vapor?350:250);q.pressure=FreeValue::fixed(vapor?1e5:1e6);q.row_tolerance=1e-11;
+        q.temperature=FreeValue::fixed(vapor?350:250);q.pressure=FreeValue::fixed(vapor?1e5:1e6);q.solver_options.values[epcsaft::policy::row] = 1e-11;
         const auto ref=solve_equilibrium(pure,q);CHECK(ref.has_state());
         for(bool h:{true,false}) recovered(pure,q,ref,h,vapor?330:240,(h?"PH2/":"PS2/")+std::string(vapor?"vapor":"liquid"));
     }
     auto sat=equilibrium_support::flash(1);sat.feed.values={2.5};sat.temperature=FreeValue::variable(300);
-    sat.pressure=FreeValue::fixed(1e6);sat.row_tolerance=1e-11;
+    sat.pressure=FreeValue::fixed(1e6);sat.solver_options.values[epcsaft::policy::row] = 1e-11;
     sat.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
     auto ref=solve_equilibrium(pure,sat);CHECK(ref.has_state());ref.amounts={2.5*0.65,2.5*0.35};
     auto q=sat;q.phases[1].amount=AmountSpec{};
@@ -75,7 +75,7 @@ void reactions() {
         r.component_intervals[1][0].correlation={IdealPolynomial{{40},298.15,kind==1?0.:5000.,kind==0?0.:R*std::log(2.)},100000};
         auto p=equilibrium_support::flash(2);p.temperature=FreeValue::fixed(300);p.pressure=FreeValue::fixed(1e6);
         p.phases[0].kind=PhaseKind::Vapor;  // vapor-side sole root at 300 K, 1 MPa (#423)
-        p.feed.values={2.5,0};p.row_tolerance=1e-11;
+        p.feed.values={2.5,0};p.solver_options.values[epcsaft::policy::row] = 1e-11;
         ReactionSpec rx;rx.name="A=B";rx.stoichiometry={-1,1};
         if(kind==0) rx.affinity_j_per_mol=5000;else if(kind==1) rx.equilibrium_constant=2;
         else rx.correlation=ReactionLogPolynomial{std::log(2.),-5000/R,0,0,298.15,100,550,EOS_STANDARD_STATE_ID};
@@ -182,7 +182,7 @@ void actions() {
     const double expected=350*pt/(ref.molar_densities[0]*ref.molar_densities[0]*state.pressure_density_derivative* *state.total_isobaric_heat_capacity);
     compare("PS4/isentropic",action(c,r,{pd}),expected,std::abs(expected),1e-8);
     auto sat=vapor;sat.phases={equilibrium_support::phase("L",PhaseKind::Liquid),equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0))};
-    sat.pressure.value=1e6;sat.temperature=FreeValue::variable(300);sat.feed.values={2.5};sat.row_tolerance=1e-11;
+    sat.pressure.value=1e6;sat.temperature=FreeValue::variable(300);sat.feed.values={2.5};sat.solver_options.values[epcsaft::policy::row] = 1e-11;
     auto sr=solve_equilibrium(pure,sat);const auto sc=compile_problem(pure,sat);auto sp=direction(sc);sp.pressure_pa=1;
     const double tangent=action(sc,sr,{sp});sr.amounts={1.625,0.875};sat.phases[1].amount={};
     const auto ps=condition(sat,false,total(pure,sr,false),300);const auto pc=compile_problem(pure,ps);const auto pr=solve_equilibrium(pure,ps);

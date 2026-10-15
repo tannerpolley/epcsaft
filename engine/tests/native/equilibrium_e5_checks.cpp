@@ -188,7 +188,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
     double product = 1.0;
     for (const double m : scale) product *= m;
     if (product == 0.0) return result;
-    const double limit = std::min(fixture.problem.row_tolerance, epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    const double limit = std::min(fixture.problem.solver_options.value(epcsaft::policy::row), epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
     // Higher orders: one centered derivative of the preceding action on fresh solves.
     // First order below still has an independent physical value stencil.
     if (order > 1) {
@@ -887,7 +887,7 @@ void check_e5_reactive() {
         const auto isomer = [&](double k, double t, double b, double c, double d) {  // K(350 K) = k
             auto problem = isomerisation_case(1.0, a).problem;
             problem.temperature = FreeValue::fixed(t);
-            problem.row_tolerance = 1.0e-10;
+            problem.solver_options.values[epcsaft::policy::row] = 1.0e-10;
             problem.reactions[0].correlation = epcsaft::ReactionLogPolynomial{std::log(k) - b / T - c * std::log(T / 300.0) - d * T,
                 b, c, d, 300.0, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
             return problem;
@@ -937,7 +937,7 @@ void check_e5_reactive() {
             auto bubble = equilibrium_support::boundary();
             bubble.temperature = FreeValue::fixed(260.0);
             bubble.pressure = FreeValue::variable();
-            bubble.row_tolerance = 1.0e-10;
+            bubble.solver_options.values[epcsaft::policy::row] = 1.0e-10;
             bubble.feed.values = {0.5, 0.5};
             bubble.reactions = isomer(i == 0 ? 1.0e-12 : k, T, 1200.0, 0.4, 0.002).reactions;
             const auto solved = epcsaft::equilibrium::solve_equilibrium(model, bubble);

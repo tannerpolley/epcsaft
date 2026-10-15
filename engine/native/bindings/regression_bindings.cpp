@@ -3,6 +3,7 @@
 #include "core/trace.hpp"
 
 #include "fields.hpp"
+#include "solver_options.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -14,8 +15,8 @@ namespace {
 
 // The point readers' request: fit's model inputs at a declared point, without optimizer controls.
 FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> coordinates, std::vector<HydrationHold> holds,
-                         std::vector<Observation> observations, std::optional<ThermochemistryRecord> thermochemistry) {
-    FitRequest request; request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
+                         std::vector<Observation> observations, std::optional<ThermochemistryRecord> thermochemistry, const py::object& solver_options) {
+    FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, 7).resolved({}); request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
     request.coordinates.coordinates = std::move(coordinates); request.holds = std::move(holds); request.observations = std::move(observations);
     return request;
 }
@@ -75,6 +76,7 @@ void register_regression(py::module_& module) {
         EPCSAFT_READONLY(CheckResult, name, unit, status, rows, failed_rows, errors, slopes, maximum, mean, argmax,
             maximum_threshold, mean_threshold, baseline_maximum, baseline_mean, report_only);
     py::class_<Prediction>(module, "Prediction")
+        EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
             requested_tolerance_met);
     py::class_<PredictionGradient>(module, "PredictionGradient")
@@ -98,15 +100,22 @@ void register_regression(py::module_& module) {
         .def("start", &CoordinateSet::start, py::arg("parameters"), py::arg("observations") = std::vector<Observation>{},
              py::arg("thermochemistry") = std::optional<ThermochemistryRecord>{});
     // The two budgets are scientific inputs (ALG-FIT); zero tolerances select the policy defaults.
-    py::class_<FitControls>(module, "FitControls")
-        .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, double function_tolerance,
-                         double gradient_tolerance, double parameter_tolerance, int workers) {
-            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds, workers};
+    auto controls = py::class_<FitControls>(module, "FitControls")
+        .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, py::object function_tolerance,
+                         py::object gradient_tolerance, py::object parameter_tolerance, int workers, py::object solver_options) {
+            FitControls c{bindings::solver_options(solver_options), maximum_iterations, maximum_elapsed_time_seconds, workers};
+            for (const auto& [i, value] : {std::pair{policy::function, function_tolerance}, {policy::gradient, gradient_tolerance}, {policy::parameter, parameter_tolerance}})
+                bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, value, 63, true);
+            return c;
         }), py::kw_only(), py::arg("maximum_iterations"), py::arg("maximum_elapsed_time_seconds"),
             py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0,
-            py::arg("workers") = 0)
-        EPCSAFT_READWRITE(FitControls, function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations,
-            maximum_elapsed_time_seconds, workers);
+            py::arg("workers") = 0, py::arg("solver_options") = py::none())
+        EPCSAFT_SOLVER_OPTIONS(FitControls, 63)
+        EPCSAFT_READWRITE(FitControls, maximum_iterations, maximum_elapsed_time_seconds, workers);
+    for (const auto& [name, i] : {std::pair{"function_tolerance", policy::function}, {"gradient_tolerance", policy::gradient}, {"parameter_tolerance", policy::parameter}})
+        controls.def_property(name, [i](const FitControls& c) { return c.solver_options.value(i); }, [i](FitControls& c, py::object v) {
+            bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
+        });
     py::class_<TrialFailure>(module, "TrialFailure")
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian);
     py::class_<FitCovariance>(module, "FitCovariance")
@@ -134,6 +143,7 @@ void register_regression(py::module_& module) {
             physical_z_upper, lower_distances, upper_distances, hold_multipliers, full_stationarity, root_errors,
             slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks);
     py::class_<FitResult>(module, "FitResult")
+        EPCSAFT_SOLVER_OPTIONS(FitResult, 63)
         EPCSAFT_READONLY(FitResult, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
@@ -166,45 +176,49 @@ void register_regression(py::module_& module) {
        py::arg("minimax") = std::nullopt, py::arg("uncertainty") = std::nullopt);
     module.def("observations_at", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
-        const std::vector<double>& errors, std::optional<ThermochemistryRecord> thermochemistry) {
+        const std::vector<double>& errors, std::optional<ThermochemistryRecord> thermochemistry, py::object solver_options) {
         return observations_at(point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
-            std::move(thermochemistry)), optimizer, errors);
+            std::move(thermochemistry), solver_options), optimizer, errors);
     }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
-       py::arg("errors"), py::arg("thermochemistry") = std::nullopt);
+       py::arg("errors"), py::arg("thermochemistry") = std::nullopt, py::arg("solver_options") = py::none());
     py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
+        EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, 63)
         EPCSAFT_READONLY(ObservationEvaluation, predictions, gradient, optimizer_gradient, chart,
             residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
-        std::optional<ThermochemistryRecord> thermochemistry, std::optional<MeasurementUncertainty> uncertainty) {
+        std::optional<ThermochemistryRecord> thermochemistry, std::optional<MeasurementUncertainty> uncertainty, py::object solver_options) {
         core::Scope scope("evaluate_observations");
         auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
-            std::move(thermochemistry));
+            std::move(thermochemistry), solver_options);
         request.uncertainty = std::move(uncertainty);
         std::vector<std::size_t> rows(request.observations.size()); std::iota(rows.begin(), rows.end(), 0);
         FitResult failures; ObservationEvaluator evaluator(request, failures, rows); ObservationEvaluation out;
         if (!evaluator.evaluate(optimizer, true, out)) throw std::invalid_argument(failures.failures.back().message);
         return out;
     }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
-       py::arg("thermochemistry") = std::nullopt, py::arg("uncertainty") = std::nullopt);
+       py::arg("thermochemistry") = std::nullopt, py::arg("uncertainty") = std::nullopt, py::arg("solver_options") = py::none());
     module.def("evaluate_minimax", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         std::vector<CheckGroup> checks, std::optional<Parameters> baseline, const MinimaxRequest& minimax,
-        std::optional<ThermochemistryRecord> thermochemistry) {
+        std::optional<ThermochemistryRecord> thermochemistry, py::object solver_options) {
         core::Scope scope("evaluate_minimax");
         auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
-            std::move(thermochemistry));
+            std::move(thermochemistry), solver_options);
         request.checks = std::move(checks); request.baseline = std::move(baseline); request.minimax = minimax;
         return fit_minimax(request, optimizer);
     }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
-       py::arg("checks"), py::arg("baseline"), py::arg("minimax"), py::arg("thermochemistry") = std::nullopt);
-    module.def("evaluate_coordinates", &evaluate_coordinates, py::arg("parameters"), py::arg("set"), py::arg("optimizer"),
-        py::arg("holds"), py::arg("thermochemistry") = std::nullopt);
+       py::arg("checks"), py::arg("baseline"), py::arg("minimax"), py::arg("thermochemistry") = std::nullopt, py::arg("solver_options") = py::none());
+    module.def("evaluate_coordinates", [](const Parameters& p, const CoordinateSet& c, const std::vector<double>& u,
+        const std::vector<HydrationHold>& h, const std::optional<ThermochemistryRecord>& t, py::object options) {
+        return evaluate_coordinates(p, c, u, h, t, bindings::solver_options(options, 7).resolved({}));
+    }, py::arg("parameters"), py::arg("set"), py::arg("optimizer"),
+        py::arg("holds"), py::arg("thermochemistry") = std::nullopt, py::arg("solver_options") = py::none());
     module.def("evaluate_checks", [](const Parameters& stored, std::vector<Observation> observations,
-        std::vector<CheckGroup> checks, std::optional<Parameters> baseline) {
-        FitRequest request; request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
+        std::vector<CheckGroup> checks, std::optional<Parameters> baseline, py::object solver_options) {
+        FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, 7).resolved({}); request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
         return evaluate_checks(request, stored);
-    }, py::arg("stored"), py::arg("observations"), py::arg("checks"), py::arg("baseline") = std::nullopt);
+    }, py::arg("stored"), py::arg("observations"), py::arg("checks"), py::arg("baseline") = std::nullopt, py::arg("solver_options") = py::none());
 }
 
 }  // namespace epcsaft::regression
