@@ -494,6 +494,9 @@ struct InfiniteDilutionReference final {
     std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
     std::vector<double> parameter_convergence_error;
     State first_rung_state;
+    std::vector<State> ladder_states;
+    std::array<double, 2> value_difference{}, witness_difference{};
+    std::vector<std::array<double, 2>> parameter_difference, witness_parameter_difference;
 };
 
 struct ElectrolyteActivity final {
@@ -505,6 +508,22 @@ struct ElectrolyteActivity final {
     std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
     State state;
 };
+
+struct ElectrolyteInputDirection final {
+    double temperature = 0.0, pressure = 0.0, molality = 0.0;
+};
+struct ElectrolyteInputAction final {
+    double mean_ionic = NAN, osmotic = NAN;
+    std::array<double, 2> reference_column{}, reference_difference{}, witness_difference{};
+    std::vector<PropertyActionDiagnostics> diagnostics;
+    PropertyActionStatus status = PropertyActionStatus::Nonfinite;
+    std::string message;
+    bool witness_evaluated = false;
+};
+ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel&, double temperature, double pressure,
+    const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
+    double molality, const InfiniteDilutionReference&, const ElectrolyteActivity&,
+    const ElectrolyteInputDirection&, double standard_deviation);
 
 std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,

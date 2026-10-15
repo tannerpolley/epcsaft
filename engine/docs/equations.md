@@ -14,6 +14,48 @@ reject accidental omissions. Source status describes derivation, not acceptance
 of a numerical implementation. Historical method equations do not select a
 current numerical method.
 
+## `errors_in_variables_objective`
+
+- Section: Parameter estimation
+- Status: Exact derivation
+- Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53 (PDF p. 65); independent physical-unit Gaussian errors selected in #510.
+- Description: Joint least squares for model parameters v and one standardized correction u per independently measured input shared by outputs of experiment k.
+- Change note: sigma_q is finite and nonnegative; zero eliminates its coordinate. Objective sigma_y is finite and positive. Difference residuals use sqrt(w)=a/sigma_y exactly once. Report-only outputs contribute no objective or independent input penalty.
+
+$$
+q_{kj}=q^M_{kj}+\sigma_{q,kj}u_{kj},\quad
+r^x_{kj}=u_{kj},\quad r^y_{ki}=\frac{f_{ki}(\theta(v),X_k(q_k))-y^M_{ki}}{\sigma_{y,ki}},\qquad
+\min_{v,u}\frac12\sum_{k,i}(r^y_{ki})^2+\frac12\sum_{k,j}(r^x_{kj})^2.
+$$
+
+## `independent_feed_measurement_coordinates`
+
+- Section: Parameter estimation
+- Status: Exact derivation
+- Source: Normalization and electroneutrality constraints in the equilibrium formulation; #510 independent species-fraction measurement chart.
+- Description: Caller-named independent species fractions and dependent species preserve a fixed feed total N in mol, normalization and charge; B has identity rows for independent species.
+- Change note: Fractions are mol/mol; charges z are component charge numbers. One neutral dependent species or two dependent species with distinct charges solve the constraint block. The entire caller-declared box must map into [0,1], with fixed support; no trial normalization or input clipping is permitted.
+
+$$
+\mathbf x_k=\mathbf b_k+B_k\mathbf q_k,\quad \mathbf n_k=N_k\mathbf x_k,\quad
+\mathbf1^TB_k=\mathbf z^TB_k=0,\quad \mathbf1^T\mathbf b_k=1,\quad\mathbf z^T\mathbf b_k=0,\qquad
+\frac{\partial\mathbf n_k}{\partial u_{kj}}=N_kB_{k,:,j}\sigma_{q,kj}.
+$$
+
+## `errors_in_variables_residual_derivative`
+
+- Section: Parameter estimation
+- Status: Exact derivation
+- Source: Differentiation of errors_in_variables_objective and independent_feed_measurement_coordinates; existing exact pressure-closed and solved-equilibrium actions.
+- Description: Native first derivatives of standardized measurement residuals; D maps optimizer model parameters to physical parameters.
+- Change note: Input-prior rows are exact identities. T/P actions include finite and reference states; molality actions hold the reference ladder fixed. The ionic terminal reference remains 1e-12 mol/kg, with its existing witness.
+
+$$
+\frac{\partial r^y_{ki}}{\partial v_a}=\frac1{\sigma_{y,ki}}\sum_b\frac{\partial f_{ki}}{\partial\theta_b}D_{ba},\quad
+\frac{\partial r^y_{ki}}{\partial u_{kj}}=\frac{\sigma_{q,kj}}{\sigma_{y,ki}}\frac{\partial f_{ki}}{\partial X_k}\frac{\partial X_k}{\partial q_{kj}},\qquad
+\frac{\partial r^x_{kj}}{\partial v_a}=0,\quad\frac{\partial r^x_{kj}}{\partial u_{lh}}=\delta_{kl}\delta_{jh}.
+$$
+
 ## `active_binary_interaction_mapping`
 
 - Section: Native phase coordinates
@@ -1741,7 +1783,7 @@ $$
 - Status: Exact derivation
 - Source: Second implicit differentiation of the pressure closure at the fixed terminal composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
 - Description: Second temperature derivative at fixed reference pressure of the returned reference limit (displayed partials are rung calculations) along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates this lower partial, including implicit association and pressure closure. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
-- Change note: Evaluated only when a heat-capacity value, an enthalpy temperature action or a second-order temperature action is requested; it supplies s_TT = -(d2 ln K_src/dT2 + d2C/dT2) to the chemical rows. Returned as the sqrt(m) Richardson limit of the rungs and admitted when R T^2 times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K: raw rung differences of 6.0e-4 J/(mol K) contract x10 per ladder step (the sqrt(m) form), and the limit difference is about 1e-8 J/(mol K) (#353). A refusal leaves the value, the first slope and enthalpy available. The same admission serves the order-two chemical-row slope s_TT (lead decision in #147): one owner per slope; the criterion allows about 2e-6 relative change of C_TT; the raw rung change of aqueous NaCl was near 1e-7 relative (T^2 change 7e-5 against 1.2e-3; C_TT = -6.6e-3) before the limit removed its sqrt(m) part. The mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`; third temperature derivatives are not implied.
+- Change note: Evaluated only when a heat-capacity value, an enthalpy temperature action or a second-order temperature action is requested; it supplies s_TT = -(d2 ln K_src/dT2 + d2C/dT2) to the chemical rows. Returned as the sqrt(m) Richardson limit of the rungs and admitted when R T^2 times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K: raw rung differences of 6.0e-4 J/(mol K) decrease by a factor of 10 per ladder step (the sqrt(m) form), and the limit difference is about 1e-8 J/(mol K) (#353). A refusal leaves the value, the first slope and enthalpy available. The same admission serves the order-two chemical-row slope s_TT (lead decision in #147): one owner per slope; the criterion allows about 2e-6 relative change of C_TT; the raw rung change of aqueous NaCl was near 1e-7 relative (T^2 change 7e-5 against 1.2e-3; C_TT = -6.6e-3) before the limit removed its sqrt(m) part. The mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`; third temperature derivatives are not implied.
 
 $$
 \mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad

@@ -112,6 +112,17 @@ void register_regression(py::module_& module) {
     py::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);
+    py::enum_<MeasuredInputKind>(module, "MeasuredInputKind")
+        EPCSAFT_VALUES(MeasuredInputKind, Temperature, Pressure, MoleFraction, Molality);
+    py::class_<MeasuredInput>(module, "MeasuredInput").def(py::init<>())
+        EPCSAFT_READWRITE(MeasuredInput, kind, species, sigma, lower, upper, unit);
+    py::class_<MeasurementGroup>(module, "MeasurementGroup").def(py::init<>())
+        EPCSAFT_READWRITE(MeasurementGroup, rows, inputs, dependent_species, feed_total_mol);
+    py::class_<MeasurementUncertainty>(module, "MeasurementUncertainty").def(py::init<>())
+        EPCSAFT_READWRITE(MeasurementUncertainty, groups, output_sigma, covariance, correlation);
+    py::class_<InputReconciliation>(module, "InputReconciliation")
+        EPCSAFT_READONLY(InputReconciliation, values, corrections, penalties, jacobian, row_groups, column_groups,
+            column_inputs, output_cost, input_cost);
     py::class_<MinimaxRequest>(module, "MinimaxRequest").def(py::init<>())
         EPCSAFT_READWRITE(MinimaxRequest, targets, group_scales, q, tolerance, activity_distance, margin);
     py::class_<MinimaxRow>(module, "MinimaxRow")
@@ -126,7 +137,7 @@ void register_regression(py::module_& module) {
         EPCSAFT_READONLY(FitResult, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);
@@ -141,15 +152,18 @@ void register_regression(py::module_& module) {
                          std::vector<Coordinate> coordinates, std::vector<Observation> observations,
                          std::vector<double> weights, const FitControls& controls, std::vector<HydrationHold> holds,
                          std::vector<CheckGroup> checks, std::optional<Parameters> baseline, bool singular_vectors,
-                         const std::optional<std::vector<std::vector<double>>>& starts, std::optional<int> iterations, std::optional<double> seconds, std::optional<MinimaxRequest> minimax) -> py::object {
+                         const std::optional<std::vector<std::vector<double>>>& starts, std::optional<int> iterations, std::optional<double> seconds,
+                         std::optional<MinimaxRequest> minimax, std::optional<MeasurementUncertainty> uncertainty) -> py::object {
         core::Scope scope("fit");
         FitRequest request{parameters, std::move(thermochemistry), {std::move(coordinates)}, std::move(observations),
-                    std::move(weights), controls, std::move(holds), std::move(checks), std::move(baseline), singular_vectors, std::move(minimax)};
+                    std::move(weights), controls, std::move(holds), std::move(checks), std::move(baseline), singular_vectors,
+                    std::move(minimax), std::move(uncertainty)};
         return starts ? py::cast(fit_sequence(request, *starts, iterations.value_or(controls.maximum_iterations), seconds.value_or(controls.maximum_elapsed_time_seconds))) : py::cast(fit(request));
     }, py::arg("parameters"), py::arg("thermochemistry"), py::arg("coordinates"), py::arg("observations"),
        py::arg("weights"), py::arg("controls"), py::arg("holds") = std::vector<HydrationHold>{},
        py::arg("checks") = std::vector<CheckGroup>{}, py::arg("baseline") = std::nullopt, py::arg("singular_vectors") = false,
-       py::arg("starts") = std::nullopt, py::arg("iterations") = std::nullopt, py::arg("seconds") = std::nullopt, py::arg("minimax") = std::nullopt);
+       py::arg("starts") = std::nullopt, py::arg("iterations") = std::nullopt, py::arg("seconds") = std::nullopt,
+       py::arg("minimax") = std::nullopt, py::arg("uncertainty") = std::nullopt);
     module.def("observations_at", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         const std::vector<double>& errors, std::optional<ThermochemistryRecord> thermochemistry) {
@@ -159,19 +173,20 @@ void register_regression(py::module_& module) {
        py::arg("errors"), py::arg("thermochemistry") = std::nullopt);
     py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         EPCSAFT_READONLY(ObservationEvaluation, predictions, gradient, optimizer_gradient, chart,
-            residual_optimizer_gradient, statuses);
+            residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
-        std::optional<ThermochemistryRecord> thermochemistry) {
+        std::optional<ThermochemistryRecord> thermochemistry, std::optional<MeasurementUncertainty> uncertainty) {
         core::Scope scope("evaluate_observations");
-        const auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
+        auto request = point_request(parameters, std::move(coordinates), std::move(holds), std::move(observations),
             std::move(thermochemistry));
+        request.uncertainty = std::move(uncertainty);
         std::vector<std::size_t> rows(request.observations.size()); std::iota(rows.begin(), rows.end(), 0);
         FitResult failures; ObservationEvaluator evaluator(request, failures, rows); ObservationEvaluation out;
         if (!evaluator.evaluate(optimizer, true, out)) throw std::invalid_argument(failures.failures.back().message);
         return out;
     }, py::arg("parameters"), py::arg("coordinates"), py::arg("optimizer"), py::arg("holds"), py::arg("observations"),
-       py::arg("thermochemistry") = std::nullopt);
+       py::arg("thermochemistry") = std::nullopt, py::arg("uncertainty") = std::nullopt);
     module.def("evaluate_minimax", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         std::vector<CheckGroup> checks, std::optional<Parameters> baseline, const MinimaxRequest& minimax,

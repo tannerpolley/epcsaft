@@ -2,6 +2,14 @@
 
 ## Language
 
+**Errors-in-variables estimation**:
+Parameter estimation that treats measured inputs as unknown true inputs and penalizes their deviations, together with output deviations, using declared measurement uncertainties.
+Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53; [measurement objective](engine/docs/equations.md#errors_in_variables_objective).
+
+**Reconciled input**:
+An estimated physical input consistent with the model and the declared measurement-error objective; its correction is measured from the supplied input value.
+Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53; [measurement objective](engine/docs/equations.md#errors_in_variables_objective).
+
 **Species reference**:
 The declared pure-liquid, pure-vapor or solvent infinite-dilution chemical-potential standard for one species. `SpeciesReference.PureGas` and `PureLiquid` select the native vapor or liquid branch at finite pressure and are refused where only the other side's root exists; a single root on an isotherm whose ALG-DENSITY scan finds no mechanical loop (a finite search, in practice above the EOS critical temperature) serves either branch; the solvent's default liquid reference retains the near-pure terminal realization.
 Source: chemical-potential standard-state invariance in `neutral_reaction_reference_transfer`; Uyan et al. (2015), Eqs. 22–23 for pure/dilute conventions; historical generator e12a5ff8 for pure CO2 vapor; issue #274.

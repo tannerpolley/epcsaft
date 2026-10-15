@@ -617,14 +617,48 @@ PredictionGradient differentiate(
 }
 
 std::vector<PredictionGradient> differentiate_group(
-    const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates
+    const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
+    const std::vector<ObservationInputDirection>& inputs, const std::vector<double>& input_sigma
 ) {
-    if (electrolyte_observation(observations.front()->kind)) {
+    if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {
             auto projected = prediction;
-            project_prediction(model, *row, projected);
-            result.push_back(differentiate(model, *row, projected));
+            if (!pressure_closed(row->kind)) project_prediction(model, *row, projected);
+            auto gradient = differentiate(model, *row, projected);
+            if (gradient.status != ObservationStatus::Available) { result.push_back(std::move(gradient)); continue; }
+            const auto parameter_width = model.active_parameters().size()
+                + std::count_if(coordinates.coordinates.begin(), coordinates.coordinates.end(), [](const auto& c) { return c.reaction.has_value(); });
+            gradient.value.resize(parameter_width, 0.0);
+            for (std::size_t j = 0; j < inputs.size(); ++j) {
+                const auto& d = inputs[j].state;
+                double value = NAN;
+                if (electrolyte_observation(row->kind)) {
+                    auto action = electrolyte_input_action(model, row->temperature, row->pressure, row->composition,
+                        row->ion_indices, row->stoichiometry, row->molality, *prediction.reference, *prediction.activity,
+                        {d.temperature_k, d.pressure_pa, inputs[j].molality}, input_sigma[j]);
+                    value = row->kind == ObservationKind::MeanIonicActivityCoefficient ? action.mean_ionic : action.osmotic;
+                    if (action.status != PropertyActionStatus::Available) gradient.message = action.message;
+                    gradient.input_actions.push_back(std::move(action));
+                } else {
+                    const bool density = row->kind == ObservationKind::Density;
+                    const auto batch = model.pressure_actions(row->temperature, row->pressure, row->composition, row->branch,
+                        density ? std::vector<PropertyObservable>{} : std::vector<PropertyObservable>{PropertyObservable::TotalIsobaricHeatCapacity},
+                        {{d.temperature_k, d.pressure_pa, d.feed_amounts_mol, {}}}, prediction.state->molar_density);
+                    if (batch.density_status == PropertyActionStatus::Available && (density || batch.results[0].status == PropertyActionStatus::Available)) {
+                        value = density ? batch.density_action[0] : *batch.results[0].action;
+                        if (row->mass_basis) {
+                            bool missing = false;
+                            value *= mean_molar_mass(model.parameters(), row->composition.data(), missing);
+                            value += *batch.molar_density * std::inner_product(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(),
+                                model.parameters().molar_mass_kg_per_mol.begin(), 0.0);
+                        }
+                    } else gradient.message = "pressure input action: " + batch.density_message;
+                }
+                if (!std::isfinite(value)) { gradient.status = ObservationStatus::ActionUnavailable; gradient.value.clear(); break; }
+                gradient.value.push_back(value);
+            }
+            result.push_back(std::move(gradient));
         }
         return result;
     }
@@ -633,7 +667,7 @@ std::vector<PredictionGradient> differentiate_group(
     const std::size_t active_width = model.active_parameters().size();
     std::vector<ReactionCoordinate> reactions;
     for (const auto& c : coordinates.coordinates) if (c.reaction) reactions.push_back(*c.reaction);
-    const std::size_t width = active_width + reactions.size();
+    const std::size_t parameter_width = active_width + reactions.size(), width = parameter_width + inputs.size();
     const auto& problem = prediction.compiled ? prediction.compiled->problem : observations.front()->problem;
     if (observations.front()->kind == ObservationKind::AdditionEnthalpy) {
         auto item = *observations.front();
@@ -653,8 +687,8 @@ std::vector<PredictionGradient> differentiate_group(
         return {initial};
     }
     // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
-    std::vector<equilibrium::SolvedStateActionDirection> directions(width);
-    for (std::size_t k = 0; k < width; ++k) {
+    std::vector<equilibrium::SolvedStateActionDirection> directions(parameter_width);
+    for (std::size_t k = 0; k < parameter_width; ++k) {
         directions[k].feed_amounts_mol.assign(components, 0.0);
         directions[k].active_parameters.assign(active_width, 0.0);
         if (k < active_width) directions[k].active_parameters[k] = 1.0;
@@ -666,6 +700,7 @@ std::vector<PredictionGradient> differentiate_group(
                     directions[k].reaction_coefficients[j] = reaction_direction(target);
         }
     }
+    for (const auto& input : inputs) directions.push_back(input.state);
     const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
     std::vector<std::vector<std::size_t>> slots(observations.size());
     std::vector<SolvedStateObservable> observables;
@@ -729,16 +764,25 @@ std::vector<PredictionGradient> differentiate_group(
         auto& gradient = gradients[row];
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;
+        for (const auto& batch : batches) gradient.state_diagnostics.push_back(batch.diagnostics);
         for (std::size_t k = 0; k < width; ++k) {
             if (observation.kind == ObservationKind::LogEquilibriumConstant) {
-                for (std::size_t j = 0; k >= active_width && j < problem.reactions.size(); ++j)
+                for (std::size_t j = 0; j < problem.reactions.size(); ++j)
                     if (problem.reactions[j].name == observation.reaction) {
-                        const auto& d = directions[k].reaction_coefficients[j];
                         const auto& law = problem.reactions[j].correlation;
-                        gradient.value[k] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
-                            law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                        if (k >= active_width && k < parameter_width) {
+                            const auto& d = directions[k].reaction_coefficients[j];
+                            gradient.value[k] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                                law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                        } else if (law && k >= parameter_width) {
+                            gradient.value[k] = directions[k].temperature_k * reaction_log_value(*law, problem.temperature.value, 1);
+                        }
                     }
                 continue;
+            }
+            if (!solved) {
+                gradient.value.clear(); gradient.status = ObservationStatus::ActionUnavailable;
+                gradient.message = "central solved state unavailable"; break;
             }
             std::vector<double> action;
             for (const auto j : slots[row]) {
