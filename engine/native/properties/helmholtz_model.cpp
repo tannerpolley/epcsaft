@@ -1089,6 +1089,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (order != DerivativeOrder::PressureSlope) ++counters_.hessian_calls;
     for (std::size_t offset = 0; offset < width; ++offset) {
         const std::size_t column = coordinates[offset];
+        if (order == DerivativeOrder::StateHessian && column >= 2 && column < 2 + components) continue;
         std::vector<double> direction(input_count, 0.0);
         direction[column] = 1.0;
         for (std::size_t site = 0; site < sites_count; ++site)
@@ -1810,7 +1811,8 @@ State HelmholtzModel::state(
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
-    const auto derivatives = evaluate(temperature, volume, mole_fractions, DerivativeOrder::Hessian);
+    const auto derivatives = evaluate(temperature, volume, mole_fractions,
+        core::current_trace() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
     const auto& sites = derivatives.site_fractions;
     const auto [electro, terms] = [&] {
         core::Scope scope("state_residual_recompute"), evaluation("evaluate");

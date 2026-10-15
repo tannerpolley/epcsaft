@@ -247,6 +247,10 @@ its existing search meaning, not exhaustive root enumeration.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
+State construction evaluates the full Helmholtz gradient and every row of the
+T, V and active-parameter Hessian columns. Uncaptured construction omits unused
+composition columns; active Core capture retains the complete Hessian payload.
+
 Density closure evaluates normalized Taylor coefficients of the shared residual
 Helmholtz equations in volume at fixed temperature and composition. Order two
 supplies pressure and slope; order three adds pressure curvature. Association
