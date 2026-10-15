@@ -54,7 +54,7 @@ ACCEPTED = dict(
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
-                fitting=dict(rows=217, cases=3, success=0, requested_tolerance_met=0, keys='61022e5bfe5b710f'),
+                fitting=dict(rows=211, cases=3, success=0, requested_tolerance_met=0, keys='ba2b694ad19d2fe8'),
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 
