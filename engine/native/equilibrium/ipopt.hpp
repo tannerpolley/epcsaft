@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <functional>
+#include "core/numerical_policy.hpp"
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -66,7 +68,7 @@ inline std::string application_return_name(Ipopt::ApplicationReturnStatus code) 
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
     double seconds, bool exact, double objective_factor, std::map<std::string, double>* consumed = nullptr,
-    double requested_row = 0.0) {
+    double requested_row = 0.0, const std::function<bool(double)>& warm = {}) {
     const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
     if (!(tolerance > 0.0) || !std::isfinite(tolerance) || !(dual_tolerance > 0.0) || !std::isfinite(dual_tolerance))
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
@@ -101,6 +103,18 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const auto initialized = app->Initialize(options_file ? options_file : "");
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
         double value = 0.0; admit(options->GetNumericValue(name, value, "")); (*consumed)[name] = value;
+    }
+    if (initialized == Ipopt::Solve_Succeeded && warm) {
+        double cap = 0.0;
+        admit(options->GetNumericValue("warm_start_mult_init_max", cap, ""));
+        if (warm(options_file && *options_file ? 0.0 : cap)) {
+            admit(options->SetStringValue("warm_start_init_point", "yes"));
+            for (const auto* name : {"warm_start_bound_push", "warm_start_bound_frac", "warm_start_mult_bound_push",
+                                    "warm_start_slack_bound_push", "warm_start_slack_bound_frac"})
+                admit(options->SetNumericValue(name, policy::EQUILIBRIUM_WARM_PUSH.value));
+            admit(options->SetStringValue("mu_strategy", "monotone"));
+            admit(options->SetNumericValue("mu_init", policy::EQUILIBRIUM_WARM_MU.value));
+        }
     }
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};
 }

@@ -917,7 +917,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const std::vector<double>& amounts,
     DerivativeOrder order
 ) const {
-    core::Scope scope("evaluate");
+    core::Scope entry("helmholtz_evaluate_locked"), scope("evaluate");
+    entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
     const std::size_t point_size = 2 + components + active_.size();

@@ -269,6 +269,7 @@ double largest_difference(
 }
 
 void clear_state(EquilibriumResult& result) {
+    result.optimizer_state.reset();
     result.temperature.clear();
     result.pressure.clear();
     result.amounts.clear();
@@ -323,6 +324,98 @@ std::vector<double> add_multipliers(
         result[point.size() + column] = solved(static_cast<Eigen::Index>(column));
     }
     return result;
+}
+
+// TNLP endpoint before polish; duals use the normalized objective and feed-relative amounts.
+struct OptimizerState final {
+    EquilibriumProblem declaration;
+    std::vector<std::vector<double>> basis;
+    std::vector<double> identity, point, lambda, lower, upper;
+};
+
+namespace {
+EquilibriumProblem optimizer_declaration(EquilibriumProblem p) {
+    p.temperature.value = p.pressure.value = 1.0;
+    p.temperature.absent = p.pressure.absent = false;
+    p.feed.solvent_mass_kg = 1.0;
+    for (auto& phase : p.phases) if (phase.is_pinned()) phase.amount.fraction = phase.is_zero_pinned() ? 0.0 : 1.0;
+    std::fill(p.standard_gibbs_j_per_mol.begin(), p.standard_gibbs_j_per_mol.end(), 0.0);
+    for (auto& r : p.reactions) {
+        if (r.equilibrium_constant) r.equilibrium_constant = 1.0;
+        if (r.affinity_j_per_mol) r.affinity_j_per_mol = 0.0;
+        if (r.correlation) r.correlation->a = r.correlation->b = r.correlation->c = r.correlation->d = 0.0;
+    }
+    return p;
+}
+std::vector<double> optimizer_identity(const CompiledSystem& c) {
+    const auto& p = c.model->parameters();
+    std::vector<double> id;
+    const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
+    append(p.charge_number); append(p.molar_mass_kg_per_mol); append(p.site_component);
+    append(p.site_multiplicity); append(p.association_active); append(p.sigma_term_component);
+    append(p.permittivity_term_component); append(p.permittivity_term_power);
+    for (const auto form : {p.electrolyte_form.declared() ? static_cast<int>(p.electrolyte_form.require("electrolyte")) : 0,
+                           p.ionic_dispersion.declared() ? static_cast<int>(p.ionic_dispersion.require("dispersion")) : 0,
+                           p.permittivity_form.declared() ? static_cast<int>(p.permittivity_form.require("permittivity")) : 0}) id.push_back(form);
+    append(std::vector<std::size_t>{p.component_count(), c.primal_size, c.rank, c.charge_row_count, c.mode_count,
+                                   c.free_intensive_count, c.pinned_count});
+    id.push_back(c.feasibility_cell()); id.push_back(c.log_packing_unbounded()); id.push_back(c.problem.critical.has_value());
+    id.push_back(c.problem.envelope ? static_cast<int>(c.problem.envelope->kind) : -1);
+    id.push_back(c.problem.envelope ? c.problem.envelope->component : 0);
+    for (const auto& phase : c.problem.phases) append(phase.support);
+    for (const auto& row : c.rows) { id.push_back(static_cast<int>(row.kind)); id.push_back(row.phase); id.push_back(row.index); }
+    return id;
+}
+}
+
+bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bool predicted) {
+    const auto refuse = [&](const char* cause) { if (scope_) scope_->probe("warm_ineligible", {}, 0, cause); return false; };
+    if (!(cap > 0.0)) return refuse("explicit options file or nonpositive effective multiplier cap");
+    if (state.identity != optimizer_identity(compiled_) || state.basis != compiled_.B
+        || !declaration_difference(state.declaration, optimizer_declaration(compiled_.problem)).empty()) return refuse("layout changed");
+    const auto n = chart_.size(), m = constraint_rows().size();
+    if (state.point.size() != n || state.lower.size() != n || state.upper.size() != n || state.lambda.size() != m)
+        return refuse("tuple shape");
+    auto chart = chart_;
+    auto start = predicted ? std::vector<double>(start_.begin(), start_.begin() + n) : state.point;
+    if (!predicted && !compiled_.feasibility_cell()) for (auto i : amount_columns_)
+        chart[i] = std::max(start[i], policy::PHASE_DISAPPEARANCE_AMOUNT.value * compiled_.feed_total);
+    std::vector<double> lower(n), upper(n), gl(m), gu(m);
+    if (!get_bounds_info(n, lower.data(), upper.data(), m, gl.data(), gu.data())) return refuse("bounds unavailable");
+    const double a = 1.0 / compiled_.feed_total, push = policy::EQUILIBRIUM_WARM_PUSH.value;
+    double minimum = INFINITY, maximum = 0.0, sum = 0.0, products = 0.0;
+    warm_lower_.assign(n, 0.0); warm_upper_.assign(n, 0.0); warm_lambda_.resize(m);
+    for (std::size_t j = 0; j < m; ++j) {
+        warm_lambda_[j] = state.lambda[j] / a;
+        if (!std::isfinite(warm_lambda_[j]) || std::abs(state.lambda[j]) > cap) return refuse("equality multiplier cap or nonfinite");
+    }
+    for (std::size_t i = 0; i < n; ++i) {
+        double y = start[i] / chart[i];
+        const bool lo = lower[i] > -1.0e19, hi = upper[i] < 1.0e19;
+        const double width = hi && lo ? upper[i] - lower[i] : INFINITY;
+        if (!(width > 0.0)) return refuse("fixed bound");
+        if (lo) y = std::max(y, lower[i] + std::min(push * std::max(1.0, std::abs(lower[i])), push * width));
+        if (hi) y = std::min(y, upper[i] - std::min(push * std::max(1.0, std::abs(upper[i])), push * width));
+        if (!std::isfinite(y) || (lo && !(y > lower[i])) || (hi && !(y < upper[i]))) return refuse("unrepresentable interior");
+        const double unit = std::find(amount_columns_.begin(), amount_columns_.end(), i) != amount_columns_.end() ? compiled_.feed_total : 1.0;
+        for (int side = 0; side < 2; ++side) {
+            if (!(side == 0 ? lo : hi)) continue;
+            const double slack = side == 0 ? y - lower[i] : upper[i] - y;
+            double z = (side == 0 ? state.lower[i] : state.upper[i]) * chart[i] / unit;
+            if (!(z >= 0.0) || !std::isfinite(z)) return refuse("invalid bound multiplier");
+            z = std::max(z, push);
+            const double product = z * slack;
+            if (!std::isfinite(product) || z > cap) return refuse("bound multiplier cap or nonfinite product");
+            (side == 0 ? warm_lower_[i] : warm_upper_[i]) = z / a;
+            minimum = std::min(minimum, product); maximum = std::max(maximum, product); sum += product; ++products;
+        }
+        start[i] = y * chart[i];
+    }
+    std::copy(start.begin(), start.end(), start_.begin());
+    chart_ = std::move(chart);
+    warm_ = true;
+    if (scope_) scope_->probe("warm_initialized", {minimum, products ? sum / products : 0.0, maximum});
+    return true;
 }
 
 GibbsMinimizer::GibbsMinimizer(
@@ -400,14 +493,14 @@ bool GibbsMinimizer::get_starting_point(
     bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
     Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda
 ) {
-    if (!init_x) return false;
+    if (!init_x && !warm_) return false;
     const std::size_t size = !compiled_.feasibility_cell() ? compiled_.primal_size : start_.size();
-    for (Ipopt::Index i = 0; i < n; ++i) x[i] = (static_cast<std::size_t>(i) < size ? start_[i] : 0.0) / chart_[i];
+    for (Ipopt::Index i = 0; init_x && i < n; ++i) x[i] = (static_cast<std::size_t>(i) < size ? start_[i] : 0.0) / chart_[i];
     if (init_z) {
-        std::fill(z_L, z_L + n, 0.0);
-        std::fill(z_U, z_U + n, 0.0);
+        if (warm_) std::copy(warm_lower_.begin(), warm_lower_.end(), z_L); else std::fill(z_L, z_L + n, 0.0);
+        if (warm_) std::copy(warm_upper_.begin(), warm_upper_.end(), z_U); else std::fill(z_U, z_U + n, 0.0);
     }
-    if (init_lambda) std::fill(lambda, lambda + m, 0.0);
+    if (init_lambda) { if (warm_) std::copy(warm_lambda_.begin(), warm_lambda_.end(), lambda); else std::fill(lambda, lambda + m, 0.0); }
     return true;
 }
 
@@ -480,6 +573,7 @@ const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Numb
 bool GibbsMinimizer::eval_f(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number& value
 ) {
+    core::Scope callback("ipopt_eval_f");
     ++evaluations_;
     try {
         value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
@@ -492,6 +586,7 @@ bool GibbsMinimizer::eval_f(
 bool GibbsMinimizer::eval_grad_f(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number* grad_f
 ) {
+    core::Scope callback("ipopt_eval_grad_f");
     try {
         const auto& point = prepared(n, x);
         if (!gradient_.has_value()) gradient_ = compiled_.objective_gradient_at(point);
@@ -506,6 +601,7 @@ bool GibbsMinimizer::eval_g(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/,
     Ipopt::Index m, Ipopt::Number* g
 ) {
+    core::Scope callback("ipopt_eval_g");
     try {
         const auto& values = rows_at(n, x).values;
         const auto rows = constraint_rows();
@@ -521,6 +617,7 @@ bool GibbsMinimizer::eval_jac_g(
     Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
+    core::Scope callback("ipopt_eval_jac_g");
     const auto rows = constraint_rows();
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -553,6 +650,7 @@ bool GibbsMinimizer::eval_h(
     bool /*new_lambda*/, Ipopt::Index nele_hess, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
+    core::Scope callback("ipopt_eval_h");
     ++hessian_calls_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -591,12 +689,15 @@ bool GibbsMinimizer::eval_h(
 }
 
 bool GibbsMinimizer::intermediate_callback(
-    Ipopt::AlgorithmMode /*mode*/, Ipopt::Index iter, Ipopt::Number /*obj_value*/,
+    Ipopt::AlgorithmMode mode, Ipopt::Index iter, Ipopt::Number /*obj_value*/,
     Ipopt::Number inf_pr, Ipopt::Number inf_du, Ipopt::Number mu,
     Ipopt::Number d_norm, Ipopt::Number regularization_size,
     Ipopt::Number alpha_du, Ipopt::Number alpha_pr, Ipopt::Index ls_trials,
     const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
+    core::Scope callback("ipopt_intermediate");
+    callback.probe("iteration", {static_cast<double>(iter), static_cast<double>(mode)});
+    restored_ = restored_ || mode == Ipopt::RestorationPhaseMode;
     // Ipopt adjusts bounds only when it accepts a point, before this callback, so the active problem's bound read
     // here holds for every search until the next callback; in restoration that is restoration's own bound block, whose
     // original-variable part restoration does not update when it adjusts the original problem's bounds.
@@ -625,12 +726,12 @@ bool GibbsMinimizer::intermediate_callback(
         {inf_pr, inf_du, mu, d_norm, regularization_size,
                             alpha_pr, alpha_du, static_cast<double>(ls_trials)},
         static_cast<std::uint32_t>(iter));
-    return !limits_ || !limits_->expired();  // max_iter owns iteration termination
+    return !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination
 }
 
 void GibbsMinimizer::finalize_solution(
     Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* x,
-    const Ipopt::Number* /*z_L*/, const Ipopt::Number* /*z_U*/, Ipopt::Index m,
+    const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m,
     const Ipopt::Number* /*g*/, const Ipopt::Number* lambda,
     Ipopt::Number /*objective*/,
     const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
@@ -639,6 +740,22 @@ void GibbsMinimizer::finalize_solution(
     solution_.assign(x, x + n);
     for (Ipopt::Index i = 0; i < n; ++i) solution_[i] *= chart_[i];
     constraint_multipliers_.assign(lambda, lambda + m);
+    if (status != Ipopt::SUCCESS || restored_) return;
+    auto endpoint = std::make_shared<OptimizerState>();
+    endpoint->declaration = optimizer_declaration(compiled_.problem);
+    endpoint->basis = compiled_.B; endpoint->identity = optimizer_identity(compiled_);
+    endpoint->point = solution_; endpoint->lambda = constraint_multipliers_;
+    const double a = 1.0 / compiled_.feed_total;
+    for (auto& v : endpoint->lambda) v *= a;
+    for (Ipopt::Index i = 0; i < n; ++i) {
+        const double unit = std::find(amount_columns_.begin(), amount_columns_.end(), i) != amount_columns_.end() ? compiled_.feed_total : 1.0;
+        endpoint->lower.push_back(a * unit / chart_[i] * z_L[i]);
+        endpoint->upper.push_back(a * unit / chart_[i] * z_U[i]);
+    }
+    if (all_numeric(endpoint->point) && all_numeric(endpoint->lambda) && all_numeric(endpoint->lower) && all_numeric(endpoint->upper)
+        && std::all_of(endpoint->lower.begin(), endpoint->lower.end(), [](double v) { return v >= 0.0; })
+        && std::all_of(endpoint->upper.begin(), endpoint->upper.end(), [](double v) { return v >= 0.0; })) endpoint_ = std::move(endpoint);
+
 }
 
 namespace {
@@ -676,10 +793,11 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
 }
 
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
-EquilibriumResult run_driver(
+static EquilibriumResult run_driver_once(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
-    std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton
+    std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool* initialized_warm = nullptr
 ) {
     const double row_tolerance = compiled.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
@@ -718,7 +836,12 @@ EquilibriumResult run_driver(
             static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
-            true, 1.0 / compiled.feed_total, &result.solver_settings, row_tolerance);
+            true, 1.0 / compiled.feed_total, &result.solver_settings, row_tolerance,
+            warm ? std::function<bool(double)>([&](double cap) {
+                const bool enabled = nlp->initialize_warm(*warm, cap, predicted);
+                if (initialized_warm) *initialized_warm = enabled;
+                return enabled;
+            }) : std::function<bool(double)>{});
         } catch (...) { capture_driver(); throw; }
     }();
     capture_driver();
@@ -1120,10 +1243,44 @@ EquilibriumResult run_driver(
     }
     if (expired()) { result.message = "elapsed work budget exhausted";
         reject_elapsed(result, scope); return result; }
+    scope.probe("returned_temperature", result.temperature);
+    scope.probe("returned_pressure", result.pressure);
+    scope.probe("returned_amounts", result.amounts);
+    scope.probe("returned_mole_fractions", result.mole_fractions);
+    scope.probe("returned_densities", result.molar_densities);
+    if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
     return result;
 }
+
+EquilibriumResult run_driver(
+    const HelmholtzModel& model, const CompiledSystem& compiled,
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
+    std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
+    std::shared_ptr<const OptimizerState> warm, bool predicted
+) {
+    if (!warm || newton) return run_driver_once(model, compiled, std::move(initial), std::move(result), scope, attempt, audit, limits, newton, {}, predicted);
+    DriverLimits shared = limits ? *limits : DriverLimits{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
+        std::chrono::steady_clock::time_point::max()};
+    const auto* work = limits ? limits : &shared;
+    EquilibriumResult tried = result;
+    bool initialized = false;
+    try {
+        core::Scope warm_scope("equilibrium_warm_attempt");
+        tried = run_driver_once(model, compiled, initial, result, warm_scope, attempt, &tried, work, false, warm, predicted, &initialized);
+        if (!initialized) return tried;
+        if (tried.success) return tried;
+    } catch (const std::exception& error) { scope.probe("warm_failed", {}, 0, error.what()); }
+    scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
+    if (audit) *audit = tried;
+    core::Scope cold_scope("equilibrium_cold_fallback");
+    auto cold = run_driver_once(model, compiled, std::move(initial), result, cold_scope, attempt, audit, work, false, {}, predicted);
+    StageWork stages; stages.add(tried); stages.report(cold);
+    if (audit) *audit = cold;
+    return cold;
+}
+
 
 namespace {
 
@@ -1270,7 +1427,8 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
     core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     std::optional<CompiledSystem> compiled;
     if (!request.discovery) compiled = compile_problem(model, request);
-    auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope);
+    auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope, nullptr,
+        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr);
     if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
         observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
     return result;
@@ -1286,7 +1444,7 @@ static bool newton_eligible(const CompiledSystem& compiled) {
 }
 
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
-                                 core::Scope* outer, const DriverLimits* limits) {
+                                 core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm) {
     std::optional<core::Scope> own;
     auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
     const auto& model = *compiled.model;
@@ -1324,7 +1482,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             stages.add(fast);
         }
         try {
-            result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, nullptr, limits);
+            result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, nullptr, limits, false, warm);
         } catch (const std::exception&) {
             if (attempt == 0) continue;  // the seeded attempt's exception falls back to the declared start
             throw;
@@ -1507,7 +1665,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& request,
-    const std::vector<double>& coordinates, std::vector<double>* attempt, const DriverLimits* limits
+    const std::vector<double>& coordinates, std::vector<double>* attempt, const DriverLimits* limits,
+    std::shared_ptr<const OptimizerState> warm
 ) {
     core::Scope scope("solve_equilibrium");
     CompiledSystem compiled = compile_problem(model, request);
@@ -1516,7 +1675,7 @@ EquilibriumResult solve_equilibrium_from_coordinates(
     if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates)) {
         throw std::invalid_argument("continuation coordinates do not match the compiled layout");
     }
-    return run_driver(model, compiled, coordinates, std::move(result), scope, attempt, nullptr, limits);
+    return run_driver(model, compiled, coordinates, std::move(result), scope, attempt, nullptr, limits, false, std::move(warm), true);
 }
 
 }  // namespace epcsaft::equilibrium
