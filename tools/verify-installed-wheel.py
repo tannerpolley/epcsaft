@@ -48,7 +48,8 @@ def verify(wheel: Path) -> None:
             if member.startswith("epcsaft/") and member.endswith(".so")
         ]
         extensions = [member for member in matches if member.startswith(NATIVE_MEMBER_PREFIX)]
-        if len(extensions) != 1 or len(matches) != 2 or ASL_MEMBER not in matches:
+        if (len(extensions) != 1 or ASL_MEMBER not in matches
+                or len(matches) != 2 + ("epcsaft/libepcsaft_native.so" in matches)):
             raise SystemExit(
                 f"expected one epcsaft._core extension and {ASL_MEMBER}, found {matches}"
             )
