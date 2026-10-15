@@ -2,6 +2,8 @@
 import importlib.machinery
 import importlib.util
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 loader = importlib.machinery.SourceFileLoader('time_key_solves', str(Path(__file__).resolve().parents[1] / 'time-key-solves'))
@@ -63,6 +65,11 @@ evaluation = dict(cpu_seconds=ceiling, seconds=ceiling, reference_taylor_evaluat
 fit = dict(seconds=120, critical_cpu_seconds=10, status='converged')
 assert not tool.f1_ceilings({'A': evaluation, 'B': evaluation}, [('A', fit), ('B', fit)])
 assert tool.f1_ceilings({'B': dict(evaluation, cpu_seconds=ceiling * 1.001)})
+invalid_control = subprocess.run([sys.executable, '-c',
+    f"import runpy; tool = runpy.run_path({loader.path!r}); "
+    f"tool['f1_ceilings']({{'A': {dict(evaluation, cpu_seconds=20.490358956)!r}}})"],
+    capture_output=True, text=True)
+assert invalid_control.returncode == 1 and 'invalid host measurement: rerun on a quieter host' in invalid_control.stderr
 assert tool.f1_ceilings({}, [('B', dict(fit, seconds=120.001))])
 assert tool.gate(*rows(skip_b=[tool.F1]), expect_change=True)
 print('F1 A=A, planted work increases, fixed ceilings and missing evidence: ok')

@@ -353,6 +353,8 @@ def f1_ceilings(evaluations, fits=(), control=False):
     if control and (set(evaluations) != set('AB') or set(fits) != set('AB')):
         return ['A=A control needs both serial evaluations and both fits']
     ceiling = 1.25 * F1_IDENTITY['frozen']['serial_cpu_seconds']
+    if any(result['cpu_seconds'] > ceiling for label, result in evaluations.items() if label == 'A' or control):
+        raise RuntimeError('invalid host measurement: rerun on a quieter host')
     for label, result in evaluations.items():
         print(f'F1 {label}: serial CPU {result["cpu_seconds"]:.6f} s / ceiling {ceiling:.6f} s; '
               f'wall {result["seconds"]:.6f} s; central Taylor {result["reference_taylor_evaluations"]}', flush=True)
@@ -485,10 +487,22 @@ def main():
         comparisons = {}
         print('WORK COUNTS FIRST: iterations / evaluations / Hessian calls (A versus B)', flush=True)
         for case in CASES:
-            baseline[case] = {label: call(label, case, starts) for label in ('A', 'B')}
+            for attempt in range(1, 4 if case == F1 else 2):
+                baseline[case] = {label: call(label, case, starts) for label in ('A', 'B')}
+                for label in ('A', 'B'):
+                    retain(label, case, 'warmup' if attempt == 1 else f'serial-{attempt}', baseline[case][label])
+                if case != F1:
+                    break
+                summary.setdefault('f1_serial_attempts', []).append({
+                    label: baseline[case][label]['cpu_seconds'] for label in ('A', 'B')})
+                try:
+                    f1_ceilings({'A': baseline[case]['A']})
+                    break
+                except RuntimeError:
+                    if attempt == 3:
+                        raise
+                    print(f'F1 serial pair {attempt}: invalid host measurement; retrying pair', flush=True)
             a, b = baseline[case]['A'], baseline[case]['B']
-            for label in ('A', 'B'):
-                retain(label, case, 'warmup', baseline[case][label])
             equal = all(tuple(left[k] for k in count_keys(case)) == tuple(right[k] for k in count_keys(case))
                         for left, right in zip(a['rows'], b['rows'], strict=True))
             comparisons[case] = dict(work_A=work(a), work_B=work(b), work_identical=equal,

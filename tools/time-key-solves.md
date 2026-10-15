@@ -68,7 +68,7 @@ at the packet's starting point. No application checkout is read. The identity
 file records the original source hashes, compressed hash and uncompressed packet
 SHA-256 `862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db`.
 
-F1 runs once per environment, outside the ordinary warmup/AB/BA timing repeats.
+F1 runs serially in A/B pairs, outside the ordinary warmup/AB/BA timing repeats.
 The same `work.csv`, `states.csv`, comparison and `summary.json` retain it.
 Its four work counts are reference computations after cache lookup (misses),
 computed `reference_column` calls, `solve_density` calls, and the sum of
@@ -89,6 +89,13 @@ non-diagnostic trace capture. Declaration decoding, trace reduction, process
 startup and output writing are excluded. Both arms must use at most 1.25 times
 the fixed CPU value in the fixture identity file; `--expect-change` cannot waive
 this ceiling. The frozen value does not follow later main timings upward.
+An over-ceiling baseline A invalidates the host measurement. The command repeats
+the serial A/B pair up to three times, sequentially, to obtain a valid baseline.
+If all three controls exceed the ceiling, it exits nonzero with
+`invalid host measurement: rerun on a quieter host`. This is not a ceiling
+failure or a pass. With a valid control, candidate B must still meet the same
+absolute ceiling. Every attempt's work and states remain subject to the work
+and numerical comparisons; `f1_serial_attempts` retains both CPU times per pair.
 The historical 21.79 s measurement on `36485a88` is **wall time**, not CPU.
 
 **Full fit.** `--fit` uses the same prepared environments and worker protocol
