@@ -74,6 +74,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #541, zeroth-order reuse: the selected prototype adds 16 and
+  removes 6 runtime lines in Properties against `7029597d`. Tape-local reuse
+  replaces the three unconditional order-zero sweeps. Existing ceilings remain
+  in force; the separate tape-optimization lever remains unqualified.
+
 - 2026-10-15, #513 (lead decision, R1 corrected after merging #497): **Properties allowance raised by the lead from +200 to +220 within the unchanged +238 total**; gross additions remain at most 300 Properties and 356 total. Against merged main `54a6d798`, the authored change adds Properties +220 and total +238. Main's Properties count is 5,532 after #497; the corrected combined count is 5,752. Properties **5,535 → 5,810**, count plus band 58; total **26,473 → 26,810**, the layer-ceiling sum, below combined count 26,584 plus band 266. The fixed design base remains `5ad73fb9`; separately accepted #505 and #497 additions are excluded from the authored allowance. Both main amendments below are retained. Shared sampled-contradiction detection, local mesh subdivision, partition agreement and cause preservation reuse the existing scan, fold bisection and Newton owners. R1 preserves a refined boundary crossing unless the ordinary partition owns its exact-zero node; it introduces no tolerance. Other layer allowances remain those in the accepted design.
 
 - 2026-10-15, #497 (lead allowance: parameter Regression +60 net / 100 gross,

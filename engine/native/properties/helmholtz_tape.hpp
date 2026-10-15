@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -126,6 +127,7 @@ struct HelmholtzTape final {
     std::size_t regular_count = 0, site_count = 0, ideal_offset = 0;
     bool residual_available = true, ideal_available = false;
     std::vector<double> site_values;
+    std::vector<double> zero_point, zero_value;
 
     static std::unique_ptr<HelmholtzTape> record(
         const Parameters& parameters,
@@ -224,6 +226,17 @@ struct HelmholtzTape final {
         return result;
     }
 
+    std::vector<double> forward_zero(const std::vector<double>& point, std::size_t* forward_count = nullptr) {
+        if (zero_point.size() != point.size()
+            || std::memcmp(zero_point.data(), point.data(), point.size() * sizeof(double)) != 0) {
+            zero_point.clear();
+            zero_value = function.Forward(0, point);
+            zero_point = point;
+            if (forward_count != nullptr) ++*forward_count;
+        }
+        return zero_value;
+    }
+
     std::vector<double> implicit_taylor(
         const std::vector<std::vector<double>>& regular_coefficients,
         std::size_t order,
@@ -244,8 +257,7 @@ struct HelmholtzTape final {
             std::copy(regular_coefficients[current].begin(), regular_coefficients[current].end(), input.begin());
             if (!current) {
                 std::copy(site_values.begin(), site_values.end(), input.begin() + regular_count);
-                output = function.Forward(0, input);
-                if (forward_count != nullptr) ++*forward_count;
+                output = forward_zero(input, forward_count);
                 if (output_prefix != nullptr) output_prefix->push_back(output);
                 continue;
             }
