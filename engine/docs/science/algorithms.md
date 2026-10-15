@@ -889,7 +889,55 @@ curvature; requiring it to decrease at every step can reject a direction that
 resolves trace chemical equilibrium within the step budget.
 Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
-For eligible calls entering `solve_compiled`, the [ADR 0009 amendment](../../../docs/scientific/decisions/0009-general-platform-one-driver.md) applies the same exact-Jacobian Newton iteration from the existing start before constructing Ipopt. In Newton mode, once the existing residual criterion is met, one further full correction uses a fresh exact Jacobian and solve; the driver returns that corrected point only if the same box and residual checks pass, retaining its work. Before every Newton candidate box check, log-composition overshoots above zero within four ulps of the physical mole-fraction bound of one are snapped to zero; the log allowance is computed from four successive `nextafter` steps above one (8.881784197001248e-16). The snapped point is re-prepared and must meet the unchanged residual criterion; otherwise Ipopt runs from the original start. Every other bound remains unchanged. Eligibility requires a square feasibility cell with one liquid and one vapor phase, one phase pinned at exactly zero and the other free, exactly one free intensive, and no discovery, reaction, ion, caloric, critical-equation or envelope condition. The selected point must end before the iteration cap, lie inclusively inside the bounds from `GibbsMinimizer::get_bounds_info`, meet the unchanged classified-row criterion without a floor allowance, and pass the existing topology, local phase stability and density-branch checks. Otherwise, including after an exception, Ipopt runs from the original start; reported work retains the failed attempt's prepared points. A returned Newton state has `solver_status` `NEWTON_CONVERGED`, zero optimizer iterations and Lagrangian-Hessian calls, zero constraint multipliers of row-count length, and zero regularization amplification. Its evaluations count Newton prepared points; solved-state actions consume the same coordinates and rows. Declared starts, continuation correctors, stability trials and caloric seed sub-solves keep Ipopt alone.
+For eligible calls entering `solve_compiled`, the [ADR 0009 amendments](../../../docs/scientific/decisions/0009-general-platform-one-driver.md)
+apply the same exact-Jacobian Newton iteration from the existing start before
+constructing Ipopt. #476 retains square feasibility cells with one liquid and
+one vapor, one zero-pinned and one free amount, exactly one free intensive,
+and no discovery, reaction, ion, caloric, critical or envelope condition.
+#545 adds square stationarity systems at fixed positive T/P with two free
+amounts, liquid/liquid or liquid/vapor phases, and identical supports equal to
+the retained positive-feed support of at least two components. Every model
+charge must be zero. Source-reference conversion, diagnostic options and
+optimizer-state transfer exclude this added domain, as do the other #476
+exclusions.
+
+Only the #545 attempt checks the finite seed against the actual physical
+primal box and topology before preparing iterations, then requires finite
+Jacobians/corrections and full numerical LU rank. Finite amount bounds from
+`GibbsMinimizer::get_bounds_info` are multiplied by the existing amount chart;
+infinite bounds retain their meaning. Candidate boxes precede preparation.
+Only #545 permits a trial whose raw rows already meet the caller criterion
+past the falling-contraction-ratio test. #476's iteration remains unchanged.
+In both domains, once the raw criterion is met, one compulsory full exact
+correction uses a fresh Jacobian and solve. The corrected point must meet the
+fresh classified criterion. At Newton box checks, log-composition overshoots
+within four ulps of physical x=1 are snapped to zero, using four successive
+`nextafter` steps above one (8.881784197001248e-16 in log coordinates), then
+re-prepared. Every other bound and criterion remains unchanged.
+
+A returned point must end before the cap, satisfy the box and unchanged
+classified rows without a floor allowance, and pass topology, local checks
+and density-branch admission. Free-amount points also pass the existing exact
+reduced-Lagrangian-Hessian check on the balance/normalization tangent space;
+chemical and pressure stationarity rows are not primal constraints. The
+existing reconstructed extensive-objective multipliers below apply, including
+`-N_feed lambda_j` for material rows. Rank and strict positive reduced
+curvature refuse degenerate amount splits, including equal-composition
+azeotropic splits; composition equality alone is not phase coincidence or a
+global stability test.
+
+Otherwise, including on admission failure or exception, unchanged Ipopt runs
+from the original start and retains attempted work and the shared budget.
+A #545 Newton return keeps `solver_status` `SUCCESS`; the existing
+`newton_fast_path` trace and its accepted outcome identify Newton. #476 retains
+`NEWTON_CONVERGED`. Both have zero optimizer iterations, optimizer Hessian
+callbacks and regularization amplification.
+Zero constraint multipliers of row-count length apply only to #476 feasibility
+cells. #545 still evaluates exact final Gibbs curvature. Evaluations count
+Newton prepared points, while trace steps separately report Newton work.
+Solved-state actions consume the same coordinates and rows. Declared starts,
+continuation correctors, stability trials and caloric seed sub-solves retain
+Ipopt alone.
 
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected

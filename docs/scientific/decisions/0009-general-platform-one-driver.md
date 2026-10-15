@@ -94,3 +94,38 @@ step is admitted. Solved-state actions read the same coordinates and rows.
 
 **Scope.** #476's equivalence corpus is the qualification. Widening the eligible calls needs a new owner
 decision; examples are ions, vapor-fraction pins, and other callers.
+
+
+**Amendment 2026-10-15 (#545, owner).** Ordinary `solve_compiled` calls may
+also attempt the same exact-Jacobian Newton iteration on neutral, nonreacting,
+fixed positive T/P cells with exactly two free-amount liquid/liquid or
+liquid/vapor phases. Both supports must equal the retained positive-feed
+support and contain at least two components; every model charge number must
+be zero. Source-reference conversion, caloric, critical, envelope, discovery,
+diagnostic-options and optimizer-transfer calls are excluded. The #476
+predicate, iteration and admission behavior remain unchanged. Declared starts,
+continuation correctors, stability trials and caloric seed sub-solves retain
+Ipopt alone.
+
+The existing seed owner constructs the start once. A copy receives Newton;
+the original remains the Ipopt fallback. Only this free-amount attempt checks
+finite coordinates, the physical-coordinate primal box and distinct,
+non-disappeared seed topology before preparing iterations, and full numerical
+Jacobian rank and finite corrections before trials. It reuses the actual
+Ipopt bounds with the amount chart converted to physical mol and the existing
+four-ulp composition snap. Only this attempt permits a trial already meeting
+the caller's raw-row criterion past the previous-contraction-ratio test.
+The exact CppAD Jacobian, full-pivot LU, damping and iteration/correction
+limits, compulsory full correction and fresh classified criterion remain.
+
+Return requires unchanged positive-amount/topology admission, exact reduced
+Lagrangian-Hessian positive curvature on the constraint tangent space and
+density-branch admission. Equal compositions can occur at a multicomponent
+azeotrope; rank and strict reduced curvature must still resolve the amount
+split. No global stability or uniqueness certificate is implied. Every rejected
+attempt, admission failure or exception falls back once to unchanged Ipopt
+from the original seed, retaining all attempted work and the caller's shared
+budget. Ipopt remains the sole failure, refusal and floor-limited-state owner.
+Solved-state actions use the same accepted coordinates, rows and derivatives.
+#545's numerical equivalence and timing evidence qualify this bounded widening;
+further widening requires an owner decision.
