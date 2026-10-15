@@ -218,6 +218,15 @@ gradient and Hessian, and each Hessian entry contracts the row coordinate's
 site tangent in O(sites). The association gradient floor is the maximum over
 the requested columns only, so it bounds exactly the gradient entries computed.
 
+Optimize each recorded Helmholtz tape once with
+`optimize("no_cumulative_sum_op")` before evaluation. CppAD retains conditional
+expressions and their selected branches while skipping unused branch work;
+cumulative-sum operators are disabled. Atomic dependencies retain CppAD's
+dependency rules; no user-defined atomic functions occur in this recording.
+Optimization discards Taylor coefficients, so a new tape's first evaluation
+recomputes order zero. See CppAD's [optimization documentation](https://cppad.readthedocs.io/stable-2025/optimize.html)
+and [conditional expressions](https://cppad.readthedocs.io/stable-2025/CondExp.html#optimize).
+
 Reuse order-zero Taylor coefficients only on the same tape at a byte-identical
 full input, including site fractions and active parameters. A changed input
 recomputes order zero; a replacement tape starts without cached coefficients.

@@ -79,6 +79,9 @@ Budget changes must not silently change scientific scope.
   with zero growth in other runtime layers. The measured change is +67 net
   formatted lines (9,596 → 9,663); Equilibrium's 9,688 and total's 26,810
   ceilings remain within their existing bands and need no raise.
+- 2026-10-15, #543, tape optimization: one added runtime line in Properties
+  against `0bec2bdf`; existing ceilings remain in force. Zeroth-order reuse
+  retains its existing owner and implementation.
 
 - 2026-10-15, #541, zeroth-order reuse: the selected prototype adds 16 and
   removes 6 runtime lines in Properties against `7029597d`. Tape-local reuse
