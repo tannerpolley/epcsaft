@@ -247,8 +247,8 @@ its existing search meaning, not exhaustive root enumeration.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
-The returned State keeps the full Helmholtz gradient and every row of the T, V
-and active-parameter Hessian columns. Uncaptured State construction omits unused
+State construction evaluates the full Helmholtz gradient and every row of the
+T, V and active-parameter Hessian columns. Uncaptured construction omits unused
 composition columns; active Core capture retains the complete Hessian payload.
 
 Density closure evaluates normalized Taylor coefficients of the shared residual
