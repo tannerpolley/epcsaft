@@ -82,11 +82,14 @@ def main():
         pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
         suffix = output(str(python), '-c', 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
         package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
-        images = [build / ('_core' + suffix)] + [build / name for name in ('libepcsaft_native.so', 'libepcsaft_asl.so', 'compile_commands.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')]
+        images = [build / ('_core' + suffix)] + [build / name for name in ('libepcsaft_native.so', 'libepcsaft_asl.so', 'compile_commands.json', 'meson-info/intro-buildoptions.json', 'meson-info/intro-compilers.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')]
         linked = all((package / library.name).is_symlink() and (package / library.name).resolve() == library
                      for library in images[:3])
-        intact = linked and (root / 'build.sha256').exists() and (root / 'build.sha256').read_text() == digest(images + list(package.rglob('*.py')))
-        if prepared == current and intact and pass_file.exists():
+        def image_identity():
+            files = images + list(package.rglob('*.py'))
+            return hashlib.sha256(json.dumps({str(p.relative_to(root)): digest([p]) for p in files}, sort_keys=True).encode()).hexdigest()
+        built = image_identity()
+        if prepared == current and linked and pass_file.exists() and json.loads(pass_file.read_text()) == dict(checks, build_sha256=built):
             print(f'reused passing checks: {pass_file}', flush=True)
             return
         print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)
@@ -114,10 +117,10 @@ def main():
         results = root / 'results' / pass_file.stem
         results.mkdir(parents=True, exist_ok=True)
         env['EPCSAFT_GATE_RESULTS'] = str(results)
-        (root / 'build.sha256').write_text(digest(images + list(package.rglob('*.py'))))
+        built = image_identity()
         for check in args.checks.split(','):
             passed_check = results / f'{check}.passed'
-            if intact and passed_check.exists():
+            if passed_check.exists() and passed_check.read_text() == built:
                 continue
             passed_check.unlink(missing_ok=True)
             command = ['bash', str(source / 'engine/tools' / f'check-native{"-sanitizers" if check == "sanitizers" else ""}.sh'), '--prepared', str(root)]
@@ -125,8 +128,8 @@ def main():
                 command += ['--changed', base]
             with (results / f'{check}.log').open('w') as log:
                 run(*command, env=env, stdout=log, stderr=subprocess.STDOUT)
-            passed_check.touch()
-        pass_file.write_text(json.dumps(checks, indent=2))
+            passed_check.write_text(built)
+        pass_file.write_text(json.dumps(dict(checks, build_sha256=built), indent=2))
         print(f'passing checks: {pass_file}', flush=True)
 
 
