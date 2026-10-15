@@ -593,6 +593,26 @@ trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
 
+Repeated public solves and accepted continuation/envelope correctors may reuse the
+previous Ipopt endpoint's primal coordinates and equality/bound multipliers when
+the ordered model, phase, support, balance-basis, row and coordinate layout is
+unchanged (#505). The tuple belongs to the equilibrium driver and is separate
+from any Newton-polished returned state. Correctors retain their tangent-predicted
+primal point. With $a=1/N_{feed}$ and amount chart $S_i$, equality multipliers
+are stored as $a\lambda$ and bound multipliers as $a u_i z_i/S_i$, where
+$u_i=N_{feed}$ for phase-amount coordinates and one otherwise; the next solve
+reverses these transformations using its own feed total and chart.
+Ipopt 3.11.9's documented warm-start initialization uses primal and multiplier
+pushes of `EQUILIBRIUM_WARM_PUSH` and monotone barrier `EQUILIBRIUM_WARM_MU`
+(the manual's *Warm-Starting Capabilities via AMPL*). Nonfinite operands, changed
+layouts, fixed bounds, or equality/bound multipliers above Ipopt's effective
+scaled cap refuse transfer. An explicit options file keeps the existing
+primal-only route. Restoration or a failed warm attempt permits one primal-only
+fallback within the same iteration/time budget; all attempted work is retained.
+Density-branch admission runs once at its existing caller. Rejected corrector
+steps disable transfer until a new state is accepted. Fit observations and fit
+trials do not opt into multiplier transfer; there is no shared solver cache.
+
 Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase

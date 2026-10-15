@@ -74,7 +74,16 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-15, #513 (lead decision): **Properties allowance raised by the lead from +200 to +220 within the unchanged +238 total**; gross additions remain at most 300 Properties and 356 total. Against fixed base `5ad73fb9`, current formatted growth is Properties +218 and total +236. Properties **5,535 → 5,804**, its count 5,746 plus band 58; total **26,083 → 26,453**, the layer-ceiling sum, below its count 26,264 plus band 263. Shared sampled-contradiction detection, local mesh subdivision, partition agreement and cause preservation retain the existing scan, fold bisection and Newton owners. Other layer allowances remain those in the accepted design.
+- 2026-10-15, #513 (lead decision): **Properties allowance raised by the lead from +200 to +220 within the unchanged +238 total**; gross additions remain at most 300 Properties and 356 total. Against fixed design base `5ad73fb9`, the authored change adds Properties +218 and total +236; the separately accepted #505 main changes add 2 Properties and 287 total before integration. The same authored growth is measured against integrated base `ffda2bc0`. Properties **5,535 → 5,806**, its combined count 5,748 plus band 58; total **26,473 → 26,744**, the layer-ceiling sum, below its combined count 26,551 plus band 266. Shared sampled-contradiction detection, local mesh subdivision, partition agreement and cause preservation retain the existing scan, fold bisection and Newton owners. Other layer allowances remain those in the accepted design.
+
+- 2026-10-15, #505: the accepted design's net allowances are Core +25,
+  Equilibrium +380, Properties +10 (entry scopes), other layers zero;
+  total +415, gross additions at most 510. Relative to `5ad73fb9`, the
+  candidate adds 22 Core, 263 Equilibrium and 2 Properties formatted lines,
+  287 total (including the rejected-result tuple reset). Core rises from 1,304 to 1,327, Equilibrium from 9,422 to
+  9,688, and total from 26,083 to 26,473. The layer ceilings are the count plus the 1% band; the
+  total is limited to the sum of layer ceilings.
+  Final delivered review and adoption remain with the lead.
 
 - 2026-10-15, #495 (lead-set allowances under the owner's overnight authority, 2026-10-15): Bindings **2,050 → 2,151**, the count 2,129 plus its band 22 after the nanobind port and delivered-review input corrections, including #486 solver options. The final count is 2,141, within one band of the ceiling. The issue allowance is +115 net / 1,100 gross Bindings lines, raised by the lead from +100 to restore the pybind11 input conversions the delivered review found missing; other runtime layers have zero additions. The total ceiling remains 26,083.
 

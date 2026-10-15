@@ -442,8 +442,13 @@ inline constexpr Tolerance STALL_WINDOW{
     "classified stalled; numerical adequacy/calibration remains open, not an accuracy bound",
 };
 
+inline constexpr Tolerance EQUILIBRIUM_WARM_PUSH{"EQUILIBRIUM_WARM_PUSH", 1.0e-6,
+    Category::AlgorithmTolerance, "Ipopt 3.11.9 manual, Warm-Starting Capabilities via AMPL; #505"};
+inline constexpr Tolerance EQUILIBRIUM_WARM_MU{"EQUILIBRIUM_WARM_MU", 1.0e-6,
+    Category::AlgorithmTolerance, "Ipopt 3.11.9 manual, monotone initial barrier for similar active sets; #505"};
 // Every entry, readable as epcsaft.tolerances(); the architecture check requires listing and a consumer.
 inline constexpr const Tolerance* ENTRIES[] = {
+    &EQUILIBRIUM_WARM_PUSH, &EQUILIBRIUM_WARM_MU,
     &CLOSE_PACKING_FRACTION, &SITE_FRACTION_FLOOR, &SITE_FRACTION_CEILING, &ASSOCIATION_RESIDUAL,
     &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,

@@ -182,6 +182,9 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
     std::vector<double> scale(order, 1.0);
     for (std::size_t j = 0; j < order; ++j)
         if (fixture.scaled) scale[j] = magnitude(fixture.directions[j], compiled, values);
+    // Keep the derivative reference independent of the multiplier-transfer method under test.
+    auto reference_start = central;
+    reference_start.optimizer_state.reset();
     Reference result;
     result.value.assign(fixture.observables.size(), 0.0);
     result.rounding.assign(fixture.observables.size(), 0.0);
@@ -202,7 +205,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
             std::vector<double> delta(fixture.active.size(), 0.0);
             for (std::size_t a = 0; a < delta.size(); ++a) delta[a] = sign * h * d.active_parameters[a];
             const auto model = shifted.model(delta);
-            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, shifted.problem, central);
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, shifted.problem, reference_start);
             if (!solved.success || !solved.requested_tolerance_met.value_or(false) || solved.convergence.residual > limit) {
                 result.rejected.push_back("preceding-action corner: " + solved.message);
                 for (auto& value : result.value) value.reset();
@@ -250,7 +253,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
             for (std::size_t a = 0; a < shift.size(); ++a) shift[a] += h * d.active_parameters[a];
         }
         const auto model = fixture.model(shift);
-        const auto solved = epcsaft::equilibrium::solve_equilibrium(model, problem, central);
+        const auto solved = epcsaft::equilibrium::solve_equilibrium(model, problem, reference_start);
         std::string failure;
         if (!solved.success) failure = "corner solve: " + solved.message;
         else if (solved.phase_count != central.phase_count) failure = "corner phase count";

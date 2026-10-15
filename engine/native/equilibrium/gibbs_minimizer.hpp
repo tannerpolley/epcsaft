@@ -77,14 +77,16 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
 EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
-    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false,
+    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr
+    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr,
+    std::shared_ptr<const OptimizerState> warm = {}
 );
 
 // Declared seeds carry no thermodynamic declarations: all share the one problem.
@@ -235,6 +237,8 @@ public:
                            const Ipopt::IpoptData* ip_data,
                            Ipopt::IpoptCalculatedQuantities* ip_cq) override;
 
+    bool initialize_warm(const OptimizerState&, double cap, bool predicted);
+    std::shared_ptr<const OptimizerState> optimizer_state() const { return endpoint_; }
     const std::vector<double>& solution() const noexcept { return solution_; }
     const std::vector<double>& constraint_multipliers() const noexcept {
         return constraint_multipliers_;
@@ -261,7 +265,10 @@ private:
     const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 
     const CompiledSystem& compiled_;
-    std::vector<double> start_;
+    std::vector<double> start_, warm_lower_, warm_upper_, warm_lambda_;
+    std::shared_ptr<const OptimizerState> endpoint_;
+    bool warm_ = false, restored_ = false;
+
     std::optional<PhasePoint> prepared_;
     std::optional<PointEvaluation> rows_;
     std::optional<std::vector<double>> jacobian_;

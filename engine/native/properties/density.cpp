@@ -90,7 +90,8 @@ public:
     Taylor<N> residual(double density, double& floor, const std::vector<double>* start = nullptr,
                        std::vector<double>* sites_out = nullptr) const {
         using Series = Taylor<N>;
-        core::Scope scope("evaluate");
+        core::Scope entry("pressure_series_residual"), scope("evaluate");
+        entry.probe("requested_order", static_cast<double>(N - 1));
         const double volume = 1.0 / density, rho0 = total_ / volume;
         Series v(volume);
         v.c[1] = 1.0;
