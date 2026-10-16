@@ -66,9 +66,25 @@ struct DriverLimits final {
     std::size_t iterations;
     std::chrono::steady_clock::time_point deadline;
     mutable std::size_t consumed = 0;  // summed over the solve and its seed sub-solves
-    bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
+    // Recovery work (#565) also caps objective/polish evaluations and Hessian callbacks; a spent cap is final.
+    bool recovery = false;
+    std::size_t evaluation_cap = 0, hessian_cap = 0;
+    mutable std::size_t evaluations = 0, hessian_calls = 0;
+    mutable bool exhausted = false;
+    bool expired() const {
+        exhausted = exhausted || (recovery && consumed >= iterations);
+        return exhausted || std::chrono::steady_clock::now() >= deadline;
+    }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
+    // Before one evaluation or Hessian callback: false, refusing it, once any recovery cap is spent.
+    bool spend(std::size_t& used, std::size_t cap) const {
+        exhausted = exhausted || (recovery && (used >= cap || consumed >= iterations));
+        return !exhausted && ++used;
+    }
 };
+// ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
+// source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
+EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);

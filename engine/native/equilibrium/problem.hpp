@@ -531,10 +531,11 @@ EquilibriumResult solve_equilibrium(
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
+// `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {});
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

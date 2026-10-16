@@ -583,7 +583,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
             return phase.composition_guess.empty() && !phase.packing_guess && phase.support.size() == c.feed_composition.size();
         }) || !std::all_of(c.feed_composition.begin(), c.feed_composition.end(), [](double z) { return z > 0.0; }))
         throw std::invalid_argument("cooling onset requires full supports and generated phase starts");
-    auto failed = solve_compiled(c);
+    auto failed = solve_compiled(c, std::nullopt, nullptr, nullptr, {}, true);
     if (!failed.success && failed.message.rfind("local phase instability:", 0) != 0 && failed.message.rfind("infeasible:", 0) != 0)
         return {std::move(failed), {}};
     std::vector<StabilityReport> reports; StageWork work; std::vector<double> composition;
