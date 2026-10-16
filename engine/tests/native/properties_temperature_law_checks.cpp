@@ -434,6 +434,19 @@ void temperature_laws() {
         refused("domain/negative-volume", [&] { (void)crossing.state(320.0, RHO, X); },
                 "invalid evaluated association_volume for pair 0/3 at T = 320");
     }
+    {   // l01 = 0.5 + 0.01 (T - 300 K) reaches 1.1 at 360 K on a pair without sites: no double site solve precedes the replay.
+        auto document = binary_document(false);
+        document.entries.push_back(entry("k01", "k_ij", {0, 1}, 0.0, "dimensionless"));
+        add_law(document.entries, "l01", "l_ij", 0, 0, 1, T_R, {0.5, 0.01, NAN_TERM, NAN_TERM, NAN_TERM});
+        const epcsaft::HelmholtzModel crossing(epcsaft::build_parameters(document));
+        const auto h = epcsaft::PropertyObservable::ResidualEnthalpy;
+        (void)crossing.density_actions(300.0, RHO, X, {h}, {{1.0, 0.0, {0.0, 0.0}, {}}});
+        refused("domain/l-crossing/density-actions", [&] { (void)crossing.density_actions(360.0, RHO, X, {h}, {{1.0, 0.0, {0.0, 0.0}, {}}}); },
+                "invalid evaluated l_ij for pair 0/1 at T = 360");
+        refused("domain/l-crossing/pressure-actions", [&] { (void)crossing.pressure_actions(360.0, 1.0e5, X,
+                    epcsaft::DensityBranch::Vapor, {h}, {{1.0, 0.0, {0.0, 0.0}, {}}}, std::nullopt); },
+                "invalid evaluated l_ij for pair 0/1 at T = 360");
+    }
     // 5. Law-owned constants are unconsumed; one of value or law per quantity; declared units.
     refused("refuse/kij-under-law", [&] { (void)epcsaft::HelmholtzModel(parameters, {{ParameterFamily::Kij, {1, 2}}}); },
             "unconsumed law-owned coordinate");
@@ -450,6 +463,11 @@ void temperature_laws() {
     refused("refuse/coefficient-unit", document_with([](auto& e) {
         add_law(e, "k", "k_ij", 0, 0, 1, T_R, {0.01, NAN_TERM, NAN_TERM, NAN_TERM, NAN_TERM});
         e.push_back(entry("k/a1", "temperature_law_coefficient", {0, 1}, 1e-4, "dimensionless")); }), "expected 1 / kelvin");
+    refused("refuse/shared-coefficient-identity", document_with([](auto& e) {
+        add_law(e, "shared", "k_ij", 0, 0, 1, T_R, {0.03, NAN_TERM, NAN_TERM, NAN_TERM, NAN_TERM});
+        e.push_back(entry("l", "l_ij_temperature_law", {1, 0, 1}, T_R, "kelvin"));
+        e.push_back(entry("shared/a0", "temperature_law_coefficient", {1, 0}, 0.01, "dimensionless")); }),
+        "repeated temperature law coefficient shared/a0");
 }
 
 }  // namespace properties_checks

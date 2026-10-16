@@ -128,6 +128,14 @@ void require(bool condition, const char* field) {
     }
 }
 
+// Each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
+void require_law_domain(double T, const Parameters& parameters) {
+    const auto laws = temperature_law_values(T, parameters);
+    const std::size_t sites = parameters.site_component.size(), components = parameters.segment_count.size();
+    for (const auto& [kind, slot, law] : parameters.temperature_law_slot)  // kinds 3, 4 own site-pair slots
+        temperature_law_value(T, parameters, laws, TemperatureLaw(kind), slot, kind > 2 ? sites : components);
+}
+
 using Jet = std::vector<double>;
 
 Jet jet_add(const Jet& left, const Jet& right, double sign = 1.0) {
@@ -953,6 +961,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     require(positive_vector(sigma), "sigma correlation");
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     require(positive_vector(diameter), "segment diameter");
+    require_law_domain(temperature, parameters_);
     core::Convergence site_record;
     const auto sites = solve_site_fractions(
         temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_
@@ -1448,6 +1457,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require(positive_vector(sigma), "sigma correlation");
         diameter = segment_diameter(temperature, parameters_, sigma);
         require(positive_vector(diameter), "segment diameter");
+        require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
                 parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_);
