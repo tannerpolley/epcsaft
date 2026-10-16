@@ -1434,7 +1434,10 @@ predictor error, and the next step is h min(2, sqrt(W/(2e))), capped by the
 maximum log step: the Euler error grows as h², so this targets e ≈ W/2 (#571).
 A rejected ordinary step halves from the attempted step down to the caller's
 minimum step and retry allowance, including a corrected density outside the
-anchored window (`branch_lost`); a singular tangent stays terminal.
+anchored window (`branch_lost`) and a corrector that returns no state because
+it ended on coincident phases (the near-critical approach to the straddle
+threshold at cap 0.05). A singular tangent and an identity swap between
+accepted states stay terminal.
 
 A mixture passes its critical point once, by a straddle in ln K. When the selected
 ln K_k is decreasing in magnitude (s times the step sign is negative), an ordinary
