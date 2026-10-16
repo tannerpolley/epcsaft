@@ -1,0 +1,31 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Native Ceres multistart joint fit (F form); the lowest-training-cost converged optimum is stored."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33"
+
+[[sources]]
+source_id = "input-0"
+role = "Retained fit input or numerical result"
+retained_path = "data/packets/figiel-2025-chloride-activity-refit/2/parameters/parameters.json"
+sha256 = "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76"
+
+[[sources]]
+source_id = "input-1"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/inputs/fit-declaration.json"
+sha256 = "4201e18c1abafc2acac965c8d138cc2429e97e7adf0c7d7f65f98db28e96c7bd"
+
+[[sources]]
+source_id = "input-2"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/results/stage-a-calcium/fit-F.json"
+sha256 = "d61882879961382012a6fb09d3f577a6b9a268bd046ecb0cdace0b2478181300"
+
+[[sources]]
+source_id = "input-3"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/results/stage-a-calcium/selection.json"
+sha256 = "d8511c2cd786d1ce2450a57484400131ccd6fde955968f93e22be2bd1a23e7cb"

@@ -364,6 +364,33 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     assert all(candidate.final_cost <= 1e-24 for candidate in sequence)
 
 
+def test_mixture_osmotic_coefficient_matches_one_salt_and_solvent_activity() -> None:
+    """#575: the full-composition osmotic row equals the one-salt row and the direct solvent activity, value and column."""
+    from tests.packets import parameters_json
+
+    names = ("water", "sodium-cation", "magnesium-cation", "chloride-anion")
+    p = Parameters.from_json(parameters_json("figiel-2025-chloride-activity-refit", 2), components=names)
+    chart = regression.CoordinateSet()
+    chart.coordinates = [regression.coordinate(p, [target], origin=0, scale=1)
+                         for target in (("k_ij", ("magnesium-cation", "water"), 1), ("debye_huckel_diameter", "sodium-cation", 1))]
+    model = Mixture(p, active_parameters=chart.active())
+    salt = regression.electrolyte(p, "osmotic_coefficient", 298.15, 1e5, {"water": 1}, ions=("magnesium-cation", "chloride-anion"),
+                                  stoichiometry=(1, 2), molality=2.0, observed=1, form="difference", scale=1)
+    x = _core.formula_composition([1, 0, 0, 0], p._native, (2, 3), (1, 2), 2.0)
+    amounts = (1 / p.molar_masses[0], 1.5, 0.75, 3.0)  # Rard-Miller-like NaCl-MgCl2 composition, I = 3.75 mol/kg
+    mixed = [dict(zip(names, x)), dict(zip(names, (n / sum(amounts) for n in amounts)))]
+    rows = [regression.mixture_osmotic_coefficient(p, 298.15, 1e5, y, observed=1, scale=1) for y in mixed]
+    direct = model.reference(298.15, 1e5, solvent_fractions=(1, 0, 0, 0)).solvent_activity(x=list(mixed[1].values()))
+    expected = [(regression.predict(model, salt).value, regression.differentiate(model, salt).value),
+                (direct.osmotic_coefficient, direct.osmotic_parameter_derivative)]
+    for row, (value, column) in zip(rows, expected):
+        assert regression.predict(model, row).value == pytest.approx(value, rel=1e-12)
+        assert regression.differentiate(model, row).value == pytest.approx(column, rel=1e-10, abs=1e-14)
+    with pytest.raises(ParameterError, match="non-electroneutral"):
+        regression.predict(model, regression.mixture_osmotic_coefficient(p, 298.15, 1e5, {"water": 0.9, "sodium-cation": 0.1},
+                                                                         observed=1, scale=1))
+
+
 def test_density_options_reach_fit_worker(evidence: Any) -> None:
     """Two EOS state groups distinguish lower-model options from restored defaults (#486 R3)."""
     source = parameters((ETHANE,))

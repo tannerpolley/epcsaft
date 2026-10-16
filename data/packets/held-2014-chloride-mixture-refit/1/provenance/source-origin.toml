@@ -1,0 +1,31 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Native Ceres multistart joint fit (H form); the lowest-training-cost converged optimum is stored."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "f95312bec834225e0396ad792231c619cb85c9fc4df980440f446847a41e8e34"
+
+[[sources]]
+source_id = "input-0"
+role = "Retained fit input or numerical result"
+retained_path = "data/packets/held-2014-strategy2/2/parameters/parameters.json"
+sha256 = "cd2412073d306b89193da263f8207d96f8c50e5a710f2ca177be7d1d21f54297"
+
+[[sources]]
+source_id = "input-1"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/inputs/fit-declaration.json"
+sha256 = "4201e18c1abafc2acac965c8d138cc2429e97e7adf0c7d7f65f98db28e96c7bd"
+
+[[sources]]
+source_id = "input-2"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/results/stage-a-calcium/fit-H.json"
+sha256 = "3474663358154c187b2e3b2b3ebdb5ce6333bd6db3986a65cb13136c2033256b"
+
+[[sources]]
+source_id = "input-3"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/results/stage-a-calcium/selection.json"
+sha256 = "d8511c2cd786d1ce2450a57484400131ccd6fde955968f93e22be2bd1a23e7cb"

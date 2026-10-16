@@ -53,7 +53,7 @@ __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluati
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
-           "CheckGroup", "CheckResult", "electrolyte", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
+           "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
            "measured_input", "measurement_group")
 
@@ -306,6 +306,12 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
             _index(parameters.component_ids, name, "reference component")
         result.reference_composition = [reference.get(name, 0.0) for name in parameters.component_ids]
     return result
+
+
+def mixture_osmotic_coefficient(parameters: Parameters, T: float, P: float, x: Mapping[str, float], *,
+                                observed: float, scale: float) -> Observation:
+    """-ln a_w / (M_w sum_j m_j) of a full electroneutral liquid composition in one solvent; residual (Phi - observed)/scale."""
+    return _pressure_closed(parameters, ObservationKind.MixtureOsmoticCoefficient, T, P, x, "liquid", observed, "difference", scale, False)
 
 
 def hydration_hold(reference: Observation, *, bracket: tuple[float, float], energy_tolerance: float,

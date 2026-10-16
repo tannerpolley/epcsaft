@@ -284,6 +284,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "2",
+      "packet_path": "data/packets/held-2014-strategy2/2",
+      "packet_fingerprint": "36f57f713a7b148725eb1164127016df7e995a57c5838dc1786549e90bbafde1",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "mixed-chloride-water-observations",
       "packet_version": "1",
       "packet_path": "data/packets/mixed-chloride-water-observations/1",
@@ -316,6 +323,27 @@
       "packet_version": "1",
       "packet_path": "data/packets/feos-rehner-2023/1",
       "packet_fingerprint": "c49d3e9e4f07693cc495f19c930e4b39f84349fba4f4ba926eb7348c14a4f7f0",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",
+      "packet_fingerprint": "7719154a02443a0745a369e559b0ea01991b093241519f18603a6f64749e9696",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2014-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-chloride-mixture-refit/1",
+      "packet_fingerprint": "991c6e7442cb6968d5d1985b6565c1275659dbd13c8b513643a10443a7482256",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
+      "packet_fingerprint": "ad1194a1dab24e5cd748e8992500e91b664715be59892cdd82ac5888a7b85004",
       "materialization": "byte-for-byte"
     }
   ]
