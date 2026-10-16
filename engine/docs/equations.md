@@ -2588,3 +2588,15 @@ $$
 $$
 \ln(T/T_{unit})-s=0,\quad \ln(P/P_{unit})-s=0,\quad \ln x_k^{inc}-\ln x_k^{feed}-s=0.
 $$
+
+## `azeotrope_condition`
+
+- Section: Equilibrium critical and envelope conditions
+- Status: Source equation
+- Source: equal phase compositions at a homogeneous azeotrope (Gibbs–Konovalov); FeOs `PhaseEquilibrium.binary_azeotrope` as the independent implementation; issue #571
+- Description: The C − 1 rows of a binary azeotrope cell (a free feed phase and an incipient phase pinned at zero amount, exactly one of T and P free) that replace the first C − 1 species balances; the remaining balance is the total amount, and the declared feed composition is only the seed.
+- Change note: The rows are affine in the log-composition chart and add no Hessian. The C-th equality follows from the two normalization rows.
+
+$$
+\ln x_k^{inc}-\ln x_k^{feed}=0,\quad k=\text{support}[0..C-2],\qquad \sum_p N_p\sum_i x_{p,i}-N_{feed}=0.
+$$

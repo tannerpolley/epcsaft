@@ -82,6 +82,10 @@ Source: EqID `critical_equations`; Heidemann and Khalil (1980); Michelsen (1980)
 A free feed phase with an incipient phase pinned at zero amount, T and P free and one selected ln T, ln P or ln K condition; its continuation passes a mixture critical point by one ln K straddle.
 Source: EqID `envelope_local_condition`; Michelsen (1980), pp. 2–4
 
+**Azeotrope cell**:
+A binary bubble/dew cell whose first C − 1 species balances are replaced by equal phase compositions and whose remaining balance is the total amount; the declared feed composition is only the seed.
+Source: EqID `azeotrope_condition`; FeOs `PhaseEquilibrium.binary_azeotrope`
+
 **Component**:
 A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation.
 Source: `ARCHITECTURE.yaml` project map

@@ -365,9 +365,24 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
         }
 }
 
-// Critical and envelope cells: one condition, neutral, nonreactive, T and P free.
+// Critical and envelope cells: one condition, neutral, nonreactive, T and P free. An azeotrope cell: a binary
+// homogeneous VLE bubble/dew cell on the full support of a positive feed with exactly one of T and P free.
 void admit_conditions(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
+    const auto positive_feed = [&] {
+        const auto& z = compiled.feed_composition;
+        return std::all_of(z.begin(), z.end(), [](double v) { return v > 0.0; });
+    };
+    if (p.azeotrope) {
+        if (p.critical || p.envelope || compiled.has_caloric_condition() || p.discovery || compiled.has_ions
+            || compiled.has_reaction || p.source_reference || p.temperature.free == p.pressure.free || p.phases.size() != 2
+            || compiled.pinned_count != 1 || p.phases[0].kind == p.phases[1].kind || p.phases[0].support.size() != 2
+            || compiled.n_feed.size() != 2 || p.phases[1].support != p.phases[0].support || !positive_feed()
+            || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); }))
+            throw std::invalid_argument("azeotrope cell requires a positive binary feed, one free and one zero-pinned phase "
+                "of opposite liquid/vapor kinds on its full support, exactly one of T and P free and no other condition");
+        return;
+    }
     if (!p.critical && !p.envelope) return;
     if ((p.critical && p.envelope) || compiled.has_caloric_condition() || !p.temperature.free || !p.pressure.free
         || p.discovery || compiled.has_ions || compiled.has_reaction || p.source_reference)
@@ -377,8 +392,7 @@ void admit_conditions(const CompiledSystem& compiled) {
         const auto& c = *p.critical;
         if (p.phases.size() != 1 || !p.phases[0].is_free() || support.size() != compiled.n_feed.size()
             || !(std::isfinite(c.density_guess_mol_per_m3) && c.density_guess_mol_per_m3 > 0.0)
-            || (!c.mode_guess.empty() && c.mode_guess.size() != support.size())
-            || std::any_of(compiled.feed_composition.begin(), compiled.feed_composition.end(), [](double z) { return !(z > 0.0); }))
+            || (!c.mode_guess.empty() && c.mode_guess.size() != support.size()) || !positive_feed())
             throw std::invalid_argument("critical cell requires one free phase on a positive full support and a density seed");
         return;
     }
@@ -701,15 +715,18 @@ CppAD::ADFun<double> record_geometry(
         row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
             / (feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0)));
     }
+    // EqID envelope_local_condition and azeotrope_condition: both phases share one support and the incipient
+    // phase is the zero pin; ln K_k = ln x_k^inc - ln x_k^feed is affine in the chart.
+    const std::size_t pin = problem.phases[0].is_pinned() ? 0 : 1;
+    const auto log_k = [&](std::size_t local) { return u[prepared.shape[pin].x[local]] - u[prepared.shape[1 - pin].x[local]]; };
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+        if (compiled.rows[row].kind == RowKind::AzeotropeCondition) row_values[row] = log_k(compiled.rows[row].index);
     if (problem.envelope) {
-        // EqID envelope_local_condition; both phases share one support and the incipient phase is the zero pin.
         const auto& e = *problem.envelope;
-        const std::size_t pin = problem.phases[0].is_pinned() ? 0 : 1;
         const auto& support = problem.phases[0].support;
         const std::size_t local = static_cast<std::size_t>(std::find(support.begin(), support.end(), e.component) - support.begin());
         row_values.back() = (e.kind == EnvelopeCoordinate::LogTemperature ? CppAD::log(T)
-            : e.kind == EnvelopeCoordinate::LogPressure ? CppAD::log(P)
-            : u[prepared.shape[pin].x[local]] - u[prepared.shape[1 - pin].x[local]]) - e.target;
+            : e.kind == EnvelopeCoordinate::LogPressure ? CppAD::log(P) : log_k(local)) - e.target;
     }
     output.insert(output.end(), row_values.begin(), row_values.end());
     return CppAD::ADFun<double>(u, output);
@@ -1170,6 +1187,10 @@ static CompiledSystem compile_with_basis(
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
     admit_conditions(compiled);
+    if (request.azeotrope) {  // B' = T B: the last species row becomes the total amount; the chemical rows are invariant
+        compiled.B.back().assign(components, 1.0);
+        compiled.balance = matvec(compiled.B, compiled.n_feed);
+    }
     if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
         if (compiled.free_intensive_count < compiled.pinned_count)  // so at least one phase is pinned
@@ -1202,7 +1223,8 @@ static CompiledSystem compile_with_basis(
             ++compiled.charge_row_count;
         }
     }
-    for (std::size_t row = 0; row < compiled.B.size(); ++row)
+    // An azeotrope cell keeps only the total-amount balance; its first C-1 rows become the azeotrope rows below.
+    for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         compiled.rows.push_back({RowKind::Normalization, phase, 0});
@@ -1214,6 +1236,7 @@ static CompiledSystem compile_with_basis(
             : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
         compiled.rows.push_back({kind, 0, i});
     }
+    for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);

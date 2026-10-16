@@ -320,8 +320,8 @@ FIELDS(MeasurementUncertainty, a, b, c, d)
 FIELDS(MeasurementChart, a, b, c, d, e, f, g, h)
 // Observation validation refuses discovery options (a fit declares its phases), so none are sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
-    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n] = item;
-    return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, n);
+    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n, o] = item;
+    return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, n, o);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {

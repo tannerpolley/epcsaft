@@ -624,6 +624,7 @@ class EquilibriumProblem:
     entropy_j_per_k: float | None
     critical: Optional[CriticalDeclaration]
     envelope: Optional[EnvelopeCondition]
+    azeotrope: bool
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
@@ -662,6 +663,7 @@ class RowKind:
     CriticalNormalization: RowKind
     CriticalCubic: RowKind
     EnvelopeCondition: RowKind
+    AzeotropeCondition: RowKind
 
 class Row:
     kind: RowKind
