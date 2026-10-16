@@ -82,16 +82,9 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-16, #566 (lead allowance under #577: Properties +243 net / 318 gross,
-  Bindings +16 / 31, Python +14 / 24, other layers zero): measured against
-  merged main `16fccc32` +137 / 142, +11 / 23 and +12 / 16. Properties
-  **6,004 → 6,155** and Bindings **2,178 → 2,203**, the counts 6,094 and 2,181
-  plus their 1% bands; Python 2,133 stays within its ceiling. Total
-  **27,066 → 27,242**, the sum of the layer ceilings, below count 27,073 plus
-  band. Request-only State response and partial molar properties reuse the
-  existing T/V Hessian columns; Henry constants are a thin wrapper over the
-  unchanged reaction-reference owner.
-
+- 2026-10-16, #566 (lead allowance under the #577 rule: Properties +243/318, Bindings +16/31, Python +14/24 net/gross, other layers 0): request-only derived State properties, partial molar properties and Henry constants use net +137/+11/+12 and gross 142/23/16 against `16fccc32`, re-measured after merging main `5dca2229`. Properties **6,004 → 6,186** and Bindings **2,178 → 2,205**, the counts 6,124 and 2,183 plus their 1% bands; Python 2,192 stays within its ceiling. Total **27,364 → 27,681**, the sum of the layer ceilings, below count 27,418 plus band 275. The response reuses the existing T/V Hessian columns; Henry constants are a thin wrapper over the unchanged reaction-reference owner.
+- 2026-10-16, #571 (lead allowance under the #577 rule: Equilibrium +45/50, Bindings +3/3, Python +4/4 net/gross, other layers 0; the lead approved a 2-line in-place edit of the parameter Regression fit worker serializer, net 0): the direct azeotrope cell and predicted-anchor envelope steps use net +36/0/+2/0 and gross 49/2/2/2 (Equilibrium/Bindings/Python/parameter Regression) against `fd14723c`. Equilibrium **9,688 → 9,796**, count 9,699 plus its band 97; the total ceiling stays 27,364 above count 27,258.
+- 2026-10-16, #567 (lead allowance under the #577 rule: Core +50/65, Contributions +100/150, Properties +30/45, parameter Regression +15/20, Surface +100/135, Bindings +5/10, Python +65/100 net/gross): temperature laws use net +23/+100/+30/0/+95/+2/+57 and gross 23/114/32/9/105/8/73 against `16fccc32`. Core **1,327 → 1,359**, Contributions **1,276 → 1,389**, Surface **577 → 673**, Python **2,143 → 2,200**, each count plus its 1% band; total **27,066 → 27,364**, the layer-ceiling sum, below count 27,220 plus band 273. Properties, parameter Regression and Bindings stay within their bands.
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,

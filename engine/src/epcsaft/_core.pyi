@@ -104,6 +104,8 @@ class Parameters:
     def site_count(self) -> int: ...
     @property
     def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
+    @property
+    def temperature_law_coefficient_identities(self) -> list[str]: ...
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
 
@@ -190,6 +192,7 @@ class ParameterFamily:
     KijReciprocalTemperatureSlope: ParameterFamily
     DielectricVolume: ParameterFamily
     DielectricTemperature: ParameterFamily
+    TemperatureLawCoefficient: ParameterFamily
 
 class ActiveParameter:
     family: ParameterFamily
@@ -641,6 +644,7 @@ class EquilibriumProblem:
     entropy_j_per_k: float | None
     critical: Optional[CriticalDeclaration]
     envelope: Optional[EnvelopeCondition]
+    azeotrope: bool
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
@@ -679,6 +683,7 @@ class RowKind:
     CriticalNormalization: RowKind
     CriticalCubic: RowKind
     EnvelopeCondition: RowKind
+    AzeotropeCondition: RowKind
 
 class Row:
     kind: RowKind
@@ -777,8 +782,9 @@ class ContinuationStop:
 class ContinuationOptions:
     """Ordinary path: steps are fractions of the start-to-target path; a rejected step halves and a step never
     grows, so initial_step is the largest step. Envelope mode (Problem.envelope set) ignores initial_step and
-    the target problem: an ordinary step is at most envelope_max_log_step (log-coordinate units), halves on
-    rejection and the cap returns after an accepted step; a rejected critical-point crossing, closing step or
+    the target problem: an ordinary step is at most envelope_max_log_step (log-coordinate units), the step after
+    an accepted one is sized from the measured predictor density error, and a rejected ordinary step (branch-window
+    miss, or a corrector that ends on coincident phases) halves; a rejected critical-point crossing, closing step or
     terminal failure ends the trace at once with the states accepted so far. It needs envelope_straddle > 0,
     2 * envelope_straddle <= envelope_max_log_step and T and P guesses through Free(guess). Both modes stop with
     budget_exhausted after more than max_retries_per_step consecutive rejections of retryable steps (reason in

@@ -12,7 +12,9 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -296,6 +298,70 @@ Scalar dipolar_helmholtz(
         / scalar_select_less(Scalar(0.0), a2 * a2, a2 - a3, Scalar(1.0));
 }
 
+// EqID: pair_parameter_temperature_law
+// q(T) = a_0 + a_1 (T - T_r) + a_2 (T - T_r)^2 + a_3 (T - T_r)^3 + s (1/T - 1/T_r) of every declared law.
+template <typename Fixed, typename ParameterSet>
+std::vector<Fixed> temperature_law_values(const Fixed& temperature, const ParameterSet& parameters) {
+    std::vector<Fixed> values(parameters.temperature_law_reference_k.size(), Fixed(0.0));
+    for (std::size_t term = 0; term < parameters.temperature_law_term_law.size(); ++term) {
+        const auto law = static_cast<std::size_t>(parameters.temperature_law_term_law[term]);
+        const double reference = parameters.temperature_law_reference_k[law];
+        const int power = parameters.temperature_law_term_power[term];
+        Fixed basis = power < 0 ? Fixed(1.0) / temperature - Fixed(1.0 / reference) : Fixed(1.0);
+        for (int p = 0; p < power; ++p) basis *= temperature - Fixed(reference);
+        values[law] += parameters.temperature_law_coefficient[term] * basis;
+    }
+    return values;
+}
+
+// A declared law has at least one slot, so `size` is at least 1.
+inline std::string law_domain_failure(const char* quantity, std::size_t slot, std::size_t size, double temperature) {
+    size = std::max<std::size_t>(size, 1);
+    return std::string("invalid evaluated ") + quantity + " for pair " + std::to_string(slot / size) + "/"
+        + std::to_string(slot % size) + " at T = " + std::to_string(temperature) + " K";
+}
+
+// The law value owning `slot` (row-major over `size`, smaller index first). An evaluated value outside its
+// quantity's domain is refused with its target and temperature, never clamped: finite k_ij, l_ij < 1
+// (positive unlike diameter), nonnegative association energy and volume.
+template <typename Fixed, typename ParameterSet>
+std::optional<Fixed> temperature_law_value(const Fixed& temperature, const ParameterSet& parameters,
+    const std::vector<Fixed>& laws, TemperatureLaw target, std::size_t slot, std::size_t size) {
+    for (const auto& [owner, owned, law] : parameters.temperature_law_slot) {
+        if (owner != static_cast<int>(target) || static_cast<std::size_t>(owned) != slot) continue;
+        const Fixed& value = laws[static_cast<std::size_t>(law)];
+        if constexpr (std::is_same_v<Fixed, double>) {
+            if (!std::isfinite(value) || (target == TemperatureLaw::Lij && !(value < 1.0))
+                || (target >= TemperatureLaw::AssociationEnergyOverK && !(value >= 0.0)))
+                throw std::invalid_argument(law_domain_failure(
+                    target == TemperatureLaw::Kij ? "k_ij" : target == TemperatureLaw::Lij ? "l_ij"
+                    : target == TemperatureLaw::AssociationVolume ? "association_volume" : "association_energy_over_k",
+                    slot, size, temperature));
+        }
+        return value;
+    }
+    return std::nullopt;
+}
+
+// k_ij or l_ij of components (i, j) at this temperature: its law, else the stored constant with the
+// legacy reciprocal-temperature k_ij term in its original operation order.
+template <typename Fixed, typename ParameterSet>
+Fixed pair_correction(const Fixed& temperature, const ParameterSet& parameters, const std::vector<Fixed>& laws,
+    TemperatureLaw target, std::size_t i, std::size_t j) {
+    const std::size_t size = parameters.segment_count.size(), pair = i * size + j;
+    if (!laws.empty())
+        if (auto value = temperature_law_value(temperature, parameters, laws, target, std::min(i, j) * size + std::max(i, j), size))
+            return *value;
+    if (target == TemperatureLaw::Lij) return parameters.l_ij[pair];
+    const double reference_temperature = parameters.k_ij_reference_temperature_k[pair];
+    Fixed k_ij = parameters.k_ij[pair];
+    if (reference_temperature > 0.0) {
+        k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]
+            * (Fixed(1.0) / temperature - Fixed(1.0 / reference_temperature));
+    }
+    return k_ij;
+}
+
 template <typename Scalar, typename ParameterSet, typename Fixed>
 HelmholtzResult<Scalar> residual_helmholtz(
     const Fixed& temperature,
@@ -372,20 +438,13 @@ HelmholtzResult<Scalar> residual_helmholtz(
 
     Fixed first_moment = Fixed(0.0);
     Fixed second_moment = Fixed(0.0);
+    const auto laws = temperature_law_values(temperature, parameters);
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
             // EqID: cross_segment_diameter
             const Fixed sigma_ij = Fixed(0.5) * (sigma[i] + sigma[j])
-                * (Fixed(1.0) - parameters.l_ij[i * size + j]);
-            const std::size_t pair = i * size + j;
-            const double reference_temperature =
-                parameters.k_ij_reference_temperature_k[pair];
-            Fixed k_ij = parameters.k_ij[pair];
-            if (reference_temperature > 0.0) {
-                k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]
-                    * (Fixed(1.0) / temperature
-                        - Fixed(1.0 / reference_temperature));
-            }
+                * (Fixed(1.0) - pair_correction(temperature, parameters, laws, TemperatureLaw::Lij, i, j));
+            const Fixed k_ij = pair_correction(temperature, parameters, laws, TemperatureLaw::Kij, i, j);
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
             const int charge_i = parameters.charge_number[i];
