@@ -1169,7 +1169,6 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
 // `limits` (recovery, #565) also caps attempted steps at max_steps; a supplied start with `anchors` is admitted on them.
 static ContinuationResult continue_path(const HelmholtzModel& model, const ContinuationRequest& request,
                                         const DriverLimits* limits, std::vector<double> anchors) {
-    core::Scope scope("continue_equilibrium");
     if (request.start_problem.envelope) return trace_envelope(model, request);
     ContinuationResult result;
     const auto& options = request.options;
@@ -1322,6 +1321,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
 }
 
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
+    core::Scope scope("continue_equilibrium");
     return continue_path(model, request, nullptr, {});
 }
 
@@ -1366,7 +1366,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
             }
             request.start_result = std::move(corrected);
         }
-        auto path = continue_path(model, request, &limits, found.molar_densities);
+        auto path = [&] { core::Scope span("continue_equilibrium"); return continue_path(model, request, &limits, found.molar_densities); }();
         if (!path.success) {
             refused.message = "from source at " + core::optional_number(found.temperature[0]) + " K: " + path.message;
             return refused;
