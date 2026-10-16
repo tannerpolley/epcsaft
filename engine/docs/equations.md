@@ -2644,7 +2644,7 @@ $$
 - Section: Equilibrium pure stoichiometric solids
 - Status: Exact derivation
 - Source: affinity of dissolution at the solved fluid state; with `chemical_potential_stationarity`, Σ_i ν_{s,i} μ_i = RT λ·(Bν_s) because Σ_i ν_{s,i} z_i = 0; issue #573
-- Description: Saturation index of solid s in decades; its scaled affinity A_s/RT is the quantity classified at the optimizer endpoint, and the row g_s/RT − λ·Bν_s = 0 holds for a present solid.
+- Description: Saturation index of solid s in decades; at the optimizer endpoint its scaled affinity is the bound multiplier, z_s = −A_s/RT, and the row g_s/RT − λ·Bν_s = 0 holds for a present solid.
 - Change note: A Pinned(0) solid reports SI_s at the solved fluid state without a coordinate or row.
 
 $$
@@ -2656,8 +2656,8 @@ $$
 - Section: Equilibrium pure stoichiometric solids
 - Status: Exact derivation
 - Source: KKT conditions of the Gibbs minimum with the bound n_s ≥ 0 and no stationarity row for n_s; issue #573
-- Description: Complementarity between the solid amount n_s (mol) and its saturation index; the Ipopt bound multiplier is z_s = −(A_s/RT)/N_feed because the objective is scaled by 1/N_feed.
-- Change note: One endpoint classification makes the declaration square: present (A_s/RT ≥ −ε, saturation row) or absent (n_s = 0), with ε the caller row criterion.
+- Description: Complementarity between the solid amount n_s (mol) and its saturation index; Ipopt's returned bound multiplier of n_s on the extensive objective G/RT is z_s = −A_s/RT, so (n_s/N_feed) z_s is the barrier parameter at an interior-point endpoint.
+- Change note: One endpoint classification makes the declaration square: present (n_s/N_feed > z_s, saturation row) or absent (n_s = 0). The rule replaced A_s/RT ≥ −ε after the barrier left a stable solid at −A_s/RT above ε for small excess feeds.
 
 $$
 n_s\ge 0,\qquad \mathrm{SI}_s\le 0,\qquad n_s\,\mathrm{SI}_s=0.

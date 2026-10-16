@@ -244,6 +244,8 @@ public:
     const std::vector<double>& constraint_multipliers() const noexcept {
         return constraint_multipliers_;
     }
+    // Ipopt's lower-bound multipliers at the endpoint, per physical column of the extensive objective.
+    const std::vector<double>& lower_multipliers() const noexcept { return lower_multipliers_; }
     const std::optional<PointEvaluation>& last_rows() const noexcept { return rows_; }
     std::vector<double> last_classified() const { return rows_ && prepared_ ? compiled_.classified_residuals(*prepared_, rows_->values) : std::vector<double>{}; }
     Ipopt::SolverReturn status() const noexcept { return status_; }
@@ -266,7 +268,7 @@ private:
     const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 
     const CompiledSystem& compiled_;
-    std::vector<double> start_, warm_lower_, warm_upper_, warm_lambda_;
+    std::vector<double> start_, lower_multipliers_, warm_lower_, warm_upper_, warm_lambda_;
     std::shared_ptr<const OptimizerState> endpoint_;
     bool warm_ = false, restored_ = false;
 

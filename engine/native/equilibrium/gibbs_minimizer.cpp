@@ -61,7 +61,8 @@ Curvature reduced_curvature_at(
     const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd constraints(0, n);
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        if (stationarity_row(compiled.rows[row].kind)) continue;
+        const auto& item = compiled.rows[row];  // an absent solid's row n_s = 0 constrains
+        if (stationarity_row(item.kind) && !(item.kind == RowKind::SolidAffinity && !compiled.solids[item.index].present)) continue;
         constraints.conservativeResize(constraints.rows() + 1, n);
         constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, n);
     }
@@ -735,6 +736,8 @@ void GibbsMinimizer::finalize_solution(
     solution_.assign(x, x + n);
     for (Ipopt::Index i = 0; i < n; ++i) solution_[i] *= chart_[i];
     constraint_multipliers_.assign(lambda, lambda + m);
+    lower_multipliers_.assign(z_L, z_L + n);
+    for (Ipopt::Index i = 0; i < n; ++i) lower_multipliers_[i] /= chart_[i];
     if (status != Ipopt::SUCCESS || restored_) return;
     auto endpoint = std::make_shared<OptimizerState>();
     endpoint->declaration = optimizer_declaration(compiled_.problem);
@@ -865,16 +868,17 @@ static EquilibriumResult run_driver_once(
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits || newton ? std::move(fallback) : boundary_start(declared);
     std::vector<double> full = !declared.feasibility_cell() ? add_multipliers(declared, point) : point;
-    // ALG-EQUILIBRIUM: each free solid is classified once at the endpoint on its scaled affinity A_s/RT against the
-    // row criterion: present (A_s/RT >= -criterion, saturation row) or absent (n_s = 0). The classified declaration is
-    // square for the polish; after it a present solid keeps n_s > 0 and an absent one A_s/RT <= criterion.
+    // ALG-EQUILIBRIUM: each free solid is classified once at the Ipopt endpoint by complementarity: present (saturation
+    // row) when n_s/N_feed exceeds its bound multiplier z_s = -A_s/RT, absent (n_s = 0) otherwise. The classified
+    // declaration is square for the polish; after it a present solid keeps n_s > 0 and an absent one A_s/RT <= criterion.
     std::optional<CompiledSystem> classified;
     if (!declared.solids.empty()) {
         classified = declared;
-        const auto at = declared.prepare(full, true);
+        const auto& bound = nlp->lower_multipliers();
         for (std::size_t s = 0; s < declared.solids.size(); ++s) {
             auto& solid = classified->solids[s];
-            solid.present = solid.column && declared.solid_affinity(at, s) >= -row_tolerance;
+            solid.present = solid.column
+                && full[*solid.column] / declared.feed_total > (bound.empty() ? 0.0 : bound[*solid.column]);
             if (solid.column && !solid.present) full[*solid.column] = 0.0;
         }
     }

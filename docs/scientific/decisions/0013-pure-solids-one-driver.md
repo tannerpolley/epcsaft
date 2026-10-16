@@ -33,10 +33,15 @@ on 2026-10-16 after an independent readiness review of the #573 design.
 - The objective gains n_s g_s/RT, the material balance gains Bν_s n_s, and the solid
   has no chemical row in the Ipopt problem. The amount bound then gives the
   complementarity n_s ≥ 0, SI_s ≤ 0, n_s SI_s = 0.
-- One classification at the endpoint, on the scaled affinity λ·Bν_s − g_s/RT against
-  the row criterion, makes the declaration square for polish and actions: a present
-  solid gets the row g_s/RT = λ·Bν_s; an absent solid gets n_s = 0. Violations after
-  the polish flip once; a remaining violation is a typed failure.
+- One classification at the Ipopt endpoint makes the declaration square for polish
+  and actions: a present solid gets the row g_s/RT = λ·Bν_s; an absent solid gets
+  n_s = 0. Violations after the polish flip once; a remaining violation is a typed
+  failure.
+- Lead decision, 2026-10-16 (delivered review r1): a solid is present when
+  n_s/N_feed exceeds its bound multiplier z_s = −A_s/RT, the complementarity
+  indicator. The first rule, the scaled affinity against the row criterion,
+  started a stable solid absent at small excess feeds, and with a second free solid
+  the single flip round then failed.
 - A `Pinned(0)` solid reports its saturation index without precipitation.
 
 [ALG-EQUILIBRIUM](../../../engine/docs/science/algorithms.md#alg-equilibrium) owns the

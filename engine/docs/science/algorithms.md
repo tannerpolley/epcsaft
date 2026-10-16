@@ -1494,16 +1494,24 @@ heteroazeotropes, C > 2 and azeotrope-line continuation are outside it.
 A free solid's amount n_s is an Ipopt column with lower bound zero, no upper
 bound and no stationarity row: its bound multiplier carries the complementarity
 of EqID `solid_amount_complementarity`. One classification owner acts at the
-optimizer endpoint, after the KKT-weighted multiplier recovery, on the scaled
-affinity A_s/RT = λ·Bν_s − g_s/RT against the caller row criterion ε: present
-when A_s/RT ≥ −ε (row g_s/RT − λ·Bν_s = 0), absent otherwise (n_s = 0). The
+Ipopt endpoint by complementarity: present when the feed-relative amount exceeds
+the bound multiplier, n_s/N_feed > z_s (z_s = −A_s/RT with A_s/RT = λ·Bν_s −
+g_s/RT; row g_s/RT − λ·Bν_s = 0), absent otherwise (n_s = 0). This replaced an
+affinity test, present when A_s/RT ≥ −ε against the caller row criterion: the
+barrier leaves a stable solid at −A_s/RT ≈ N_feed μ/n_s, above ε for small excess
+feeds (6.29891–6.5 mol/kg halite), so the stable solid started absent and, with a
+second free solid, both flipped and the round failed (#573 review r1). The
 existing polish runs on that square classified declaration. Afterwards a present
 solid must keep n_s > 0 and an absent one A_s/RT ≤ ε; every violating solid
-flips in one round and the declaration is polished once more. A later violation
-is the typed failure naming the solids; a singular classified Jacobian
-(dependent Bν_s among present solids, or more present phases than the phase rule
-allows) is a singular failure naming the present solids. Admission does not
-refuse dependent stoichiometries, because polymorphs are physical. The Newton
+flips in one round and the declaration is polished once more. Near onset
+(halite feeds up to 1e-4 mol/kg above saturation) the barrier amount is still
+unresolved and the stable solid takes that flip. A later violation is the typed
+failure naming the solids; a singular classified Jacobian (dependent Bν_s among
+present solids, or more present phases than the phase rule allows) is a singular
+failure naming the present solids, as for halite with an identical free copy.
+Admission does not refuse dependent stoichiometries, because polymorphs are
+physical: a free copy of halite with ln K + 0.01 stays absent at SI = −0.01/ln 10.
+An absent solid's row n_s = 0 is a constraint of the reduced-Hessian check. The Newton
 attempts are ineligible (a solid requires a source reference). Solved-state
 actions rebuild the classification from the central amounts (present exactly
 when n_s > 0) and are one-sided at the onset kink; T and P directions are

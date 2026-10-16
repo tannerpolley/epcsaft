@@ -4,6 +4,7 @@ Held 2014 strategy-2 water/Na+/Cl-; Clarke and Glew 1985 (doi:10.1063/1.555730) 
 Table 17A solubility 6.1476 mol/kg; halite molar volume 27.1 cm3/mol from PHREEQC pitzer.dat (phreeqpython 1.6.2).
 """
 from functools import cache
+import dataclasses
 import json
 import math
 from typing import Any
@@ -101,6 +102,25 @@ def test_pinned_halite_saturation_index(evidence: Any, molality: float, phreeqc:
          method="Reference.activity", claim="SI = [2 ln(m g) - ln K]/ln 10")
     same(evidence, f"halite/F4b/{molality}", index, phreeqc, rtol=0.0, atol=0.04,
          method="PHREEQC 3 pitzer.dat via phreeqpython 1.6.2", claim="2 x the 0.02-decade activity target")
+
+
+@pytest.mark.parametrize("molality", [6.5, 7.5])
+def test_halite_polymorph(evidence: Any, molality: float) -> None:
+    """R4: a free same-formula solid with ln K + 0.01 stays absent at SI = -0.01/ln 10; halite is unchanged."""
+    halite = problem(molality).solids[0]
+    shifted = ReactionLogPolynomial(LAW.a + 0.01, LAW.b, LAW.c, LAW.d, LAW.reference_temperature, 288.15, 308.15,
+                                    "molality-infinite-dilution")
+    copy = dataclasses.replace(halite, name="halite-b", correlation=shifted)
+    result = solve_equilibrium(model(), dataclasses.replace(problem(molality), solids=[halite, copy]))
+    assert result.success, result.message
+    single = solve(molality)
+    same(evidence, f"halite/R4/{molality}/m_s", liquid_molality(result), liquid_molality(single), rtol=1e-8, atol=0.0,
+         method="native solve with two free solids", claim="the lower-g_s solid takes the amount")
+    same(evidence, f"halite/R4/{molality}/n_s", result.solid_amounts[0], single.solid_amounts[0], rtol=1e-8, atol=0.0,
+         method="native solve with two free solids", claim="the lower-g_s solid takes the amount")
+    assert result.solid_amounts[1] == 0.0
+    same(evidence, f"halite/R4/{molality}/SI", result.solid_affinity_decades[1], -0.01 / math.log(10.0),
+         rtol=0.0, atol=1e-9, method="exact ln K shift", claim="the absent polymorph keeps a negative affinity")
 
 
 def actions(result: _core.EquilibriumResult, molality: float, observables: list[_core.SolvedStateObservable],
