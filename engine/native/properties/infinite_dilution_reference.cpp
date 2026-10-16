@@ -752,6 +752,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
 
 std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices) {
+    core::Scope scope("henry_constants");
     const auto& parameters = model.parameters();
     const std::size_t components = parameters.component_count();
     const auto solvent = std::size_t(std::find(solvent_fractions.begin(), solvent_fractions.end(), 1.0)

@@ -85,16 +85,16 @@ class Mixture:
         x: Sequence[float] | Mapping[str, float] | None = None,
         phase: str | None = None,
         anchor: State | None = None,
-        derived_properties: bool = False,
+        derived_properties: bool | None = None,
     ) -> State:
         if (rho is None) == (P is None):
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
         if rho is not None:
-            return self._model.state(T, rho, self._composition(x), derived_properties)
+            return self._model.state(T, rho, self._composition(x), bool(derived_properties))
         assert P is not None
         return self._model.state_at_pressure(
-            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, derived_properties
+            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
         )
 
     def reference(
