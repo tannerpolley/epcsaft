@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from pyomo.environ import ExternalFunction
+from pyomo.environ import ExternalFunction  # type: ignore[import-untyped]
 
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
@@ -45,7 +45,7 @@ def assert_callback_equals_native(model: Pure) -> None:
         native += [[first[0].results[k].value, *(b.results[k].action for b in first + second)] for k in (0, 1)]
         for row in range(3):
             value, gradient, hessian = callback.evaluate_fgh([300.0, 1.0e6, 1.0, text, str(row), str(phase)], fgh=2)
-            assert [float(v).hex() for v in (value, *gradient[:2], *hessian[:3])] == [float(v).hex() for v in native[row]]
+            assert [float(v).hex() for v in (value, *gradient[:2], *hessian[:3])] == [None if v is None else v.hex() for v in native[row]]
 
 
 def test_fitted_propane_exports() -> None:
