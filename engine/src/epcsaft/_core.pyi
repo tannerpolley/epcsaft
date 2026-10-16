@@ -332,7 +332,7 @@ class State:
     association: float
     debye_huckel: float
     born: float
-    dipolar: float
+    dipolar: float  # the declared polar term: dipole-dipole or quadrupole-quadrupole
     bulk_relative_permittivity: float
     residual_helmholtz: float
     compressibility_factor: float

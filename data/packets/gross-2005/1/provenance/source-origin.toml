@@ -1,0 +1,10 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "b443666c4e8f29e56a863be8b183819d23a0675df78aebb2553f548c0c70a5ab"
+origin_repository = "none"
+origin_commit = "0000000000000000000000000000000000000000"
+origin_tree = "0000000000000000000000000000000000000000"
+origin_path = "AIChE J. 51 (2005) 2556-2568, doi:10.1002/aic.10502, Table A1 and the Eq. 9 n_Q statement; Zotero item EIPM974F attachment LYM2V8BA, PDF SHA-256 cfd73fa388bec051b91e4f51e1c2e16ddf2f2140b6c037996ab33290887c5d50"

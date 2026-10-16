@@ -82,6 +82,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #574 (owner-approved allowance: Contributions +42, Surface +12, Core +4, Properties +3, Python +2, Bindings 0; total +63 net): the Gross (2005) quadrupole term uses net +34/+12/+2/+2/+2/0 and gross 64/21/3/4/2/0 (Contributions/Surface/Core/Properties/Python/Bindings) against `5dca2229`, plus a net-0 one-line in-place edit of the parameter Regression fit worker serializer for the two new parameter vectors. Measured after merging main `56216880`: Contributions **1,389 → 1,424**, count 1,409 plus its band 15; Surface **768 → 780**, count 772 plus its band 8; Core **1,359 → 1,375**, count 1,361 plus its band 14 (#565 had filled Core to its ceiling). The total ceiling stays main's **27,966**, above the count 27,932 by less than its band 280.
 - 2026-10-16, #565 (lead allowance under the #577 rule: Equilibrium +270 net / 270 gross, Core +10 / 10, other
   layers 0, net over the merge base): measured growth against main `8fb04d01` (after #568, #569 and #570) is
   Equilibrium +154 net and Core +9 formatted runtime lines. Equilibrium **9,796 → 9,977** (count 9,878 plus band
