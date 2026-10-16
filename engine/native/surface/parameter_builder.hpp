@@ -30,5 +30,7 @@ struct ParameterDocument final {
 };
 
 Parameters build_parameters(const ParameterDocument& document);
+// The start document with each fitted slot's entry magnitude replaced; refuses unless it rebuilds `fitted` bitwise.
+ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted);
 
 }  // namespace epcsaft
