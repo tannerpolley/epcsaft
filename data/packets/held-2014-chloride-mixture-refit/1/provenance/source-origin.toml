@@ -16,7 +16,7 @@ sha256 = "cd2412073d306b89193da263f8207d96f8c50e5a710f2ca177be7d1d21f54297"
 source_id = "input-1"
 role = "Retained fit input or numerical result"
 retained_path = "analyses/2026-chloride-brine-refit/inputs/fit-declaration.json"
-sha256 = "71431c75611d5d526859a1d1dcea31c3c99446c1daea140de120a69f6ec1ad6e"
+sha256 = "4201e18c1abafc2acac965c8d138cc2429e97e7adf0c7d7f65f98db28e96c7bd"
 
 [[sources]]
 source_id = "input-2"

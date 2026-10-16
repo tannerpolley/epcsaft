@@ -4,7 +4,7 @@ transformations = ["Native Ceres multistart joint fit (F form); the lowest-train
 
 [[records]]
 retained_path = "parameters/parameters.json"
-sha256 = "6c54525ba46030252280c84126c9d356abf4720f1d312ef7073621ceeb54bbab"
+sha256 = "bc57e59efedc2a385a9e6e27217de74d204a8a782f0bc402a99aff6db6967193"
 
 [[sources]]
 source_id = "input-0"
@@ -16,7 +16,7 @@ sha256 = "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76"
 source_id = "input-1"
 role = "Retained fit input or numerical result"
 retained_path = "analyses/2026-chloride-brine-refit/inputs/fit-declaration.json"
-sha256 = "71431c75611d5d526859a1d1dcea31c3c99446c1daea140de120a69f6ec1ad6e"
+sha256 = "4201e18c1abafc2acac965c8d138cc2429e97e7adf0c7d7f65f98db28e96c7bd"
 
 [[sources]]
 source_id = "input-2"

@@ -19,7 +19,7 @@ USES = {
     "feos-gross-sadowski-2002": "Gross and Sadowski 2002 Table 1 associating pure fluids (FeOs) with explicit Wolbach-Sandler rules; supply k_ij for a mixture.",
     "feos-rehner-2023": "Rehner 2023 binary k_ij and induced-association parameters with their Esper 2023 pure records (FeOs); non-commercial use (CC BY-NC 4.0).",
     "figiel-2025-aqueous-iodides": "Figiel 2025 aqueous NaI and KI at 298.15 K and 1 bar.",
-    "figiel-2025-chloride-mixture-refit": "Unqualified candidate: Na/Mg/Ca refit on chloride binaries and NaCl-MgCl2, NaCl-KCl-CaCl2 mixtures at 298.15 K (Figiel form); the packet description states its held-out errors.",
+    "figiel-2025-chloride-mixture-refit": "Owner-qualified 2026-10-16 for NaCl-MgCl2-CaCl2 brines at 298.15 K: Na/Mg/Ca refit on chloride binaries and NaCl-MgCl2, NaCl-KCl-CaCl2 mixtures (Figiel form); the packet description states its held-out errors and the one failing realization.",
     "figiel-2025-chloride-activity-refit": "Provisional (relaxed target): aqueous MgCl2 and CaCl2 refit on the Figiel 2025 set; the packet description states its measured errors.",
     "figiel-2025-reference-electrolytes": "Figiel 2025 alkali halides in water, methanol and ethanol (modified Born term).",
     "figiel-2025-validation-parameters": "Figiel 2025 validation-side transcription, including the iodide; for validation, not a separate model.",

@@ -17,7 +17,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `feos-rehner-2023` | 1 | 1 | Rehner 2023 binary k_ij and induced-association parameters with their Esper 2023 pure records (FeOs); non-commercial use (CC BY-NC 4.0). |
 | `figiel-2025-aqueous-iodides` | 3 | 2, 3 | Figiel 2025 aqueous NaI and KI at 298.15 K and 1 bar. |
 | `figiel-2025-chloride-activity-refit` | 2 | 2 | Provisional (relaxed target): aqueous MgCl2 and CaCl2 refit on the Figiel 2025 set; the packet description states its measured errors. |
-| `figiel-2025-chloride-mixture-refit` | 1 | 1 | Unqualified candidate: Na/Mg/Ca refit on chloride binaries and NaCl-MgCl2, NaCl-KCl-CaCl2 mixtures at 298.15 K (Figiel form); the packet description states its held-out errors. |
+| `figiel-2025-chloride-mixture-refit` | 1 | 1 | Owner-qualified 2026-10-16 for NaCl-MgCl2-CaCl2 brines at 298.15 K: Na/Mg/Ca refit on chloride binaries and NaCl-MgCl2, NaCl-KCl-CaCl2 mixtures (Figiel form); the packet description states its held-out errors and the one failing realization. |
 | `figiel-2025-reference-electrolytes` | 4 | 2, 3, 4 | Figiel 2025 alkali halides in water, methanol and ethanol (modified Born term). |
 | `figiel-2025-validation-parameters` | 3 | 2, 3 | Figiel 2025 validation-side transcription, including the iodide; for validation, not a separate model. |
 | `figiel-yu-held-2025` | 4 | 2, 3, 4 | Figiel, Yu and Held 2025 full solvent and ion set, including H+, sulfate and vanadium ions. |
