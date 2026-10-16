@@ -23,7 +23,8 @@ polar model is only meaningful together with its own parameters.
 
 - **Opt-in family.** `model_families` gains an optional `polar` kind. Its choices
   are `none`, which is also the default when the kind is absent, and
-  `dipole-dipole`.
+  `dipole-dipole`; [ADR 0014](0014-optional-quadrupole-quadrupole-term.md) adds
+  `quadrupole-quadrupole`.
 - **Inputs.** `dipole-dipole` requires two explicit records for every selected
   component: `dipole_moment` in `debye` and `dipole_count` (n_μ, dimensionless).
   Both must be finite and non-negative; zero is allowed for nonpolar species.
@@ -33,7 +34,7 @@ polar model is only meaningful together with its own parameters.
   `polarizability_scaling` and `correlation_integral_parameter`. Neither set
   feeds the other equation, and they are never translated into each other.
 - **Where the equation lives.** The Contributions layer owns it, in
-  `dipolar_helmholtz`, using the equations cited in [equations](../../../engine/docs/equations.md#dipolar_helmholtz).
+  `multipole_helmholtz`, shared with the quadrupole term since ADR 0014, using the equations cited in [equations](../../../engine/docs/equations.md#dipolar_helmholtz).
   It shares η, σ_i and ε_i with dispersion on the same tape.
 - **Combining rules.** ε_ij = √(ε_iε_j) without k_ij (source p. 1196). k_ij
   remains a dispersion correction only.
@@ -42,8 +43,9 @@ polar model is only meaningful together with its own parameters.
 - **Comparisons.** A polar model is compared only with its own published or
   documented-refit parameters, against a nonpolar model with its own parameters
   on the same data. It is never added to nonpolar-fitted parameters.
-- **Still retired.** Quadrupole–quadrupole, dipole–quadrupole and the Vrabec–Gross
-  cross term remain retired under ADR 0006 until a separate owner approval.
+- **Still retired.** The Vrabec–Gross dipole–quadrupole cross term remains retired
+  under ADR 0006 until a separate owner approval; the quadrupole–quadrupole term is
+  admitted by ADR 0014.
 
 ## Validity and verification
 

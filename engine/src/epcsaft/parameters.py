@@ -156,7 +156,8 @@ class Parameters:
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
         coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",
                                 "solvation_factor", "relative_permittivity", "dielectric_volume", "dielectric_temperature", "dipole_scaling",
-                                "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count", *renamed}
+                                "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count",
+                                "quadrupole_moment", "quadrupole_count", *renamed}
         for component_id in selected_ids:
             record = component_records[component_id]
             fixed = _mapping(record.get("fixed", {}), f"component/{component_id}/fixed")
