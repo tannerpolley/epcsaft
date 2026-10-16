@@ -82,6 +82,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #570 (lead allowance under #577: Surface +50, Bindings +35,
+  Python +8 against main `16fccc32`): measured growth is +50 / +34 / +6
+  formatted runtime lines. Surface **577 → 628**, Bindings **2,178 → 2,227**,
+  each the measured count plus its 1% band; Python stays 2,143. Total
+  **27,066 → 27,166**, the layer-ceiling sum. One native inverse beside
+  `build_parameters` writes fitted slots back into the start document, and one
+  form-tagged interval writer and reader replace the NASA9-only record.
+
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
