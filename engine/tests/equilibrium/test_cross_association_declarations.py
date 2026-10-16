@@ -116,8 +116,8 @@ def test_declarations_refuse_before_evaluation_and_ignore_other_selections() -> 
 def test_asl_record_transports_the_declaration_to_the_same_native_owner() -> None:
     """The epcsaft_pressure_property record carries the declaration entry; its liquid density equals the Python
     state's, and the same record without the entry is refused by native admission inside the ASL library."""
-    from pyomo.core.base.external import _ARGLIST
-    from pyomo.environ import ExternalFunction
+    from pyomo.core.base.external import _ARGLIST  # type: ignore[import-untyped]
+    from pyomo.environ import ExternalFunction  # type: ignore[import-untyped]
 
     interval = IdealInterval(200.0, 1000.0, True, True, IdealCorrelation(IdealNASA9([0.0, 0.0, 4.0] + [0.0] * 6), 1e5))
     mixture = Mixture(Parameters.from_mapping(document([NONE])), thermochemistry=ThermochemistryRecord(1e5, [[interval]] * 2))

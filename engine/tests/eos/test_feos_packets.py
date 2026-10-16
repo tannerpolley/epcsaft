@@ -6,7 +6,6 @@ import json
 import math
 import sys
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -77,7 +76,7 @@ def test_gross_2002_equals_table_1_and_declares_its_rules() -> None:
 
 def test_esper_maps_nonpolar_dipolar_self_and_acceptor_only_records() -> None:
     packet = document("feos-esper-2023")
-    sites = {}
+    sites: dict[str, list[tuple[str, int]]] = {}
     for site in packet["topology"]["sites"]:
         sites.setdefault(site["component_id"], []).append((site["site_id"], site["multiplicity"]))
     edges = {e["endpoint_a"]["component_id"] for e in packet["topology"]["edges"]}
