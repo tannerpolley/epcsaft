@@ -4,7 +4,7 @@ transformations = ["Native Ceres multistart joint fit (F form); the lowest-train
 
 [[records]]
 retained_path = "parameters/parameters.json"
-sha256 = "c4056a04f06f4802d443094564234e0bc6c4bf951b2b435f183e46fc66a0130e"
+sha256 = "6c54525ba46030252280c84126c9d356abf4720f1d312ef7073621ceeb54bbab"
 
 [[sources]]
 source_id = "input-0"
@@ -16,7 +16,7 @@ sha256 = "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76"
 source_id = "input-1"
 role = "Retained fit input or numerical result"
 retained_path = "analyses/2026-chloride-brine-refit/inputs/fit-declaration.json"
-sha256 = "b801ff5b201eae13b718ec4c042928a2835274b4d066e3483a83676e9a559bf2"
+sha256 = "71431c75611d5d526859a1d1dcea31c3c99446c1daea140de120a69f6ec1ad6e"
 
 [[sources]]
 source_id = "input-2"
@@ -28,4 +28,4 @@ sha256 = "d61882879961382012a6fb09d3f577a6b9a268bd046ecb0cdace0b2478181300"
 source_id = "input-3"
 role = "Retained fit input or numerical result"
 retained_path = "analyses/2026-chloride-brine-refit/results/stage-a-calcium/selection.json"
-sha256 = "6213ee6b2a89ddab1dab2cf5e1d82bc39a42c941724166bc9a7f84a524d13a8a"
+sha256 = "d8511c2cd786d1ce2450a57484400131ccd6fde955968f93e22be2bd1a23e7cb"

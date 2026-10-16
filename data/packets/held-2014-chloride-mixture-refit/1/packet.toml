@@ -2,9 +2,9 @@ schema_version = 2
 packet_id = "held-2014-chloride-mixture-refit"
 packet_version = "1"
 title = "Held 2014 strategy 2 chloride brine refit (issue #575 stage A)"
-description = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail; robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail; dinane-mounir-2003 I>3 0.0014/0.0024 fail. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
+description = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits, Dinane-Mounir judged by source agreement (owner amendment 2026-10-16: per realization, the larger of the frozen limit and the Rard-Miller/Dinane-Mounir disagreement) (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail (0/1,467 realizations pass; failing: 1467 realizations); robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail (1,466/1,467 realizations pass; failing: r1408); dinane-mounir-2003 I>3 0.0014/0.0024 pass. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
 license_or_use_basis = "Project-derived parameters for private scientific verification; no full paper content."
-tolerance_rationale = "Held-out errors under the frozen #556 limits are stated in the description; numerical fitting, no physical validation."
+tolerance_rationale = "Held-out errors under the frozen #556 limits, with the owner's 2026-10-16 source-agreement limit for Dinane-Mounir, are stated in the description; numerical fitting, no physical validation."
 
 [[sources]]
 source_id = "held-2014"
@@ -26,7 +26,7 @@ use_basis = "water identity and molecular weight"
 [[sources]]
 source_id = "issue-575-stage-a-joint-fit"
 citation = "ePC-SAFT issue 575 stage-A native joint fit, 2026-10-16"
-use_basis = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail; robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail; dinane-mounir-2003 I>3 0.0014/0.0024 fail. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
+use_basis = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits, Dinane-Mounir judged by source agreement (owner amendment 2026-10-16: per realization, the larger of the frozen limit and the Rard-Miller/Dinane-Mounir disagreement) (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail (0/1,467 realizations pass; failing: 1467 realizations); robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail (1,466/1,467 realizations pass; failing: r1408); dinane-mounir-2003 I>3 0.0014/0.0024 pass. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
 
 [[sources]]
 source_id = "goldberg-nuttall-1978"
@@ -72,7 +72,7 @@ description = "Aqueous NaCl-MgCl2-CaCl2 at 298.15 K and 1 bar, ionic strength <=
 path = "parameters/parameters.json"
 role = "parameters"
 media_type = "application/json"
-sha256 = "5a5a66af81bc6ec124c7b6861d810e9d4cdf557297dc3a6519b9f6b5c85381cb"
+sha256 = "f95312bec834225e0396ad792231c619cb85c9fc4df980440f446847a41e8e34"
 source_refs = ["held-2014", "figiel-yu-held-2025", "nist-srd-69-water", "issue-575-stage-a-joint-fit", "goldberg-nuttall-1978", "hamer-wu-1972", "rard-miller-1987", "marcus-1991", "saad-padova-marcus-1980"]
 domain_refs = ["issue-575-chloride-brine-298-15-k"]
 units_basis = "Explicit units per coefficient; sigma, DH, Born and packing lengths in angstrom, energies in kelvin, segment counts and k_ij dimensionless."
@@ -81,7 +81,7 @@ units_basis = "Explicit units per coefficient; sigma, DH, Born and packing lengt
 path = "provenance/source-origin.toml"
 role = "provenance"
 media_type = "application/toml"
-sha256 = "87bc0174b6709e7f9d6a8a6edfa2b10519187167ff0131daef5e8b9fe926a4c4"
+sha256 = "cfb44c2379f7239efbb2353eab459e71a71ca2711156077c4e66ef28abf10afa"
 source_refs = ["held-2014", "figiel-yu-held-2025", "nist-srd-69-water", "issue-575-stage-a-joint-fit", "goldberg-nuttall-1978", "hamer-wu-1972", "rard-miller-1987", "marcus-1991", "saad-padova-marcus-1980"]
 domain_refs = ["issue-575-chloride-brine-298-15-k"]
 units_basis = "Non-numeric source identities and SHA-256 hashes."

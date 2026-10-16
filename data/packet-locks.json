@@ -336,14 +336,14 @@
       "packet_id": "held-2014-chloride-mixture-refit",
       "packet_version": "1",
       "packet_path": "data/packets/held-2014-chloride-mixture-refit/1",
-      "packet_fingerprint": "f6aa205225c870d04c0d747b17a45b77e61af86d533cd5cd5808ff547e90fc22",
+      "packet_fingerprint": "ed6d47d760dc4342f0a2307bd60848ec325f6224e7162e8dd56cf2a6274482ce",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-chloride-mixture-refit",
       "packet_version": "1",
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
-      "packet_fingerprint": "ef4a1bbaac3bb76530288ce616e74faac8c471e409f703e5b3633704511f79ef",
+      "packet_fingerprint": "c7f677f26ecd942535c55093c3b752867228ccb690c478653631652dfd0ddbd3",
       "materialization": "byte-for-byte"
     }
   ]
