@@ -1280,7 +1280,11 @@ T1 = T0 + (H_spec − H0)/C_f, or T1 = T0 exp((S_spec − S0)/C_f).
 Only finite positive C_f and an admitted T1 change the seed. Pure two-phase
 seeds instead use the pinned-zero saturation cell at P and the caloric lever
 rule; an exterior target requires a caller-declared single phase. An auxiliary
-failure retains its cause and the caller start; there is no outer retry.
+failure retains its cause and the caller start; there is no outer retry. The seed
+alone stops after `EQUILIBRIUM_CALORIC_SEED_ITERATIONS` (20) Ipopt iterations, within
+any caller limits; one without a state by then is discarded like any failed seed.
+A start outside the declared phases' coexistence region otherwise spends 48–200
+iterations on a seed that cannot succeed; converged seeds took 4–14 (#579).
 
 Regular PH/PS qualification restricts the returned coordinates to a diagnostic
 fixed-TP Gibbs chart, recovers its physical chemical duals and computes the

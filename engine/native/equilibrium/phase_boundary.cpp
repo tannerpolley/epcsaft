@@ -909,7 +909,11 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (pure) seed_problem.phases[1].amount = AmountSpec::pinned(0.0);
         else seed_problem.temperature = FreeValue::fixed(compiled.seed_temperature());
         const auto source = compile_problem(*compiled.model, seed_problem);
-        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits, stages), nullptr, limits);
+        // The seed alone stops at its own budget; a seed without a state is discarded either way (#579).
+        DriverLimits budget = limits ? *limits : DriverLimits{std::numeric_limits<std::size_t>::max(), std::chrono::steady_clock::time_point::max()};
+        budget.iterations = std::min(budget.iterations, budget.consumed + static_cast<std::size_t>(policy::EQUILIBRIUM_CALORIC_SEED_ITERATIONS.value));
+        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits, stages), nullptr, &budget);
+        if (limits) limits->consumed = budget.consumed;
         if (stages) stages->add(seed);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
         if (seed.has_state()) {

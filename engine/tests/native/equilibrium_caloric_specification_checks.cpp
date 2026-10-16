@@ -19,7 +19,7 @@ inline EquilibriumProblem condition(EquilibriumProblem p, bool h, double target,
     if(h) p.enthalpy_j=target; else p.entropy_j_per_k=target;
     return p;
 }
-inline void recovered(const HelmholtzModel& m,const EquilibriumProblem& p,const EquilibriumResult& ref,
+inline EquilibriumResult recovered(const HelmholtzModel& m,const EquilibriumProblem& p,const EquilibriumResult& ref,
                       bool h,double seed,const std::string& id) {
     const double target=total(m,ref,h), feed=std::accumulate(p.feed.values.begin(),p.feed.values.end(),0.0);
     const auto request=condition(p,h,target,seed); const auto result=solve_equilibrium(m,request);
@@ -28,6 +28,7 @@ inline void recovered(const HelmholtzModel& m,const EquilibriumProblem& p,const 
     compare(id+"/closure",total(m,result,h),target,feed*GAS_CONSTANT_J_PER_MOL_K*(h?result.temperature[0]:1),1e-10);
     for(std::size_t i=0;i<result.amounts.size();++i) compare(id+"/split-"+std::to_string(i),result.amounts[i],ref.amounts[i],feed,1e-9);
     for(std::size_t i=0;i<result.mole_fractions.size();++i) compare(id+"/x-"+std::to_string(i),result.mole_fractions[i],ref.mole_fractions[i],1,1e-8);
+    return result;
 }
 inline EquilibriumProblem binary() {
     auto p=equilibrium_support::flash(2); p.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor));
@@ -67,6 +68,23 @@ void roundtrips() {
             compare(std::string(h?"PH3":"PS3")+"/S-lever",(total(pure,result,false)/2.5-sl)/(sv-sl),0.35,1,1e-8);
         }
     }
+    // #579: Gross (2001) benzene/toluene with NASA Glenn (2002) NASA9 calorics at 1 bar. The start 1.05 x 370 K lies
+    // above the dew point, so the fixed-T seed has no liquid; it stops at its own budget and is discarded (66 -> 24).
+    auto bt=properties_support::parameters(2);
+    bt.segment_count={2.4653,2.8149};bt.sigma_constant={3.6478,3.7169};bt.dispersion_energy_over_k={287.35,285.69};
+    bt.molar_mass_kg_per_mol={0.078114,0.092141};bt.k_ij[1]=bt.k_ij[2]=-0.003;
+    ThermochemistryRecord nasa;nasa.standard_pressure=100000.0;
+    for(auto a:std::vector<std::array<double,9>>{
+            {-167734.0902,4404.50004,-37.1737791,0.1640509559,-0.0002020812374,1.307915264e-07,-3.4442841e-11,-10354.55401,216.9853345},
+            {-287796.222,6133.94152,-45.7470676,0.1936895724,-0.0002304305304,1.459301178e-07,-3.7907961e-11,-23084.02499,269.3915042}}) {
+        for(auto& v:a) v*=8.31451/GAS_CONSTANT_J_PER_MOL_K;  // the record's gas constant to the Engine's
+        nasa.component_intervals.push_back({{200,1000,true,true,{IdealNASA9{a},100000}}});
+    }
+    const HelmholtzModel aromatics(bt,{},nasa);
+    auto flash=binary();flash.temperature=FreeValue::fixed(370);flash.pressure=FreeValue::fixed(1e5);
+    const auto at370=solve_equilibrium(aromatics,flash);CHECK(at370.has_state());
+    const auto ph=recovered(aromatics,flash,at370,true,1.05*370,"PH5/benzene-toluene");
+    CHECK(ph.iterations<=26);
 }
 void reactions() {
     for(int kind=0;kind<3;++kind) {
