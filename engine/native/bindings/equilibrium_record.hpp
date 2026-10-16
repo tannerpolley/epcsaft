@@ -1,6 +1,8 @@
 #pragma once
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "surface/parameter_builder.hpp"
+#include <algorithm>
+#include <array>
 #include <sstream>
 #include <type_traits>
 
@@ -119,10 +121,18 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     return w.finish();
 }
 
-// Property callbacks: the parameter document and a NASA9 thermochemistry record, no state.
+// Thermochemistry interval forms, in IdealCorrelation variant order; each writes its coefficients, then its anchors.
+inline const std::array<std::string, 5> ideal_tags = {"polynomial", "shomate", "nasa7", "nasa9", "dippr107"};
+inline const std::array<decltype(IdealCorrelation::form), 5> ideal_forms = {IdealPolynomial{}, IdealShomate{}, IdealNASA7{}, IdealNASA9{}, IdealDIPPR107{}};
+template <class C> std::vector<double*> ideal_anchors(C& c) {
+    if constexpr (std::is_same_v<C, IdealShomate>) return {&c.formation_enthalpy};
+    if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) return {&c.reference_temperature, &c.reference_enthalpy, &c.reference_entropy};
+    return {};
+}
+// Property callbacks: the parameter document and a thermochemistry record, no state.
 inline std::string asl_property_record(const ParameterDocument& d, const ThermochemistryRecord& t, const policy::SolverOptions& solver_options = {}) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.property.v1");
+    w.put("epcsaft.asl.property.v2");
     put_document(w, d);
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
@@ -130,12 +140,13 @@ inline std::string asl_property_record(const ParameterDocument& d, const Thermoc
     for (const auto& intervals : t.component_intervals) {
         w.put(intervals.size());
         for (const auto& item : intervals) {
-            // ponytail: NASA9 only (the qualified HDA use); add other forms when a consumer qualifies them.
-            const auto* nasa9 = std::get_if<IdealNASA9>(&item.correlation.form);
-            if (nasa9 == nullptr) throw std::invalid_argument("ASL property record supports NASA9 intervals only");
             w.put(item.lower); w.put(item.upper); w.put(item.lower_inclusive); w.put(item.upper_inclusive);
-            w.put(item.correlation.source_pressure);
-            for (const double a : nasa9->coefficients) w.put(a);
+            w.put(item.correlation.source_pressure); w.put(ideal_tags[item.correlation.form.index()]);
+            std::visit([&](auto c) {
+                w.vector(std::vector<double>(c.coefficients.begin(), c.coefficients.end()));
+                w.put(ideal_anchors(c).size());
+                for (const double* value : ideal_anchors(c)) w.put(*value);
+            }, item.correlation.form);
         }
     }
     return w.finish();

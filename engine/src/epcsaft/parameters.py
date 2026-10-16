@@ -107,7 +107,7 @@ class Parameters:
         site_ids: tuple[tuple[str, str], ...],
     ) -> None:
         self._native = native
-        self._document: _core.ParameterDocument | None = None
+        self._document: _core.ParameterDocument | str | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
 
