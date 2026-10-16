@@ -750,6 +750,56 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     return result;
 }
 
+std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices) {
+    core::Scope scope("henry_constants");
+    const auto& parameters = model.parameters();
+    const std::size_t components = parameters.component_count();
+    const auto solvent = std::size_t(std::find(solvent_fractions.begin(), solvent_fractions.end(), 1.0)
+        - solvent_fractions.begin());
+    auto solutes = solute_indices;
+    std::sort(solutes.begin(), solutes.end());
+    if (solvent_fractions.size() != components || solvent == components
+        || std::count(solvent_fractions.begin(), solvent_fractions.end(), 0.0) != std::ptrdiff_t(components - 1)
+        || solutes.empty() || solutes.back() >= components
+        || std::adjacent_find(solutes.begin(), solutes.end()) != solutes.end()
+        || std::binary_search(solutes.begin(), solutes.end(), solvent))
+        throw std::invalid_argument("henry constants need one pure solvent and distinct known solutes");
+    std::vector<HenryConstant> result(solutes.size());
+    for (std::size_t row = 0; row < solutes.size(); ++row) result[row].component_index = solutes[row];
+    // A charge-balanced pair of ion slots passes the ratio validation; Henry admits all-neutral models only.
+    if (std::any_of(parameters.charge_number.begin(), parameters.charge_number.end(), [](int z) { return z != 0; })) {
+        for (auto& henry : result) {
+            henry.status = NeutralReferenceStatus::NonNeutralDeclaration;
+            henry.message = "henry constants require an all-neutral model";
+        }
+        return result;
+    }
+    NeutralReferenceDeclaration declaration{solvent, std::vector<double>(components, 1.0), 1.0, {}};
+    declaration.solute_molality_ratios[solvent] = 0.0;
+    std::vector<std::vector<double>> rows(solutes.size(), std::vector<double>(components, 0.0));
+    for (std::size_t row = 0; row < solutes.size(); ++row) rows[row][solutes[row]] = 1.0;
+    const auto references = reaction_references(model, temperature, pressure, declaration, rows,
+        std::vector<ReactionReference>(rows.size()), /*pressure_jets=*/false);
+    for (std::size_t row = 0; row < solutes.size(); ++row) {
+        auto& henry = result[row];
+        const auto& reference = references[row];
+        henry.raw_log_reference = reference.terminal_contraction;
+        henry.observed_terminal_change = reference.observed_terminal_change;
+        henry.status = reference.status;
+        henry.message = reference.message;
+        if (!reference.terminal_contraction) continue;
+        // EqID: henry_constant_px
+        const double value = GAS_CONSTANT_J_PER_MOL_K * temperature * std::exp(*reference.terminal_contraction);
+        if (std::isfinite(value) && value > 0.0) henry.henry_constant_px = value;
+        else {
+            henry.status = NeutralReferenceStatus::Nonfinite;
+            henry.message = "henry constant transform is nonfinite or zero";
+        }
+    }
+    return result;
+}
+
 NeutralReferenceReactionDiagnostic reaction_reference(
     const HelmholtzModel& model,
     double temperature,

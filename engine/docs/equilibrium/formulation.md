@@ -360,30 +360,35 @@ Restricted supports and density-label starts limit that set, and positive local
 curvature does not exclude a remote split. [ALG-STABILITY](../science/algorithms.md#alg-stability)
 owns enumeration, conserved addition/removal and separate work budgets.
 
-Charged trial supports are admitted only when the declared bulk-permittivity
-form reaches the vacuum limit, $\epsilon_r\to1$ as $\rho_m\to0$.
-The existing `DensityTemperature` (Schreckenberg) and `DipolarPerturbation`
-(Rueben) forms satisfy this condition by their definitions in
+Charged trial supports are admitted under every declared bulk-permittivity
+form. The existing `DensityTemperature` (Schreckenberg) and
+`DipolarPerturbation` (Rueben) forms reach the vacuum limit,
+$\epsilon_r\to1$ as $\rho_m\to0$, by their definitions in
 [full EOS §6.2 and §6.4](../science/full-eos.md#6-bulk-dielectric-and-debye-huckel),
 EqID: `density_correlated_bulk_permittivity` and EqID:
-`dipolar_perturbation_bulk_permittivity`. `IonSuppression` (including
-solvent-only, ion-fraction and ion-specific choices) and `ComponentMixing`
-are density independent and are refused for charged trials. Their electrolyte
-terms are defined for condensed phases; a free-volume trial search cannot infer
-that domain from a Liquid label or mechanical pressure-root admission.
+`dipolar_perturbation_bulk_permittivity`; their charged trials count at every
+density. `IonSuppression` (including solvent-only, ion-fraction and
+ion-specific choices) and `ComponentMixing` are density independent. Their
+electrolyte terms are defined for condensed phases, and a free-volume trial
+search cannot infer that domain from a Liquid label or mechanical pressure-root
+admission alone. Under these forms a charged trial point counts only when it is
+a stable density root of its own composition at the test T and P that the
+density owner's side classification (#423) places on the liquid side of that
+composition's own mechanical loop, the classification declared Liquid phases
+already satisfy (#568).
 
-One native support-admission rule reads the model's declared form before any
-trial root or optimizer invocation. A requested family containing a charged
-support under a refused form raises `ParameterError` with
-"permittivity model has no low-density limit; declare phases". The same rule
-runs before discovery declaration solves. Caller-supplied neutral-only supports
-remain admitted on these models. No density cutoff, optimizer-success filter,
-parameter substitution or model change is introduced. Declared solves,
-continuation, fitting and ASL retain their existing domain and calculations.
-The vacuum limit is a necessary admission condition for this search, not
-physical validation or a global stability certificate. The previously evaluated
-solvent-only gas-density descent remains retained numerical evidence and is
-classified as refused under this owner-adopted rule.
+[ALG-STABILITY](../science/algorithms.md#supports-seeds-and-trial-solves) owns
+the seed and end-point checks. A vapor-side root, a sole root without a loop
+sample and a point away from every stable root are unavailable with the cause
+"charged trial outside the condensed domain of density-independent
+permittivity"; they are never witnesses or stability evidence. Neutral trials,
+vacuum-limit forms, declared solves, continuation, fitting and ASL retain their
+existing domain and calculations. No density cutoff, new tolerance,
+optimizer-success filter, parameter substitution or model change is introduced.
+The condition is necessary for this search, not physical validation or a global
+stability certificate, and it establishes condensed density only, not the
+correlation's fitted range. The previously evaluated solvent-only gas-density
+descent at 2.32 mol/m³ lies on a sole root without a loop and stays refused.
 
 The exact global dual infimum (EqID: `helmholtz_lagrangian_dual`, EqID:
 `dual_inner_problem`) can supply a lower bound. A local inner minimizer is an

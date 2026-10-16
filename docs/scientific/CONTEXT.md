@@ -219,16 +219,20 @@ remaining work.
   Mechanical and local checks remain available; a declared result implies no
   unperformed search. [ADR 0012](decisions/0012-native-tangent-plane-phase-discovery.md)
   records the adopted choices, not numerical support.
-- Charged trial supports in explicit testing/discovery require a declared bulk
-  permittivity form with the vacuum limit: Schreckenberg `DensityTemperature`
-  or Rueben `DipolarPerturbation` (full EOS §6.2/§6.4). Density-independent
-  `IonSuppression` and `ComponentMixing` describe condensed-phase electrolyte
-  terms and raise `ParameterError`: "permittivity model has no low-density limit;
-  declare phases". Neutral-only trial families and declared calculations are
-  unchanged. The retained solvent-only gas-density descent is refused under
-  this owner-adopted search rule; its numerical operands remain available.
-  A vacuum limit establishes neither physical validation nor global stability.
-  No density cutoff or optimizer-success filter is introduced.
+- Charged trial supports in explicit testing/discovery count at every density
+  under a bulk permittivity form with the vacuum limit: Schreckenberg
+  `DensityTemperature` or Rueben `DipolarPerturbation` (full EOS §6.2/§6.4).
+  Density-independent `IonSuppression` and `ComponentMixing` describe
+  condensed-phase electrolyte terms: a charged trial point counts only at a
+  stable density root of its own composition on the liquid side of that
+  composition's loop (#423 classification, ADR 0012 #568 addendum). Vapor-side,
+  loop-less and off-root points are unavailable with the cause "charged trial
+  outside the condensed domain of density-independent permittivity". Neutral
+  trials and declared calculations are unchanged. The retained solvent-only
+  gas-density descent lies on a sole root without a loop and stays refused; its
+  numerical operands remain available. Admission establishes neither physical
+  validation nor global stability. No density cutoff, new tolerance or
+  optimizer-success filter is introduced.
 - Caller tolerances govern solve requests. Return finite candidates with achieved
   residuals and explicit unmet-tolerance warnings; return named absence and
   diagnostics when no finite candidate exists.
