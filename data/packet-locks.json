@@ -277,6 +277,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "2",
+      "packet_path": "data/packets/held-2014-strategy2/2",
+      "packet_fingerprint": "36f57f713a7b148725eb1164127016df7e995a57c5838dc1786549e90bbafde1",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "mixed-chloride-water-observations",
       "packet_version": "1",
       "packet_path": "data/packets/mixed-chloride-water-observations/1",

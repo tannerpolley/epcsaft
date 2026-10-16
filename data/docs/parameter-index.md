@@ -22,7 +22,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `gross-vrabec-2006` | 1 | 1 | Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters. |
 | `hamer-wu-1972-aqueous-alkali-halides` | 1 | 1 | Observations, not parameters: evaluated molality-scale mean ionic activity coefficients of six aqueous 1:1 salts at 298.15 K. |
 | `hda-pc-saft` | 1 | 1 | Toluene hydrodealkylation H2/CH4/benzene/toluene: nonassociating PC-SAFT pure records and all six k_ij (two fitted in #73). |
-| `held-2014-strategy2` | 1 | 1 | Held 2014 strategy-2 water and chloride ions at 298.15 K; transcription candidate, not a qualified fit. |
+| `held-2014-strategy2` | 2 | 1, 2 | Held 2014 strategy-2 water and chloride ions at 298.15 K; /2 uses the Eq. (21) 0.88 sigma closest approach that reproduces the paper figures, /1 the text's sigma; transcription, not a qualified fit. |
 | `held-cameretti-sadowski-2008` | 4 | 2, 3, 4 | Held 2008 water and 29 ions, fully dissociated aqueous electrolytes at 298.15 K and 1 bar. |
 | `hydrogen-binary-vle` | 2 | 2 | Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 7 | 5, 6, 7 | Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE. |
@@ -67,7 +67,7 @@ Current packet versions whose parameter files hold the component.
 | `butanal` | `gross-vrabec-2006/1` |
 | `butane` | `gross-sadowski-2001/3` |
 | `butanone` | `gross-vrabec-2006/1` |
-| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `carbamate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `carbon-dioxide` | `gross-sadowski-2001/3`, `mea-co2-h2o-nine-species-estimation/5` |
 | `carbon-disulfide` | `gross-sadowski-2001/3` |
@@ -75,7 +75,7 @@ Current packet versions whose parameter files hold the component.
 | `carbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `cesium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorate-anion` | `held-cameretti-sadowski-2008/4` |
-| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorine` | `gross-sadowski-2001/3` |
 | `chlorobenzene` | `gross-sadowski-2001/3` |
 | `chloroethane` | `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
@@ -120,9 +120,9 @@ Current packet versions whose parameter files hold the component.
 | `isobutanol` | `khudaida-2026-figure-2-electrolyte-lle/7` |
 | `isopentane` | `gross-sadowski-2001/3` |
 | `isopropyl-ethanoate` | `gross-sadowski-2001/3` |
-| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `m-xylene` | `gross-sadowski-2001/3` |
-| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `methane` | `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `methanol` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4` |
 | `methyl-butanoate` | `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
@@ -152,13 +152,13 @@ Current packet versions whose parameter files hold the component.
 | `pentadecane` | `gross-sadowski-2001/3` |
 | `pentane` | `gross-sadowski-2001/3` |
 | `perchlorate-anion` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `propanal` | `gross-vrabec-2006/1` |
 | `propane` | `gross-2001-propane/3`, `gross-sadowski-2001/3` |
 | `propylene` | `gross-sadowski-2001/3` |
 | `protonated-monoethanolamine` | `mea-co2-h2o-nine-species-estimation/5` |
 | `rubidium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `strontium-cation` | `held-cameretti-sadowski-2008/4` |
 | `sulfate-anion` | `figiel-yu-held-2025/4`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `sulfur-dioxide` | `gross-sadowski-2001/3` |
@@ -170,4 +170,4 @@ Current packet versions whose parameter files hold the component.
 | `undecane` | `gross-sadowski-2001/3` |
 | `vanadium-iii-cation` | `figiel-yu-held-2025/4` |
 | `vanadyl-cation` | `figiel-yu-held-2025/4` |
-| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5` |
+| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5` |

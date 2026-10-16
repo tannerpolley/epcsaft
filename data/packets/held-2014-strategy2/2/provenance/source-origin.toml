@@ -1,0 +1,19 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Packet /1 with debye_huckel_diameter = packing_diameter (0.88 sigma) for every ion; no fitted value."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "cd2412073d306b89193da263f8207d96f8c50e5a710f2ca177be7d1d21f54297"
+
+[[sources]]
+source_id = "input-0"
+role = "Retained fit input or numerical result"
+retained_path = "data/packets/held-2014-strategy2/1/parameters/parameters.json"
+sha256 = "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71"
+
+[[sources]]
+source_id = "input-1"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/reproduction/2014-held/results/figure-line-comparison.csv"
+sha256 = "0e2edadb07ba7b7d1f543ac36ecf73aca1bb3c15cb1b32076f952abc22a1543a"
