@@ -9,7 +9,7 @@ import pytest
 from epcsaft import Mixture, Parameters, Pure
 from epcsaft import equilibrium as eq
 from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
-from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS
+from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS, _mea_mapping
 from tests.native_inputs import ETHANE, parameters
 from tests.packets import parameters_json
 
@@ -179,7 +179,7 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
     true-species split, the single-liquid speciation, the bubble's liquid pre-solve at its pressure seed and
     fugacity pressure step) under its work limits, so it returns the same state and summed work. The bubble reports
     that pre-solve's work, and a budget below it stops before the bubble solve."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     bubble = _mea_flash(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Pinned(0.)))
     work = ("iterations", "evaluations", "hessian_calls")
     for declared in (bubble, _mea_flash(5918.5286, eq.Phase("V", kind="vapor", support=_MEA[:3])), _mea_flash(8877.7929)):
@@ -206,7 +206,7 @@ def test_feed_start_regrows_the_vapor_at_the_356_point() -> None:
     liquid species at 1/9 of the feed before normalization, equal amounts) one step nearly emptied the liquid on main
     7fa511b6, and the solve ended "phase V vanished"; the amount step rule refuses that step. That start and the
     generated true-species split both reach main's apparent-K state within 1e-10."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     problem = _mea_flash(3699.0803800848512, eq.Phase("V", kind="vapor", support=_MEA[:3]))
     z = [.25557798094241313 * 9.7292821, 9.7292821, 76.9751925]
     liquid = z + [sum(z) / 9] * 6
