@@ -78,14 +78,20 @@ Budget changes must not silently change scientific scope.
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
   Bindings **2,151 → 2,178**, Python **2,107 → 2,143**, each the measured
-  count plus its 1% band. Total **26,810 → 27,067**, the layer-ceiling sum.
+  count plus its 1% band. Total **26,809 → 27,066**, the layer-ceiling sum after #557.
   One all-species solvent contraction replaces both one-salt contractions;
   the one-salt declaration supplies its particle ratio without a rounding
   round trip through mole fractions. The lead raised the Properties net
   allowance from +180 to +181 for the two delivered-review failure-reporting
   corrections; gross and all other allowances, including total +280 / 375,
-  are unchanged.
+  are unchanged. The independent −2 net Parameter Regression change in #557
+  is excluded from #556 growth.
 
+- 2026-10-15, #557 (rule 2): Parameter Regression **3,874 → 3,873**, the
+  formatted count 3,834 plus its band 39 after replacing the blanket overlap
+  refusal with ordered coefficient composition (22 gross additions, −2 net).
+  Total **26,810 → 26,809**, the sum of the layer ceilings. Other runtime
+  layers are unchanged.
 - 2026-10-15, #545 (owner): approved Equilibrium allowance +100 net / 160
   gross formatted lines relative to `0bec2bdf42e31bf37e8d4679169c8174b580408f`,
   with zero growth in other runtime layers. The measured change is +67 net
