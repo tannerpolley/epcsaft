@@ -432,7 +432,7 @@ suppression coefficient. Its water and 1-butanol source correlations are
 evaluated exactly at the bundle's sole admitted temperature, 298.15 K. CppAD
 differentiates the displayed composition rule in the common owner.
 
-With every species charged (an ionic liquid plus a salt), the solvent sum is empty and the rule is `epsilon_r,bulk = sum_i x_i epsilon_r,i` (Bulow2019 Eq. 7; Bulow2021 §2.3, Table 5); the Debye-Huckel term and the Born charging work from vacuum (Bulow2021 Eq. 24) need only this `epsilon_r,bulk > 0`. Only this form admits a parameter set without a neutral species: ion suppression and the density form average neutral-solvent records, and Rueben2024 fit the perturbation form's ion records to water-salt mixtures. Stability refuses ionic trial supports, automatic or supplied, under this form; declare the equilibrium phases instead.
+With every species charged (an ionic liquid plus a salt), the solvent sum is empty and the rule is `epsilon_r,bulk = sum_i x_i epsilon_r,i` (Bulow2019 Eq. 7; Bulow2021 §2.3, Table 5); the Debye-Huckel term and the Born charging work from vacuum (Bulow2021 Eq. 24) need only this `epsilon_r,bulk > 0`. Only this form admits a parameter set without a neutral species: ion suppression and the density form average neutral-solvent records, and Rueben2024 fit the perturbation form's ion records to water-salt mixtures. Under this form, stability admits ionic trials only on the condensed side of their own composition's loop ([ALG-STABILITY](algorithms.md#supports-seeds-and-trial-solves)).
 
 ### 6.2 Schreckenberg density topology
 
