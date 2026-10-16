@@ -416,6 +416,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     result.permittivity_term_coefficient.assign(permittivity_terms, 0.0);
     result.permittivity_term_power.assign(permittivity_terms, 0);
     std::set<std::size_t> sigma_amplitude, sigma_exponent, permittivity_coefficients, intercepts;
+    std::set<std::string> coefficient_identities;
     for (const auto& entry : document.entries) {
         if (entry.field == "sigma_term_amplitude" || entry.field == "sigma_term_exponent") {
             const auto term = entry.index[0];
@@ -444,6 +445,7 @@ Parameters build_parameters(const ParameterDocument& document) {
             const int energy = found->second.first == "association_energy_over_k" ? 1 : 0;
             const double value = entry.magnitude * unit_factor(entry, energy + (slope ? 1 : -power));
             if (!std::isfinite(value)) reject("nonfinite " + where(entry));
+            if (!coefficient_identities.insert(entry.identity).second) reject("repeated temperature law coefficient " + where(entry));
             if (power == 0) intercepts.insert(entry.index[0]);
             result.temperature_law_term_law.push_back(static_cast<int>(entry.index[0]));
             result.temperature_law_term_power.push_back(power);
