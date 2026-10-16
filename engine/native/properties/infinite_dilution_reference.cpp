@@ -723,7 +723,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
             for (std::size_t d = 2; d <= reference_order; ++d)
-                for (std::size_t b = 0; b <= d-c; ++b) {
+                for (std::size_t b = 0; b <= (pressure_jets ? d-c : 0); ++b) {
                     const std::size_t a = d-b-c;
                     if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
                     for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
