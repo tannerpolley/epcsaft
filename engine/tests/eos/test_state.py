@@ -8,7 +8,8 @@ from typing import Any
 
 import pytest
 
-from epcsaft import DensityBranch, Mixture, ParameterError, Parameters, Pure
+from epcsaft import (DensityBranch, IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ParameterError, Parameters,
+                     Pure, ThermochemistryRecord)
 from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
 
@@ -455,3 +456,119 @@ def test_density_anchor_outside_domain_keeps_native_convergence_failure() -> Non
     with pytest.raises(ConvergenceError, match="left_domain: residual 0") as failure:
         model.state(200.0, P=1.0e5, phase="liquid", anchor=anchor)
     assert isinstance(failure.value, EosError)
+
+
+# #566 derived State properties. Clapeyron BasicIdeal as one constant polynomial: Cp = 5R/2, anchors at 300 K, 1 bar.
+_R = 8.31446261815324
+_BASIC_IDEAL = IdealPolynomial([2.5 * _R], 300.0, 2.5 * _R * 300.0, _R * (2.5 + 2.5 * math.log(300.0) + math.log(_R / 1e5)))
+_DERIVED = ("isothermal_compressibility", "isobaric_expansivity", "heat_capacity_ratio", "isentropic_compressibility",
+            "speed_of_sound", "joule_thomson_coefficient")
+_PARTIAL = ("partial_molar_volume", "partial_molar_enthalpy", "partial_molar_entropy")
+# Clapeyron 0.6.29 VT_* and _partial_property at 300 K, the same parameters, masses, R and BasicIdeal; columns:
+# P, Cp, Cv, kappa_T, alpha_P, gamma, kappa_S, w, mu_JT, then v_i, h_i, s_i per component. Retained comparator:
+# #566 reference-values.json (SHA-256 25ca53f55c3646826390b4ad5a26c4377e89d901ee938994fac17ea5737c4ded).
+_CLAPEYRON: dict[tuple[str, float, tuple[float, ...]], tuple[tuple[float, ...], tuple[tuple[float, ...], ...]]] = {
+    ("propane", 10.0, (1.0,)): ((
+        24851.063870309004, 20.92484505730069, 12.499257735892634, 4.03896269160768e-05, 0.0033680178565465794,
+        1.674087013760289, 2.4126360567934118e-05, 306.5875359596401, 4.972728321514283e-05), (
+        (0.1,), (6210.066348330103,), (72.75285746093314,))),
+    ("propane", 12000.0, (1.0,)): ((
+        17281151.61786351, 57.077344774420204, 25.826492475130674, 3.465815537595254e-09, 0.0020814388241019435,
+        2.210030836722493, 1.5682204429034611e-09, 1097.757021369006, -5.48332492593646e-07), (
+        (8.333333333333326e-05,), (-9596.036203472815,), (-14.042556200231374,))),
+    ("methane-ethane", 200.0, (0.4, 0.6)): ((
+        487070.6864253928, 21.778686538246202, 12.639631605845253, 2.103406943133779e-06, 0.0035798651369842753,
+        1.723047571115487, 1.2207480387625344e-06, 409.2143553160764, 1.697979833756275e-05), (
+        (0.005090799699017654, 0.004939466867321562), (6177.358948615365, 5979.632802908508),
+        (55.54237630672732, 51.75357688601219))),
+    ("methane-ethane", 8000.0, (0.4, 0.6)): ((
+        9520487.906309793, 95.96140244639435, 16.194940470527886, 1.34988005329227e-07, 0.016945021368564746,
+        5.925393959985727, 2.2781270956969778e-08, 473.63622130238076, 5.319204266593722e-06), (
+        (0.00025345238566291625, 3.9365076224722084e-05), (7989.34478068556, -3789.1227552397054),
+        (36.764362090305546, 1.4195930772730305))),
+}
+
+
+def _basic_model(name: str) -> Mixture:
+    components = ("propane",) if name == "propane" else ("methane", "ethane")
+    parameters = Parameters.from_json(parameters_json(f"gross-2001-{name}", 3), components=components)
+    record = ThermochemistryRecord(1e5, [[IdealInterval(100.0, 1000.0, True, True, IdealCorrelation(_BASIC_IDEAL, 1e5))]
+                                         for _ in components])
+    return (Pure if len(components) == 1 else Mixture)(parameters, thermochemistry=record)
+
+
+def test_derived_properties_match_clapeyron(evidence: Any) -> None:
+    for (name, rho, x), (row, partials) in _CLAPEYRON.items():
+        model = _basic_model(name)
+        state = model.state(300.0, rho=rho, x=x, derived_properties=True)
+        inputs = {"T_K": 300.0, "rho_mol_m3": rho, "x": list(x), "packet": f"gross-2001-{name}/3"}
+        scalars = ("pressure", "total_isobaric_heat_capacity", "total_isochoric_heat_capacity", *_DERIVED)
+        for key, reference in zip(scalars, row):
+            same(evidence, f"derived/{name}/{rho}/{key}", getattr(state, key), reference, 0.0, 1e-10, inputs=inputs)
+        for key, components in zip(_PARTIAL, partials):
+            for i, value in enumerate(getattr(state, key)):
+                same(evidence, f"derived/{name}/{rho}/{key}/{i}", value, components[i], 0.0, 1e-10, inputs=inputs)
+        # Weighted partial molar sums recover the molar totals: v, h and s on the State's own standard pressure.
+        for key, total in zip(_PARTIAL, (1.0 / state.molar_density, state.total_enthalpy, state.total_entropy)):
+            same(evidence, f"derived/{name}/{rho}/sum/{key}", sum(a * b for a, b in zip(x, getattr(state, key))),
+                 total, 0.0, 1e-12, inputs=inputs)
+        # The pressure-closed State assembles the same values at its converged density.
+        closed = model.state(300.0, P=row[0], x=x, phase="liquid" if rho > 1000.0 else "vapor", derived_properties=True)
+        at_root = model.state(300.0, rho=closed.molar_density, x=x, derived_properties=True)
+        for key in (*_DERIVED, *_PARTIAL):
+            assert getattr(closed, key) == getattr(at_root, key), key
+
+
+def test_sound_speed_reaches_the_ideal_gas_limit(evidence: Any) -> None:
+    for name, x in (("propane", (1.0,)), ("methane-ethane", (0.4, 0.6))):
+        model = _basic_model(name)
+        mass = sum(a * b for a, b in zip(x, model.parameters.molar_masses))
+        ideal = math.sqrt(5.0 / 3.0 * _R * 300.0 / mass)  # gamma_id = Cp_id/(Cp_id - R) for Cp_id = 5R/2
+        speeds = [model.state(300.0, rho=rho, x=x, derived_properties=True).speed_of_sound for rho in (1e-2, 1e-4, 1e-6, 1e-8)]
+        errors = [abs(speed - ideal) / ideal for speed in speeds if speed is not None]
+        assert len(errors) == 4 and errors == sorted(errors, reverse=True), errors  # dilution error falls with density
+        same(evidence, f"sound_limit/{name}", ideal * (1.0 + errors[-1]), ideal, 0.0, 1e-10,
+             inputs={"T_K": 300.0, "rho_mol_m3": 1e-8, "x": list(x), "ladder_relative_errors": errors})
+
+
+def test_derived_property_availability() -> None:
+    parameters = Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane"))
+    interval = [IdealInterval(100.0, 1000.0, True, True, IdealCorrelation(_BASIC_IDEAL, 1e5))]
+    late = [IdealInterval(350.0, 1000.0, True, True, IdealCorrelation(IdealPolynomial([2.5 * _R], 500.0, 0.0, 0.0), 1e5))]
+    assert Mixture(parameters).state(300.0, rho=8000.0, x=(0.4, 0.6)).partial_molar_volume is None  # not requested
+    for record in (None, ThermochemistryRecord(1e5, [interval, []]), ThermochemistryRecord(1e5, [interval, late])):
+        state = Mixture(parameters, thermochemistry=record).state(300.0, rho=8000.0, x=(0.4, 0.6), derived_properties=True)
+        assert state.isothermal_compressibility is not None and state.isobaric_expansivity is not None
+        assert all(value is not None for value in state.partial_molar_volume or [None])
+        assert state.heat_capacity_ratio is state.speed_of_sound is state.joule_thomson_coefficient is None
+        assert state.partial_molar_enthalpy == state.partial_molar_entropy == [None, None]
+    # A zero-fraction neutral species keeps finite insertion volume and enthalpy; its entropy diverges.
+    zero = _basic_model("methane-ethane").state(300.0, rho=200.0, x=(0.0, 1.0), derived_properties=True)
+    assert zero.partial_molar_volume is not None and zero.partial_molar_enthalpy is not None
+    assert zero.partial_molar_entropy is not None
+    assert None not in (zero.partial_molar_volume[0], zero.partial_molar_enthalpy[0], zero.partial_molar_entropy[1])
+    assert zero.partial_molar_entropy[0] is None
+    # A nonpositive (dP/drho)_T keeps every old field and makes every new response value unavailable.
+    unstable = _basic_model("propane").state(300.0, rho=5000.0, derived_properties=True)
+    assert unstable.pressure_density_derivative < 0.0 and unstable.total_enthalpy is not None
+    assert all(getattr(unstable, key) is None for key in _DERIVED)
+    assert unstable.partial_molar_volume == unstable.partial_molar_enthalpy == [None]
+    # Associated neutral liquid with absent charged slots: neutral volumes finite, IonicInsertion entries None.
+    mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 4), components=_MEA_ORDER))
+    liquid = mea.state(313.15, P=1e5, x=(0.85, 0.10, 0.05, 0, 0, 0, 0, 0, 0), phase="liquid", derived_properties=True)
+    assert liquid.partial_molar_volume is not None
+    assert all(value is not None for value in liquid.partial_molar_volume[:3])
+    assert liquid.partial_molar_volume[3:] == [None] * 6
+
+
+def test_contributions_sum_to_residual_helmholtz() -> None:
+    # Acetone at 400 K, 10000 mol/m3 is the failing dipolar split (a negative-pressure algebraic check only).
+    acetone = Pure(Parameters.from_json(parameters_json("gross-vrabec-2006", 1), components=("acetone",))).state(400.0, rho=1e4)
+    mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 4), components=_MEA_ORDER))
+    nonpolar = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3))).state(300.0, rho=8000.0, x=(0.4, 0.6))
+    ionic = mea.state(313.15, rho=3.0e4, x=(0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0))
+    associated = mea.state(313.15, P=1e5, x=(0.85, 0.10, 0.05, 0, 0, 0, 0, 0, 0), phase="liquid")
+    assert acetone.dipolar < 0.0 and nonpolar.dipolar == 0.0
+    for state in (acetone, nonpolar, ionic, associated):
+        terms = (state.hard_chain, state.dispersion, state.association, state.debye_huckel, state.born, state.dipolar)
+        close(sum(terms), state.residual_helmholtz, 1e-12)
