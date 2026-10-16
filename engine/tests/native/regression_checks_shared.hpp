@@ -48,6 +48,28 @@ inline FitControls budgeted_controls() {
     controls.maximum_iterations = 100; controls.maximum_elapsed_time_seconds = 600.0;
     return controls;
 }
+// #572: source-law ln K = A + d T rows (d = 0.0045/K) with fitted A (origin 0, scale 1, box [-1, 1]), output
+// sigmas and the frozen Ceres controls; the caller declares input groups and any measurement matrix.
+inline FitRequest intercept_request(const std::vector<double>& temperatures, const std::vector<double>& observed,
+                                    const std::vector<double>& sigma) {
+    FitRequest request; request.parameters = properties_support::neutral_ternary(); request.controls = budgeted_controls();
+    auto& options = request.controls.solver_options.values;
+    options[policy::function] = 1e-16; options[policy::gradient] = 1e-14; options[policy::parameter] = 1e-12;
+    regression::Coordinate a; a.reaction = regression::ReactionCoordinate{"reaction_a", regression::ReactionCoefficient::A};
+    a.origin = 0; a.scale = 1; a.lower = -1; a.upper = 1;
+    request.coordinates.coordinates = {a}; request.uncertainty.emplace(); request.uncertainty->output_sigma = sigma;
+    auto problem = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
+        equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
+        equilibrium_support::Chemistry::TwoReactions);
+    problem.reactions[0].equilibrium_constant.reset();
+    problem.reactions[0].correlation = ReactionLogPolynomial{0, 0, 0, 0.0045, 300, 250, 450, equilibrium::EOS_STANDARD_STATE_ID};
+    for (std::size_t i = 0; i < temperatures.size(); ++i) {
+        problem.temperature = FreeValue::fixed(temperatures[i]);
+        Observation row; row.kind = ObservationKind::LogEquilibriumConstant; row.problem = problem; row.reaction = "reaction_a";
+        row.observed = observed[i]; request.observations.push_back(row);
+    }
+    return request;
+}
 constexpr double FIRST_ORDER = 5.0e-6;  // P4's frozen first-order action criterion
 
 // |model - reference| <= max(atol, rtol max(|model|, |reference|)); records and returns the verdict.

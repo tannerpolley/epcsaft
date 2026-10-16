@@ -348,8 +348,9 @@ current interfaces or universal acceptance criteria.
 ## Declared measurement uncertainty
 
 `MeasurementUncertainty` selects errors-in-variables estimation within the
-existing native Ceres fit. It declares independent input and output standard
-deviations in physical units; no variance is fitted. The objective and exact
+existing native Ceres fit. It declares input and output standard deviations in
+physical units and, optionally, one known joint covariance or correlation; no
+variance is fitted. The objective and exact
 columns are EqIDs `errors_in_variables_objective` and
 `errors_in_variables_residual_derivative`, specializing Zavala (2008), thesis
 chapter 4, §4.2, Eq. (4.2), printed p. 53. This defines a conditional synthetic
@@ -389,8 +390,18 @@ permittivity, caloric enthalpy rows, critical/envelope declarations, references,
 hydration targets and mixed-solvent ionic inputs are unsupported in this mode.
 Fixed rows can accompany admitted uncertain rows with declared output sigma.
 Missing/nonpositive objective sigma, negative/nonfinite input sigma, unsupported
-units, correlated declarations, overlapping groups, conflicting states and
-nonphysical feed boxes are refused with their cause.
+units, overlapping groups, conflicting states and nonphysical feed boxes are
+refused with their cause.
+
+`covariance` (physical units) or `correlation` declares one dense row-major
+matrix; declaring both is refused. Its m rows are the positive-weight outputs
+in observation order, then the positive-sigma inputs in
+`column_groups`/`column_inputs` order, so correlations may cross measurement
+groups. Zero-weight outputs and zero-sigma inputs occupy no row; all sigmas
+remain required. With D the diagonal of those sigmas, R = D⁻¹CD⁻¹. A wrong size,
+an empty or nonfinite matrix, a diagonal or symmetry error above 64 m ε, or a
+matrix that is not positive definite is refused before fitting. The objective
+is ½‖L⁻¹e‖² with R = LLᵀ (EqID `errors_in_variables_objective`).
 
 The existing point-local parameter map D, residual slope and weighting act once
 on parameter and input columns. Equilibrium actions share one defining-Jacobian
@@ -403,6 +414,15 @@ finer witness when needed. Failed actions retain their cause.
 
 `InputReconciliation` returns computed inputs, standardized corrections,
 penalties, separate output/input costs and the complete standardized Jacobian.
+With a matrix, `corrections` remain the standardized physical corrections, while
+`penalties` are the squared whitened input components, `output_cost` is half the
+squared whitened output block (the marginal output term) and `input_cost` the
+remaining conditional term, which depends on output errors under output/input
+correlation; their sum is the objective. The Jacobian, `weighted_residuals`,
+fit `optimizer_jacobian`, projected gradient, SVD and covariance are whitened;
+the public point `optimizer_gradient` stays the raw dy/d(v,u) and
+`residual_optimizer_gradient` holds the complete whitened columns. Group labels
+identify measurements, not owners of whitened rows.
 Its first rows are output rows; subsequent rows and columns follow
 `column_groups`/`column_inputs`, after the model-parameter columns. `row_groups`
 uses the observation count for an ungrouped output. The authoritative request
@@ -414,7 +434,9 @@ original measured inputs. Report-only failures do not change objective acceptanc
 At a regular converged interior point the model covariance is the vv block of
 $(J^TJ)^{-1}$ for the full augmented J, then mapped by D. This eliminates input
 directions; using only output parameter columns would condition on fitted
-inputs. Known absolute sigmas have no common variance-factor estimate. Rank
+inputs. Known absolute sigmas or covariance have no common variance-factor
+estimate; the covariance assumption text names the joint Gaussian covariance
+when a matrix is declared. Rank
 deficiency, unfinished fitting or any active model/input bound withholds
 covariance. This is a local Gaussian approximation. Ordered starts reset all
 input corrections to zero and keep the shared work budget; minimax with an
