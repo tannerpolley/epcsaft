@@ -274,8 +274,14 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
-    """The fitted native document under the start's component and site names, for a new Mixture or Pure."""
-    return Parameters(result.parameters, start.component_ids, start.site_ids)
+    """The fitted native set under the start's names; its document, or why the start cannot represent it, for ASL export."""
+    fitted = Parameters(result.parameters, start.component_ids, start.site_ids)
+    if isinstance(start._document, _core.ParameterDocument):
+        try:
+            fitted._document = _core.fitted_document(start._document, result.parameters)
+        except ValueError as refusal:  # the fit stays usable; the ASL record builders raise this cause
+            fitted._document = f"the start document cannot represent the fit: {refusal}"
+    return fitted
 
 
 def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mapping[str, float], *,

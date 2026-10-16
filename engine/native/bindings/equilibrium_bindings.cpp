@@ -19,13 +19,22 @@
 namespace nb = nanobind;
 namespace epcsaft::equilibrium {
 
+// A fit the start document cannot represent carries the refusal message in place of the document.
+static ParameterDocument record_document(const nb::object& model) {
+    const nb::object document = model.attr("parameters").attr("_document");
+    if (document.is_none()) throw std::invalid_argument("ASL record: parameters built without a parameter document");
+    if (nb::isinstance<nb::str>(document)) throw std::invalid_argument("ASL record: " + nb::cast<std::string>(document));
+    return nb::cast<ParameterDocument>(document);
+}
+
 void register_equilibrium(nb::module_& module) {
     module.def("property_asl_record", [](nb::object model) {
-        const nb::object native_owner = model.attr("_model"), document = model.attr("parameters").attr("_document");
+        const auto document = record_document(model);
+        const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        if (document.is_none() || !native.active_parameters().empty() || !native.thermochemistry())
-            throw std::invalid_argument("ASL property record requires document parameters, inactive and with thermochemistry");
-        return asl_property_record(nb::cast<ParameterDocument>(document), *native.thermochemistry(), native.solver_options());
+        if (!native.active_parameters().empty() || !native.thermochemistry())
+            throw std::invalid_argument("ASL property record requires inactive parameters with thermochemistry");
+        return asl_property_record(document, *native.thermochemistry(), native.solver_options());
     }, nb::arg("model"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     nb::enum_<PhaseKind>(module, "PhaseKind")
@@ -252,9 +261,7 @@ void register_equilibrium(nb::module_& module) {
     module.def("equilibrium_asl_record", [](nb::object model, nb::object problem, const ContinuationOptions& continuation,
             std::vector<double> offset, std::vector<std::vector<double>> matrix, std::vector<double> anchor,
             std::size_t identity_component, double minimum_gap) {
-        const nb::object document = model.attr("parameters").attr("_document");
-        if (document.is_none())  // fitted parameters carry no source document to export (#29)
-            throw std::invalid_argument("ASL record requires parameters loaded from a parameter document; fitted parameters have none");
+        const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
         if (!native.active_parameters().empty() || native.thermochemistry())
@@ -263,7 +270,7 @@ void register_equilibrium(nb::module_& module) {
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
         compile_problem(native, p);
-        return asl_record(nb::cast<ParameterDocument>(document), p, continuation, map, native.solver_options());
+        return asl_record(document, p, continuation, map, native.solver_options());
     }, nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
     module.def("compile_problem", &compile_problem, nb::keep_alive<0, 1>());

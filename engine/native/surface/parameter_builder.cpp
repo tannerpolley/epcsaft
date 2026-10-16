@@ -1,11 +1,13 @@
 #include "surface/parameter_builder.hpp"
 
 #include "core/trace.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <map>
 #include <set>
 #include <sstream>
@@ -482,6 +484,48 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.electrolyte_form = {};
         result.ionic_dispersion = {};
         result.permittivity_form = {};
+    }
+    return result;
+}
+
+ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted) {
+    using detail::family_values;
+    static const std::vector<std::string> fields({"segment_count", "sigma_constant", "dispersion_energy_over_k", "k_ij",
+        "l_ij", "association_energy_over_k", "association_volume", "born_diameter", "debye_huckel_diameter",
+        "packing_diameter", "ion_suppression_coefficient", "born_c_dielectric", "ionic_region_relative_permittivity",
+        "k_ij_reciprocal_temperature_slope", "dielectric_volume", "dielectric_temperature"});  // ParameterFamily order
+    const Parameters base = build_parameters(start);
+    const auto charged = std::find_if(base.charge_number.begin(), base.charge_number.end(), [](int z) { return z != 0; });
+    ParameterDocument result = start;
+    std::map<std::pair<std::size_t, std::size_t>, std::string> units;
+    for (auto& entry : result.entries) {
+        const auto f = static_cast<std::size_t>(std::find(fields.begin(), fields.end(), entry.field) - fields.begin());
+        if (f == fields.size()) continue;
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        std::size_t k = entry.index.empty() ? 0 : entry.index[0];
+        if (entry.index.size() == 2)  // a site pair or a component pair
+            k = k * (entry.field.rfind("association_", 0) == 0 ? start.site_component.size() : start.component_ids.size()) + entry.index[1];
+        // The builder spreads the scalar suppression coefficient over the charged slots.
+        if (entry.field == "ion_suppression_coefficient" && entry.index.empty()) {
+            if (charged == base.charge_number.end()) continue;
+            k = static_cast<std::size_t>(charged - base.charge_number.begin());
+        }
+        units[{f, k}] = entry.unit;
+        const auto now = family_values(fitted, family), was = family_values(base, family);
+        if (now.second != was.second || std::memcmp(now.first + k, was.first + k, sizeof(double)) == 0) continue;
+        entry.magnitude = now.first[k] / (entry.field == "dielectric_volume" ? 1.0e-3 : 1.0);  // liter / mole
+    }
+    const Parameters rebuilt = build_parameters(result);
+    for (std::size_t f = 0; f < fields.size(); ++f) {
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        const auto want = family_values(fitted, family), got = family_values(rebuilt, family);
+        if (want.second != got.second) reject("fitted " + fields[f] + " slot count differs from the document's");
+        for (std::size_t k = 0; k < want.second; ++k) {
+            if (std::memcmp(want.first + k, got.first + k, sizeof(double)) == 0) continue;
+            const auto unit = units.find({f, k});
+            reject("fitted " + fields[f] + " slot " + std::to_string(k)
+                + (unit == units.end() ? " has no document entry" : " does not round-trip in " + unit->second));
+        }
     }
     return result;
 }

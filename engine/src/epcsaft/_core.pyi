@@ -106,6 +106,7 @@ class Parameters:
     def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
+def fitted_document(start: ParameterDocument, fitted: Parameters) -> ParameterDocument: ...
 
 class IdealPolynomial:
     coefficients: list[float]
