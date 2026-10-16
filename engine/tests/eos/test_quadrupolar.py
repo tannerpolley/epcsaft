@@ -2,7 +2,8 @@
 
 a_qq is isolated as a^r(polar family) - a^r(same parameters without it) at fixed
 (T, rho, x). The checks falsify the equations against Clapeyron 0.6.29 QPCPSAFT rows
-(moments rescaled to the Engine's debye constant), the second-virial limit written
+(moments rescaled to the Engine's debye constant), FeOs 0.10.1 where every m_i <= 2,
+the second-virial limit written
 independently here from Gross (2005) Eq. 9 and Table 2 without a chain-length cap,
 CO2 and benzene saturation pressure, the CO2/N2 bubble point (code identity of the
 mixing rule, not validation), the derivative chains, and the absent-quadrupole limit.
@@ -67,16 +68,19 @@ def _rows(name: str) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def test_quadrupolar_helmholtz_matches_clapeyron() -> None:
-    # Benzene (m = 2.2463 > 2) fails by 21.5 % if the dipole's chain-length cap reaches the quadrupole.
-    rows = _rows("clapeyron-term-rows.csv")
-    assert len(rows) == 4
-    for row in rows:
-        names = tuple(row["species"].split("+"))
-        x = tuple(float(v) for v in row["x"].split())
-        value = _quadrupolar(names, float(row["T_K"]), float(row["rho_mol_m3"]), x)
-        reference = float(row["a_qq_clapeyron"])
-        assert abs(value - reference) <= 1e-10 * abs(reference), row
+def test_quadrupolar_helmholtz_matches_clapeyron_and_feos() -> None:
+    # Benzene (m = 2.2463 > 2) fails by 21.5 % if the dipole's chain-length cap reaches the quadrupole. FeOs caps
+    # each m_i and carries longer J constants, so it is compared only where every m_i <= 2, at 1e-6.
+    for name, column, count, tolerance in (("clapeyron-term-rows.csv", "a_qq_clapeyron", 4, 1e-10),
+                                            ("feos-term-rows.csv", "a_qq_feos", 3, 1e-6)):
+        rows = _rows(name)
+        assert len(rows) == count
+        for row in rows:
+            names = tuple(row["species"].split("+"))
+            x = tuple(float(v) for v in row["x"].split())
+            value = _quadrupolar(names, float(row["T_K"]), float(row["rho_mol_m3"]), x)
+            reference = float(row[column])
+            assert abs(value - reference) <= tolerance * abs(reference), row
 
 
 def test_quadrupolar_second_virial_limit() -> None:
