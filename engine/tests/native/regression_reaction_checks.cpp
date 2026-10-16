@@ -409,6 +409,10 @@ void check_reaction_derivatives() {
         agree(source_pressure ? "reaction-a2/fixed_basis" : "reaction-a2/system_basis", "x_Na", "1",
               result.predictions[0], *direct.value, 0.0, 1.0e-12, "",
               "rewriting the native coefficient retains the declared source reference", "reaction-fit");
+        a2.coordinates.coordinates[0].reaction->coefficient = ReactionCoefficient::EnthalpyShift;
+        a2.coordinates.coordinates[0].reaction->pivot_temperature = 313.15;
+        a2.coordinates.coordinates[0].scale = 2500.0;
+        reaction_columns(source_pressure ? "reaction-pair/fixed" : "reaction-pair/system", a2);
     }
     FitRequest a3;
     a3.controls = budgeted_controls();
@@ -419,6 +423,11 @@ void check_reaction_derivatives() {
         reaction_coordinate("iso", ReactionCoefficient::C), reaction_coordinate("iso", ReactionCoefficient::D, 1.0 / 180.0)};
     regular_reaction_state(HelmholtzModel(a3.parameters), a3.observations.front(), "reaction-a3");
     const auto result = reaction_columns("reaction-a3/free_pressure", a3);
+    auto pair = a3;
+    pair.coordinates.coordinates.resize(2);
+    pair.coordinates.coordinates[1].reaction = ReactionCoordinate{"iso", ReactionCoefficient::EnthalpyShift, 200.0};
+    pair.coordinates.coordinates[1].scale = 2500.0;
+    reaction_columns("reaction-pair/free_pressure", pair);
     const double basis[] = {1.0, 1.0 / 180.0, std::log(180.0 / 200.0), 180.0};
     for (std::size_t row = 0; row < 2; ++row)
         for (std::size_t c = 1; c < 4; ++c)
@@ -936,11 +945,14 @@ void check_ionic_addition_enthalpy() {
     coordinates.coordinates[1].origin = -2000.0;
     coordinates.coordinates[1].lower = -3000.0;
     coordinates.coordinates[1].upper = -1000.0;
+    auto shift = reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::EnthalpyShift, 2500.0);
+    shift.reaction->pivot_temperature = 313.15;
+    coordinates.coordinates.push_back(shift);
     const HelmholtzModel model(parameters, coordinates.active_parameters(), record);
     const auto prediction = predict(model, row);
     CHECK(prediction.status == ObservationStatus::Available && prediction.value);
     const auto exact = differentiate_group(model, {&row}, prediction, coordinates).front();
-    CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 2);
+    CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 3);
     const auto endpoint = [&](const HelmholtzModel& rebuilt, const EquilibriumProblem& problem, double gauge = 0.0, bool centered = false) {
         const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
         CHECK(solved.success);
@@ -1005,7 +1017,7 @@ void check_ionic_addition_enthalpy() {
     const auto start = coordinates.start(parameters, {row}, record);
     using binary128_support::Wide;
     const std::vector<binary128_support::Quantity> enthalpy{{"H", "J", 0.0, {}}};
-    for (std::size_t column = 0; column < 2; ++column) {
+    for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column) {
         // Delta h_add composed in binary128: WideIonic re-solves each endpoint's density and
         // dissociation and the added water's state from the EOS kernels; the double solves only
         // seed and check it, so no double endpoint rounding (~7e-10 J/mol) enters the differences.
@@ -1544,8 +1556,73 @@ void check_reaction_enthalpy_shift() {
     auto wrong = request;
     wrong.coordinates.coordinates[0].reaction->pivot_temperature = 0.0;
     CHECK(fit(wrong).status == "invalid_setup");
-    wrong = request; wrong.coordinates.coordinates.push_back(reaction_coordinate("reaction_a"));
-    CHECK(fit(wrong).message.find("overlapping enthalpy shift") != std::string::npos);
+    for (const auto coefficient : {ReactionCoefficient::A, ReactionCoefficient::B}) {
+        auto pair = request;
+        pair.coordinates.coordinates.resize(1);
+        auto plain = reaction_coordinate("reaction_a", coefficient, coefficient == ReactionCoefficient::A ? 1.0 : 80.0);
+        plain.origin = coefficient == ReactionCoefficient::A ? problem.reactions[0].correlation->a : problem.reactions[0].correlation->b;
+        pair.coordinates.coordinates.push_back(plain);
+        for (const bool reverse : {false, true}) {
+            if (reverse) std::reverse(pair.coordinates.coordinates.begin(), pair.coordinates.coordinates.end());
+            auto u = pair.coordinates.start(pair.parameters, pair.observations);
+            const std::size_t h = reverse ? 1 : 0, q = 1-h;
+            u[q] += 0.4;
+            auto unshifted = pair.observations;
+            const auto base = pair.coordinates.apply(unshifted, u).at("reaction_a");
+            u[h] = 2.4; // 2500 J/mol with the inherited affine origin.
+            auto rows = pair.observations;
+            const auto law = pair.coordinates.apply(rows, u).at("reaction_a");
+            agree("reaction-pair/pivot", "ln_K", "1", reaction_log_value(law, 313.15), reaction_log_value(base, 313.15),
+                2e-12, 0.0, "same plain value", "the shift preserves the pivot after the plain assignment", "issue-557");
+            for (const double t : {293.15, 313.15, 353.15, 393.15})
+                agree("reaction-pair/enthalpy", "delta_H/h", "1",
+                    GAS_CONSTANT_J_PER_MOL_K*t*t*(reaction_log_value(law,t,1)-reaction_log_value(base,t,1))/2500.0,
+                    1.0, 1e-12, 0.0, "applied native laws", "the completed law adds the physical enthalpy increment", "issue-557");
+            const HelmholtzModel model(pair.parameters);
+            for (std::size_t i=0; i<rows.size(); ++i) {
+                const auto prediction = predict(model, rows[i]);
+                CHECK(prediction.status == ObservationStatus::Available);
+                pair.observations[i].observed = *prediction.value;
+            }
+            const auto recovered = fit(pair);
+            CHECK(recovered.usable && recovered.covariance.rank == 2);
+            for (std::size_t c=0; c<2; ++c)
+                agree("reaction-pair/recovery", "u", "1", recovered.optimizer[c], u[c], 1e-8, 1e-10,
+                    "noise-free log K at four temperatures", "the pair is recovered jointly", "issue-557");
+            auto replay = pair.observations;
+            for (auto& row : replay) for (auto& reaction : row.problem.reactions)
+                if (reaction.name == "reaction_a") reaction.correlation = recovered.chart.reaction_laws.at(reaction.name);
+            for (std::size_t i=0; i<replay.size(); ++i)
+                CHECK(*predict(model, replay[i]).value == recovered.predictions[i]);
+            auto duplicate = pair;
+            duplicate.coordinates.coordinates.push_back(plain);
+            CHECK(fit(duplicate).message.find("duplicate target") != std::string::npos);
+            duplicate = pair;
+            duplicate.coordinates.coordinates.push_back(request.coordinates.coordinates[0]);
+            duplicate.coordinates.coordinates.back().reaction->pivot_temperature = 300.0;
+            CHECK(fit(duplicate).message.find("duplicate target") != std::string::npos);
+        }
+    }
+    auto preapplied = request;
+    const std::vector<double> offset{-8201.9, 8418.5};
+    for (auto& coordinate : preapplied.coordinates.coordinates) { coordinate.lower = -10000.0; coordinate.upper = 10000.0; }
+    preapplied.coordinates.apply(preapplied.observations, {(offset[0]-100.0)/1000.0, (offset[1]-100.0)/1000.0});
+    for (std::size_t c=0; c<2; ++c) {
+        preapplied.coordinates.coordinates[c].lower -= offset[c];
+        preapplied.coordinates.coordinates[c].upper -= offset[c];
+    }
+    const auto zero = preapplied.coordinates.start(preapplied.parameters, preapplied.observations);
+    CHECK(preapplied.coordinates.physical(zero) == std::vector<double>({0.0, 0.0}));
+    auto shifted_rows = preapplied.observations;
+    const auto total_laws = preapplied.coordinates.apply(shifted_rows, {0.15, -0.3});
+    for (std::size_t c=0; c<2; ++c)
+        agree("reaction-enthalpy/preapplied", "total_h", "J/mol",
+            GAS_CONSTANT_J_PER_MOL_K*313.15*313.15*(reaction_log_value(total_laws.at(problem.reactions[c].name),313.15,1)
+                -reaction_log_value(*problem.reactions[c].correlation,313.15,1)), offset[c]+(c==0 ? 250.0 : -200.0),
+            1e-8, 0.0, fields({field("pre_applied_J_mol", offset[c]), field("increment_J_mol", c==0 ? 250.0 : -200.0),
+                field("law_a", total_laws.at(problem.reactions[c].name).a), field("law_b_K", total_laws.at(problem.reactions[c].name).b),
+                field("lower_increment_J_mol", preapplied.coordinates.coordinates[c].lower), field("upper_increment_J_mol", preapplied.coordinates.coordinates[c].upper)}),
+            "translated bounds retain the total physical shift", "issue-557");
     // #448's effective species-reference refusal reaches point readers and heat final endpoints.
     wrong = request; wrong.parameters = properties_support::aqueous_electrolyte();
     auto source = referenced_formula(std::nullopt);

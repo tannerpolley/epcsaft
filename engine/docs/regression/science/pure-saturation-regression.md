@@ -196,6 +196,23 @@ weights. `result.chart.reaction_laws[name]` gives the fitted native correlation;
 `regression.reaction_log10_reciprocal(law)` supplies $(A,B,C)$ for the declared
 negative base-10 reciprocal form. Replay preserves caller-owned source metadata.
 
+A plain coefficient and one enthalpy shift may target the same reaction. Each
+trial assigns the plain coefficient first, then adds the pivot direction to the
+fresh supplied law. The pivot invariant compares laws at the same plain value.
+The plain physical value remains distinct from the completed law's coefficient.
+Two shifts on one reaction and duplicate plain coefficients are refused.
+Replay attaches `result.chart.reaction_laws` and fitted EOS parameters directly,
+without applying the coordinates a second time; preserve native double values.
+
+For a nonzero starting shift in a shift-only fit, pre-apply the known amount
+$h_0$ to the supplied native law, start the fitted increment $h$ at zero, and
+translate total-shift bounds $[l,u]$ to $[l-h_0,u-h_0]$. Serialize $h_0$, $h$ and
+the total $h_0+h$ alongside the completed law. The Engine cannot infer an
+unreported pre-applied amount. This recipe does not preserve an unshifted plain
+coefficient meaning in a combined pair with nonzero $h_0$: that would also
+require translating the plain coefficient's origin and bounds. The required
+combined chart uses $h_0=0$.
+
 ## Prediction Jacobians and fitting (R2, R3)
 
 $\partial y/\partial\theta$ comes from the shared owners only: the Properties
