@@ -16,7 +16,7 @@ from epcsaft.equilibrium import (
 )
 
 from tests.equilibrium.test_declared_starts import _mea_flash
-from tests.equilibrium.test_trace_reliability import _MEA
+from tests.equilibrium.test_trace_reliability import _MEA, _mea_mapping
 from tests.native_inputs import aqueous_electrolyte
 from tests.packets import parameters_json
 
@@ -209,7 +209,7 @@ def test_malformed_explicit_mapping_fields_are_rejected() -> None:
 def test_incidental_ipopt_options_preserve_equilibrium_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("EPCSAFT_IPOPT_OPTIONS_FILE", raising=False)
     monkeypatch.chdir(tmp_path)
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     declaration = _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3]))
     clean = solve_equilibrium(model, declaration)
     (tmp_path / "ipopt.opt").write_text("mu_strategy adaptive\nmax_iter 0\nbogus_option 1\n")
@@ -246,8 +246,10 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
         assert result.requested_tolerance_met is True and result.convergence.stop == _core.Stop.infeasible
 
 
-def test_supplied_charged_family_refuses_before_trial_work() -> None:
-    # ALG-STABILITY: density-independent charged admission, including packing replay.
+def test_supplied_charged_trials_count_only_on_their_liquid_side() -> None:
+    # ALG-STABILITY, #568: under ion suppression a charged trial counts only at a stable root of its own composition
+    # on the liquid side of that composition's loop. The salt-rich sole root carries its loop sample; half its
+    # density and the vapor root are refused with the named cause.
     species = ("water", "sodium-cation", "chloride-anion")
     model = Mixture(Parameters.from_json(
         parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=species,
@@ -256,23 +258,45 @@ def test_supplied_charged_family_refuses_before_trial_work() -> None:
         feed=Amounts(dict(zip(species, (0.98, 0.01, 0.01)))), phases=[Phase("L", kind="liquid")])
     central = solve_equilibrium(model, declaration)
     assert central.success
-    compiled = equilibrium.compile_problem(model, declaration)
-    charged = declaration._native(model).phases[0]
-    charged.support = [0, 1, 2]
-    charged.composition_guess = central.mole_fractions
-    charged.packing_guess = central.packing_fractions[0]
-    neutral = _core.PhaseSpec()
-    neutral.support, neutral.composition_guess = [0], [1.0, 0.0, 0.0]
-    neutral.packing_guess = central.packing_fractions[0]
+
+    def trial(x: list[float], density: float) -> _core.PhaseSpec:
+        spec = declaration._native(model).phases[0]
+        spec.support, spec.composition_guess = [0, 1, 2], x
+        spec.packing_guess = model._model.packing_fraction_coefficient(298.15, x) * density
+        return spec
+    water, salt = list(central.mole_fractions), [0.1, 0.45, 0.45]
+    vapor = model.state(298.15, P=1e5, x=water, phase="vapor").molar_density
+    root = model.state(298.15, P=1e5, x=salt, phase="liquid").molar_density
     options = equilibrium.StabilityOptions()
-    options.evaluate_supplied_trials, options.trials = True, [neutral, charged, neutral]
-    with _core.Capture() as captured:
-        with pytest.raises(ParameterError, match="^permittivity model has no low-density limit; declare phases$"):
-            equilibrium.stability_test(compiled, central, options)
-    assert all(s.name not in ("tangent_plane_trial", "solve_density") for s in captured.spans)
-    assert all(e.name != "hessian_calls" for e in captured.events)
-    options.trials = [neutral]
-    assert "tpd_over_rt" in equilibrium.stability_test(compiled, central, options).trials[0].quantities
+    options.evaluate_supplied_trials, options.trials = True, [trial(water, central.molar_densities[0]),
+        trial(water, vapor), trial(salt, root), trial(salt, root / 2)]
+    liquid, gas, rich, half = equilibrium.stability_test(
+        equilibrium.compile_problem(model, declaration), central, options).trials
+    assert liquid.evidence == rich.evidence == "evaluated" and "tpd_over_rt" in liquid.quantities
+    assert rich.quantities["negative_slope_density_mol_m3"] < root
+    for refused in (gas, half):
+        assert refused.evidence == "unresolved" and "tpd_over_rt" not in refused.quantities
+        assert refused.message.endswith("charged trial outside the condensed domain of density-independent permittivity")
+
+
+def test_ionic_discovery_reproduces_the_declared_split() -> None:
+    # #568 F1: Khudaida Figure 2 point 7, Discover() from the feed against the declared cold two-liquid solve
+    # (case-6 comparison, 1e-9); its ion partition lowers G below the neutral-only value -8.662995081104183.
+    names = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    model = Mixture(Parameters.from_json(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=names))
+    feed = Amounts(dict(zip(names, (0.646925133827633, 0.07045345803743744, 0.22564721508764596,
+                                    0.028487096523641797, 0.028487096523641797))))
+    declared = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10, phases=[
+        Phase("Lw", kind="liquid", composition_guess=(0.80, 0.05, 0.05, 0.05, 0.05)),
+        Phase("Lo", kind="liquid", composition_guess=(0.20, 0.10, 0.6998, 0.0001, 0.0001))]))
+    found = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10, phases=equilibrium.Discover()))
+    assert declared.success and found.success and found.requested_tolerance_met and found.phase_count == 2
+    pairs = [found.mole_fractions[5 * order[p] + i] - declared.mole_fractions[5 * p + i]
+             for order in ((0, 1), (1, 0)) for p in range(2) for i in range(5)]
+    assert min(max(abs(d) for d in pairs[:10]), max(abs(d) for d in pairs[10:])) <= 1e-9
+    assert abs(found.objective - declared.objective) <= 1e-9 * max(1.0, abs(declared.objective))
+    assert found.objective < -8.662995081104183
 
 
 def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
@@ -283,7 +307,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     vapor is refused before the reference calculation that would otherwise fail at 400 K."""
     nacl = ("water", "sodium-cation", "chloride-anion")
     salt = Mixture(Parameters.from_json(parameters_json("held-cameretti-sadowski-2008", 4), components=nacl))
-    mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    mea = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     reactions = _mea_flash(0.).reactions
     cases: list[tuple[Mixture, float, Amounts | Molalities, Sequence[equilibrium.Reaction], float, int]]
     cases = [(salt, 373.15, Molalities({"sodium-cation": 1., "chloride-anion": 1.}, solvent=("water",), solvent_mass_kg=1.),

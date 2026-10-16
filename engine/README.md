@@ -170,6 +170,13 @@ ln_k = ReactionLogPolynomial(2.0, -1000.0, 0.0, 0.0, 298.15, 273.15, 373.15, EOS
 reaction = Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)  # exactly one of K, affinity or ln K(T)
 ```
 
+A NASA9 record file (`nasa-glenn-nasa9-records` version 1, coefficient order a1..a7, b1, b2) loads once:
+`packet = ThermochemistryPacket(path)` rescales all nine coefficients of every interval by
+R_source/R_Engine in native code, so cp, h and s keep their source values, and refuses a malformed form or
+version, duplicate species and an invalid gas constant, pressure, coefficient or interval chain. Intervals are
+[lower, upper), the last closed. `packet.select(component_ids)` returns a `ThermochemistryRecord` in the
+selection's order; it copies the prepared intervals and never rescales again.
+
 Reaction sets come from the caller. `ReactionLogPolynomial` is
 ln K(T) = a + b/T + c ln(T/T_ref) + d T on the Engine standard state
 (`EOS_STANDARD_STATE_ID`); a K or correlation on a source basis (molality or
@@ -308,7 +315,12 @@ official IDAES executable and exact option-file readback.
 
 `eos.property_asl_record(mixture)` constructs the immutable record of the installed
 `epcsaft_pressure_property` external function (#73) for a mixture with document
-parameters, no active parameters and a NASA9 thermochemistry record. Its real
+parameters, no active parameters and a thermochemistry record in any native form
+(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v2`).
+`regression.fitted_parameters` writes the fitted values back into the start
+document's entries, so both records export a fit; a fit the document cannot
+represent (a fitted slot with no entry, a value that does not rebuild bitwise in
+its entry's unit) stays usable and the record builders raise that cause. The function's real
 arguments are `q = (T K, P Pa, w_1..w_C)` with `x = w / sum(w)`, then the strings
 record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
 `ln(phi_i)`) and phase (`0` liquid, the highest stable density root; `1` vapor,
@@ -323,7 +335,7 @@ nonfinite values with `epcsaft_property:<cause>:<PropertyActionStatus code>:...`
 the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
 `ambiguous_branch`, `nonmechanical_root`, `inner_iteration_failure` or
 `unavailable_derivative`; an unavailable row leaves the other rows valid, and an
-owned NASA9 endpoint keeps its value while its temperature derivative is
+owned thermochemistry endpoint keeps its value while its temperature derivative is
 unavailable. Derivatives are qualified for neutral records only: a single-ion
 weight direction is not charge balanced, and native admission refuses it.
 

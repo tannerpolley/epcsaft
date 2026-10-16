@@ -27,6 +27,7 @@ from .eos import (
     PropertyObservable,
     Pure,
     State,
+    ThermochemistryPacket,
     ThermochemistryRecord,
     ThermochemistryStatus,
 )
@@ -114,6 +115,7 @@ __all__ = (
     "SolventActivity",
     "State",
     "Stop",
+    "ThermochemistryPacket",
     "ThermochemistryRecord",
     "ThermochemistryStatus",
     "provenance",
