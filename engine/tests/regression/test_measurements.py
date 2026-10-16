@@ -1,4 +1,4 @@
-"""Independent measurement declarations and the native worker transport preserve the same numerical problem."""
+"""Measurement declarations, with or without a joint correlation, and the native worker transport preserve the same numerical problem."""
 from typing import Any
 
 from epcsaft import regression as reg
@@ -38,7 +38,19 @@ def test_shared_measurement_transport_and_worker_equivalence(evidence: Any) -> N
     named = reg.measured_input(p, "mole_fraction", species="s1", sigma=0.001, bounds=(0.1, 0.9), unit="mol/mol")
     chart = reg.measurement_group(p, [0], [named], dependent_species=["s0"], feed_total_mol=1.0)
     assert chart.inputs[0].species == 1 and chart.dependent_species == [0]
+    # A declared correlation over (y, T) is admitted in the parent and whitened there; workers return identical rows.
+    uncertainty.correlation = [0.5 ** abs(i - j) for i in range(6) for j in range(6)]
+    a, b = (reg.fit(p, [coordinate], rows, uncertainty=uncertainty,
+        controls=reg.FitControls(maximum_iterations=100, maximum_elapsed_time_seconds=600.0, workers=workers))
+        for workers in (1, 2))
+    assert a.status == b.status == "converged" and a.physical == b.physical and a.final_cost == b.final_cost
+    assert a.reconciliation is not None and b.reconciliation is not None
+    assert a.reconciliation.jacobian == b.reconciliation.jacobian and "joint" in a.covariance.assumption
     uncertainty.covariance = []
     refused = reg.fit(p, [coordinate], rows, uncertainty=uncertainty,
         controls=reg.FitControls(maximum_iterations=100, maximum_elapsed_time_seconds=600.0, workers=2))
-    assert refused.status == "invalid_setup" and "correlated" in refused.message
+    assert refused.status == "invalid_setup" and "both" in refused.message
+    uncertainty.correlation = None
+    refused = reg.fit(p, [coordinate], rows, uncertainty=uncertainty,
+        controls=reg.FitControls(maximum_iterations=100, maximum_elapsed_time_seconds=600.0, workers=2))
+    assert refused.status == "invalid_setup" and "dimension" in refused.message

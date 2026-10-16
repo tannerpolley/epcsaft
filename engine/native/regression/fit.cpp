@@ -26,6 +26,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -50,10 +51,8 @@ bool finite(const std::vector<double>& values) {
 }
 
 // The same point-local D maps raw observation columns and covariance.
-void chain(const FitRequest& request, const std::vector<double>& map, std::size_t row,
-           double sqrt_weight, double prediction, const double* gradient, double* out) {
+void chain(const FitRequest& request, const std::vector<double>& map, double slope, const double* gradient, double* out) {
     const auto columns = request.coordinates.coordinates.size();
-    const double slope = sqrt_weight * residual_slope(request.observations[row], prediction);
     std::fill(out, out + columns, 0.0);
     for (std::size_t r = 0; r < map.size() / columns; ++r)
         for (std::size_t c = 0; c < columns; ++c) out[c] += slope * gradient[r] * map[r * columns + c];
@@ -75,8 +74,8 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
 
 // Statistical membership is declared; equal thermodynamic states never create a measurement.
 struct MeasurementChart final {
-    std::vector<std::size_t> membership, groups, inputs;
-    std::vector<double> measured, sigma, lower, upper;
+    std::vector<std::size_t> membership, groups, inputs, rows;  // rows: compact matrix order, n + c for inputs
+    std::vector<double> measured, sigma, lower, upper, factor;  // factor: row-major L of R = LL^T
     std::vector<std::vector<double>> composition;
     MeasurementChart() = default;
 
@@ -84,7 +83,6 @@ struct MeasurementChart final {
         if (!request.uncertainty) return;
         membership.assign(request.observations.size(), request.observations.size());
         const auto& uncertainty = *request.uncertainty;
-        require(!uncertainty.covariance && !uncertainty.correlation, "correlated measurement declarations are unsupported");
         require(!request.minimax, "uncertainty with minimax is unsupported");
         require(uncertainty.output_sigma.size() == membership.size(), "missing output sigma");
         for (std::size_t i = 0; i < membership.size(); ++i) {
@@ -212,6 +210,29 @@ struct MeasurementChart final {
                     && hi <= 1.0 + policy::COMPOSITION_SUM_TOLERANCE.value, "nonphysical feed box");
             }
         }
+        // One joint matrix over positive-weight outputs, then active inputs; refused rather than repaired (ALG-FIT).
+        const auto& matrix = uncertainty.covariance ? uncertainty.covariance : uncertainty.correlation;
+        if (!matrix) return;
+        require(!uncertainty.covariance || !uncertainty.correlation, "declares both covariance and correlation");
+        std::vector<double> deviations;
+        for (std::size_t i = 0; i < membership.size(); ++i)
+            if (request.weights.empty() || request.weights[i] > 0.0) { rows.push_back(i); deviations.push_back(uncertainty.output_sigma[i]); }
+        for (std::size_t c = 0; c < groups.size(); ++c) { rows.push_back(membership.size() + c); deviations.push_back(sigma[c]); }
+        const auto m = static_cast<Eigen::Index>(rows.size());
+        require(matrix->size() == rows.size() * rows.size(), "measurement matrix dimension");
+        require(finite(*matrix), "finite measurement matrix");
+        Eigen::MatrixXd r = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(matrix->data(), m, m);
+        const Eigen::Map<const Eigen::VectorXd> s(deviations.data(), m);
+        if (uncertainty.covariance) r.array() /= (s * s.transpose()).array();  // R = D^-1 C D^-1
+        const double allowance = 64.0 * static_cast<double>(m) * std::numeric_limits<double>::epsilon();
+        for (Eigen::Index i = 0; i < m; ++i) {
+            require(std::abs(r(i, i) - 1.0) <= allowance, "measurement matrix diagonal disagrees with the declared sigmas");
+            for (Eigen::Index j = 0; j < i; ++j) require(std::abs(r(i, j) - r(j, i)) <= allowance, "measurement matrix is not symmetric");
+        }
+        const Eigen::LLT<Eigen::MatrixXd> llt(r);  // reads the lower triangle
+        const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> l = llt.matrixL();
+        require(llt.info() == Eigen::Success && l.allFinite(), "measurement matrix is not positive definite");
+        factor.assign(l.data(), l.data() + l.size());
     }
 
     void apply(const FitRequest& request, const std::vector<double>& point, std::vector<Observation>& observations) const {
@@ -317,7 +338,7 @@ FIELDS(Failure, a, b, c, d, e)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
-FIELDS(MeasurementChart, a, b, c, d, e, f, g, h)
+FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
 // Observation validation refuses discovery options (a fit declares its phases), so none are sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
     auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n, o] = item;
@@ -569,7 +590,7 @@ struct ObservationEvaluator::Impl final {
         if (jacobian) out.optimizer_gradient.resize((n + latent) * columns);
         for (std::size_t i = 0; jacobian && i < n; ++i) {
             if (sqrt_weights_[i] == 0.0) continue;
-            chain(request_, trial.chart.map, i, sqrt_weights_[i], out.predictions[i],
+            chain(request_, trial.chart.map, sqrt_weights_[i] * residual_slope(request_.observations[i], out.predictions[i]),
                   out.gradient.data() + i * width, out.optimizer_gradient.data() + i * columns);
             for (std::size_t c = 0; c < latent; ++c) out.optimizer_gradient[i * columns + parameters + c]
                 = sqrt_weights_[i] * residual_slope(request_.observations[i], out.predictions[i])
@@ -593,11 +614,38 @@ struct ObservationEvaluator::Impl final {
             }
             out.cost += reconciled.input_cost;
             if (!std::isfinite(out.cost)) return reject(n, ObservationStatus::Nonfinite, "input penalty not finite", jacobian);
+            if (!measurement_.factor.empty() && !whiten(out, columns))
+                return reject(n, ObservationStatus::Nonfinite, "whitened residual or Jacobian not finite", jacobian);
             if (jacobian) reconciled.jacobian = out.optimizer_gradient;
         }
         for (const int fd : workers_.sockets) put(fd, true);
         publish(optimizer, jacobian, out, trial, fresh, same_point);
         return true;
+    }
+
+    // z = L^-1 e on the compact rows of the residual and of every complete column; excluded rows stay zero.
+    // Output-first order makes the output cost marginal and the input cost conditional on the outputs.
+    bool whiten(ObservationEvaluation& out, std::size_t columns) const {
+        const auto& rows = measurement_.rows;
+        const auto m = static_cast<Eigen::Index>(rows.size()), inputs = static_cast<Eigen::Index>(measurement_.groups.size());
+        const std::size_t width = out.optimizer_gradient.empty() ? 0 : columns;
+        Eigen::MatrixXd e(m, static_cast<Eigen::Index>(1 + width));
+        for (std::size_t k = 0; k < rows.size(); ++k) {
+            e(static_cast<Eigen::Index>(k), 0) = out.weighted[rows[k]];
+            for (std::size_t c = 0; c < width; ++c) e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c)) = out.optimizer_gradient[rows[k] * columns + c];
+        }
+        Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(measurement_.factor.data(), m, m)
+            .triangularView<Eigen::Lower>().solveInPlace(e);
+        for (std::size_t k = 0; k < rows.size(); ++k) {
+            out.weighted[rows[k]] = e(static_cast<Eigen::Index>(k), 0);
+            for (std::size_t c = 0; c < width; ++c) out.optimizer_gradient[rows[k] * columns + c] = e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c));
+        }
+        auto& reconciled = *out.reconciliation;
+        reconciled.output_cost = 0.5 * e.col(0).head(m - inputs).squaredNorm();
+        reconciled.input_cost = 0.5 * e.col(0).tail(inputs).squaredNorm();
+        for (Eigen::Index c = 0; c < inputs; ++c) reconciled.penalties[static_cast<std::size_t>(c)] = e(m - inputs + c, 0) * e(m - inputs + c, 0);
+        out.cost = reconciled.output_cost + reconciled.input_cost;
+        return e.allFinite() && std::isfinite(out.cost);
     }
 
     // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
@@ -826,9 +874,19 @@ bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool c
     out.residual_optimizer_gradient.clear();
     if (!impl_->evaluate(optimizer, columns, out)) return false;
     if (columns) out.residual_optimizer_gradient = out.optimizer_gradient;
+    const auto& measurement = impl_->measurement_;
+    const std::size_t parameters = impl_->request_.coordinates.coordinates.size(), latent = measurement.groups.size();
     if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
-        const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]) * impl_->sqrt_weights_[i];
-        for (std::size_t c = 0; c < optimizer.size(); ++c) out.optimizer_gradient[i * optimizer.size() + c] /= slope;
+        double* row = out.optimizer_gradient.data() + i * optimizer.size();
+        if (measurement.factor.empty()) {
+            const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]) * impl_->sqrt_weights_[i];
+            for (std::size_t c = 0; c < optimizer.size(); ++c) row[c] /= slope;
+            continue;
+        }
+        // Whitening mixes rows, so raw dy/d(v,u) comes from the physical actions, never from objective rows.
+        const std::size_t width = impl_->request_.coordinates.tie().size() + impl_->request_.holds.size();
+        chain(impl_->request_, out.chart.map, 1.0, out.gradient.data() + i * width, row);
+        for (std::size_t c = 0; c < latent; ++c) row[parameters + c] = out.input_gradient[i * latent + c] * measurement.sigma[c];
     }
     if (columns) out.optimizer_gradient.resize(out.predictions.size() * optimizer.size());
     return true;
@@ -979,7 +1037,9 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     cov.assumption = "unit-variance weighted residuals, independent errors and a regular local "
                      "linearization at an interior point; multiply by variance_factor for an "
                      "unknown common variance; no claim under bounds, rank deficiency or model discrepancy";
-    if (request.uncertainty) cov.assumption = "known absolute independent Gaussian sigmas; local Gaussian linearization, with reconciled inputs eliminated; no common variance estimate";
+    if (request.uncertainty) cov.assumption = std::string("known absolute ")
+        + (request.uncertainty->covariance || request.uncertainty->correlation ? "joint Gaussian covariance" : "independent Gaussian sigmas")
+        + "; local Gaussian linearization, with reconciled inputs eliminated; no common variance estimate";
     for (std::size_t i = 0; i < n; ++i)
         if (request.weights.empty() || request.weights[i] > 0.0) cov.objective_rows.push_back(i);
     if (result.reconciliation) for (std::size_t c = 0; c < result.reconciliation->corrections.size(); ++c)

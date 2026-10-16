@@ -18,14 +18,17 @@ current numerical method.
 
 - Section: Parameter estimation
 - Status: Exact derivation
-- Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53 (PDF p. 65); independent physical-unit Gaussian errors selected in #510.
-- Description: Joint least squares for model parameters v and one standardized correction u per independently measured input shared by outputs of experiment k.
-- Change note: sigma_q is finite and nonnegative; zero eliminates its coordinate. Objective sigma_y is finite and positive. Difference residuals use sqrt(w)=a/sigma_y exactly once. Report-only outputs contribute no objective or independent input penalty.
+- Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53 (PDF p. 65); independent physical-unit Gaussian errors selected in #510; the known joint Gaussian covariance (generalized least-squares negative log-likelihood) selected in #572.
+- Description: Joint least squares for model parameters v and one standardized correction u per measured input shared by outputs of experiment k, with an optional known correlation R over the positive-weight output errors followed by the active input corrections.
+- Change note: sigma_q is finite and nonnegative; zero eliminates its coordinate. Objective sigma_y is finite and positive. Difference residuals use sqrt(w)=a/sigma_y exactly once. Report-only outputs and zero-sigma inputs occupy no row of e or R. A declared covariance C converts through the sigmas; R is fixed, symmetric positive definite with unit diagonal within 64 m epsilon, and never repaired. R = I recovers the independent sum.
 
 $$
 q_{kj}=q^M_{kj}+\sigma_{q,kj}u_{kj},\quad
 r^x_{kj}=u_{kj},\quad r^y_{ki}=\frac{f_{ki}(\theta(v),X_k(q_k))-y^M_{ki}}{\sigma_{y,ki}},\qquad
-\min_{v,u}\frac12\sum_{k,i}(r^y_{ki})^2+\frac12\sum_{k,j}(r^x_{kj})^2.
+\mathbf e=\begin{bmatrix}\mathbf r^y\\\mathbf r^x\end{bmatrix},\quad
+R=\Sigma^{-1}C\,\Sigma^{-1}=LL^T,\quad
+\min_{v,u}\frac12\lVert L^{-1}\mathbf e\rVert^2
+\;\overset{R=I}{=}\;\frac12\sum_{k,i}(r^y_{ki})^2+\frac12\sum_{k,j}(r^x_{kj})^2.
 $$
 
 ## `heat_capacity_ratio`
@@ -71,13 +74,14 @@ $$
 - Section: Parameter estimation
 - Status: Exact derivation
 - Source: Differentiation of errors_in_variables_objective and independent_feed_measurement_coordinates; existing exact pressure-closed and solved-equilibrium actions.
-- Description: Native first derivatives of standardized measurement residuals; D maps optimizer model parameters to physical parameters.
-- Change note: Input-prior rows are exact identities. T/P actions include finite and reference states; molality actions hold the reference ladder fixed. The ionic terminal reference remains 1e-12 mol/kg, with its existing witness.
+- Description: Native first derivatives of standardized measurement residuals; D maps optimizer model parameters to physical parameters; a declared correlation applies the same triangular solve to every complete column.
+- Change note: Input-prior rows are exact identities before whitening. T/P actions include finite and reference states; molality actions hold the reference ladder fixed. The ionic terminal reference remains 1e-12 mol/kg, with its existing witness. Raw prediction columns dy/dv and sigma_q dy/dq come from the physical actions, never from whitened rows.
 
 $$
 \frac{\partial r^y_{ki}}{\partial v_a}=\frac1{\sigma_{y,ki}}\sum_b\frac{\partial f_{ki}}{\partial\theta_b}D_{ba},\quad
 \frac{\partial r^y_{ki}}{\partial u_{kj}}=\frac{\sigma_{q,kj}}{\sigma_{y,ki}}\frac{\partial f_{ki}}{\partial X_k}\frac{\partial X_k}{\partial q_{kj}},\qquad
-\frac{\partial r^x_{kj}}{\partial v_a}=0,\quad\frac{\partial r^x_{kj}}{\partial u_{lh}}=\delta_{kl}\delta_{jh}.
+\frac{\partial r^x_{kj}}{\partial v_a}=0,\quad\frac{\partial r^x_{kj}}{\partial u_{lh}}=\delta_{kl}\delta_{jh},\qquad
+\frac{\partial(L^{-1}\mathbf e)}{\partial(v,u)}=L^{-1}\frac{\partial\mathbf e}{\partial(v,u)}.
 $$
 
 ## `active_binary_interaction_mapping`
