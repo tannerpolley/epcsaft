@@ -307,6 +307,16 @@ _MEA_REACTIONS = (  # R1-R5: water, CO2 and bicarbonate dissociation, carbamate 
 _MEA_FEED = [1e-05, 1e-05, 8e-05, 1e-05, 0.00011, 1e-05]  # ion amounts [mol] after CO2, MEA, water
 
 
+def _mea_mapping(path: Path) -> dict[str, Any]:
+    """An MEA document with its historical CO2/MEA omission declared explicitly (#569): no cross edge, not a
+    claim that the physical interaction is absent."""
+    mapping: dict[str, Any] = json.loads(path.read_text())
+    mapping["topology"].setdefault("no_cross_association", []).append({
+        "component_id_a": "carbon-dioxide", "component_id_b": "monoethanolamine",
+        "provenance": {"source_id": mapping["document_id"], "locator": f"{path.relative_to(Path(__file__).resolve().parents[3])}: no CO2/MEA edge"}})
+    return mapping
+
+
 @pytest.mark.parametrize("label, temperature, carbon_dioxide, guess, speciation", [
     ("bottinger-046", 313.15, 0.34290000000000004,
      [0.00012044382032884565, 0.03820530851007986, 0.88492326364512, 0.03838499164509782, 0.03561505266280674,
@@ -326,7 +336,7 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
     The speciation is exact by construction: each density-basis ln K_r = sum_i nu_ri (ln(x_i rho) + mu_i^res/RT)
     at x (packet 3 EOS with the applications' Born runtime defaults), and x carries the feed's balances. The
     684b213a start, which seeded the guess directly, exhausted the 200-iteration budget on both states."""
-    mapping = json.loads(parameters_json("mea-co2-h2o-nine-species-estimation", 4).read_text())
+    mapping = _mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4))
     for family in mapping["model_families"]:
         if family["kind"] == "electrolyte":
             family.update(c_shell=1.0, c_dielectric=1.0)
@@ -362,7 +372,7 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
     The raw reduced-Hessian minimum (-2.9e-13 and -1e-16 to -3e-16) lies under its rounding n eps ||S|| = 8e-11, and
     wheels 684b213a, 4105e2a4 and main 99e333cd all rejected both states on its sign. The equilibrated inertia
     (minimum 1.4e-3 against a band below 1e-13, analyses/2026-stability-noise-band) certifies them on every solve."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     ln_k = (-605.348, -587.8, -948.2312, -25.1014, -298.6415)
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
                                                                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
@@ -379,7 +389,7 @@ def test_mea_liquid_reaches_carbon_dioxide_root_below_the_cutoff() -> None:
     EQUILIBRIUM_BOX_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
     half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68. #322: the action there was
     refused by that cutoff; the carbon amounts move with the CO2 feed, sum_C dn_i/d ln n_CO2 = n_CO2."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
                  EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
     carbon_dioxide = 1e-6 * 9.7292821
@@ -415,7 +425,7 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
 
 def test_zero_feed_ions_allow_provisional_flash_start() -> None:
     """#265: packet-3 neutral feed at loading 1e-3 reaches an accepted flash that conserves C, H, N, O and charge."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450.,
                  EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
     feed = {"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}
@@ -444,7 +454,7 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     root = Path(__file__).resolve().parents[2] / "data" / "reference"
     request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
     system = request["reaction_system"]
-    mapping = json.loads((root / "mea-nominally-unloaded" / "parameters.json").read_text())
+    mapping = _mea_mapping(root / "mea-nominally-unloaded" / "parameters.json")
     for family in mapping["model_families"]:
         if family["kind"] == "electrolyte":
             family.update(c_shell=1.0, c_dielectric=1.0)

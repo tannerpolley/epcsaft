@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
 from . import _core
 from .equilibrium.problem import _vector
@@ -38,6 +40,36 @@ ParameterError = _core.ParameterError
 EosError = _core.EosError
 DensityStructureError = _core.DensityStructureError
 property_asl_record = _core.property_asl_record
+
+
+class ThermochemistryPacket:
+    """NASA9 species records loaded once: native preparation rescales the nine coefficients by
+    R_source/R_Engine; select only copies and reorders. Intervals are [lower, upper), the last closed."""
+
+    __slots__ = ("species_ids", "_record")
+
+    def __init__(self, path: str | Path) -> None:
+        document = json.loads(Path(path).read_text())
+        form = (document.get("schema"), document.get("schema_version"), document.get("coefficient_order"))
+        if form != ("nasa-glenn-nasa9-records", 1, "a1 a2 a3 a4 a5 a6 a7 b1 b2".split()):
+            raise ParameterError("unsupported thermochemistry packet form or version")
+        p0, species = document["standard_pressure_Pa"], document["species"]
+        self.species_ids: tuple[str, ...] = tuple(item["species_id"] for item in species)
+        if len(set(self.species_ids)) != len(self.species_ids):
+            raise ParameterError("duplicate thermochemistry species")
+
+        def interval(i: Any, last: bool) -> IdealInterval:
+            return IdealInterval(i["lower_K"], i["upper_K"], True, last, IdealCorrelation(IdealNASA9(i["coefficients"]), p0))
+
+        ordered = [sorted(item["intervals"], key=lambda record: record["lower_K"]) for item in species]
+        record = ThermochemistryRecord(p0, [[interval(item, item is items[-1]) for item in items] for items in ordered])
+        self._record = _core.prepare_thermochemistry(record, document["gas_constant_J_per_mol_K"])
+
+    def select(self, species_ids: Sequence[str]) -> ThermochemistryRecord:
+        if missing := [item for item in species_ids if item not in self.species_ids]:
+            raise ParameterError(f"thermochemistry packet has no species {missing[0]}")
+        prepared = self._record.component_intervals
+        return ThermochemistryRecord(self._record.standard_pressure, [prepared[self.species_ids.index(i)] for i in species_ids])
 
 
 def _branch(phase: str | None) -> _core.DensityBranch:

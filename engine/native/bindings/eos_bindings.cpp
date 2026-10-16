@@ -121,6 +121,7 @@ void register_eos(nb::module_& module) {
             association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice,
             entries);
     module.def("build_parameters", &epcsaft::build_parameters);
+    module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
     module.def("fitted_document", &epcsaft::fitted_document);
 
     nb::class_<epcsaft::Parameters>(module, "Parameters")
