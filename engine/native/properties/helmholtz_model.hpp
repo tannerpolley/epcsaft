@@ -415,7 +415,9 @@ public:
     void validate_electroneutrality(const std::vector<double>& mole_fractions) const;
     SweepCounters counters() const;
     // reaction_references results of this immutable model by exact inputs: a short FIFO (#380).
-    std::optional<std::vector<NeutralReferenceReactionDiagnostic>> stored_references(const std::vector<double>& inputs) const;
+    // Inputs [first, last) only add columns: a stored result covers smaller ones there (#595).
+    std::optional<std::vector<NeutralReferenceReactionDiagnostic>> stored_references(const std::vector<double>& inputs,
+        std::size_t first, std::size_t last) const;
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
     const policy::SolverOptions& solver_options() const { return solver_options_; }

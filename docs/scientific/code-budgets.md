@@ -82,6 +82,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #595 (owner allowance: Equilibrium +30 net / 45 gross, Properties +8 / 12, other layers 0): reacting equilibrium Cp actions request only the reference columns they read, and one ladder per solved state serves them, using net +19/+5 and gross 45/12 (Equilibrium/Properties) against `56216880`. Equilibrium 9,897 and Properties 6,129 stay within their ceilings 9,977 and 6,186 and their bands; total 27,904 of 27,966. `reaction_references` and the model's reference store remain the one ladder owner.
 - 2026-10-16, #565 (lead allowance under the #577 rule: Equilibrium +270 net / 270 gross, Core +10 / 10, other
   layers 0, net over the merge base): measured growth against main `8fb04d01` (after #568, #569 and #570) is
   Equilibrium +154 net and Core +9 formatted runtime lines. Equilibrium **9,796 → 9,977** (count 9,878 plus band

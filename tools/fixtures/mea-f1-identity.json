@@ -39,9 +39,9 @@
     "serial_wall_seconds": 16.28246296299767,
     "reference_taylor_evaluations": 675,
     "work": {
-      "reference_computations": 296,
-      "reference_columns": 3462,
-      "density_solves": 2637,
+      "reference_computations": 295,
+      "reference_columns": 3388,
+      "density_solves": 2627,
       "equilibrium_iterations": 1426
     },
     "measurement": "non-diagnostic native trace; process CPU and wall around evaluate_observations; decoding and trace reduction excluded",
@@ -74,6 +74,7 @@
         "status": "converged"
       }
     },
-    "evidence": "build/issue-497/refreeze-evaluation.json; build/issue-497/main-aa/summary.json and fit-cpu-A/, fit-cpu-B/"
+    "evidence": "build/issue-497/refreeze-evaluation.json; build/issue-497/main-aa/summary.json and fit-cpu-A/, fit-cpu-B/",
+    "work_refrozen": "#595: unread reference columns are no longer computed; the serial CPU value is unchanged"
   }
 }
