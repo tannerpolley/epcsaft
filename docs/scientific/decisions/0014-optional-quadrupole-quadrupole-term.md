@@ -33,7 +33,8 @@ independently measured moments and no extra adjustable parameter.
 - **Where the equation lives.** Contributions evaluates both terms in one
   multipole function that keeps the dipole's operation order, sharing η, σ_i, ε_i,
   the Padé form and the J-polynomial helper on the same tape. The helper no longer
-  caps; the dipole caps its own chain arguments.
+  caps; the dipole caps its own chain arguments. The result member `dipolar` carries
+  whichever polar term the model declares.
 - **Unchanged models.** An undeclared family evaluates no multipole code, and the
   dipole values are bit-identical to those before this decision.
 - **Comparisons.** Polar models are compared only with their own parameters
