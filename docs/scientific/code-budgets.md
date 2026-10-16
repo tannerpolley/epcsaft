@@ -63,6 +63,14 @@ The band of a layer, or of the total, is 1% of its current count, rounded up.
    it needs a new owner decision with the scientific requirement and
    alternatives.
 
+   Delegation (owner, 2026-10-16, #577): for the issues selected from the
+   2026-10-15 audits (#563–#579), the lead approves each issue's allowance once
+   its independent readiness review returns Ready, using the reviewer's
+   recommended allowance, and records it in the issue body. Their combined net
+   growth may not exceed +2,000 formatted runtime lines over the 26,886 counted
+   at `517a3450`. Beyond that total, and for any build of the scope-change
+   issues #573–#576, the owner decides.
+
 A temporary over-budget working state may be simplified and repaired. Do not
 freeze uncompilable code because an intermediate write exceeded a number. The
 completed candidate must satisfy both band limits before acceptance.
