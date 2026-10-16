@@ -1590,9 +1590,9 @@ without one it is `evaluated_without_positive_donor`, with the cause
 `no_positive_full_support_donor` and absent donor estimates. Packing,
 reconstruction, density and energy failures retain unavailable ordered rows
 and their causes, including `nonpositive/nonfinite trial composition` and
-`stability point outside packing domain`. Family admission below is unchanged,
-even with supplied packing: a refused charged family never becomes per-point
-unavailability. `completed` means the ordered evaluations were exhausted,
+`stability point outside packing domain`. Under density-independent
+permittivity the condensed-side check below applies at the supplied packing; a
+refused charged point is an unavailable row with its cause. `completed` means the ordered evaluations were exhausted,
 including unavailable rows; a trial budget can leave the sequence incomplete.
 No stability or instability conclusion follows from supplied-point evaluation.
 
@@ -1615,18 +1615,30 @@ resolves on U by the ALG-EQUILIBRIUM support rule, which also refuses explicit e
 supports and ionic Vapor. Reject empty caller lists, species outside U and one-sign
 ionic supports.
 
-Before enumerating starts, one shared native support-admission predicate requires
-`DensityTemperature` or `DipolarPerturbation` whenever a requested support
-contains ions. These are the existing forms with $\epsilon_r\to1$ as
-$\rho_m\to0$ (full EOS §6.2/§6.4). Density-independent `IonSuppression` and
-`ComponentMixing` describe condensed-phase electrolyte terms and raise the typed
-`ParameterError`: "permittivity model has no low-density limit; declare phases".
-Reject the requested family explicitly; do not silently drop charged trials or
-interpret refusal as stability. This predicate is used by the explicit test and
-by discovery before its first declaration solve, and never by declared solves,
-continuation, fitting or ASL. Neutral-only requested families are unaffected.
-Admission reads the form, not a sampled density, fitted coefficient, phase label
-or optimizer termination. It introduces no density cutoff or failed-trial filter.
+Charged supports are admitted under every declared bulk-permittivity form.
+`DensityTemperature` and `DipolarPerturbation` reach $\epsilon_r\to1$ as
+$\rho_m\to0$ (full EOS §6.2/§6.4), and their charged trials count at every
+density. Density-independent `IonSuppression` (all choices) and
+`ComponentMixing` are condensed-liquid correlations (#568). Under them a charged
+trial point counts only when it coincides, within `DENSITY_ANCHOR_LOG_WINDOW`,
+with a stable density root of its own composition at the test T and P, and the
+density owner's side classification (`density_side`, #423) of that root is
+Liquid. The seed applies the classification to its already-solved Liquid root.
+The end point solves one Liquid-branch root with its sibling before the trial
+energy, through the same root match that discovery addition uses; a supplied
+packing is checked only there. A vapor-side root, a sole root without a loop
+sample (`Unspecified`) and a point away from every stable root, including a
+stalled point inside the unstable region, are unavailable with the cause
+"charged trial outside the condensed domain of density-independent
+permittivity". They are never witnesses or evidence of stability. Admitted
+charged end points record the root's `negative_slope_density_mol_m3` when it has
+one. Under density-independent forms, admission reads the trial state's side of
+its own composition's mechanical loop through the density owner's
+classification, not a phase label, fitted coefficient or optimizer termination.
+It introduces no density cutoff, new tolerance or failed-trial filter.
+Compositions with no loop at T are under-admitted, and admission establishes
+condensed density only, not the correlation's fitted range. Declared solves,
+continuation, fitting and ASL are unaffected.
 
 For ordinary search, for every admitted pair enumerate a positive charge-neutral base from equal
 supported weights with ionic group rescaling. A compatible candidate's strictly

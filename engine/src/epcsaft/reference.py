@@ -14,6 +14,7 @@ class Reference:
     """Immutable snapshot of the physical inputs at which the native reference fugacities were solved."""
 
     _model: _core.HelmholtzModel
+    component_ids: tuple[str, ...]
     T: float
     P: float
     solvent_fractions: tuple[float, ...]
@@ -63,3 +64,13 @@ class Reference:
 
     def solvent_activity(self, *, x: Sequence[float]) -> SolventActivity:
         return _core.solvent_activity(self._model, self.T, self.P, x, self._native)
+
+    def henry_constants(self, *, solutes: Sequence[str]) -> list[_core.HenryConstant]:
+        """Fugacity-based H_i^px = lim f_i/x_i (Pa) of neutral solutes in this pure-solvent reference."""
+        if self._ion_indices is not None:
+            raise _core.ParameterError("NonNeutralDeclaration: Henry constants need a solvent-only reference")
+        try:
+            indices = [self.component_ids.index(solute) for solute in solutes]
+        except ValueError as error:
+            raise _core.ParameterError(f"unknown solute component in {list(solutes)}") from error
+        return _core.henry_constants(self._model, self.T, self.P, self.solvent_fractions, indices)
