@@ -882,6 +882,15 @@ void HelmholtzModel::validate_composition(
                                     + core::optional_number(policy::COMPOSITION_SUM_TOLERANCE.value));
 }
 
+void HelmholtzModel::validate_electroneutrality(const std::vector<double>& mole_fractions) const {
+    validate_composition(mole_fractions);
+    double charge = 0.0;
+    for (std::size_t i = 0; i < mole_fractions.size(); ++i) charge += parameters_.charge_number[i] * mole_fractions[i];
+    if (!(std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value))
+        throw std::invalid_argument("non-electroneutral composition: charge sum " + core::optional_number(charge)
+                                    + "; expected 0 within " + core::optional_number(policy::COMPOSITION_SUM_TOLERANCE.value));
+}
+
 void HelmholtzModel::validate_point(
     double temperature,
     double volume,
