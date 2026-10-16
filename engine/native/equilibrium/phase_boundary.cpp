@@ -608,7 +608,8 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
 Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>()>& tangent_at, double delta,
-                const std::vector<double>& anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm) {
+                const std::vector<double>& anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
+                const DriverLimits* limits = nullptr) {
     Attempt attempt;
     attempt.terminal = true;
     std::vector<double> tangent;
@@ -636,7 +637,7 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
         std::size_t projected = 0;
         const bool inside = inside_domain(compiled, predicted, projected);
         scope.probe("predictor_projected", static_cast<double>(projected));
-        if (inside) return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted, nullptr, nullptr, std::move(warm)),
+        if (inside) return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted, nullptr, limits, std::move(warm)),
                                         anchors, false, scope);
         attempt.terminal = false;
         attempt.stop = ContinuationStop::left_domain;
@@ -1165,7 +1166,9 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
     return "unknown";
 }
 
-ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
+// `limits` (recovery, #565) also caps attempted steps at max_steps; a supplied start with `anchors` is admitted on them.
+static ContinuationResult continue_path(const HelmholtzModel& model, const ContinuationRequest& request,
+                                        const DriverLimits* limits, std::vector<double> anchors) {
     core::Scope scope("continue_equilibrium");
     if (request.start_problem.envelope) return trace_envelope(model, request);
     ContinuationResult result;
@@ -1222,7 +1225,6 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     if (parameter_path) { path.parameter_start = parameter_start; path.parameter_target = request.parameter_targets; }
 
     // Initial admission at q = 0.
-    std::vector<double> anchors;
     std::vector<double> y_current;
     CompiledSystem current = start;
     std::unique_ptr<HelmholtzModel> current_model;
@@ -1242,7 +1244,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                 return finish(std::move(result), ContinuationStop::invalid_path, "supplied start result layout differs");
             }
             admitted = admit_result(model, start, parameter_path
-                ? solve_equilibrium_from_coordinates(model, request.start_problem, supplied.coordinates) : supplied, anchors, true, initial,
+                ? solve_equilibrium_from_coordinates(model, request.start_problem, supplied.coordinates) : supplied, anchors, anchors.empty(), initial,
                 !parameter_path);
         } else {
             admitted = admit_result(model, start,
@@ -1271,6 +1273,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         if (q >= 1.0) return finish(std::move(result), ContinuationStop::reached_target, "");
         if (result.accepted_steps >= options.max_steps)
             return finish(std::move(result), ContinuationStop::budget_exhausted, "max_steps reached before the target");
+        if (limits && (limits->expired() || result.attempts >= options.max_steps))
+            return finish(std::move(result), ContinuationStop::budget_exhausted, "recovery work or attempts exhausted");
         const double q_try = std::min(q + dq, 1.0);
         ++result.attempts;
         core::Scope attempt_scope("equilibrium_continuation_attempt");
@@ -1281,7 +1285,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         CompiledSystem compiled = compile_problem(trial, problem);
         Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&] {
             return sensitivity(current, y_current, path.lever(current));
-        }, q_try - q, anchors, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr);
+        }, q_try - q, anchors, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
         if (!attempt.result.has_value()) attempt_scope.probe("driver_result_present", 0.0);
@@ -1314,6 +1318,70 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         dq = halved;
         ++local_retries;
         ++result.retries;
+    }
+}
+
+ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
+    return continue_path(model, request, nullptr, {});
+}
+
+// ALG-EQUILIBRIUM neutral recovery: the first admitted source at T_seed 0.95^j, then fixed-T continuation, or for a
+// free-T boundary a same-source chart correction at the source pressure and fixed-P continuation. Internal
+// declarations carry no guesses; boundary endpoints share one free-intensive seed. No second source after a path stop.
+EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits) {
+    core::Scope scope("equilibrium_recovery");
+    const auto& model = *target.model;
+    const double tolerance = target.problem.solver_options.value(policy::row);
+    const bool free_temperature = target.problem.temperature.free;
+    EquilibriumResult refused, found;
+    auto declared = target.problem;
+    for (auto& phase : declared.phases) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
+    if (declared.pressure.free) declared.pressure = FreeValue::variable();
+    auto source = declared;
+    if (free_temperature) source.pressure = FreeValue::variable();
+    try {
+        for (int j = 1; j <= static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value) && !found.success; ++j) {
+            limits.check();  // the slot is spent before compilation
+            source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(0.95, j));
+            found = solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits);
+            scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), found.message.c_str());
+        }
+        if (!found.success) { refused.message = "no admitted lower-temperature source: " + found.message; return refused; }
+        const auto work = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+        ContinuationRequest request{source, declared, found, {0.05, 1.0e-6, work, 10}, {}};
+        if (free_temperature) {
+            request.start_problem = declared;
+            request.start_problem.pressure = FreeValue::fixed(found.pressure[0]);
+            auto chart = found.coordinates;
+            chart[target.primal_size - 1] = found.temperature[0];
+            auto corrected = solve_equilibrium_from_coordinates(model, request.start_problem, chart, nullptr, &limits);
+            double drift = corrected.success ? std::max(std::abs(corrected.temperature[0] / found.temperature[0] - 1.0),
+                largest_difference(corrected.mole_fractions, found.mole_fractions)) : INFINITY;
+            for (std::size_t p = 0; corrected.success && p < found.amounts.size(); ++p)
+                drift = std::max({drift, std::abs(corrected.amounts[p] - found.amounts[p]) / target.feed_total,
+                    std::abs(corrected.molar_densities[p] / found.molar_densities[p] - 1.0)});
+            if (!(drift <= tolerance)) {
+                refused.message = "free-temperature chart correction left the source state: " + corrected.message;
+                return refused;
+            }
+            request.start_result = std::move(corrected);
+        }
+        auto path = continue_path(model, request, &limits, found.molar_densities);
+        if (!path.success) {
+            refused.message = "from source at " + core::optional_number(found.temperature[0]) + " K: " + path.message;
+            return refused;
+        }
+        auto reached = std::move(path.states.back());
+        const auto admitted = check_density_branches(model, target, reached, {}, true, scope, &limits);
+        if (!admitted.accepted || !(target.classified_residual_norm(reached.coordinates) <= tolerance)) {
+            refused.message = "reached target refused: " + admitted.message;
+            return refused;
+        }
+        reached.declaration = std::make_shared<const EquilibriumProblem>(target.problem);
+        return reached;
+    } catch (const std::exception& error) {
+        refused.message = error.what();
+        return refused;
     }
 }
 

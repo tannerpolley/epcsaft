@@ -7,6 +7,8 @@
 #include "equilibrium/stoichiometry.hpp"
 
 #include <algorithm>
+#include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -534,6 +536,13 @@ void check_s15c() {
     CHECK(!result.has_state());
     CHECK(result.message.find("phases_coincide") != std::string::npos);
     CHECK(result.message.find("distance") != std::string::npos);
+    // #565: the one recovery from the 228.06 K source stops at the critical identity swap; both causes and all work stand.
+    const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, problem));
+    CHECK(result.message.rfind(ordinary.message + "; recovery: ", 0) == 0);
+    CHECK(result.message.find("phases_coalesced") != std::string::npos);
+    CHECK(result.iterations > ordinary.iterations && result.iterations - ordinary.iterations <= 512);
+    CHECK(result.evaluations > ordinary.evaluations && result.evaluations - ordinary.evaluations <= 2048);
+    CHECK(result.hessian_calls > ordinary.hessian_calls && result.hessian_calls - ordinary.hessian_calls <= 1024);
 }
 
 // ------------------------------------------------------------------ E4 continuation
@@ -798,12 +807,26 @@ void check_e4_d() {
     };
     // #352: this pressure guess reached the trivial state (5.414 MPa, x_L = x_V = 0.5) as a success; its bulk
     // phase has local lowest eigenvalue -5.2e-5 and is refused, which does not say no bubble point exists.
+    // #565: the public solve recovers the bubble point; FeOs 0.10.1 at identical parameters, tolerance 1e-12
+    // (build/issue-565/feos-bubble-260.json): P, y_CH4, liquid and vapor densities.
     auto trivial = equilibrium_support::bubble_at(260.0);
     trivial.pressure = FreeValue::variable(2.02606e6);
-    const auto refused = epcsaft::equilibrium::solve_equilibrium(model, trivial);
-    record_bool("e4-d/trivial", "e4-d", "the trivial state from a 2.02606 MPa guess at 260 K is refused as locally unstable",
-        !refused.success && refused.message.find("local phase instability") != std::string::npos,
-        recording_support::fields({recording_support::field("message", refused.message)}));
+    const auto refused = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, trivial));
+    const auto recovered = epcsaft::equilibrium::solve_equilibrium(model, trivial);
+    const std::array<double, 4> feos{6753518.165684925, 0.584677746826541, 10555.743792969572, 7345.13575956793};
+    const std::array<double, 4> engine{recovered.success ? recovered.pressure[0] : NAN, recovered.success ? recovered.mole_fractions[2] : NAN,
+        recovered.success ? recovered.molar_densities[0] : NAN, recovered.success ? recovered.molar_densities[1] : NAN};
+    double deviation = 0.0;
+    for (std::size_t i = 0; i < feos.size(); ++i) deviation = std::max(deviation, std::abs(engine[i] / feos[i] - 1.0));
+    record_bool("e4-d/trivial", "e4-d", "the trivial state from a 2.02606 MPa guess at 260 K is refused as locally unstable; "
+        "the public solve's one recovery reaches the FeOs bubble point within 1e-8 with both causes and all work",
+        !refused.success && !refused.has_state() && refused.message.rfind("local phase instability", 0) == 0
+            && recovered.success && deviation <= 1.0e-8 && std::abs(recovered.mole_fractions[0] - 0.5) <= 1.0e-8
+            && recovered.message.find("; recovered after: " + refused.message) != std::string::npos
+            && recovered.iterations > refused.iterations && recovered.iterations - refused.iterations <= 512
+            && recovered.evaluations > refused.evaluations && recovered.evaluations - refused.evaluations <= 2048
+            && recovered.hessian_calls > refused.hessian_calls && recovered.hessian_calls - refused.hessian_calls <= 1024,
+        recording_support::fields({recording_support::field("message", recovered.message), recording_support::field("deviation", deviation)}));
     request.start_problem = seeded(260.0);
     request.target_problem = seeded(280.0);
     request.options = options(0.005, 0.0003125, 20000, 4);
@@ -998,6 +1021,122 @@ void check_e4_paths() {
         "model > reference", rejected, "e4-paths", "two-root", "|\\\\ln(\\\\rho_V/\\\\rho_L)|", "T,P", "|\\\\ln(\\\\rho_V/\\\\rho_L)|>w", "case");
 }
 
+// #565 neutral recovery, one table of default-start declarations and references at identical parameters:
+// FeOs 0.10.1 bubble/dew pressures (build/audit-2026-10-15/opus/probes/p03/feos.json, build/issue-565/build-r1/
+// feos-neutral-sweep.json and feos-near-critical.json), the p02b dew of every admitted route and the hydrogen/
+// toluene native continuation states (build/issue-565/design.md). Each row's added work stays within the caps.
+void check_recovery() {
+    using namespace e4;
+    struct Row { const char* id; bool dew; double T, seed, P; std::vector<double> guess = {}; };
+    std::vector<Row> rows;
+    const std::vector<std::array<double, 2>> bubble{{140.0, 355746.1260962896}, {160.0, 831742.1541128904}, {180.0, 1596859.111206483},
+        {200.0, 2671240.2928830944}, {220.0, 4024901.9507284164}, {230.0, 4773606.678817619}, {240.0, 5530182.692287229},
+        {245.0, 5893731.72338732}, {250.0, 6232298.823117528}, {252.0, 6357024.466918677}, {254.0, 6473547.62722313},
+        {256.0, 6580081.422119517}, {260.0, 6753518.165684925}, {262.0, 6813255.896801155}, {264.0, 6846852.46933276},
+        {265.0, 6850292.053748079}, {265.5, 6847647.85517266}};
+    const std::vector<std::array<double, 2>> dew{{140.0, 7613.157233521342}, {160.0, 42777.879167340696}, {180.0, 157730.59294257686},
+        {200.0, 439950.11163249984}, {220.0, 1017082.8624947034}, {230.0, 1471398.7980179824}, {240.0, 2078845.1274314262},
+        {245.0, 2455019.3747884184}, {250.0, 2891524.5755612366}, {252.0, 3086014.4514932185}, {254.0, 3293646.2195307426},
+        {256.0, 3516037.740173608}};
+    for (const auto& [T, P] : bubble) rows.push_back({"bubble", false, T, 0.0, P});
+    for (const auto& [T, P] : dew) rows.push_back({"dew", true, T, 0.0, P});
+    for (const double seed : {5e5, 1e6, 1.5e6, 2e6, 2.5e6, 3e6, 4e6, 5e6, 6.16e6})
+        rows.push_back({"p02b", true, 239.3700696309195, seed, 2035211.56822574});
+    for (const double x : {0.1, 0.2, 0.3}) rows.push_back({"p02b-guess", true, 239.3700696309195, 6.16e6, 2035211.56822574, {x, 1.0 - x}});
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    const auto within_caps = [](const EquilibriumResult& r, const EquilibriumResult& ordinary) {
+        return r.iterations - ordinary.iterations <= 512 && r.evaluations - ordinary.evaluations <= 2048
+            && r.hessian_calls - ordinary.hessian_calls <= 1024 && r.iterations >= ordinary.iterations;
+    };
+    std::size_t passed = 0, recovered = 0;
+    std::string failures;
+    for (const auto& row : rows) {
+        auto problem = equilibrium_support::bubble_at(row.T);
+        if (row.dew) {
+            problem.phases[0].amount = AmountSpec::pinned(0.0);
+            problem.phases[1].amount = AmountSpec::free();
+            problem.phases[0].composition_guess = row.guess;
+        }
+        problem.pressure = row.seed > 0.0 ? FreeValue::variable(row.seed) : FreeValue::variable();
+        const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, problem));
+        const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
+        recovered += !ordinary.success && r.success;
+        const bool ok = r.success && std::abs(r.pressure[0] / row.P - 1.0) <= 1.0e-8 && within_caps(r, ordinary)
+            && (ordinary.success ? r.iterations == ordinary.iterations && r.pressure == ordinary.pressure
+                                 : r.message.find("; recovered after: " + ordinary.message) != std::string::npos);
+        passed += ok;
+        if (!ok) failures += std::string(row.id) + " " + std::to_string(row.T) + " " + std::to_string(row.seed) + ": " + r.message + "; ";
+    }
+    record_bool("e4-r/references", "e4-r", "every default-start methane/ethane bubble and dew below the mixture critical point and every p02b "
+        "route reaches its reference pressure within 1e-8; ordinary successes are unchanged and recoveries keep their cause within the caps",
+        passed == rows.size() && recovered > 0, recording_support::fields({recording_support::field("rows", rows.size()),
+            recording_support::field("passed", passed), recording_support::field("recovered", recovered), recording_support::field("failures", failures)}));
+    // Exhausted work on the 256 K dew: the public solve reports ordinary plus recovery work exactly; cutting each cap to
+    // half of the full recovery's use, or an expired deadline, refuses with every counter within its cap (no work at all
+    // after the deadline), the exhaustion latched.
+    auto dew256 = equilibrium_support::bubble_at(256.0);
+    dew256.phases[0].amount = AmountSpec::pinned(0.0);
+    dew256.phases[1].amount = AmountSpec::free();
+    const auto target = epcsaft::equilibrium::compile_problem(model, dew256);
+    const auto limits = [](std::size_t i, std::size_t e, std::size_t h, std::chrono::steady_clock::time_point deadline) {
+        epcsaft::equilibrium::DriverLimits l{i, deadline};
+        l.recovery = true; l.evaluation_cap = e; l.hessian_cap = h;
+        return l;
+    };
+    const auto never = std::chrono::steady_clock::time_point::max();
+    auto full = limits(512, 2048, 1024, never);
+    const auto reached = epcsaft::equilibrium::recover_from_source(target, full);
+    const auto ordinary = epcsaft::equilibrium::solve_compiled(target);
+    const auto public_dew = epcsaft::equilibrium::solve_equilibrium(model, dew256);
+    bool exhausted = reached.success && public_dew.success && public_dew.pressure == reached.pressure
+        && public_dew.iterations == ordinary.iterations + full.consumed && public_dew.evaluations == ordinary.evaluations + full.evaluations
+        && public_dew.hessian_calls == ordinary.hessian_calls + full.hessian_calls;
+    std::vector<double> spent;
+    for (int cut = 0; cut < 3; ++cut) {
+        auto l = limits(cut == 0 ? full.consumed / 2 : 512, cut == 1 ? full.evaluations / 2 : 2048, cut == 2 ? full.hessian_calls / 2 : 1024, never);
+        const auto refused = epcsaft::equilibrium::recover_from_source(target, l);
+        exhausted = exhausted && !refused.success && !refused.has_state() && l.exhausted && l.consumed <= l.iterations
+            && l.evaluations <= l.evaluation_cap && l.hessian_calls <= l.hessian_cap;
+        spent.insert(spent.end(), {double(l.consumed), double(l.evaluations), double(l.hessian_calls)});
+    }
+    auto late = limits(512, 2048, 1024, std::chrono::steady_clock::now());
+    exhausted = exhausted && !epcsaft::equilibrium::recover_from_source(target, late).success
+        && late.consumed == 0 && late.evaluations == 0 && late.hessian_calls == 0;
+    record_bool("e4-r/exhausted", "e4-r", "recovery work is reported exactly and an exhausted cap or deadline ends it within the cap",
+        exhausted, recording_support::fields({recording_support::field("full", std::vector<double>{double(full.consumed),
+            double(full.evaluations), double(full.hessian_calls)}), recording_support::field("cut", spent)}));
+    // Hydrogen/toluene (hda-pc-saft packet): both amounts free at fixed T/P, no guesses. 450 K / 1 MPa lies below the
+    // 1049348.65 Pa dew pressure: the one vapor stays refused.
+    auto parameters = properties_support::parameters(2);
+    parameters.segment_count = {1.0, 2.8149};
+    parameters.sigma_constant = {2.986, 3.7169};
+    parameters.dispersion_energy_over_k = {19.2775, 285.69};
+    parameters.molar_mass_kg_per_mol = {0.00201588, 0.092141};
+    parameters.k_ij = {0.0, -0.047, -0.047, 0.0};
+    epcsaft::HelmholtzModel hydrogen(parameters);
+    struct Flash { double T, P, beta, x, y, rho_l, rho_v; };
+    for (const auto& f : {Flash{420.0, 2.0e6, 0.577995536849733, 0.010645429712296, 0.857286171879353, 8060.20295089, 571.247031289},
+                          Flash{450.0, 1.2e6, 0.894209103210267, 0.00510774614411727, 0.558549052074899, 7651.05900158, 333.340840172},
+                          Flash{450.0, 1.0e6, NAN, NAN, NAN, NAN, NAN}}) {
+        auto problem = equilibrium_support::bubble_at(f.T);
+        problem.phases[1].amount = AmountSpec::free();
+        problem.pressure = FreeValue::fixed(f.P);
+        const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(hydrogen, problem));
+        const auto r = epcsaft::equilibrium::solve_equilibrium(hydrogen, problem);
+        double deviation = INFINITY;
+        if (r.success) deviation = std::max({std::abs(r.amounts[1] / (r.amounts[0] + r.amounts[1]) - f.beta), std::abs(r.mole_fractions[0] - f.x),
+            std::abs(r.mole_fractions[2] - f.y), std::abs(r.molar_densities[0] / f.rho_l - 1.0), std::abs(r.molar_densities[1] / f.rho_v - 1.0)});
+        const bool refusal = std::isnan(f.beta);
+        record_bool(refusal ? "e4-r/hydrogen-refused" : f.T == 420.0 ? "e4-r/hydrogen-420" : "e4-r/hydrogen-450", "e4-r",
+            refusal ? "hydrogen/toluene at 450 K / 1 MPa stays refused with both causes and no state"
+                    : "hydrogen/toluene without guesses reaches the continuation state within 1e-8",
+            !ordinary.success && within_caps(r, ordinary) && (refusal
+                ? !r.success && !r.has_state() && r.message.rfind(ordinary.message + "; recovery: ", 0) == 0
+                : r.success && deviation <= 1.0e-8),
+            recording_support::fields({recording_support::field("deviation", deviation), recording_support::field("message", r.message)}));
+    }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1016,5 +1155,6 @@ int main(int argc, char** argv) {
         {{"native.boundary.e4-d", "E4-D"}, check_e4_d},
         {{"native.boundary.e4-e", "E4-E"}, check_e4_e},
         {{"native.boundary.e4-paths", "E4-P"}, check_e4_paths},
+        {{"native.boundary.e4-r", "E4-R"}, check_recovery},
     });
 }

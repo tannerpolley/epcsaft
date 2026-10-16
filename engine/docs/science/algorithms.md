@@ -788,6 +788,32 @@ esterification liquid pairs of the [Ascani 2023 reproduction](../../../analyses/
 lost their minor liquid at 1, 100 and 10,000 mol; from $N$ they return the lower-G distinct
 liquids (PR #421). This is an empirically qualified initialization convention, not a
 convergence guarantee.
+<a id="neutral-recovery"></a>**Neutral recovery (#565).** An ordinary neutral, nonreacting, non-associating
+declared L+V solve may perform one bounded continuation recovery only after coincidence, local phase
+instability, local infeasibility or an optimizer iteration limit. A successful ordinary result returns
+unchanged. Recovery uses the existing driver, start mapper, exact predictor/corrector and anchored phase
+admission, with all failed initial, source and corrector work charged to the same remaining caller
+budget. It cannot restart an exhausted budget, change phase identity, select another branch after a
+terminal continuation event, or certify global stability. A failed recovery preserves both stopping
+causes and publishes no recovered state.
+The domain is a fixed-T or fixed-P boundary with one zero-pinned phase, or a fixed-T/P flash with both
+amounts free, on the full positive feed support; it excludes discovery, critical, envelope, caloric and
+source-reference declarations. Only the public solve without a caller start and cooling onset's first
+solve recover; regression observations, the speciation seed, ordered starts and the recovery's own solves
+do not. The triggers are a non-fatal Ipopt return at `LOCAL_INFEASIBILITY` or `MAXITER_EXCEEDED`,
+coalesced phases, or a resolved negative lowest local-stability eigenvalue; a vanished phase, a
+density-branch refusal and every other stop stand. Sources are ordinary solves at
+$T_j=0.95^j\,T_\mathrm{seed}$, $j=1,\dots,8$ (`EQUILIBRIUM_RECOVERY_SOURCES`), with guesses removed and an
+absent free-pressure seed; the first admitted one is continued at fixed $T$ to the target, or, for a
+free-$T$ boundary, first corrected at its own pressure in the free-$T$ chart (agreeing with the source
+within the row tolerance) and continued at fixed $P$. Continuation steps are 0.05 to $10^{-6}$ with ten
+retries; the source densities anchor its initial admission. The reached state passes the target's rows
+and cold density-branch admission. Added optimizer iterations and continuation attempts are each at most
+`EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations four times and Hessian callbacks twice
+that, within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
+with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
+This replaces, for this domain only, #352's rule that a no-start fallback is decided before the target
+solve; the reacting and caloric no-retry rules below are unchanged.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors

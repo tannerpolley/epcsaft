@@ -569,6 +569,7 @@ bool GibbsMinimizer::eval_f(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number& value
 ) {
     core::Scope callback("ipopt_eval_f");
+    if (limits_ && !limits_->spend(limits_->evaluations, limits_->evaluation_cap)) return false;
     ++evaluations_;
     try {
         value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
@@ -646,6 +647,7 @@ bool GibbsMinimizer::eval_h(
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
     core::Scope callback("ipopt_eval_h");
+    if (limits_ && !limits_->spend(limits_->hessian_calls, limits_->hessian_cap)) return false;
     ++hessian_calls_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -895,6 +897,7 @@ static EquilibriumResult run_driver_once(
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
     if (non_error && !expired()) {
+        if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return limited_result();
         auto at = compiled.prepare(full, true);
         ++polish_evaluations;
         if (audit) audit->convergence.evaluations = ++audit->evaluations;
@@ -1006,6 +1009,7 @@ static EquilibriumResult run_driver_once(
                 }
                 PhasePoint at_candidate;
                 std::vector<double> rows_after;
+                if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return limited_result();
                 try {
                     at_candidate = compiled.prepare(candidate, true);
                     ++polish_evaluations;
@@ -1447,7 +1451,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
     std::optional<CompiledSystem> compiled;
     if (!request.discovery) compiled = compile_problem(model, request);
     auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope, nullptr,
-        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr);
+        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr, !start);
     if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
         observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
     return result;
@@ -1478,8 +1482,30 @@ static bool free_amount_newton_eligible(const CompiledSystem& compiled) {
     return true;
 }
 
+// The #565 recovery domain: a neutral nonreacting non-associating L+V boundary or TP flash on the full positive feed.
+static bool recovery_eligible(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    const auto components = compiled.model->parameters().component_count();
+    return (newton_eligible(compiled) || free_amount_newton_eligible(compiled)) && p.phases[0].kind != p.phases[1].kind
+        && !p.source_reference && compiled.model->parameters().site_component.empty()
+        && p.phases[0].support.size() == components && p.phases[1].support.size() == components
+        && std::all_of(compiled.n_feed.begin(), compiled.n_feed.end(), [](double n) { return n > 0.0; });
+}
+
+// The #565 triggers, from the raw Ipopt status (a fatal return carries its application return after "; "): a
+// non-fatal LOCAL_INFEASIBILITY or MAXITER_EXCEEDED, or after a successful or acceptable stop, coalesced phases or a
+// resolved negative lowest stability eigenvalue. A vanished phase and every other stop stand.
+static bool recovery_trigger(const EquilibriumResult& result) {
+    const auto& status = result.solver_status;
+    if (result.topology_event == TopologyEvent::PhaseDisappeared) return false;
+    if (status == "LOCAL_INFEASIBILITY" || status == "MAXITER_EXCEEDED") return true;
+    return (status == "SUCCESS" || status == "STOP_AT_ACCEPTABLE_POINT") && (result.topology_event == TopologyEvent::PhasesCoalesced
+        || (result.message.rfind("local phase instability:", 0) == 0 && result.message.find(" has lowest eigenvalue ") != std::string::npos));
+}
+
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
-                                 core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm) {
+                                 core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
+                                 bool recover) {
     std::optional<core::Scope> own;
     auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
     const auto& model = *compiled.model;
@@ -1492,6 +1518,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     StageWork stages;
     auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled, limits, stages);
     EquilibriumResult result;
+    bool admission_refused = false;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
         stages.add(result);  // a failed seeded attempt
@@ -1531,13 +1558,30 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             branches.message = std::string("density branch admission failed: ") + error.what();
         }
         if (!branches.accepted) {
+            admission_refused = true;
             result.success = false;
             result.message = branches.message;
             clear_state(result);
         }
     }
     stages.report(result);
-    return result;
+    if (result.success || !recover || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
+        || !recovery_eligible(compiled) || !recovery_trigger(result)) return result;
+    // ALG-EQUILIBRIUM neutral recovery: its own caps, within any caller remainder; both causes and all work are kept.
+    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    DriverLimits work{limits ? std::min(cap, limits->iterations - limits->consumed) : cap,
+        limits ? limits->deadline : std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    auto recovered = recover_from_source(compiled, work);
+    if (limits) limits->consumed += work.consumed;
+    result.iterations += work.consumed;
+    result.evaluations += work.evaluations;
+    result.hessian_calls += work.hessian_calls;
+    if (!recovered.success) { result.message += "; recovery: " + recovered.message; return result; }
+    recovered.message += "; recovered after: " + result.message;
+    recovered.iterations = result.iterations;
+    recovered.evaluations = result.evaluations;
+    recovered.hessian_calls = result.hessian_calls;
+    return recovered;
 }
 
 EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
