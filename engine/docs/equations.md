@@ -623,14 +623,16 @@ $$
 - Section: Contribution intermediates / Dipole-dipole
 - Status: Source equation
 - Source: [Gross2006], Eqs.~(10)--(16) and Table 1
-- Description: Pair and triplet correlation integrals with chain-length-interpolated coefficients.
-- Change note: The unlike energy in J2 is the geometric mean without k_ij.
+- Description: Pair and triplet correlation integrals with chain-length-interpolated coefficients, shared by the dipole (Table 1) and the quadrupole ([Gross2005], Eqs.~(12)--(19) and Table 2).
+- Change note: The unlike energy in J2 is the geometric mean without k_ij. Only the dipole caps its chain lengths at 2 (ADR 0011); the quadrupole uses the uncapped $m_{ij}$, $m_{ijk}$ (ADR 0014).
 
 $$
 J_{2,ij}=\sum_{n=0}^{4}\left(a_{n,ij}+b_{n,ij}\frac{\epsilon_{ij}}{kT}\right)\eta^n,\quad
 J_{3,ijk}=\sum_{n=0}^{4}c_{n,ijk}\eta^n,\quad
 a_{n}=a_{0n}+\frac{m-1}{m}a_{1n}+\frac{m-1}{m}\frac{m-2}{m}a_{2n},\quad
-m_{ij}=\min\!\left(\sqrt{m_im_j},2\right),\ m_{ijk}=\min\!\left((m_im_jm_k)^{1/3},2\right),\ \epsilon_{ij}=\sqrt{\epsilon_i\epsilon_j}.
+\epsilon_{ij}=\sqrt{\epsilon_i\epsilon_j},\\
+\text{dipole: } m_{ij}=\min\!\left(\sqrt{m_im_j},2\right),\ m_{ijk}=\min\!\left((m_im_jm_k)^{1/3},2\right);\qquad
+\text{quadrupole: } m_{ij}=\sqrt{m_im_j},\ m_{ijk}=(m_im_jm_k)^{1/3}.
 $$
 
 ## `dipolar_second_order`
@@ -1548,6 +1550,43 @@ $$
 =\left(m,\sigma,\epsilon/k_B\right),
 \qquad
 \boldsymbol{k}=\boldsymbol{l}=(0).
+$$
+
+## `quadrupolar_helmholtz`
+
+- Section: Contribution intermediates / Quadrupole-quadrupole
+- Status: Source equation
+- Source: [Gross2005], Eq.~(8)
+- Description: Optional third-order Padé quadrupole-quadrupole Helmholtz contribution; zero when every quadrupolar species is absent.
+- Change note: Admitted as an opt-in family by ADR 0014; it shares the dipole's Padé form and J integrals.
+
+$$
+a^{qq}=\frac{A_2}{1-A_3/A_2},\qquad a^{qq}=0\ \text{if}\ A_2=0.
+$$
+
+## `quadrupolar_second_order`
+
+- Section: Contribution intermediates / Quadrupole-quadrupole
+- Status: Exact derivation
+- Source: [Gross2005], Eq.~(9) with $q_i=(\epsilon_i/kT)n_{Q,i}Q_i^{*2}$
+- Description: Second-order quadrupole-quadrupole perturbation term.
+- Change note: The reduced moment $q_i=n_{Q,i}Q_i^2/(4\pi\varepsilon_0kTm_i\sigma_i^5)$ absorbs $\epsilon_i$.
+
+$$
+A_2=-\frac{9\pi}{16}\widehat{\rho}\sum_i\sum_j x_ix_j\frac{\sigma_i^5\sigma_j^5}{\sigma_{ij}^7}q_iq_jJ_{2,ij}.
+$$
+
+## `quadrupolar_third_order`
+
+- Section: Contribution intermediates / Quadrupole-quadrupole
+- Status: Exact derivation
+- Source: [Gross2005], Eq.~(10) with the same $q_i$ and $J_{3,ij}=0$ (Eq.~(14))
+- Description: Third-order quadrupole-quadrupole perturbation term.
+- Change note: $(4\pi^2/3)(3/4)^3=9\pi^2/16$; the sign is positive, as in Eq.~(A11).
+
+$$
+A_3=\frac{9\pi^2}{16}\widehat{\rho}^{\,2}\sum_i\sum_j\sum_k x_ix_jx_k
+\frac{\sigma_i^5\sigma_j^5\sigma_k^5}{\sigma_{ij}^3\sigma_{ik}^3\sigma_{jk}^3}q_iq_jq_kJ_{3,ijk}.
 $$
 
 ## `reaction_affinity`

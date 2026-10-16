@@ -13,6 +13,7 @@ Correct mathematics is not weakened to match an implementation defect.
 |---|---|---|
 | Gross2001 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2001, 40, 1244-1260, DOI `10.1021/ie0003887` | PC-SAFT hard-chain, dispersion, pressure, chemical potential, fugacity, and residual properties |
 | Gross2006 | Gross and Vrabec, *AIChE J.* 2006, 52, 1194-1204, DOI `10.1002/aic.10683` | Optional dipole-dipole term, Eqs. (7)-(16) and Table 1 constants; Table 2 PCP-SAFT parameters (ADR 0011) |
+| Gross2005 | Gross, *AIChE J.* 2005, 51, 2556-2568, DOI `10.1002/aic.10502` | Optional quadrupole-quadrupole term, Eqs. (8)-(19) and Table 2 constants; Table A1 PCP-SAFT parameters (ADR 0014) |
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
@@ -107,7 +108,8 @@ paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
 separate dipolar-density-perturbation relative-permittivity formulation; ADR 0011
-readmits only the optional dipole-dipole term of section 4.1.
+readmits the optional dipole-dipole term of section 4.1 and ADR 0014 the optional
+quadrupole-quadrupole term of section 4.2. The dipole-quadrupole cross term stays retired.
 The common Helmholtz definition owns thermodynamic derivatives. Independent
 finite-difference formulas belong to numerical verification, not an alternate
 production equation owner.
@@ -246,6 +248,26 @@ outside the claim; public actions report a support change there. The constants a
 Lennard-Jones plus point-dipole simulations at 0.55 ≤ T/T_c ≤ 0.99 with
 elongation L* ≤ 1. Polar parameters are valid only with their own fitted m, σ,
 ε/k and k_ij (ADR 0011).
+
+### 4.2 Optional quadrupole-quadrupole term
+
+A model that declares `polar: quadrupole-quadrupole` adds the Gross2005 third-order
+Padé quadrupole-quadrupole contribution instead. Every component supplies
+`quadrupole_moment` (debye angstrom) and `quadrupole_count` n_Q; zero marks a
+nonquadrupolar species. The reduced moment is
+`q_i = n_Q,i Q_i^2/(4π ε_0 k T m_i σ_i^5)`, with the same debye bridge as the dipole,
+and the J integrals use the uncapped `m_ij = (m_i m_j)^0.5` and
+`m_ijk = (m_i m_j m_k)^(1/3)` of source Eqs. 18-19. The two-body third-order
+integral is zero (Eq. 14).
+
+Defining relation: [EqID: `quadrupolar_helmholtz`](../equations.md#quadrupolar_helmholtz), [EqID: `quadrupolar_second_order`](../equations.md#quadrupolar_second_order), [EqID: `quadrupolar_third_order`](../equations.md#quadrupolar_third_order), [EqID: `dipolar_integrals`](../equations.md#dipolar_integrals).
+
+The absent-species limit and the support-change status are those of section 4.1.
+The constants are fitted to two-centre Lennard-Jones plus point-quadrupole
+simulations at elongations 0 ≤ L* ≤ 0.8 (m up to 1.8447) and 0.5 ≤ T/T_c ≤ 0.99;
+larger m, such as benzene's 2.2463, is the source's own extrapolation. The source
+finds its mixing rule unsuitable for real mixtures with more than one quadrupolar
+component. A model declares either the dipole or the quadrupole term, never both.
 
 ## 5. Association
 

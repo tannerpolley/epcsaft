@@ -151,6 +151,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "gross-2005",
+      "packet_version": "1",
+      "packet_path": "data/packets/gross-2005/1",
+      "packet_fingerprint": "34f86df6c97080c4d3f3537fa88f08bd93c51959e32c9dfa864d7efc661957bb",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "gross-sadowski-2001",
       "packet_version": "3",
       "packet_path": "data/packets/gross-sadowski-2001/3",

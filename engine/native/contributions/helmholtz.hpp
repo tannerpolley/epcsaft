@@ -106,6 +106,23 @@ inline constexpr std::array<std::array<double, 5>, 3> DIPOLE_C = {{
     {-0.6260979, 1.2924686, 1.6542783, -3.4396744, 0.0},
 }};
 
+// Gross (2005) Table 2, rows n = 0..4 of the quadrupolar J integrals.
+inline constexpr std::array<std::array<double, 5>, 3> QUADRUPOLE_A = {{
+    {1.2378308, 2.4355031, 1.6330905, -1.6118152, 6.9771185},
+    {1.2854109, -11.465615, 22.086893, 7.4691383, -17.197772},
+    {1.7942954, 0.7695103, 7.2647923, 94.486699, -77.148458},
+}};
+inline constexpr std::array<std::array<double, 5>, 3> QUADRUPOLE_B = {{
+    {0.4542718, -4.5016264, 3.5858868, 0.0, 0.0},
+    {-0.8137340, 10.064030, -10.876631, 0.0, 0.0},
+    {6.8682675, -5.1732238, -17.240207, 0.0, 0.0},
+}};
+inline constexpr std::array<std::array<double, 5>, 3> QUADRUPOLE_C = {{
+    {-0.5000437, 6.5318692, -16.014780, 14.425970, 0.0},
+    {2.0002094, -6.7838658, 20.383246, -10.895984, 0.0},
+    {3.1358271, 7.2475888, 3.0759478, 0.0, 0.0},
+}};
+
 template <typename Scalar>
 struct HelmholtzResult final {
     Scalar hard_chain;
@@ -221,15 +238,14 @@ Scalar hard_sphere_contact(const Fixed& reduced_diameter, const Scalar& zeta_2, 
 
 template <typename Scalar, typename Fixed>
 // EqID: dipolar_integrals
-// Coefficient a_n(m) = t0 + (m-1)/m t1 + (m-1)(m-2)/m^2 t2 with m capped at 2.
+// Coefficient a_n(m) = t0 + (m-1)/m t1 + (m-1)(m-2)/m^2 t2.
 Scalar dipolar_integral(
     const std::array<std::array<double, 5>, 3>& table,
     const std::array<std::array<double, 5>, 3>* energy_table,
     const Fixed& chain, const Fixed& reduced_energy, const Scalar& eta
 ) {
-    const Fixed m = scalar_select_less(chain, Fixed(2.0), chain, Fixed(2.0));
-    const Fixed first = (m - 1.0) / m;
-    const Fixed second = first * (m - 2.0) / m;
+    const Fixed first = (chain - 1.0) / chain;
+    const Fixed second = first * (chain - 2.0) / chain;
     Scalar value = Scalar(0.0);
     for (std::size_t n = table[0].size(); n-- > 0;) {
         Fixed coefficient = table[0][n] + first * table[1][n] + second * table[2][n];
@@ -244,55 +260,66 @@ Scalar dipolar_integral(
 
 template <typename Scalar, typename ParameterSet, typename Fixed>
 // EqID: dipolar_helmholtz
-// Gross and Vrabec (2006) Eqs. 7-9 with q_i = n_i mu_i^2 / (4 pi eps0 k T m_i sigma_i^3).
-// The unlike energy in J2 is sqrt(eps_i eps_j) without k_ij (source p. 1196).
-Scalar dipolar_helmholtz(
+// EqID: quadrupolar_helmholtz
+// Gross and Vrabec (2006) Eqs. 7-9 (dipole, n = 3) or Gross (2005) Eqs. 8-10 with J_3,ij = 0 (quadrupole, n = 5),
+// q_i = n_i M_i^2 / (4 pi eps0 k T m_i sigma_i^n) for the moment M. The unlike energy in J2 is sqrt(eps_i eps_j)
+// without k_ij. Only the dipole caps m_ij, m_ijk at 2 (GV2006 p. 1196); Gross (2005) Eqs. 18-19 do not.
+Scalar multipole_helmholtz(
     const Fixed& temperature, const Scalar& number_density, const Scalar& eta,
     const std::vector<Fixed>& x, const ParameterSet& parameters,
-    const std::vector<Fixed>& sigma, const std::vector<Fixed>& epsilon
+    const std::vector<Fixed>& sigma, const std::vector<Fixed>& epsilon, bool quadrupole
 ) {
     const std::size_t size = x.size();
     constexpr double scale = DEBYE_SQUARED_J_ANGSTROM3 / BOLTZMANN_J_PER_K;
+    const auto& moment = quadrupole ? parameters.quadrupole_moment_debye_angstrom : parameters.dipole_moment_debye;
+    const auto& count = quadrupole ? parameters.quadrupole_count : parameters.dipole_count;
+    const int power = quadrupole ? 5 : 3;
+    // value * factor^n as repeated left products, keeping the dipole's operation order.
+    const auto times = [](Fixed value, const Fixed& factor, int n) {
+        for (; n > 0; --n) value = value * factor;
+        return value;
+    };
+    const auto chain = [quadrupole](const Fixed& m) {
+        return quadrupole ? m : scalar_select_less(m, Fixed(2.0), m, Fixed(2.0));
+    };
     std::vector<Fixed> q(size, Fixed(0.0));
     std::vector<std::size_t> polar;
     for (std::size_t i = 0; i < size; ++i) {
-        const double mu = parameters.dipole_moment_debye[i];
-        if (mu == 0.0 || parameters.dipole_count[i] == 0.0) continue;
+        if (moment[i] == 0.0 || count[i] == 0.0) continue;
         polar.push_back(i);
-        q[i] = parameters.dipole_count[i] * mu * mu * scale
-            / (temperature * parameters.segment_count[i] * sigma[i] * sigma[i] * sigma[i]);
+        q[i] = count[i] * moment[i] * moment[i] * scale / times(temperature * parameters.segment_count[i], sigma[i], power);
     }
     Scalar second = Scalar(0.0);
     Scalar third = Scalar(0.0);
     for (const std::size_t i : polar) {
-        const Fixed volume_i = sigma[i] * sigma[i] * sigma[i];
+        const Fixed volume_i = times(sigma[i], sigma[i], power - 1);
         for (const std::size_t j : polar) {
-            const Fixed volume_j = sigma[j] * sigma[j] * sigma[j];
+            const Fixed volume_j = times(sigma[j], sigma[j], power - 1);
             const Fixed sigma_ij = 0.5 * (sigma[i] + sigma[j]);
             const Scalar j2 = dipolar_integral<Scalar, Fixed>(
-                DIPOLE_A, &DIPOLE_B,
-                scalar_sqrt(parameters.segment_count[i] * parameters.segment_count[j]),
+                quadrupole ? QUADRUPOLE_A : DIPOLE_A, quadrupole ? &QUADRUPOLE_B : &DIPOLE_B,
+                chain(scalar_sqrt(parameters.segment_count[i] * parameters.segment_count[j])),
                 scalar_sqrt(epsilon[i] * epsilon[j]) / temperature, eta);
-            second += x[i] * x[j] * volume_i * volume_j
-                / (sigma_ij * sigma_ij * sigma_ij) * q[i] * q[j] * j2;
+            second += x[i] * x[j] * volume_i * volume_j / times(sigma_ij, sigma_ij, 2 * power - 4) * q[i] * q[j] * j2;
             for (const std::size_t k : polar) {
                 const Scalar j3 = dipolar_integral<Scalar, Fixed>(
-                    DIPOLE_C, nullptr,
-                    scalar_exp(scalar_log(parameters.segment_count[i]
-                        * parameters.segment_count[j] * parameters.segment_count[k]) / 3.0),
+                    quadrupole ? QUADRUPOLE_C : DIPOLE_C, nullptr,
+                    chain(scalar_exp(scalar_log(parameters.segment_count[i]
+                        * parameters.segment_count[j] * parameters.segment_count[k]) / 3.0)),
                     Fixed(0.0), eta);
-                third += x[i] * x[j] * x[k] * volume_i * volume_j
-                    * sigma[k] * sigma[k] * sigma[k]
-                    / (sigma_ij * 0.5 * (sigma[i] + sigma[k]) * 0.5 * (sigma[j] + sigma[k]))
-                    * q[i] * q[j] * q[k] * j3;
+                const Fixed triplet = sigma_ij * 0.5 * (sigma[i] + sigma[k]) * 0.5 * (sigma[j] + sigma[k]);
+                third += times(x[i] * x[j] * x[k] * volume_i * volume_j, sigma[k], power)
+                    / times(triplet, triplet, power - 3) * q[i] * q[j] * q[k] * j3;
             }
         }
     }
     // EqID: dipolar_second_order
-    const Scalar a2 = -PI * number_density * second;
+    // EqID: quadrupolar_second_order
+    const Scalar a2 = (quadrupole ? -9.0 * PI / 16.0 : -PI) * number_density * second;
     // EqID: dipolar_third_order
-    const Scalar a3 = -4.0 * PI * PI / 3.0 * number_density * number_density * third;
-    // a_dd = A2 / (1 - A3/A2). With every dipole absent A2 = A3 = 0 and the Pade factor
+    // EqID: quadrupolar_third_order
+    const Scalar a3 = (quadrupole ? 9.0 * PI * PI / 16.0 : -4.0 * PI * PI / 3.0) * number_density * number_density * third;
+    // a_polar = A2 / (1 - A3/A2). With every moment absent A2 = A3 = 0 and the Pade factor
     // is taken as its limit 1; both selected operands avoid 0/0 on the tape.
     return a2 * scalar_select_less(Scalar(0.0), a2 * a2, a2, Scalar(1.0))
         / scalar_select_less(Scalar(0.0), a2 * a2, a2 - a3, Scalar(1.0));
@@ -472,13 +499,14 @@ HelmholtzResult<Scalar> residual_helmholtz(
         -2.0 * PI * number_density * integral_1 * first_moment -
         PI * number_density * mean_segment_count * c1 * integral_2 * second_moment;
 
-    // Optional: an undeclared polar family leaves the dipole arrays empty.
+    // Optional: an undeclared polar family leaves the dipole and quadrupole arrays empty.
     Scalar dipolar = Scalar(0.0);
-    if (!parameters.dipole_moment_debye.empty()) {
+    const bool quadrupole = !parameters.quadrupole_moment_debye_angstrom.empty();
+    if (quadrupole || !parameters.dipole_moment_debye.empty()) {
         const std::vector<Fixed> epsilon(
             parameters.dispersion_energy_over_k.begin(), parameters.dispersion_energy_over_k.end());
-        dipolar = dipolar_helmholtz(
-            temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon);
+        dipolar = multipole_helmholtz(
+            temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon, quadrupole);
     }
 
     // EqID: association_helmholtz

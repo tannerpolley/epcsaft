@@ -18,6 +18,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `figiel-yu-held-2025` | 4 | 2, 3, 4 | Figiel, Yu and Held 2025 full solvent and ion set, including H+, sulfate and vanadium ions. |
 | `gross-2001-methane-ethane` | 3 | 2, 3 | Methane-ethane binary (Gross and Sadowski 2001, k_ij = 0). |
 | `gross-2001-propane` | 3 | 2, 3 | Pure propane (Gross and Sadowski 2001). |
+| `gross-2005` | 1 | 1 | Gross 2005 quadrupolar CO2, N2 and benzene; valid only with the quadrupole-quadrupole family, not as nonpolar PC-SAFT parameters. |
 | `gross-sadowski-2001` | 3 | 2, 3 | Gross and Sadowski 2001 Table 2: 78 nonassociating pure fluids (alkanes, alkenes, aromatics, gases, esters, ethers, halocarbons). |
 | `gross-vrabec-2006` | 1 | 1 | Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters. |
 | `hamer-wu-1972-aqueous-alkali-halides` | 1 | 1 | Observations, not parameters: evaluated molality-scale mean ionic activity coefficients of six aqueous 1:1 salts at 298.15 K. |
@@ -58,7 +59,7 @@ Current packet versions whose parameter files hold the component.
 | `any-cation` | `zuber-2014-electrolyte-permittivity/1` |
 | `argon` | `gross-sadowski-2001/3` |
 | `barium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `benzene` | `gross-sadowski-2001/3`, `hda-pc-saft/1` |
+| `benzene` | `gross-2005/1`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `bicarbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `biphenyl` | `gross-sadowski-2001/3` |
 | `bromate-anion` | `held-cameretti-sadowski-2008/4` |
@@ -69,7 +70,7 @@ Current packet versions whose parameter files hold the component.
 | `butanone` | `gross-vrabec-2006/1` |
 | `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `held-2014-strategy2/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `carbamate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
-| `carbon-dioxide` | `gross-sadowski-2001/3`, `mea-co2-h2o-nine-species-estimation/5` |
+| `carbon-dioxide` | `gross-2005/1`, `gross-sadowski-2001/3`, `mea-co2-h2o-nine-species-estimation/5` |
 | `carbon-disulfide` | `gross-sadowski-2001/3` |
 | `carbon-monoxide` | `gross-sadowski-2001/3` |
 | `carbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
@@ -142,7 +143,7 @@ Current packet versions whose parameter files hold the component.
 | `n-propyl-propanoate` | `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
 | `neopentane` | `gross-sadowski-2001/3` |
 | `nitrate-anion` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `nitrogen` | `gross-sadowski-2001/3` |
+| `nitrogen` | `gross-2005/1`, `gross-sadowski-2001/3` |
 | `nonadecane` | `gross-sadowski-2001/3` |
 | `nonane` | `gross-sadowski-2001/3` |
 | `o-xylene` | `gross-sadowski-2001/3` |

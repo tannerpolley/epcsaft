@@ -566,7 +566,7 @@ std::vector<IdealCorrelation> selected_ideal_correlations(
 }
 
 // {ideal and total entropy, every other result}: a neutral insertion follows its infinite-dilution limit (#73)
-// except through x ln x and in a model with the dipolar term, whose A2-only branch with every dipole absent
+// except through x ln x and in a model with a multipole term, whose A2-only branch with every moment absent
 // omits A3 beyond second composition order (full EOS 4.1); an ionic insertion is singular throughout.
 std::array<PropertyActionStatus, 2> support_status(
     const HelmholtzModel& model, const std::vector<double>& composition,
@@ -581,7 +581,9 @@ std::array<PropertyActionStatus, 2> support_status(
     }
     const auto status = [&](bool singular) { return ionic ? PropertyActionStatus::IonicInsertion
         : singular ? PropertyActionStatus::SupportChange : PropertyActionStatus::Available; };
-    return {status(support), status(support && !model.parameters().dipole_count.empty())};
+    const auto& parameters = model.parameters();
+    const bool multipole = !parameters.dipole_count.empty() || !parameters.quadrupole_count.empty();
+    return {status(support), status(support && multipole)};
 }
 
 PropertyActionBatch unavailable_batch(
