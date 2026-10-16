@@ -39,7 +39,7 @@ project_map: {
     "engine.core": {"name": "Core", "parent": "engine", "purpose": "Constants, coordinates, numerical policy and diagnostics."},
     "engine.contributions": {"name": "Contributions", "parent": "engine", "purpose": "Ideal and individual residual Helmholtz formulations."},
     "engine.properties": {"name": "Properties", "parent": "engine", "purpose": "State evaluation, Ideal/Residual/Total quantities, density closure and derivative chains."},
-    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions; PH/PS/UV and discovery are future scope in GitHub issues."},
+    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions, neutral nonreactive PH/PS and fixed-T/P phase discovery; UV and charged or reacting PH/PS are unavailable."},
     "engine.regression": {"name": "Regression", "parent": "engine", "purpose": "Observation composition, fitting and fit diagnostics."},
     "engine.surface": {"name": "Surface", "parent": "engine", "purpose": "Physical input construction, resolution and admission."},
     "engine.bindings": {"name": "Bindings/Python", "parent": "engine", "purpose": "Native-language translation and the public Python input/output interfaces."},
