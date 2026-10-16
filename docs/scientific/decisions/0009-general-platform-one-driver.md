@@ -32,8 +32,8 @@ limited-memory equilibrium replacements are not authorized. This requirement
 does not qualify the existing Hessian: pinned/free-intensive formulation,
 derivative correctness and demanded-case cost remain work in the implementation
 plan. Lower-level density/association root kernels remain distinct. Material limitations require an owner
-decision rather than a silent second driver. Solids remain a separately
-justified extension. Runtime budgets retain their current numeric owner.
+decision rather than a silent second driver. Pure stoichiometric solids use
+this driver ([ADR 0013](0013-pure-solids-one-driver.md)). Runtime budgets retain their current numeric owner.
 
 Obsolete stage designs, briefs, worker records and superseded architecture
 ADRs are preserved in Git at `2985cd4`; current scientific evidence remains

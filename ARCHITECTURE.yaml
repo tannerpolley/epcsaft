@@ -160,7 +160,7 @@ formulation:
   # All admitted specifications use one driver and shared energy/row owners.
   # Its numerical method and curvature must be qualified for each admitted domain.
   equilibrium_drivers: 1
-  not_expressible: [solids, augmented critical-point equations, kinetics]
+  not_expressible: [solid solutions, augmented critical-point equations, kinetics]
 
 naming:
   # No proper nouns in identifiers. Source names are citations, not symbols.

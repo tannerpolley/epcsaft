@@ -1485,6 +1485,28 @@ states it misses. Qualification covers homogeneous binary VLE azeotropes
 against FeOs `binary_azeotrope` (A1); uniqueness, global stability,
 heteroazeotropes, C > 2 and azeotrope-line continuation are outside it.
 
+### Pure stoichiometric solids
+
+A free solid's amount n_s is an Ipopt column with lower bound zero, no upper
+bound and no stationarity row: its bound multiplier carries the complementarity
+of EqID `solid_amount_complementarity`. One classification owner acts at the
+optimizer endpoint, after the KKT-weighted multiplier recovery, on the scaled
+affinity A_s/RT = λ·Bν_s − g_s/RT against the caller row criterion ε: present
+when A_s/RT ≥ −ε (row g_s/RT − λ·Bν_s = 0), absent otherwise (n_s = 0). The
+existing polish runs on that square classified declaration. Afterwards a present
+solid must keep n_s > 0 and an absent one A_s/RT ≤ ε; every violating solid
+flips in one round and the declaration is polished once more. A later violation
+is the typed failure naming the solids; a singular classified Jacobian
+(dependent Bν_s among present solids, or more present phases than the phase rule
+allows) is a singular failure naming the present solids. Admission does not
+refuse dependent stoichiometries, because polymorphs are physical. The Newton
+attempts are ineligible (a solid requires a source reference). Solved-state
+actions rebuild the classification from the central amounts (present exactly
+when n_s > 0) and are one-sided at the onset kink; T and P directions are
+admitted through order one, feed directions through the general order. The
+solid's ln K^ρ is compiled once at fixed T at the source pressure, with its first
+T slope where the reference admits it; a scalar K refuses T actions.
+
 ### Polish and endpoint trace records
 
 Detailed capture emits `polish_direction` (undamped correction infinity norm,

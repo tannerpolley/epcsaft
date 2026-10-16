@@ -61,7 +61,7 @@ Curvature reduced_curvature_at(
     const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd constraints(0, n);
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        if (compiled.rows[row].kind == RowKind::Chemical || compiled.rows[row].kind == RowKind::Pressure) continue;
+        if (stationarity_row(compiled.rows[row].kind)) continue;
         constraints.conservativeResize(constraints.rows() + 1, n);
         constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, n);
     }
@@ -280,6 +280,8 @@ void clear_state(EquilibriumResult& result) {
     result.multipliers.clear();
     result.constraint_multipliers.clear();
     result.coordinates.clear();
+    result.solid_amounts.clear();
+    result.saturation_indices.clear();
 }
 
 std::vector<double> add_multipliers(
@@ -463,6 +465,8 @@ bool GibbsMinimizer::get_bounds_info(
         }
         ++offset;
     }
+    for (const auto& solid : compiled_.solids)
+        if (solid.column) x_l[offset++] = 0.0;  // EqID solid_amount_complementarity: n_s >= 0, no upper bound
     offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
@@ -502,11 +506,7 @@ bool GibbsMinimizer::get_starting_point(
 std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
     std::vector<std::size_t> result;
     for (std::size_t row = 0; row < compiled_.rows.size(); ++row) {
-        if (compiled_.feasibility_cell()
-            || (compiled_.rows[row].kind != RowKind::Chemical
-                && compiled_.rows[row].kind != RowKind::Pressure)) {
-            result.push_back(row);
-        }
+        if (compiled_.feasibility_cell() || !stationarity_row(compiled_.rows[row].kind)) result.push_back(row);
     }
     return result;
 }
@@ -789,16 +789,16 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
 
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 static EquilibriumResult run_driver_once(
-    const HelmholtzModel& model, const CompiledSystem& compiled,
+    const HelmholtzModel& model, const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool* initialized_warm = nullptr
 ) {
-    const double row_tolerance = compiled.problem.solver_options.value(policy::row);
+    const double row_tolerance = declared.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
     // A feasibility cell has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = row_tolerance
-        * (compiled.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
+        * (declared.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
@@ -806,7 +806,7 @@ static EquilibriumResult run_driver_once(
     std::optional<EquilibriumResult> limit_audit;
     if (limits && !audit) audit = &limit_audit.emplace(result);
     auto fallback = limits || newton ? initial : std::vector<double>{};
-    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope, limits);
+    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(declared, std::move(initial), &scope, limits);
     if (audit) audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const auto capture_driver = [&] {
         if (!audit) return;
@@ -836,7 +836,7 @@ static EquilibriumResult run_driver_once(
             static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
-            true, 1.0 / compiled.feed_total, &result.solver_settings, row_tolerance,
+            true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start);
         } catch (...) { capture_driver(); throw; }
     }();
@@ -863,8 +863,39 @@ static EquilibriumResult run_driver_once(
     };
     if (expired()) return limited_result();
     std::vector<double> point = nlp->solution();
-    if (point.empty()) point = limits || newton ? std::move(fallback) : boundary_start(compiled);
-    std::vector<double> full = !compiled.feasibility_cell() ? add_multipliers(compiled, point) : point;
+    if (point.empty()) point = limits || newton ? std::move(fallback) : boundary_start(declared);
+    std::vector<double> full = !declared.feasibility_cell() ? add_multipliers(declared, point) : point;
+    // ALG-EQUILIBRIUM: each free solid is classified once at the endpoint on its scaled affinity A_s/RT against the
+    // row criterion: present (A_s/RT >= -criterion, saturation row) or absent (n_s = 0). The classified declaration is
+    // square for the polish; after it a present solid keeps n_s > 0 and an absent one A_s/RT <= criterion.
+    std::optional<CompiledSystem> classified;
+    if (!declared.solids.empty()) {
+        classified = declared;
+        const auto at = declared.prepare(full, true);
+        for (std::size_t s = 0; s < declared.solids.size(); ++s) {
+            auto& solid = classified->solids[s];
+            solid.present = solid.column && declared.solid_affinity(at, s) >= -row_tolerance;
+            if (solid.column && !solid.present) full[*solid.column] = 0.0;
+        }
+    }
+    const CompiledSystem& compiled = classified ? *classified : declared;
+    // Names the solids violating their classification and, with `flip`, flips them. An absent amount is exactly zero.
+    const auto solid_violations = [&](bool flip) {
+        std::string names;
+        if (!classified) return names;
+        const auto at = compiled.prepare(full, true);
+        for (std::size_t s = 0; s < classified->solids.size(); ++s) {
+            auto& solid = classified->solids[s];
+            if (!solid.column) continue;
+            if (!solid.present) full[*solid.column] = 0.0;
+            if (solid.present ? full[*solid.column] > 0.0 : compiled.solid_affinity(at, s) <= row_tolerance) continue;
+            names += (names.empty() ? "" : ", ") + declared.problem.solids[s].name;
+            if (!flip) continue;
+            solid.present = !solid.present;
+            if (!solid.present) full[*solid.column] = 0.0;
+        }
+        return names;
+    };
     const bool free_amount_newton = newton && !compiled.feasibility_cell();
     std::vector<double> lower(newton ? full.size() : 0, -INFINITY), upper(lower.size(), INFINITY);
     const auto inside_box = [&](std::vector<double>& candidate) {
@@ -894,7 +925,8 @@ static EquilibriumResult run_driver_once(
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
-    if (non_error && !expired()) {
+    std::size_t polish_round = 0;
+    while (non_error && !expired()) {
         auto at = compiled.prepare(full, true);
         ++polish_evaluations;
         if (audit) audit->convergence.evaluations = ++audit->evaluations;
@@ -1049,6 +1081,7 @@ static EquilibriumResult run_driver_once(
         if (detailed && best != full) scope.probe("polish_stop", {best_raw, best_classified,
             static_cast<double>(final_step)}, final_step, "best classified point returned");
         full = std::move(best);
+        if (polish_round++ || solid_violations(true).empty()) break;  // one flip round, then one more polish
     }
     if (expired()) return limited_result();
     if (newton) {
@@ -1143,6 +1176,17 @@ static EquilibriumResult run_driver_once(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
+    std::string present;
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s)
+        if (compiled.solids[s].present) present += (present.empty() ? "" : ", ") + compiled.problem.solids[s].name;
+    if (const auto names = solid_violations(false); !names.empty()) {
+        topology_ok = false;
+        topology_failure = "solid classification violated after one flip round: " + names;
+    } else if (!present.empty() && !inspect_sensitivity(compiled, full).nonsingular) {
+        topology_ok = false;
+        result.convergence.stop = core::Stop::singular;
+        topology_failure = "rank-deficient classified equations with present solids: " + present;
+    }
     bool accepted = !expired() && non_error && topology_ok && (!newton || (!capped && in_bounds && corrected))
         && (result.convergence.stop == core::Stop::converged
         || (!newton && result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
@@ -1198,7 +1242,7 @@ static EquilibriumResult run_driver_once(
             } else if (row.kind == RowKind::Electro) {
                 result.constraint_multipliers.push_back(
                     -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
-            } else if (row.kind != RowKind::Chemical && row.kind != RowKind::Pressure) {
+            } else if (!stationarity_row(row.kind)) {
                 result.constraint_multipliers.push_back(0.0);
             }
         }
@@ -1268,6 +1312,10 @@ static EquilibriumResult run_driver_once(
     scope.probe("returned_mole_fractions", result.mole_fractions);
     scope.probe("returned_densities", result.molar_densities);
     if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s) {  // EqID solid_saturation_index
+        result.solid_amounts.push_back(compiled.solids[s].column ? full[*compiled.solids[s].column] : 0.0);
+        result.saturation_indices.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
+    }
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
     return result;

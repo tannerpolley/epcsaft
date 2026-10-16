@@ -83,6 +83,18 @@ struct ReactionSpec final {
     std::optional<ReactionReference> reference;
 };
 
+// EqID solid_standard_gibbs: a pure stoichiometric solid S -> sum_i nu_i A_i (charge neutral) with exactly one
+// source constant, its reference at the source pressure P0, and V_s in m^3/mol; Free or Pinned(0) amount.
+struct SolidSpec final {
+    std::string name;
+    std::vector<double> stoichiometry;
+    std::optional<double> equilibrium_constant;
+    std::optional<ReactionLogPolynomial> correlation;
+    std::optional<ReactionReference> reference;
+    double molar_volume_m3_per_mol = 0.0;
+    AmountSpec amount;
+};
+
 // Exact declaration equality, shared by fitting admission/grouping and continuation.
 inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
     const auto correlation = [](const auto& v) {
@@ -141,12 +153,18 @@ struct EquilibriumProblem final {
     bool azeotrope = false;  // EqID azeotrope_condition: a binary bubble/dew cell whose feed composition is the seed
     // Caller row criterion for the solve; the named policy value is the only default.
     policy::SolverOptions solver_options;
+    std::vector<SolidSpec> solids;
 };
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, Saturation
 };
+
+// Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
+inline bool stationarity_row(RowKind kind) noexcept {
+    return kind == RowKind::Chemical || kind == RowKind::Pressure || kind == RowKind::Saturation;
+}
 
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
@@ -161,6 +179,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
         return "critical_equations";
     case RowKind::EnvelopeCondition: return "envelope_local_condition";
     case RowKind::AzeotropeCondition: return "azeotrope_condition";
+    case RowKind::Saturation: return "solid_saturation_index";
     }
     return "unknown";
 }
@@ -254,12 +273,23 @@ struct RowSeries final {
     std::vector<double> temperature, pressure;
     std::vector<PhaseSeries> phase;
     std::array<std::vector<std::vector<double>>, 3> reaction_shift; // L, L_T, L_TT Taylor coefficients
+    std::vector<std::vector<double>> solid_amount, solid_affinity;  // [solid][k]: n_s and A_s/RT
     PropertyActionStatus energy = PropertyActionStatus::Available;
     PropertyActionDiagnostics energy_diagnostics;
     std::size_t maximum_energy_order = 0;
 };
 
 void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>& support);
+
+// A compiled solid: its amount column when free, B nu_s, ln K^rho(T, P0) and its T slope where admitted. A
+// present solid's row is solid_saturation_index; an absent one's is n_s = 0 (ALG-EQUILIBRIUM classification).
+struct CompiledSolid final {
+    std::optional<std::size_t> column;
+    std::vector<double> balance;
+    double log_k = 0.0;
+    std::optional<double> log_k_slope;
+    bool present = false;
+};
 
 struct CompiledSystem final {
     std::vector<double> optimizer_identity() const;
@@ -289,6 +319,11 @@ struct CompiledSystem final {
     bool conserves_total_moles = true;
     std::size_t jacobian_rank = 0;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
+    std::vector<CompiledSolid> solids;
+
+    // EqIDs solid_standard_gibbs and solid_saturation_index: g_s/RT and A_s/RT = lambda.B nu_s - g_s/RT.
+    double solid_gibbs(const PhasePoint& prepared, std::size_t solid) const;
+    double solid_affinity(const PhasePoint& prepared, std::size_t solid) const;
 
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
@@ -367,6 +402,8 @@ struct CompiledSystem final {
 CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
+// The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
+CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 
 // Conserved inventory only: maximum is mol in amount mode, dimensionless in fraction mode.
 // witness is n/N_feed, or (y, tau=N_feed/N); finite_witness uses the same chart.
@@ -438,6 +475,7 @@ struct EquilibriumResult final {
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
     std::optional<CriticalRecord> critical;
+    std::vector<double> solid_amounts, saturation_indices;  // per declared solid: mol, and SI_s in decades
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()
@@ -517,7 +555,9 @@ enum class SolvedStateObservableKind {
     PhaseLogActivity,
     PhaseGibbsMolarVolume,
     SystemEnthalpy,
-    EquilibriumIsobaricHeatCapacity
+    EquilibriumIsobaricHeatCapacity,
+    SolidAmount,  // `phase` is the solid ordinal
+    SolidSaturationIndex
 };
 
 struct SolvedStateObservable final {

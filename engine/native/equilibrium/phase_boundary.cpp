@@ -1063,6 +1063,10 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
         if (!same_reaction(x, y)) return "reaction " + reaction_name(x, r) + " differs";
     }
     if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
+    if (a.solids.size() != b.solids.size()) return "solid count differs";
+    for (std::size_t s = 0; s < a.solids.size(); ++s)
+        if (a.solids[s].stoichiometry != b.solids[s].stoichiometry || a.solids[s].amount.kind != b.solids[s].amount.kind)
+            return "solid " + a.solids[s].name + " differs";
     if (endpoint && a.topology_declared != b.topology_declared) return "topology declaration differs";
     if (a.feed.kind != b.feed.kind || a.feed.solvent != b.feed.solvent
         || a.feed.solvent_mass_kg != b.feed.solvent_mass_kg || a.feed.values.size() != b.feed.values.size())
@@ -1172,6 +1176,8 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
 
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
     core::Scope scope("continue_equilibrium");
+    if (!request.start_problem.solids.empty() || !request.target_problem.solids.empty())
+        throw std::invalid_argument("continuation is not admitted with solids");
     if (request.start_problem.envelope) return trace_envelope(model, request);
     ContinuationResult result;
     const auto& options = request.options;

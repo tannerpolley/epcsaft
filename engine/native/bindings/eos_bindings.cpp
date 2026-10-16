@@ -264,7 +264,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, 7)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
             parameter_derivative, parameter_convergence_error, pure_solvent_log_fugacity, pure_solvent_state,
-            solvent_status, solvent_cause, solvent_convergence);
+            solvent_status, solvent_cause, solvent_convergence, value_difference);
     nb::class_<epcsaft::SolventActivity>(module, "SolventActivity")
         EPCSAFT_READONLY(epcsaft::SolventActivity, solvent_activity, osmotic_coefficient,
             solvent_activity_parameter_derivative, osmotic_parameter_derivative, parameter_status, parameter_cause,
