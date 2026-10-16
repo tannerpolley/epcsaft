@@ -23,9 +23,9 @@ def rows(counts_b=(10, 15, 11), fractions_b=X, case=CASE, empty_b=(), skip_b=())
             planted = wheel == 'B' and name == case
             c = counts_b if planted else (10, 15, 11)
             work.append(dict(wheel=wheel, case=name, sample='warmup', point=name,
-                             **dict(zip(tool.count_keys(name), (*c, 12) if name == tool.F1 else c, strict=True))))
+                             **dict(zip(tool.count_keys(name), (*c, 12) if name in tool.FROZEN else c, strict=True))))
             for quantity in tool.quantities(name):
-                values = fractions_b if planted and quantity == 'mole_fractions' else X
+                values = fractions_b if planted and quantity == 'mole_fractions' else X[:1] if name == tool.CP else X
                 if wheel == 'B' and (name, quantity) in empty_b:
                     values = []
                 states.extend(dict(wheel=wheel, case=name, sample='warmup', point=name, quantity=quantity,
@@ -60,17 +60,23 @@ for key in tool.F1_COUNTS:
     planted[key] -= 2
     assert not tool.gate(work, states), f'{key} decrease'
 
-ceiling = 1.25 * tool.F1_IDENTITY['frozen']['serial_cpu_seconds']
-evaluation = dict(cpu_seconds=ceiling, seconds=ceiling, reference_taylor_evaluations=664)
+frozen = tool.FROZEN[tool.F1]['identity']['frozen']
+ceiling = 1.25 * frozen['serial_cpu_seconds']
+evaluation = dict(cpu_seconds=ceiling, seconds=ceiling, reference_taylor_evaluations=664, work=frozen['work'])
 fit = dict(seconds=120, critical_cpu_seconds=10, status='converged')
-assert not tool.f1_ceilings({'A': evaluation, 'B': evaluation}, [('A', fit), ('B', fit)])
-assert tool.f1_ceilings({'B': dict(evaluation, cpu_seconds=ceiling * 1.001)})
+assert not tool.ceilings(tool.F1, {'A': evaluation, 'B': evaluation}, [('A', fit), ('B', fit)])
+assert tool.ceilings(tool.F1, {'B': dict(evaluation, cpu_seconds=ceiling * 1.001)})
 invalid_control = subprocess.run([sys.executable, '-c',
     f"import runpy; tool = runpy.run_path({loader.path!r}); "
-    f"tool['f1_ceilings']({{'A': {dict(evaluation, cpu_seconds=20.490358956)!r}}})"],
+    f"tool['ceilings']({tool.F1!r}, {{'A': {dict(evaluation, cpu_seconds=ceiling * 1.007)!r}}})"],
     capture_output=True, text=True)
 assert invalid_control.returncode == 1 and 'invalid host measurement: rerun on a quieter host' in invalid_control.stderr
-assert tool.f1_ceilings({}, [('B', dict(fit, seconds=120.001))])
+assert tool.ceilings(tool.F1, {}, [('B', dict(fit, seconds=120.001))])
+# Only an arm doing the frozen work measures the host; a candidate B is held to the ceiling whatever its work.
+other = dict(evaluation, cpu_seconds=10 * ceiling, work=dict(frozen['work'], reference_columns=1))
+assert not tool.ceilings(tool.F1, {'A': other, 'B': evaluation})
+assert tool.ceilings(tool.F1, {'A': evaluation, 'B': other})
+assert not tool.ceilings(tool.CP, {'A': other, 'B': other}, control=True)
 assert tool.gate(*rows(skip_b=[tool.F1]), expect_change=True)
 print('F1 A=A, planted work increases, fixed ceilings and missing evidence: ok')
 
@@ -89,7 +95,7 @@ assert tool.gate(work, states, expect_change=True)
 controls = [({'A': evaluation}, {'A': fit, 'B': fit}),
             ({'A': evaluation, 'B': evaluation}, {'A': fit, 'B': dict(fit, critical_cpu_seconds=float('nan'))}),
             ({'A': evaluation, 'B': evaluation}, {'A': fit, 'B': dict(fit, status='failed')})]
-assert all(tool.f1_ceilings(evaluations, fits.items(), control=True) for evaluations, fits in controls)
+assert all(tool.ceilings(tool.F1, evaluations, fits.items(), control=True) for evaluations, fits in controls)
 
 work, states = rows()
 next(row for row in states if row['case'] == tool.F1 and row['wheel'] == 'B')['value'] = float('nan')

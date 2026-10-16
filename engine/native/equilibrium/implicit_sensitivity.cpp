@@ -803,6 +803,28 @@ Series system_enthalpy_series(const HelmholtzModel &model, const RowSeries &seri
     return enthalpy;
 }
 
+// Reference calorics an action reads, at least `floor`: {Gibbs degree order + 1, + 2 for Cp/Cv (xg(2,0)), 2 if nothing
+// moves; parameter columns; pressure columns if P moves or V, U, Cv read one}. Apparent Cp is the mixed (T, d) action.
+using CaloricNeed = std::array<std::size_t, 3>;
+CaloricNeed caloric_need(const EquilibriumProblem &problem, const SolvedStateActionRequest &request, bool zero,
+                         CaloricNeed floor) {
+    std::size_t extra = 1, apparent = 0, parameters = 0, pressure = 0;
+    for (const auto &o : request.observables) {
+        apparent |= o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
+        const bool property = o.kind == SolvedStateObservableKind::PhaseProperty && caloric_property(o.property);
+        const auto kind = property ? property_kind(o.property) : 0;
+        pressure |= o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume || kind == 1 || kind == 4;
+        if (kind >= 3) extra = 2;
+    }
+    bool moving = !zero && (apparent || problem.temperature.free || problem.pressure.free);
+    for (const auto &d : request.directions) {
+        for (double v : d.active_parameters) parameters |= !zero && v != 0.0;
+        moving |= parameters || (!zero && (d.temperature_k != 0.0 || d.pressure_pa != 0.0));
+        pressure |= !zero && (problem.pressure.free || d.pressure_pa != 0.0);
+    }
+    const std::size_t degree = moving ? std::min<std::size_t>(request.directions.size() + apparent + extra, 4) : 2;
+    return {std::max(floor[0], degree), std::max(floor[1], parameters), std::max(floor[2], pressure)};
+}
 struct ActionCenter final {
     Center center;
     std::vector<SolvedStateActionResult> central_results;
@@ -811,8 +833,7 @@ struct ActionCenter final {
     SolvedStateActionDiagnostics diagnostics;
     std::optional<ReferenceCalorics> calorics;
     std::optional<SolvedStateActionBatch> thermal_enthalpy;
-    std::size_t caloric_order = 0;
-    bool caloric_parameters = false;
+    CaloricNeed caloric{};
     SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
     SolvedStateActionStatus matrix_gate = SolvedStateActionStatus::Available;
     double classified_residual = 0.0;
@@ -850,7 +871,8 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
 
 static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
-    const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope
+    const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
+    const CaloricNeed& covering = {}
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -866,7 +888,7 @@ static SolvedStateActionBatch evaluate_action(
                                            std::vector<double>(model.active_parameters().size())};
         const bool new_thermal = !shared || !shared->thermal_enthalpy;
         if (new_thermal) {
-            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope);
+            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope, covering);
             if (!shared) {
                 for (std::size_t i = 0; i < first.results.size(); ++i) {
                     first.results[i].observable = request.observables[i];
@@ -876,9 +898,9 @@ static SolvedStateActionBatch evaluate_action(
             }
             shared->thermal_enthalpy = std::move(first);
         }
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope);
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
         enthalpy.directions.insert(enthalpy.directions.begin(), thermal);
-        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope);
+        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
         const double feed = std::accumulate(compiled.n_feed.begin(), compiled.n_feed.end(), 0.0);
         const auto &direction = request.directions.front();
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
@@ -937,6 +959,7 @@ static SolvedStateActionBatch evaluate_action(
     if (!shared) {
         shared.emplace();
         auto& common = *shared;
+        common.caloric = covering;
         common.center.prepared = compiled.prepare(central.coordinates);
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
@@ -988,24 +1011,13 @@ static SolvedStateActionBatch evaluate_action(
         return o.kind == SolvedStateObservableKind::SystemEnthalpy || other_caloric(o);
     };
     const bool needs_calorics = std::any_of(request.observables.begin(), request.observables.end(), caloric);
+    const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     if (reference_problem && needs_calorics) {
-        bool moving = false, parameters = false;
-        for (const auto &d : request.directions) {
-            moving |= d.temperature_k != 0.0 || d.pressure_pa != 0.0;
-            for (double v : d.active_parameters)
-                parameters |= v != 0.0;
-        }
-        moving |= problem.temperature.free || problem.pressure.free || parameters;
-        // A first enthalpy action differentiates g - T g_T + RT once: standard Gibbs degree two.
-        moving &= order > 1 || std::any_of(request.observables.begin(), request.observables.end(), other_caloric);
-        const auto consumed = moving ? std::min(order + 2, std::size_t(4)) : std::size_t(2);
-        if (!shared->calorics || consumed > shared->caloric_order ||
-            (parameters && !shared->caloric_parameters)) {
-            shared->caloric_order = std::max(consumed, shared->caloric_order);
-            shared->caloric_parameters |= parameters;
-            shared->calorics =
-                reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, true,
-                                   true, shared->caloric_parameters, shared->caloric_order);
+        const auto need = caloric_need(problem, request, zero, shared->caloric);
+        if (!shared->calorics || need != shared->caloric) {
+            shared->caloric = need;
+            shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure,
+                                                  true, need[2], need[1], need[0]);
         }
         calorics = &*shared->calorics;
     }
@@ -1139,7 +1151,6 @@ static SolvedStateActionBatch evaluate_action(
         batch.diagnostics.condition_estimate = shared->diagnostics.condition_estimate;
         gate = shared->matrix_gate;
     }
-    const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = problem.temperature.free ||
         std::any_of(controls.begin(), controls.end(), [](const auto &c) { return c[0] != 0.0; });
     if (gate == SolvedStateActionStatus::Available && !zero && thermal
@@ -1249,16 +1260,18 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     if (directions.empty()) throw std::invalid_argument("solved-state action order");
     std::vector<SolvedStateActionRequest> requests;
     requests.reserve(directions.size());
+    CaloricNeed cover{};  // the center's first reference request covers every direction, a zero one as moving
     for (const auto& direction : directions) {
         requests.push_back({observables, {direction}});
         validate_request(compiled, central, requests.back());
+        cover = caloric_need(compiled.problem, requests.back(), false, cover);
     }
     std::optional<ActionCenter> shared;
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
     const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
     for (const auto& request : requests)
-        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope));
+        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope, cover));
     return batches;
 }
 

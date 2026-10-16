@@ -607,9 +607,15 @@ double reaction_reference_log_scale(
     return scale;
 }
 
-std::optional<std::vector<NeutralReferenceReactionDiagnostic>> HelmholtzModel::stored_references(const std::vector<double>& inputs) const {
+std::optional<std::vector<NeutralReferenceReactionDiagnostic>> HelmholtzModel::stored_references(
+    const std::vector<double>& inputs, std::size_t first, std::size_t last) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto& [stored, result] : references_) if (stored == inputs) return result;
+    for (const auto& [stored, result] : references_) {
+        bool covers = stored.size() == inputs.size();
+        for (std::size_t i = 0; covers && i < inputs.size(); ++i)
+            covers = first <= i && i < last ? inputs[i] <= stored[i] : inputs[i] == stored[i];
+        if (covers) return result;
+    }
     return std::nullopt;
 }
 
@@ -647,9 +653,9 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
     // Every input of this pure function of the model, segment sizes first so the flat key is unambiguous.
-    std::vector<double> inputs{temperature, system_pressure, double(pressure_jets), double(solvent_anchor.has_value()),
-        solvent_anchor.value_or(0.0), double(temperature_order), double(parameter_jets), double(reference_order),
-        double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
+    std::vector<double> inputs{temperature, system_pressure, double(solvent_anchor.has_value()),
+        solvent_anchor.value_or(0.0), double(pressure_jets), double(temperature_order), double(parameter_jets),
+        double(reference_order), double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
         declaration.standard_molality_mol_per_kg, double(declaration.solute_molality_ratios.size()),
         double(declaration.species_reference.size()), double(stoichiometries.size())};
     inputs.insert(inputs.end(), declaration.solute_molality_ratios.begin(), declaration.solute_molality_ratios.end());
@@ -660,7 +666,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         inputs.insert(inputs.end(), {double(references[row].reference_pressure_pa.has_value()),
             references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
     }
-    if (auto stored = model.stored_references(inputs)) return std::move(*stored);
+    if (auto stored = model.stored_references(inputs, 4, 8)) return std::move(*stored);
     scope.probe("reference_cache_miss", 1.0);
     struct CachedTrace final {
         double pressure = 0.0;
@@ -723,7 +729,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
             for (std::size_t d = 2; d <= reference_order; ++d)
-                for (std::size_t b = 0; b <= d-c; ++b) {
+                for (std::size_t b = 0; b <= (pressure_jets ? d-c : 0); ++b) {
                     const std::size_t a = d-b-c;
                     if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
                     for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
