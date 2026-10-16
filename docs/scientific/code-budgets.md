@@ -82,6 +82,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #566 (lead allowance under #577: Properties +243 net / 318 gross,
+  Bindings +16 / 31, Python +14 / 24, other layers zero, against `d0e992c2`):
+  measured +123 / 141, −6 / 15 and +12 / 16. Properties **6,004 → 6,141**, the
+  count 6,080 plus its band 61. Bindings 2,164, Python 2,133 and total 27,042
+  stay within their ceilings. Request-only State response and partial molar
+  properties reuse the existing T/V Hessian columns; Henry constants are a thin
+  wrapper over the unchanged reaction-reference owner.
+
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,

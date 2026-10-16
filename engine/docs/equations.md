@@ -28,6 +28,30 @@ r^x_{kj}=u_{kj},\quad r^y_{ki}=\frac{f_{ki}(\theta(v),X_k(q_k))-y^M_{ki}}{\sigma
 \min_{v,u}\frac12\sum_{k,i}(r^y_{ki})^2+\frac12\sum_{k,j}(r^x_{kj})^2.
 $$
 
+## `heat_capacity_ratio`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Ratio of the total isobaric and isochoric molar heat capacities.
+- Change note: Computed only on request; unavailable unless the total c_p (`total_heat_capacity_cp`) and c_v (`total_heat_capacity_cv`) are available, finite and positive, so it needs ideal thermochemistry.
+
+$$
+\gamma=\frac{c_p}{c_v}.
+$$
+
+## `henry_constant_px`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Fugacity definition with the raw density-standard reference of `neutral_reaction_reference_transfer`; #566 design
+- Description: Fugacity-based Henry constant in Pa of a neutral solute i in one pure solvent of an all-neutral model: H = lim f_i/x_i, not the partial-pressure volatility p/x.
+- Change note: Admitted per solute on one unit reaction row of `neutral_reaction_reference_transfer` with the terminal pair of `reference_limit_terminal_pair`; that admission measures observed terminal change, not error to infinite dilution. Mixed or saline solvents and charged models are refused (NonNeutralDeclaration). The molality form M_s H^px is not exposed.
+
+$$
+H_i^{px}=\lim_{x_i\to0}\frac{f_i}{x_i}=P\phi_i^\infty=RT\rho_0\exp L_i^\infty,\qquad L_i=\ln\frac{\rho_m}{\rho_0}+\Phi_{n_i},\qquad\rho_0=1\ \mathrm{mol\,m^{-3}}.
+$$
+
 ## `independent_feed_measurement_coordinates`
 
 - Section: Parameter estimation
@@ -1062,6 +1086,54 @@ $$
 S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
 $$
 
+## `isentropic_compressibility`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Isentropic compressibility at fixed composition.
+- Change note: Computed only on request; availability of `isothermal_compressibility` and `heat_capacity_ratio`.
+
+$$
+\kappa_S=-\frac{1}{v}\left(\frac{\partial v}{\partial P}\right)_{s,\boldsymbol{x}}=\kappa_T\frac{c_v}{c_p}.
+$$
+
+## `isobaric_expansivity`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Isobaric expansivity at fixed composition.
+- Change note: Computed only on a derived_properties request; unavailable unless (dP/drho)_T,x is finite and positive. A positive slope does not certify phase stability.
+
+$$
+\alpha_P=\frac{1}{v}\left(\frac{\partial v}{\partial T}\right)_{P,\boldsymbol{x}}=\frac{P_T}{\rho_m P_\rho},\qquad P_T=\frac{P}{T}-RT\Phi_{VT}.
+$$
+
+## `isothermal_compressibility`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Isothermal compressibility at fixed composition.
+- Change note: Computed only on a derived_properties request; unavailable unless (dP/drho)_T,x is finite and positive. A positive slope does not certify phase stability.
+
+$$
+\kappa_T=-\frac{1}{v}\left(\frac{\partial v}{\partial P}\right)_{T,\boldsymbol{x}}=\frac{1}{\rho_m P_\rho},\qquad P_\rho=\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
+$$
+
+## `joule_thomson_coefficient`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Joule-Thomson coefficient (dT/dP at constant molar enthalpy) in K/Pa; negative values are physical.
+- Change note: Computed only on request; unavailable unless total c_p is available and positive. Numerator and denominator are both molar.
+
+$$
+\mu_{JT}=\left(\frac{\partial T}{\partial P}\right)_{h,\boldsymbol{x}}=\frac{Tv_T-v}{c_p},\qquad v_T=\left(\frac{\partial v}{\partial T}\right)_{P,\boldsymbol{x}}=-\frac{P_T}{P_v}.
+$$
+
 ## `log_fugacity_coefficient`
 
 - Section: Thermodynamic properties
@@ -1294,6 +1366,42 @@ $$
 V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
 \qquad
 V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
+$$
+
+## `partial_molar_enthalpy`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Partial molar enthalpy of component i at fixed T and P on the supplied ideal thermochemistry basis.
+- Change note: Computed only on request; availability of `partial_molar_volume` plus Available thermochemistry for the whole record. Component h_i^o comes from the existing interval selection and correlation owner at the record's standard pressure P^o. d_i is the fixed-P, fixed-x temperature derivative of ln phi_i. The x-weighted sum equals the total molar enthalpy.
+
+$$
+\bar h_i=h_i^\circ-RT^2d_i,\qquad d_i=\Phi_{n_iT}+\Phi_{n_iV}v_T+\frac{1}{T}-\frac{v_T}{v}.
+$$
+
+## `partial_molar_entropy`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Partial molar entropy of component i at fixed T and P on the supplied ideal thermochemistry basis.
+- Change note: Availability of `partial_molar_enthalpy`, and unavailable at x_i = 0, where ln x_i diverges. It keeps the same-density residual entropy of State; the x-weighted sum equals the total molar entropy.
+
+$$
+\bar s_i=s_i^\circ-RL_i-RTd_i,\qquad L_i=\ln\frac{x_i\rho_mRT}{P^\circ}+\Phi_{n_i}.
+$$
+
+## `partial_molar_volume`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Partial molar volume of component i at fixed T and P, the amount derivative of extensive volume, evaluated at N = 1 mol.
+- Change note: Computed only on request, in component order; unavailable for an IonicInsertion component or a nonpositive slope. A zero-fraction neutral species gives its finite insertion limit. For present ions only electroneutral combinations carry a physical claim.
+
+$$
+\bar v_i=-\frac{P_{n_i}}{P_V},\qquad P_{n_i}=RT\left(\frac{1}{V}-\Phi_{Vn_i}\right),\qquad P_V=-RT\left(\frac{1}{V^2}+\Phi_{VV}\right).
 $$
 
 ## `phase_dimensionless_helmholtz`
@@ -1718,6 +1826,18 @@ C_{VV}=\Delta\nu/V^2+\sum_i\nu_i\psi_{n_iVV},\\
 C_P=\frac{C_V}{p_V},\qquad
 C_{PP}=\frac{C_{VV}}{p_V^2}-\frac{C_Vp_{VV}}{p_V^3},\qquad
 g_P=-RT C_P,\quad g_{PP}=-RT C_{PP}.
+$$
+
+## `speed_of_sound`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Exact derivation from `pressure`, `residual_chemical_potential` and the T/V Hessian columns of State; #566 design
+- Description: Thermodynamic speed of sound in m/s: the composition-frozen acoustic limit without transport, chemical relaxation or phase redistribution.
+- Change note: Computed only on request; availability of `isentropic_compressibility`, plus a positive molar mass for every occupied species. M is in kg/mol; zero-fraction species do not contribute.
+
+$$
+w=\frac{1}{\sqrt{\rho_m M\kappa_S}}=\sqrt{\frac{c_p}{c_v}\frac{P_\rho}{M}},\qquad M=\sum_i x_iM_i.
 $$
 
 ## `standard_state_transfer_temperature_derivative`

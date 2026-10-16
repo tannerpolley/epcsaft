@@ -85,14 +85,17 @@ class Mixture:
         x: Sequence[float] | Mapping[str, float] | None = None,
         phase: str | None = None,
         anchor: State | None = None,
+        derived_properties: bool = False,
     ) -> State:
         if (rho is None) == (P is None):
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
         if rho is not None:
-            return self._model.state(T, rho, self._composition(x))
+            return self._model.state(T, rho, self._composition(x), derived_properties)
         assert P is not None
-        return self._model.state_at_pressure(T, P, self._composition(x), branch, anchor.molar_density if anchor else None)
+        return self._model.state_at_pressure(
+            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, derived_properties
+        )
 
     def reference(
         self,
@@ -108,7 +111,7 @@ class Mixture:
         if ions is None:
             fractions = tuple(solvent_fractions)
             native = _core.solvent_reference(self._model, T, P, fractions)
-            return Reference(self._model, T, P, fractions, None, None, native)
+            return Reference(self._model, self.component_ids, T, P, fractions, None, None, native)
         assert stoichiometry is not None
         try:
             ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
@@ -117,7 +120,7 @@ class Mixture:
         # The reference keeps its own copies: later caller edits cannot mix states with the native fugacities.
         fractions, formula = tuple(solvent_fractions), cast(tuple[int, int], tuple(stoichiometry))
         native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
-        return Reference(self._model, T, P, fractions, ion_indices, formula, native)
+        return Reference(self._model, self.component_ids, T, P, fractions, ion_indices, formula, native)
 
     def density_actions(
         self,

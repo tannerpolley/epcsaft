@@ -1165,4 +1165,37 @@ void neutral_property_pressure_hessian() {
     }
 }
 
+
+// #566: State's Joule-Thomson coefficient against two independent pressure-chart action routes:
+// (T v_T - v)/c_p with v_T from the volume action, and -(dh/dP)_T/(dh/dT)_P from total-enthalpy actions.
+void joule_thomson_identities() {
+    using namespace epcsaft;
+    const HelmholtzModel model(properties_support::neutral_binary(), {}, properties_support::p3_binary_record());
+    const double T = 300.0;
+    const std::vector<double> x{0.4, 0.6};
+    using Point = std::tuple<const char*, double, DensityBranch>;
+    for (const auto& [name, P, branch] : std::array<Point, 2>{{
+             {"vapor", 4.87e5, DensityBranch::Vapor}, {"dense", 9.52e6, DensityBranch::Liquid}}}) {
+        const auto state = model.state_at_pressure(T, P, x, branch, std::nullopt, true);
+        const auto actions = [&, P = P, branch = branch](const PressureActionDirection& direction) {
+            return model.pressure_actions(T, P, x, branch,
+                {PropertyObservable::MolarVolumeTemperatureDerivative, PropertyObservable::TotalEnthalpy}, {direction});
+        };
+        const auto t = actions({1.0, 0.0, {0.0, 0.0}, {}}), p = actions({0.0, 1.0, {0.0, 0.0}, {}});
+        const double mu = state.joule_thomson_coefficient.value();
+        const std::array<std::pair<const char*, double>, 2> routes{{
+            {"volume", (T * t.results[0].value.value() - 1.0 / state.molar_density)
+                / state.total_isobaric_heat_capacity.value()},
+            {"enthalpy", -p.results[1].action.value() / t.results[1].action.value()}}};
+        const auto inputs = recording_support::fields({recording_support::field("T_K", T),
+            recording_support::field("P_Pa", P), recording_support::field("x", x),
+            recording_support::field("rho", state.molar_density)});
+        for (const auto& [route, reference] : routes)
+            recording_support::compare(("joule-thomson/" + std::string(name) + "/" + route).c_str(),
+                "joule_thomson_coefficient", "K/Pa", mu, reference, inputs, "Relationship", "exact-identity",
+                "State mu_JT equals the isenthalpic pressure-action identity", "symmetric_close", 0.0, 1.0e-12,
+                recording_support::scalar_verdict(mu, reference, "symmetric_close", 0.0, 1.0e-12), "joule-thomson");
+    }
+}
+
 }  // namespace properties_checks

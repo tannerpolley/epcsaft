@@ -1805,7 +1805,8 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
 State HelmholtzModel::state(
     double temperature,
     double molar_density,
-    const std::vector<double>& mole_fractions
+    const std::vector<double>& mole_fractions,
+    bool derived_properties
 ) const {
     core::Scope scope("state");
     validate_composition(mole_fractions);
@@ -1853,6 +1854,7 @@ State HelmholtzModel::state(
     result.association = terms.association;
     result.debye_huckel = terms.debye_huckel;
     result.born = terms.born;
+    result.dipolar = terms.dipolar;
     result.bulk_relative_permittivity = electro.bulk_relative_permittivity;
     result.residual_helmholtz = derivatives.value;
     result.compressibility_factor = z;
@@ -1949,6 +1951,62 @@ State HelmholtzModel::state(
     result.molar_density = molar_density;
     result.pressure_density_derivative = dpressure_drho;
     result.site_fractions = sites;
+    if (!derived_properties) return result;
+    // Fixed-composition response and partial molar properties from the T/V Hessian columns above.
+    const auto finite = [](double value) { return std::isfinite(value) ? std::optional(value) : std::nullopt; };
+    const std::size_t components = mole_fractions.size(), width = derivatives.gradient.size();
+    const bool slope = std::isfinite(dpressure_drho) && dpressure_drho > 0.0;
+    const double volume_t = -dpressure_dt / dpressure_dv;  // (dv/dT)_P,x
+    if (slope) {
+        // EqID: isothermal_compressibility
+        result.isothermal_compressibility = finite(1.0 / (molar_density * dpressure_drho));
+        // EqID: isobaric_expansivity
+        result.isobaric_expansivity = finite(dpressure_dt / (molar_density * dpressure_drho));
+    }
+    const auto& cp = result.total_isobaric_heat_capacity;  // available only with a positive slope
+    const auto& cv = result.total_isochoric_heat_capacity;
+    if (cp && *cp > 0.0) {
+        // EqID: joule_thomson_coefficient
+        result.joule_thomson_coefficient = finite((temperature * volume_t - volume) / *cp);
+        if (cv && *cv > 0.0 && result.isothermal_compressibility) {
+            // EqID: heat_capacity_ratio
+            result.heat_capacity_ratio = finite(*cp / *cv);
+            // EqID: isentropic_compressibility
+            result.isentropic_compressibility = finite(*result.isothermal_compressibility * *cv / *cp);
+            double mass = 0.0;
+            bool masses = true;
+            for (std::size_t i = 0; i < components; ++i) if (mole_fractions[i] > 0.0) {
+                masses = masses && parameters_.molar_mass_kg_per_mol[i] > 0.0;
+                mass += mole_fractions[i] * parameters_.molar_mass_kg_per_mol[i];
+            }
+            // EqID: speed_of_sound
+            if (masses && result.heat_capacity_ratio)
+                result.speed_of_sound = finite(std::sqrt(*result.heat_capacity_ratio * dpressure_drho / mass));
+        }
+    }
+    auto& volumes = result.partial_molar_volume.emplace(components);
+    auto& enthalpies = result.partial_molar_enthalpy.emplace(components);
+    auto& entropies = result.partial_molar_entropy.emplace(components);
+    const bool ideal = result.thermochemistry_status == ThermochemistryStatus::Available && result.ideal_enthalpy;
+    for (std::size_t i = 0; slope && i < components; ++i) {
+        if (!result.residual_chemical_potential_over_rt[i]) continue;  // IonicInsertion
+        const double phi_nt = derivatives.hessian[(2 + i) * width], phi_nv = derivatives.hessian[(2 + i) * width + 1];
+        // EqID: partial_molar_volume
+        volumes[i] = finite(-GAS_CONSTANT_J_PER_MOL_K * temperature * (1.0 / volume - phi_nv) / dpressure_dv);
+        if (!ideal) continue;
+        const auto thermal = evaluate_ideal_correlation(
+            ideal_interval(thermochemistry_->component_intervals[i], temperature)->correlation,
+            temperature, thermochemistry_->standard_pressure);
+        // d_i = (d ln phi_i / dT)_P,x on the density chart
+        const double d = phi_nt + phi_nv * volume_t + 1.0 / temperature - volume_t / volume;
+        // EqID: partial_molar_enthalpy
+        enthalpies[i] = finite(thermal.h - GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * d);
+        if (mole_fractions[i] == 0.0) continue;  // ln x_i diverges
+        const double log_ideal = std::log(mole_fractions[i] * molar_density * GAS_CONSTANT_J_PER_MOL_K * temperature
+            / thermochemistry_->standard_pressure) + *result.residual_chemical_potential_over_rt[i];
+        // EqID: partial_molar_entropy
+        entropies[i] = finite(thermal.s - GAS_CONSTANT_J_PER_MOL_K * (log_ideal + temperature * d));
+    }
     return result;
 }
 
@@ -1957,13 +2015,14 @@ State HelmholtzModel::state_at_pressure(
     double pressure,
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density,
+    bool derived_properties
 ) const {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
     );
-    State result = state(temperature, root.molar_density, mole_fractions);
+    State result = state(temperature, root.molar_density, mole_fractions, derived_properties);
     if (result.log_fugacity_coefficient) {
         // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
         const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));
