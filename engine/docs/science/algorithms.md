@@ -2347,10 +2347,14 @@ a required finite positive pivot in K within each supplied correlation interval.
 Its form-free direction is the derived instance in
 `reaction_constant_coordinate_derivative`. Every trial applies it once to its
 fresh observation copy; zero shift preserves the supplied coefficients.
-It starts at physical zero, refuses another coordinate on the same reaction,
-and retains the existing named and species-reference admission in point readers.
+It starts at physical zero and admits plain coefficient coordinates on the same
+reaction. Plain assignments precede shift additions, independently of declaration
+order. Duplicate plain coefficients and two shifts on one reaction are refused.
+The existing named and species-reference admission remains in point readers.
 The fitted chart publishes the native law by reaction name, alongside the
-existing physical shift row. The native `reaction_log10_reciprocal` helper
+existing physical shift row and any plain coordinate values. To replay, attach
+the completed native laws and fitted EOS parameters without applying coordinates
+again. The native `reaction_log10_reciprocal` helper
 returns its decadic coefficients and refuses $c\ne0$.
 Sequence starts and minimax explicitly refuse this coordinate; their existing
 coefficient and EOS charts retain their behavior.

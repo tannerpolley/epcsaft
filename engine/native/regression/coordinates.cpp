@@ -77,8 +77,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
             const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
             (void)reaction_direction(target);
-            for (const auto& other : coordinates) if (&other != &coordinate && other.reaction && other.reaction->name == target.name)
-                check(!shift && other.reaction->coefficient != ReactionCoefficient::EnthalpyShift, "overlapping enthalpy shift");
             const equilibrium::ReactionSpec* prior = nullptr;
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
             std::vector<const equilibrium::EquilibriumProblem*> problems;
@@ -224,9 +222,10 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
         problems.push_back(&observation.problem);
         if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
     }
-    for (std::size_t row = 0; row < order.size(); ++row) {
+    // Assign absolute coefficients before adding shifts, independent of declaration order.
+    for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {
         const auto& target = coordinates[order[row]].reaction;
-        if (!target) continue;
+        if (!target || (target->coefficient == ReactionCoefficient::EnthalpyShift) != shift) continue;
         for (auto* problem : problems)
             for (auto& reaction : problem->reactions) {
                 if (reaction.name != target->name) continue;

@@ -74,6 +74,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #557 (rule 2): Parameter Regression **3,874 → 3,873**, the
+  formatted count 3,834 plus its band 39 after replacing the blanket overlap
+  refusal with ordered coefficient composition (22 gross additions, −2 net).
+  Total **26,810 → 26,809**, the sum of the layer ceilings. Other runtime
+  layers are unchanged.
 - 2026-10-15, #545 (owner): approved Equilibrium allowance +100 net / 160
   gross formatted lines relative to `0bec2bdf42e31bf37e8d4679169c8174b580408f`,
   with zero growth in other runtime layers. The measured change is +67 net
