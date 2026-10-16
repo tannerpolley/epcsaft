@@ -2,6 +2,8 @@
 
 #include "core/declared.hpp"
 
+#include <array>
+#include <string>
 #include <vector>
 
 // The parameter arrays the equations read. Plain data, no validation: the model
@@ -34,6 +36,14 @@ enum class IonicDispersion {
     ExcludeSameSign = 2,  // pairs with z_i z_j > 0, the diagonal included, take 0
 };
 
+// Quantities a temperature law may own (equation pair_parameter_temperature_law).
+enum class TemperatureLaw {
+    Kij = 1,                    // component pair
+    Lij = 2,                    // component pair
+    AssociationEnergyOverK = 3, // explicit site-pair edge, K
+    AssociationVolume = 4,      // explicit site-pair edge
+};
+
 struct FixedParameters {
     // Chain and segment geometry
     std::vector<int> sigma_term_component;
@@ -48,6 +58,18 @@ struct FixedParameters {
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;  // 0 inactive, 1 active, 2 Wolbach--Sandler rule edge
+
+    // Temperature laws q(T) = sum_p a_p (T - T_r)^p + s (1/T - 1/T_r): a reference per law; per coefficient
+    // its law, power p (-1 for s) and source identity; per owned slot (target, row-major slot with the
+    // smaller index first, law). Empty unless declared.
+    std::vector<double> temperature_law_reference_k;
+    std::vector<int> temperature_law_term_law;
+    std::vector<int> temperature_law_term_power;
+    std::vector<std::string> temperature_law_coefficient_identity;
+    std::vector<std::array<int, 3>> temperature_law_slot;
+    // Combining-rule edges evaluated at each temperature: edge, its two explicit self edges (site-pair
+    // slots), and the law of its volume correction c, kappa_ij = sqrt(kappa_ii kappa_jj) (1 - c), or -1.
+    std::vector<std::array<int, 4>> association_thermal_rule;
 
     // Electrolyte
     std::vector<int> charge_number;
@@ -99,6 +121,7 @@ struct ParameterRecord final : FixedParameters {
     std::vector<Scalar> association_volume;
     std::vector<Scalar> dielectric_volume_m3_per_mol;
     std::vector<Scalar> dielectric_temperature_k;
+    std::vector<Scalar> temperature_law_coefficient;
 
     std::size_t component_count() const { return segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }

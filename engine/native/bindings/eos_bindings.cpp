@@ -101,7 +101,7 @@ void register_thermal_inputs(nb::module_& module) {
         EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
             DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
             DispersionEnergyOverK, Kij, Lij, AssociationEnergyOverK, AssociationVolume, KijReciprocalTemperatureSlope,
-            DielectricVolume, DielectricTemperature);
+            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     nb::class_<ActiveParameter>(module, "ActiveParameter")
         .def(nb::init<ParameterFamily, std::vector<std::size_t>>(), nb::arg("family"), nb::arg("indices"))
@@ -125,7 +125,9 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)
         .def_prop_ro("site_count", &epcsaft::Parameters::site_count)
-        .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order");
+        .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order")
+        .def_ro("temperature_law_coefficient_identities", &epcsaft::Parameters::temperature_law_coefficient_identity,
+            "source identity of each TemperatureLawCoefficient slot");
     nb::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
         EPCSAFT_VALUES(epcsaft::DerivativeOrder, Value, Gradient, PressureSlope, Hessian);
     nb::enum_<epcsaft::NeutralProperty>(module, "NeutralProperty")

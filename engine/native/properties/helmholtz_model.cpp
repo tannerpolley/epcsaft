@@ -472,9 +472,17 @@ void validate_parameter_coordinate(
         require(indices.size() == 2 && first < indices[1]
             && indices[1] == column * size + row, "reciprocal parameter coordinate");
     }
+    // A law owns its slot and a thermal combining rule its edge, so their stored constants are unconsumed.
+    const auto owner = family == ParameterFamily::Lij ? TemperatureLaw::Lij
+        : family == ParameterFamily::AssociationEnergyOverK ? TemperatureLaw::AssociationEnergyOverK
+        : family == ParameterFamily::AssociationVolume ? TemperatureLaw::AssociationVolume : TemperatureLaw::Kij;
     for (const auto index : indices) {
         require(!active || !association || parameters.association_active[index] != 0, "inactive association coordinate");
         require(!active || !slope || parameters.k_ij_reference_temperature_k[index] > 0.0, "k_ij slope without reference temperature");
+        for (const auto& [target, slot, law] : parameters.temperature_law_slot)
+            require(!active || target != static_cast<int>(owner) || static_cast<std::size_t>(slot) != index, "unconsumed law-owned coordinate");
+        for (const auto& rule : parameters.association_thermal_rule)
+            require(!active || !association || static_cast<std::size_t>(rule[0]) != index, "unconsumed law-owned coordinate");
     }
 }
 
@@ -779,6 +787,10 @@ HelmholtzModel::HelmholtzModel(
             "association_energy_over_k symmetry");
     require(symmetric(parameters_.association_volume, sites),
             "association_volume symmetry");
+    // build_parameters admits law structure; coefficients are the active values a fit may change.
+    const std::size_t terms = parameters_.temperature_law_term_law.size();
+    require(parameters_.temperature_law_coefficient.size() == terms && parameters_.temperature_law_term_power.size() == terms
+        && finite_vector(parameters_.temperature_law_coefficient), "temperature_law_coefficient");
     for (const int component : parameters_.site_component) {
         require(component >= 0 && static_cast<std::size_t>(component) < components,
                 "site_component");
