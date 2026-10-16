@@ -1071,6 +1071,27 @@ void check_recovery() {
         "route reaches its reference pressure within 1e-8; ordinary successes are unchanged and recoveries keep their cause within the caps",
         passed == rows.size() && recovered > 0, recording_support::fields({recording_support::field("rows", rows.size()),
             recording_support::field("passed", passed), recording_support::field("recovered", recovered), recording_support::field("failures", failures)}));
+    // p02b through cooling_onset: the free-T dew seeded at 250 K is refused ordinarily; the recovered dew (chart
+    // correction to free T, fixed-P continuation) stands because no liquid trial descends at its temperature.
+    auto onset_dew = equilibrium_support::bubble_at(250.0);
+    onset_dew.phases[0].amount = AmountSpec::pinned(0.0);
+    onset_dew.phases[1].amount = AmountSpec::free();
+    onset_dew.temperature = FreeValue::variable(250.0);
+    onset_dew.pressure = FreeValue::fixed(2035211.5677328);
+    const auto onset_compiled = epcsaft::equilibrium::compile_problem(model, onset_dew);
+    const auto onset_ordinary = epcsaft::equilibrium::solve_compiled(onset_compiled);
+    const auto [onset, reports] = epcsaft::equilibrium::cooling_onset(onset_compiled);
+    const double onset_deviation = onset.success ? onset.temperature[0] / 239.370069623738 - 1.0 : INFINITY;
+    const bool descent = std::any_of(reports.begin(), reports.end(), [](const auto& report) {
+        return std::any_of(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; }); });
+    record_bool("e4-r/cooling-onset", "e4-r", "the refused free-T p02b dew recovers through cooling_onset to 239.370069623738 K "
+        "within 1e-8 with no competing liquid descent, its cause kept and its added work within the caps",
+        !onset_ordinary.success && std::abs(onset_deviation) <= 1.0e-8 && !reports.empty() && !descent
+            && onset.message.find("; recovered after: " + onset_ordinary.message) != std::string::npos && within_caps(onset, onset_ordinary),
+        recording_support::fields({recording_support::field("deviation", onset_deviation), recording_support::field("reports", reports.size()),
+            recording_support::field("added", std::vector<double>{double(onset.iterations - onset_ordinary.iterations),
+                double(onset.evaluations - onset_ordinary.evaluations), double(onset.hessian_calls - onset_ordinary.hessian_calls)}),
+            recording_support::field("message", onset.message)}));
     // Exhausted work on the 256 K dew: the public solve reports ordinary plus recovery work exactly; cutting each cap to
     // half of the full recovery's use, or an expired deadline, refuses with every counter within its cap (no work at all
     // after the deadline), the exhaustion latched.
