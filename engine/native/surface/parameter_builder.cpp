@@ -32,7 +32,7 @@ bool symmetric_field(const std::string& field) {
         || field == "k_ij_reciprocal_temperature_slope"
         || field == "k_ij_reference_temperature"
         || field == "association_energy_over_k"
-        || field == "association_volume";
+        || field == "association_volume" || field == "no_cross_association";
 }
 
 Index canonical_index(const ParameterEntry& entry) {
@@ -212,6 +212,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::string> scalar_fields;
     double ion_fraction_suppression = 0.0;
     std::vector<Rule> rules;
+    std::set<std::pair<std::size_t, std::size_t>> no_cross;
     std::map<std::size_t, std::size_t> sigma_term_components;
     std::map<std::size_t, std::size_t> permittivity_term_components;
     // Density-dependent forms consume only their own records (full EOS 6.2, 6.4).
@@ -347,6 +348,11 @@ Parameters build_parameters(const ParameterDocument& document) {
             require_index(entry, 6, "combining rule index");
             for (const auto index : entry.index) if (index >= sites) reject("site index out of range for " + where(entry));
             rules.push_back({entry.identity, {entry.index[0], entry.index[1], entry.index[2], entry.index[3], entry.index[4], entry.index[5]}});
+        } else if (entry.field == "no_cross_association") {
+            // A declaration marker, not an association quantity: every unlike site edge stays inactive.
+            const auto [i, j] = pair_index(entry, components);
+            if (unit_factor(entry, "dimensionless") * entry.magnitude != 0.0) reject("nonzero declaration " + where(entry));
+            no_cross.emplace(std::min(i, j), std::max(i, j));
         } else if (entry.field == "ionic_region_relative_permittivity"
                    || (entry.field == "ion_suppression_coefficient" && entry.index.empty())) {
             require_index(entry, 0, "scalar index");
@@ -476,6 +482,19 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.association_volume[output] = volume;
         result.association_volume[reverse] = volume;
     }
+    // Full EOS §5: omitted cross edges stay inactive, so each site-bearing component pair declares a cross
+    // edge or no_cross_association; nothing is inferred.
+    std::map<std::pair<std::size_t, std::size_t>, bool> cross;  // site-bearing component pair -> any active cross edge
+    for (std::size_t s = 0; s < sites; ++s) {
+        for (std::size_t t = 0; t < sites; ++t) {
+            const std::pair<std::size_t, std::size_t> pair(document.site_component[s], document.site_component[t]);
+            if (pair.first < pair.second) cross[pair] = cross[pair] || result.association_active[s * sites + t] != 0;
+        }
+    }
+    for (const auto& [pair, active] : cross)
+        if (no_cross.count(pair) == static_cast<std::size_t>(active))
+            reject((active ? "no_cross_association contradicts a cross edge: " : "missing cross association or no_cross_association: ")
+                   + document.component_ids[pair.first] + "/" + document.component_ids[pair.second]);
     // Selection fixes topology (full EOS §12): an uncharged selection has no
     // ionic term, so its packet-level electrolyte choices have no consumer.
     if (std::none_of(result.charge_number.begin(), result.charge_number.end(), [](int z) { return z != 0; })) {
@@ -484,6 +503,21 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.permittivity_form = {};
     }
     return result;
+}
+
+// NASA9 coefficients in units of the source gas constant, rescaled once to the Engine's.
+ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant) {
+    if (!std::isfinite(source_gas_constant) || source_gas_constant <= 0.0) reject("invalid source gas constant");
+    const double scale = source_gas_constant / GAS_CONSTANT_J_PER_MOL_K;
+    for (auto& intervals : record.component_intervals) {
+        validate_ideal_intervals(intervals);  // also refuses a species without intervals
+        for (auto& interval : intervals) {
+            auto* nasa9 = std::get_if<IdealNASA9>(&interval.correlation.form);
+            if (nasa9 == nullptr) reject("thermochemistry packet interval is not NASA9");
+            for (double& coefficient : nasa9->coefficients) coefficient *= scale;
+        }
+    }
+    return record;
 }
 
 }  // namespace epcsaft

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/parameters.hpp"
+#include "properties/thermochemistry.hpp"
 
 #include <cstddef>
 #include <string>
@@ -30,5 +31,6 @@ struct ParameterDocument final {
 };
 
 Parameters build_parameters(const ParameterDocument& document);
+ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant);
 
 }  // namespace epcsaft

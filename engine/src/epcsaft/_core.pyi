@@ -106,6 +106,7 @@ class Parameters:
     def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
+def prepare_thermochemistry(record: ThermochemistryRecord, source_gas_constant: float) -> ThermochemistryRecord: ...
 
 class IdealPolynomial:
     coefficients: list[float]

@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from epcsaft import DensityBranch, Mixture, ParameterError, Parameters, Pure
+from tests.equilibrium.test_trace_reliability import _mea_mapping
 from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
 
@@ -32,6 +33,7 @@ def close(left: float, right: float, relative: float) -> None:
 
 def test_relabelling_and_state_identities(evidence: Any) -> None:
     packet = parameters_json("mea-co2-h2o-nine-species-estimation", 4)
+    declared = _mea_mapping(packet)
     order = _MEA_ORDER
     reverse = tuple(reversed(order))
     x = (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)
@@ -39,16 +41,16 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     density = 3.0e4
     pressure_target = 1.0e5
     phase = "liquid"
-    first = Mixture(Parameters.from_json(packet, components=order)).state(
+    first = Mixture(Parameters.from_mapping(declared, components=order)).state(
         temperature, rho=density, x=x
     )
-    second = Mixture(Parameters.from_json(packet, components=reverse)).state(
+    second = Mixture(Parameters.from_mapping(declared, components=reverse)).state(
         temperature, rho=density, x=tuple(reversed(x))
     )
     first_fugacity = first.log_fugacity_coefficient
     second_fugacity = second.log_fugacity_coefficient
     fugacity_available = first_fugacity is not None and second_fugacity is not None
-    mixture = Mixture(Parameters.from_json(packet, components=order))
+    mixture = Mixture(Parameters.from_mapping(declared, components=order))
     state = mixture.state(temperature, P=pressure_target, x=x, phase=phase)
     anchored = mixture.state(
         temperature, P=pressure_target, x=x, phase=phase, anchor=state
