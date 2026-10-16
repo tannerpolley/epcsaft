@@ -1,11 +1,13 @@
 #include "surface/parameter_builder.hpp"
 
 #include "core/trace.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <map>
 #include <set>
 #include <sstream>
@@ -33,7 +35,7 @@ bool symmetric_field(const std::string& field) {
         || field == "k_ij_reference_temperature"
         || field == "association_energy_over_k"
         || field == "association_volume"
-        || field == "association_volume_correction";
+        || field == "association_volume_correction" || field == "no_cross_association";
 }
 
 Index canonical_index(const ParameterEntry& entry) {
@@ -226,6 +228,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::string> scalar_fields;
     double ion_fraction_suppression = 0.0;
     std::vector<Rule> rules;
+    std::set<std::pair<std::size_t, std::size_t>> no_cross;
     std::map<std::size_t, std::size_t> sigma_term_components;
     std::map<std::size_t, std::size_t> permittivity_term_components;
     std::map<std::size_t, std::pair<std::string, double>> laws;  // quantity, reference (0: constant correction)
@@ -391,6 +394,11 @@ Parameters build_parameters(const ParameterDocument& document) {
             }
         } else if (entry.field == "temperature_law_coefficient" || entry.field == "temperature_law_reciprocal_slope") {
             // Read in the term pass below, after every law is declared.
+        } else if (entry.field == "no_cross_association") {
+            // A declaration marker, not an association quantity: every unlike site edge stays inactive.
+            const auto [i, j] = pair_index(entry, components);
+            if (unit_factor(entry, "dimensionless") * entry.magnitude != 0.0) reject("nonzero declaration " + where(entry));
+            no_cross.emplace(std::min(i, j), std::max(i, j));
         } else if (entry.field == "ionic_region_relative_permittivity"
                    || (entry.field == "ion_suppression_coefficient" && entry.index.empty())) {
             require_index(entry, 0, "scalar index");
@@ -558,12 +566,88 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.association_volume[reverse] = volume;
     }
     if (!corrections.empty()) reject("unconsumed association_volume_correction");
+    // Full EOS §5: omitted cross edges stay inactive, so each site-bearing component pair declares a cross
+    // edge or no_cross_association; nothing is inferred.
+    std::map<std::pair<std::size_t, std::size_t>, bool> cross;  // site-bearing component pair -> any active cross edge
+    for (std::size_t s = 0; s < sites; ++s) {
+        for (std::size_t t = 0; t < sites; ++t) {
+            const std::pair<std::size_t, std::size_t> pair(document.site_component[s], document.site_component[t]);
+            if (pair.first < pair.second) cross[pair] = cross[pair] || result.association_active[s * sites + t] != 0;
+        }
+    }
+    for (const auto& [pair, active] : cross)
+        if (no_cross.count(pair) == static_cast<std::size_t>(active))
+            reject((active ? "no_cross_association contradicts a cross edge: " : "missing cross association or no_cross_association: ")
+                   + document.component_ids[pair.first] + "/" + document.component_ids[pair.second]);
     // Selection fixes topology (full EOS §12): an uncharged selection has no
     // ionic term, so its packet-level electrolyte choices have no consumer.
     if (std::none_of(result.charge_number.begin(), result.charge_number.end(), [](int z) { return z != 0; })) {
         result.electrolyte_form = {};
         result.ionic_dispersion = {};
         result.permittivity_form = {};
+    }
+    return result;
+}
+
+// NASA9 coefficients in units of the source gas constant, rescaled once to the Engine's.
+ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant) {
+    core::Scope scope("prepare_thermochemistry");
+    if (!std::isfinite(source_gas_constant) || source_gas_constant <= 0.0) reject("invalid source gas constant");
+    const double scale = source_gas_constant / GAS_CONSTANT_J_PER_MOL_K;
+    for (auto& intervals : record.component_intervals) {
+        validate_ideal_intervals(intervals);  // also refuses a species without intervals
+        for (auto& interval : intervals) {
+            auto* nasa9 = std::get_if<IdealNASA9>(&interval.correlation.form);
+            if (nasa9 == nullptr) reject("thermochemistry packet interval is not NASA9");
+            for (double& coefficient : nasa9->coefficients) coefficient *= scale;
+        }
+    }
+    return record;
+}
+
+ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted) {
+    core::Scope scope("fitted_document");
+    static const std::array<std::string, detail::PARAMETER_FAMILY_COUNT> fields({"segment_count", "sigma_constant",
+        "dispersion_energy_over_k", "k_ij", "l_ij", "association_energy_over_k", "association_volume", "born_diameter",
+        "debye_huckel_diameter", "packing_diameter", "ion_suppression_coefficient", "born_c_dielectric",
+        "ionic_region_relative_permittivity", "k_ij_reciprocal_temperature_slope", "dielectric_volume",
+        "dielectric_temperature", "temperature_law_coefficient"});  // ParameterFamily order
+    const Parameters base = build_parameters(start);
+    const auto charged = std::find_if(base.charge_number.begin(), base.charge_number.end(), [](int z) { return z != 0; });
+    ParameterDocument result = start;
+    std::map<std::pair<std::size_t, std::size_t>, std::string> units;
+    const auto& laws = base.temperature_law_coefficient_identity;  // a law term's slot is its identity's position
+    for (auto& entry : result.entries) {
+        std::size_t k = entry.index.empty() ? 0 : entry.index[0];
+        if (entry.index.size() == 2)  // a site pair or a component pair
+            k = k * (entry.field.rfind("association_", 0) == 0 ? start.site_component.size() : start.component_ids.size()) + entry.index[1];
+        // The builder spreads the scalar suppression coefficient over the charged slots.
+        if (entry.field == "ion_suppression_coefficient" && entry.index.empty()) {
+            if (charged == base.charge_number.end()) continue;
+            k = static_cast<std::size_t>(charged - base.charge_number.begin());
+        }
+        auto f = static_cast<std::size_t>(std::find(fields.begin(), fields.end(), entry.field) - fields.begin());
+        const bool term = entry.field.find("temperature_law_") == 0 || entry.field == "association_volume_correction";
+        const auto law = term ? std::find(laws.begin(), laws.end(), entry.identity) : laws.end();
+        if (law != laws.end()) f = fields.size() - 1, k = static_cast<std::size_t>(law - laws.begin());
+        if (f == fields.size()) continue;
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        units[{f, k}] = entry.unit;
+        const auto now = detail::family_values(fitted, family), was = detail::family_values(base, family);
+        if (now.second != was.second || std::memcmp(now.first + k, was.first + k, sizeof(double)) == 0) continue;
+        entry.magnitude = now.first[k] / (entry.unit == "liter / mole" ? unit_factor(entry, "molar volume") : 1.0);
+    }
+    const Parameters rebuilt = build_parameters(result);
+    for (std::size_t f = 0; f < fields.size(); ++f) {
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        const auto want = detail::family_values(fitted, family), got = detail::family_values(rebuilt, family);
+        if (want.second != got.second) reject("fitted " + fields[f] + " slot count differs from the document's");
+        for (std::size_t k = 0; k < want.second; ++k) {
+            if (std::memcmp(want.first + k, got.first + k, sizeof(double)) == 0) continue;
+            const auto unit = units.find({f, k});
+            reject("fitted " + fields[f] + " slot " + std::to_string(k)
+                + (unit == units.end() ? " has no document entry" : " does not round-trip in " + unit->second));
+        }
     }
     return result;
 }

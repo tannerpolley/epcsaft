@@ -291,6 +291,34 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "feos-gross-sadowski-2001",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-gross-sadowski-2001/1",
+      "packet_fingerprint": "75f8c9327337043642db49d785ccf7dd68714909a810cf4fd2bc3aad1487bcb3",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-gross-sadowski-2002",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-gross-sadowski-2002/1",
+      "packet_fingerprint": "2cf03c941d839b4d2cbdd501351233efc7ae73ef6e8d73deec0f55f561ba7934",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-esper-2023",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-esper-2023/1",
+      "packet_fingerprint": "a81f3030fd0603c34895aa58cb893f96b267951b93e42bd35a11e8f986afe7f9",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-rehner-2023",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-rehner-2023/1",
+      "packet_fingerprint": "c49d3e9e4f07693cc495f19c930e4b39f84349fba4f4ba926eb7348c14a4f7f0",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
       "packet_version": "1",
       "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",

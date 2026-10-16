@@ -108,6 +108,8 @@ class Parameters:
     def temperature_law_coefficient_identities(self) -> list[str]: ...
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
+def prepare_thermochemistry(record: ThermochemistryRecord, source_gas_constant: float) -> ThermochemistryRecord: ...
+def fitted_document(start: ParameterDocument, fitted: Parameters) -> ParameterDocument: ...
 
 class IdealPolynomial:
     coefficients: list[float]
@@ -330,6 +332,7 @@ class State:
     association: float
     debye_huckel: float
     born: float
+    dipolar: float
     bulk_relative_permittivity: float
     residual_helmholtz: float
     compressibility_factor: float
@@ -365,6 +368,20 @@ class State:
     thermochemistry_status: ThermochemistryStatus
     density_branch: DensityBranch
     stable_root_count: Optional[int]
+    # Requested by derived_properties=True, else None; fixed composition. None where the cause applies:
+    # nonpositive (dP/drho)_T for all, missing total Cp/Cv (thermochemistry) for Cp-dependent values,
+    # an unoccupied species without positive molar mass for sound.
+    isothermal_compressibility: Optional[float]  # 1/Pa
+    isobaric_expansivity: Optional[float]  # 1/K
+    heat_capacity_ratio: Optional[float]  # total Cp/Cv
+    isentropic_compressibility: Optional[float]  # 1/Pa
+    speed_of_sound: Optional[float]  # m/s, thermodynamic composition-frozen limit
+    joule_thomson_coefficient: Optional[float]  # K/Pa
+    # Per component (component_ids order); entries None for IonicInsertion, enthalpy/entropy None without
+    # Available thermochemistry, entropy None at zero mole fraction.
+    partial_molar_volume: Optional[list[Optional[float]]]  # m^3/mol
+    partial_molar_enthalpy: Optional[list[Optional[float]]]  # J/mol
+    partial_molar_entropy: Optional[list[Optional[float]]]  # J/(mol K)
 
 class DensityDiagnosticPoint:
     molar_density: float
@@ -410,7 +427,8 @@ class HelmholtzModel:
     solver_options: list[dict[str, Any]]
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
                  thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> None: ...
-    def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> State: ...
+    def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float],
+              derived_properties: bool = False) -> State: ...
     def neutral_property(self, temperature: float, molar_density: float, property: NeutralProperty, order: DerivativeOrder) -> NeutralPropertyDerivatives: ...
     def density_actions(self, temperature: float, molar_density: float,
                         mole_fractions: Sequence[float], observables: Sequence[PropertyObservable],
@@ -421,7 +439,8 @@ class HelmholtzModel:
                          directions: Sequence[PressureActionDirection],
                          anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
     def packing_fraction_coefficient(self, temperature: float, composition: list[float]) -> float: ...
-    def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
+    def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch,
+                          anchor_density: Optional[float] = None, derived_properties: bool = False) -> State: ...
     def molar_density_upper_bound(self, temperature: float, composition: Sequence[float]) -> float: ...
     def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
                             nodes: Sequence[float], density_tolerance: float, log_tolerance: float,
@@ -953,6 +972,18 @@ class SolventActivity:
     cause: str
     osmotic_cause: str
     state: State
+
+class HenryConstant:
+    """H_i^px = lim f_i/x_i = RT rho0 exp(raw_log_reference), rho0 = 1 mol/m^3; None unless status is Available."""
+    component_index: int
+    raw_log_reference: Optional[float]
+    henry_constant_px: Optional[float]  # Pa
+    observed_terminal_change: Optional[float]
+    status: NeutralReferenceStatus
+    message: str
+
+def henry_constants(model: HelmholtzModel, temperature: float, pressure: float,
+                    solvent_fractions: Sequence[float], solute_indices: Sequence[int]) -> list[HenryConstant]: ...
 
 def solvent_reference(model: HelmholtzModel, temperature: float, pressure: float,
     solvent_fractions: Sequence[float]) -> InfiniteDilutionReference: ...

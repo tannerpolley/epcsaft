@@ -121,6 +121,8 @@ void register_eos(nb::module_& module) {
             association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice,
             entries);
     module.def("build_parameters", &epcsaft::build_parameters);
+    module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
+    module.def("fitted_document", &epcsaft::fitted_document);
 
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)
@@ -177,7 +179,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_VALUES(epcsaft::ThermochemistryStatus, MissingRecord, Available, OutsideInterval, Nonfinite);
     nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
-        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born,
+        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
             // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
             residual_chemical_potential_over_rt, component_property_status,
@@ -188,7 +190,10 @@ void register_eos(nb::module_& module) {
             total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions,
             density_convergence, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
-            density_branch, stable_root_count);
+            density_branch, stable_root_count)
+        EPCSAFT_READONLY(epcsaft::State, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
+            isentropic_compressibility, speed_of_sound, joule_thomson_coefficient, partial_molar_volume,
+            partial_molar_enthalpy, partial_molar_entropy);
     nb::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
         EPCSAFT_READONLY(epcsaft::DensityDiagnosticPoint, molar_density, packing_fraction, pressure,
             pressure_density_derivative, lower, upper, residual, mechanical_sign, linked, declared, cause, stop);
@@ -209,10 +214,11 @@ void register_eos(nb::module_& module) {
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
         .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
-                         const std::vector<double>& composition) {
+                         const std::vector<double>& composition, bool derived_properties) {
             model.validate_electroneutrality(composition);
-            return model.state(temperature, molar_density, composition);
-        })
+            return model.state(temperature, molar_density, composition, derived_properties);
+        }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"),
+             nb::arg("derived_properties") = false)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
                                     double temperature, double molar_density,
@@ -246,12 +252,13 @@ void register_eos(nb::module_& module) {
         })
         .def("state_at_pressure", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
                                      const std::vector<double>& composition, epcsaft::DensityBranch branch,
-                                     std::optional<double> anchor_density) {
+                                     std::optional<double> anchor_density, bool derived_properties) {
             model.validate_electroneutrality(composition);
-            return model.state_at_pressure(temperature, pressure, composition, branch, anchor_density);
+            return model.state_at_pressure(temperature, pressure, composition, branch, anchor_density,
+                derived_properties);
         },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
-             nb::arg("branch"), nb::arg("anchor_density") = std::nullopt)
+             nb::arg("branch"), nb::arg("anchor_density") = std::nullopt, nb::arg("derived_properties") = false)
         .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound)
         .def("density_diagnostics", &epcsaft::HelmholtzModel::density_diagnostics,
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("nodes"),
@@ -269,6 +276,10 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(epcsaft::SolventActivity, solvent_activity, osmotic_coefficient,
             solvent_activity_parameter_derivative, osmotic_parameter_derivative, parameter_status, parameter_cause,
             status, cause, osmotic_cause, state);
+    nb::class_<epcsaft::HenryConstant>(module, "HenryConstant")
+        EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px,
+            observed_terminal_change, status, message);
+    module.def("henry_constants", &epcsaft::henry_constants);
     module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {
         return epcsaft::solvent_reference(model, T, P, x);
     });
