@@ -74,6 +74,19 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
+  +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
+  +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
+  Bindings **2,151 → 2,178**, Python **2,107 → 2,143**, each the measured
+  count plus its 1% band. Total **26,809 → 27,066**, the layer-ceiling sum after #557.
+  One all-species solvent contraction replaces both one-salt contractions;
+  the one-salt declaration supplies its particle ratio without a rounding
+  round trip through mole fractions. The lead raised the Properties net
+  allowance from +180 to +181 for the two delivered-review failure-reporting
+  corrections; gross and all other allowances, including total +280 / 375,
+  are unchanged. The independent −2 net Parameter Regression change in #557
+  is excluded from #556 growth.
+
 - 2026-10-15, #557 (rule 2): Parameter Regression **3,874 → 3,873**, the
   formatted count 3,834 plus its band 39 after replacing the blanket overlap
   refusal with ordered coefficient composition (22 gross additions, −2 net).

@@ -100,9 +100,16 @@ class Mixture:
         P: float,
         *,
         solvent_fractions: Sequence[float],
-        ions: tuple[str, str],
-        stoichiometry: tuple[int, int],
+        ions: tuple[str, str] | None = None,
+        stoichiometry: tuple[int, int] | None = None,
     ) -> Reference:
+        if (ions is None) != (stoichiometry is None):
+            raise ParameterError("reference requires both ions and stoichiometry or neither")
+        if ions is None:
+            fractions = tuple(solvent_fractions)
+            native = _core.solvent_reference(self._model, T, P, fractions)
+            return Reference(self._model, T, P, fractions, None, None, native)
+        assert stoichiometry is not None
         try:
             ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
         except (ValueError, IndexError) as error:

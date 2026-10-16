@@ -1,0 +1,104 @@
+{
+  "meaning": "Factual source tables and source-only conversions; no Engine prediction or parameter qualification.",
+  "sources": [
+    {
+      "source_id": "robinson-bower-1966",
+      "zotero_parent": "NUPRKNZV",
+      "zotero_pdf_attachment": "V7ETQ9YV",
+      "collection": "EMXSVBQK",
+      "doi": "10.6028/jres.070A.027",
+      "pdf_sha256": "fa0aad70870957e1d4a0a82fc95dd28c4f74994b85c2a9275066714c03add35e",
+      "locators": "Table 1 and 2 p.314; procedure p.313; activity derivation pp.315-318",
+      "citation": "R. A. Robinson and V. E. Bower, Properties of Aqueous Mixtures of Pure Salts. Thermodynamics of the Ternary System: Water-Sodium Chloride-Calcium Chloride at 25 C, Journal of Research of the National Bureau of Standards A 70A (1966), 313-318."
+    },
+    {
+      "source_id": "rard-miller-1987",
+      "zotero_parent": "M552Z2SC",
+      "zotero_pdf_attachment": "FS9Y25S9",
+      "collection": "EMXSVBQK",
+      "doi": "10.1021/je00047a025",
+      "pdf_sha256": "26eb1f7809c261a1c7f833aea59bd8b78a4b301f85e0e7fe23ac8dd9db02d8b3",
+      "locators": "Tables I p.86 and II p.87; binary check Table III p.87; uncertainties p.86",
+      "citation": "J. A. Rard and D. G. Miller, Isopiestic determination of the osmotic and activity coefficients of aqueous mixtures of sodium chloride and magnesium chloride at 25 C, Journal of Chemical and Engineering Data 32 (1987), 85-92."
+    },
+    {
+      "source_id": "dinane-mounir-2003",
+      "zotero_parent": "5GZVKTPL",
+      "zotero_pdf_attachment": "C4MZPNCU",
+      "collection": "EMXSVBQK",
+      "doi": "10.1016/S0378-3812(02)00300-X",
+      "pdf_sha256": "964b2f9c6be1041b2977fd5c2775d61ace48c77e991613f121acf75156abbaf8",
+      "locators": "Table 1 p.18; reference method p.14; dispersion pp.19,21; symbols p.24",
+      "citation": "A. Dinane and A. Mounir, Water activities, osmotic and activity coefficients in aqueous mixtures of sodium and magnesium chlorides at 298.15 K by the hygrometric method, Fluid Phase Equilibria 206 (2003), 13-25."
+    }
+  ],
+  "transcription": "Printed decimal tokens and source locators are preserved. Source blank cells are not filled, except explicitly marked structural pure-salt zeros. Shared reference values copied from table headers retain their source groups.",
+  "conditions": "298.15 K (25 C); isopiestic papers do not establish a complete pressure correction. Pressure is not a measured domain here.",
+  "measurement_roles": {
+    "robinson-bower-1966": "Table 1 is isopiestic solution composition and ratio data. Table 2 gives NaCl reference anchors at mean reference molalities. Converted Phi uses actual Table 1 reference molality, a piecewise-linear Table 2 reference, and the explicit NaCl/CaCl2 molalities. Pure CaCl2 endpoints and Table 2 anchors are reference checks.",
+    "rard-miller-1987": "Tables I-II contain total formula-salt molality and ionic-strength fractions, referenced to each printed NaCl or CaCl2 solution. Source Eq.4 converts the reference particle molality times Phi to mixture Phi. Table III is a separate binary MgCl2 reference check. The source-zero-weight mixture is retained and marked.",
+    "dinane-mounir-2003": "Table 1 water activities are primary observations. Ionic strength and printed fraction labels are derived. Growth ratios and assigned reference activities are diagnostic inputs to the original method; no calibration curve or row-specific reference molality is supplied."
+  },
+  "uncertainty": {
+    "robinson-bower-1966": {
+      "temperature_degC": 0.01,
+      "coefficient_uncertainty": null,
+      "meaning": "No numerical per-row coefficient/activity uncertainty is supplied. Printed ratio-fit differences are not uncertainty. Five molality/ratio/fraction inconsistencies remain in the source tokens."
+    },
+    "rard-miller-1987": {
+      "temperature_degC": 0.005,
+      "equilibrium_concentration_percent": [
+        0.05,
+        0.1,
+        0.12,
+        0.13
+      ],
+      "coefficient_scatter_percent": [
+        0.1,
+        0.25
+      ],
+      "CaCl2_reference_percent": [
+        0.2,
+        0.4
+      ],
+      "reference_change_Phi_low_Na_fraction": [
+        0.001,
+        0.003
+      ],
+      "reference_change_Phi_high_Na_fraction": 0.004,
+      "Mg_stock_mol_kg": [
+        [
+          5.565,
+          0.0019
+        ],
+        [
+          5.5684,
+          0.0045
+        ]
+      ],
+      "adopted_Mg_stock_mol_kg": 5.5667,
+      "Na_stock_1_mol_kg": [
+        4.9979,
+        4.9962
+      ],
+      "Na_stock_1_dehydration_uncertainty_mol_kg": 0.0006,
+      "Na_stock_2_mol_kg": 4.9607,
+      "Na_stock_2_uncertainty": null,
+      "meaning": "Stock and reference contributions are shared systematic effects. The five low-concentration equilibrations are not identified cell by cell. Scatter about a smooth curve is not an independent pointwise sigma. The source says 224 points below I=6.16, while its printed cells reconstruct 223."
+    },
+    "dinane-mounir-2003": {
+      "reported_aw_dispersion": 0.0006,
+      "reported_Phi_dispersion": 0.028,
+      "other_reported_Pitzer_Phi_dispersion": 0.01,
+      "pointwise_uncertainty": null,
+      "meaning": "Pages 19 and 21 describe fit/model dispersions, while the page 24 symbols call them measured-quantity uncertainties. Their scope is unresolved; they supply neither independent row weights nor a confidence claim."
+    }
+  },
+  "mixing_basis": "Formula-salt molality is mol/kg water. For NaCl plus MCl2, I=m_N+3 m_D, q=2 m_N+3 m_D. Robinson particle fraction is 3 m_Ca/q; Rard/Dinane NaCl ionic-strength fraction is m_N/I. These fractions differ.",
+  "conversions": {
+    "water_molar_mass_kg_mol": 0.0180153,
+    "Rard": "m_N=3 y m_T/(1+2y); m_Mg=(1-y)m_T/(1+2y); Phi=nu_ref*m_ref*Phi_ref/q, nu_ref=2 for NaCl and 3 for CaCl2. Converted aw=exp(-M_w*q*Phi) is the same observation, not another measurement.",
+    "Robinson": "Phi=(2 M_B/q)*Phi_NaCl(M_B). Piecewise-linear interpolation of Table 2 mean-M_B anchors, using the first segment for the short extension to M_B=0.5339. The converted file retains local-three-anchor quadratic and printed-R alternatives. The maximum linear/quadratic induced Phi change is 0.00011467728984893838; this is a reconstruction sensitivity estimate, not a rigorous error bound or measurement uncertainty.",
+    "Dinane": "No derived Phi is added to the source water-activity table. Explicit molalities determine the composition; printed y=0.33/0.50/0.67 are labels."
+  }
+}

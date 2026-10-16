@@ -27,6 +27,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `hydrogen-binary-vle` | 2 | 2 | Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 7 | 5, 6, 7 | Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE. |
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
+| `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
 | `zuber-2014-electrolyte-permittivity` | 1 | 1 | Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol. |
 

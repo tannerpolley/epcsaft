@@ -31,7 +31,7 @@ from .eos import (
     ThermochemistryStatus,
 )
 from .parameters import ParameterError, Parameters
-from .reference import Activity, Reference
+from .reference import Activity, Reference, SolventActivity
 
 trace = _core.Capture
 Stop = _core.Stop
@@ -111,6 +111,7 @@ __all__ = (
     "PropertyObservable",
     "Pure",
     "Reference",
+    "SolventActivity",
     "State",
     "Stop",
     "ThermochemistryRecord",

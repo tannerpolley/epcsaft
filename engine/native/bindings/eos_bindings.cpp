@@ -250,7 +250,19 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, 7)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
-            parameter_derivative, parameter_convergence_error, pure_solvent_log_fugacity);
+            parameter_derivative, parameter_convergence_error, pure_solvent_log_fugacity, pure_solvent_state,
+            solvent_status, solvent_cause, solvent_convergence);
+    nb::class_<epcsaft::SolventActivity>(module, "SolventActivity")
+        EPCSAFT_READONLY(epcsaft::SolventActivity, solvent_activity, osmotic_coefficient,
+            solvent_activity_parameter_derivative, osmotic_parameter_derivative, parameter_status, parameter_cause,
+            status, cause, osmotic_cause, state);
+    module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {
+        return epcsaft::solvent_reference(model, T, P, x);
+    });
+    module.def("solvent_activity", [](const epcsaft::HelmholtzModel& model, double T, double P,
+        const std::vector<double>& x, const epcsaft::InfiniteDilutionReference& reference) {
+        return epcsaft::solvent_activity(model, T, P, x, reference);
+    });
     nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, 7)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,

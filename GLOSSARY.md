@@ -2,6 +2,10 @@
 
 ## Language
 
+**Solvent activity**:
+Dimensionless solvent fugacity divided by its pure-liquid value at the same temperature and pressure, with the same physical parameters and permittivity model. The practical osmotic coefficient is its negative logarithm divided by solvent molar mass times total solute-species molality.
+Source: [practical osmotic coefficient](engine/docs/equations.md#practical_osmotic_coefficient), extensive Helmholtz Euler identity and Hamer and Wu (1972).
+
 **Errors-in-variables estimation**:
 Parameter estimation that treats measured inputs as unknown true inputs and penalizes their deviations, together with output deviations, using declared measurement uncertainties.
 Source: Zavala (2008), thesis chapter 4, §4.2, Eq. (4.2), printed p. 53; [measurement objective](engine/docs/equations.md#errors_in_variables_objective).

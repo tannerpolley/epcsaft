@@ -30,6 +30,35 @@ HAMER_WU_MOLALITIES = (0.001, 0.01, 0.1, 0.5, 1.0, 2.0)
 TEMPERATURE_K, PRESSURE_PA = 298.15, 100000.0
 
 
+def test_solvent_activity_transport() -> None:
+    from dataclasses import replace
+    import pytest
+    from epcsaft import ActiveParameter, ParameterError, ParameterFamily, PropertyActionStatus, Pure
+
+    components = ("water", "sodium-cation", "magnesium-cation", "chloride-anion")
+    parameters = Parameters.from_json(parameters_json("figiel-2025-chloride-activity-refit", 2), components=components)
+    model = Mixture(parameters, active_parameters=[ActiveParameter(ParameterFamily.DispersionEnergyOverK, [0])])
+    ref = model.reference(298.15, 1e5, solvent_fractions=(1,0,0,0))
+    amounts = (1/parameters.molar_masses[0], 0, 1, 2)
+    result = ref.solvent_activity(x=tuple(n/sum(amounts) for n in amounts))
+    # Frozen pre-extension one-salt helper witness, reconstructed natively from Phi and its column.
+    assert result.solvent_activity == pytest.approx(0.93687139131454011, abs=1e-10)
+    assert result.solvent_activity_parameter_derivative == pytest.approx([-6.6051908626038093e-05], abs=1e-10)
+    assert result.parameter_status == [PropertyActionStatus.Available]
+    assert replace(ref, T=300).solvent_activity(x=(1,0,0,0)).cause == "SolventReferenceMismatch"
+    with pytest.raises(ParameterError, match="IonicReferenceUnavailable"):
+        ref.activity(1)
+    with pytest.raises(ParameterError, match="both ions"):
+        model.reference(298.15,1e5,solvent_fractions=(1,0,0,0),ions=("sodium-cation","chloride-anion"))
+    for x in ((0.9,0.1,0,0), (1.1,0,0,-0.1), (0.9,0,0,0), (float("nan"),0,0,0)):
+        with pytest.raises(ParameterError):
+            ref.solvent_activity(x=x)
+    water = Pure(Parameters.from_json(parameters_json("figiel-2025-chloride-activity-refit",2),components=("water",)))
+    pure = water.reference(298.15,1e5,solvent_fractions=(1,)).solvent_activity(x=(1,))
+    assert pure.solvent_activity == 1 and pure.osmotic_cause == "OsmoticUndefinedPureSolvent"
+    assert pure.osmotic_coefficient == Stop.converged_to_floor and pure.osmotic_parameter_derivative == []
+
+
 def _file_identity(path: Path) -> dict[str, Any]:
     return {
         "path": str(path.relative_to(REPOSITORY_ROOT)),
