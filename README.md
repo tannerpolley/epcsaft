@@ -27,8 +27,8 @@ writes it, `tools/report` rewrites it on demand, and `xdg-open build/report.html
 The supported development environment is Linux with Git, Python 3.13, `uv`, a
 C and C++ compiler, Ninja, CMake, pkg-config, and `flock`. The locked root
 environment supplies Meson, meson-python, nanobind, and `patchelf`. The native
-graph also needs the environment-provided Ipopt and Eigen development
-packages. The first build needs network access for the two
+graph also needs the environment-provided Ipopt, Eigen and Ceres development
+packages, at the versions in [engine/README.md](engine/README.md#native-dependency-graph). The first build needs network access for the two
 checksum-pinned Meson subproject archives (CppAD and HiGHS). The native owner checks additionally
 require `clang-18`, `clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file`,
 and `nm`. `ccache` is optional. The line budgets in both check commands also need
