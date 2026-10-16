@@ -97,7 +97,7 @@ def test_declarations_refuse_before_evaluation_and_ignore_other_selections() -> 
     assert close(forward.pressure, backward.pressure)
     # The native owner refuses a direct document's duplicate, self-pair and nonzero declarations.
     native = Parameters.from_mapping(document([NONE]))._document
-    assert native is not None
+    assert isinstance(native, _core.ParameterDocument)
     for index, magnitude, cause in (((1, 0), 0.0, "duplicate"), ((0, 0), 0.0, "invalid component pair"),
                                     ((0, 1), 1.0, "nonzero declaration")):
         entry = next(e for e in native.entries if e.field == "no_cross_association")
@@ -132,7 +132,7 @@ def test_asl_record_transports_the_declaration_to_the_same_native_owner() -> Non
     transported, message = density(property_asl_record(mixture))
     assert message == "" and close(transported, mixture.state(351.0, P=1e5, x=(0.8, 0.2), phase="liquid").molar_density)
     native = mixture.parameters._document
-    assert native is not None
+    assert isinstance(native, _core.ParameterDocument)
     native.entries = [e for e in native.entries if e.field != "no_cross_association"]
     refused, message = density(property_asl_record(mixture))
     assert not math.isfinite(refused) and "missing cross association or no_cross_association: ethanol/water" in message
