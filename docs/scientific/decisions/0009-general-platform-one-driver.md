@@ -17,7 +17,9 @@ All admitted equilibrium specifications use one driver and shared mathematical
 rows; separate application/problem-specific equilibrium solvers are excluded.
 This replaces the proposal to allow independently selected equilibrium drivers.
 It preserves lower-level density/association kernels and the distinct search
-and continuation operations that reuse equilibrium calculations.
+and continuation operations that reuse equilibrium calculations. The one bounded neutral recovery
+after a failed ordinary L+V solve ([ALG-EQUILIBRIUM](../../../engine/docs/science/algorithms.md#neutral-recovery), #565)
+reuses this driver and the straight continuation controller.
 
 The existing native ownership principles remain: one Python-free native shared library for Python and native programs,
 one extension and an ASL adapter with its private native copy from the same PIC

@@ -23,6 +23,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `figiel-yu-held-2025` | 4 | 2, 3, 4 | Figiel, Yu and Held 2025 full solvent and ion set, including H+, sulfate and vanadium ions. |
 | `gross-2001-methane-ethane` | 3 | 2, 3 | Methane-ethane binary (Gross and Sadowski 2001, k_ij = 0). |
 | `gross-2001-propane` | 3 | 2, 3 | Pure propane (Gross and Sadowski 2001). |
+| `gross-2005` | 1 | 1 | Gross 2005 quadrupolar CO2, N2 and benzene; valid only with the quadrupole-quadrupole family, not as nonpolar PC-SAFT parameters. |
 | `gross-sadowski-2001` | 3 | 2, 3 | Gross and Sadowski 2001 Table 2: 78 nonassociating pure fluids (alkanes, alkenes, aromatics, gases, esters, ethers, halocarbons). |
 | `gross-vrabec-2006` | 1 | 1 | Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters. |
 | `hamer-wu-1972-aqueous-alkali-halides` | 1 | 1 | Observations, not parameters: evaluated molality-scale mean ionic activity coefficients of six aqueous 1:1 salts at 298.15 K. |
@@ -894,7 +895,7 @@ Current packet versions whose parameter files hold the component.
 | `azidooctane` | `feos-esper-2023/1` |
 | `barium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `benzaldehyde` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
-| `benzene` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
+| `benzene` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-2005/1`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
 | `benzenemethanethiol <benzyl mercaptan>` | `feos-esper-2023/1` |
 | `benzenesulfonyl chloride` | `feos-esper-2023/1` |
 | `benzenethiol` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
@@ -967,7 +968,7 @@ Current packet versions whose parameter files hold the component.
 | `carbon dioxide` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1` |
 | `carbon disulfide` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1` |
 | `carbon monoxide` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1` |
-| `carbon-dioxide` | `gross-sadowski-2001/3`, `mea-co2-h2o-nine-species-estimation/5` |
+| `carbon-dioxide` | `gross-2005/1`, `gross-sadowski-2001/3`, `mea-co2-h2o-nine-species-estimation/5` |
 | `carbon-disulfide` | `gross-sadowski-2001/3` |
 | `carbon-monoxide` | `gross-sadowski-2001/3` |
 | `carbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
@@ -1591,7 +1592,7 @@ Current packet versions whose parameter files hold the component.
 | `nitrobenzene` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `nitrocyclohexane` | `feos-esper-2023/1` |
 | `nitroethane` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
-| `nitrogen` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
+| `nitrogen` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `gross-2005/1`, `gross-sadowski-2001/3` |
 | `nitrogen dioxide` | `feos-esper-2023/1` |
 | `nitrogen oxide` | `feos-esper-2023/1` |
 | `nitrogen trifluoride` | `feos-esper-2023/1` |

@@ -25,6 +25,7 @@ USES = {
     "figiel-2025-validation-parameters": "Figiel 2025 validation-side transcription, including the iodide; for validation, not a separate model.",
     "figiel-yu-held-2025": "Figiel, Yu and Held 2025 full solvent and ion set, including H+, sulfate and vanadium ions.",
     "gross-2001-methane-ethane": "Methane-ethane binary (Gross and Sadowski 2001, k_ij = 0).",
+    "gross-2005": "Gross 2005 quadrupolar CO2, N2 and benzene; valid only with the quadrupole-quadrupole family, not as nonpolar PC-SAFT parameters.",
     "gross-2001-propane": "Pure propane (Gross and Sadowski 2001).",
     "gross-sadowski-2001": "Gross and Sadowski 2001 Table 2: 78 nonassociating pure fluids (alkanes, alkenes, aromatics, gases, esters, ethers, halocarbons).",
     "gross-vrabec-2006": "Gross and Vrabec 2006 dipolar fluids; valid only with the dipole-dipole family, not as nonpolar PC-SAFT parameters.",
