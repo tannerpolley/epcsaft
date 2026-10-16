@@ -74,14 +74,17 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-15, #556 (lead allowance Properties +180 net / 240 gross, Bindings
+- 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
-  +179 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,002**,
+  +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
   Bindings **2,151 → 2,178**, Python **2,107 → 2,143**, each the measured
-  count plus its 1% band. Total **26,810 → 27,065**, the layer-ceiling sum.
+  count plus its 1% band. Total **26,810 → 27,067**, the layer-ceiling sum.
   One all-species solvent contraction replaces both one-salt contractions;
   the one-salt declaration supplies its particle ratio without a rounding
-  round trip through mole fractions.
+  round trip through mole fractions. The lead raised the Properties net
+  allowance from +180 to +181 for the two delivered-review failure-reporting
+  corrections; gross and all other allowances, including total +280 / 375,
+  are unchanged.
 
 - 2026-10-15, #545 (owner): approved Equilibrium allowance +100 net / 160
   gross formatted lines relative to `0bec2bdf42e31bf37e8d4679169c8174b580408f`,

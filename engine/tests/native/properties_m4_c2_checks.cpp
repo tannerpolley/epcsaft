@@ -422,7 +422,10 @@ void solvent_activity_properties() {
         auto absent = x; absent[s] = 0.0; absent[1-s] += x[s];
         CHECK(solvent_activity(model, 298.15, 1e5, absent, ref).cause.find("PureSolventUnavailable") == 0);
         auto failed = ref; failed.pure_solvent_state.reset();
-        CHECK(solvent_activity(model, 298.15, 1e5, x, failed).cause.find("PureSolventUnavailable") == 0);
+        const auto missing_reference = solvent_activity(model, 298.15, 1e5, x, failed);
+        CHECK(missing_reference.cause.find("PureSolventUnavailable") == 0
+            && missing_reference.status == PropertyActionStatus::CentralPropertyUnavailable
+            && !missing_reference.solvent_activity && !missing_reference.osmotic_coefficient);
         CHECK(solvent_reference(model, 298.15, 1e5, x).solvent_cause.find("PureSolventUnavailable") == 0);
         auto missing = ref;
         missing.pure_solvent_state->log_fugacity_parameter_derivative[s].reset();
@@ -448,10 +451,14 @@ void solvent_activity_properties() {
     CHECK(solvent_reference(model, 650.0, 100.0, solvent).solvent_cause.find("VaporSideState") == 0);
     auto bad = *ref.pure_solvent_state; bad.pressure_density_derivative = 0.0;
     const auto x = formula_composition(solvent, model.parameters(), {1,2}, {1,1}, 1.0);
-    CHECK(solvent_activity(model, 298.15, 1e5, x, ref, bad).cause.find("DensityUnavailable") == 0);
+    const auto density_refused = solvent_activity(model, 298.15, 1e5, x, ref, bad);
+    CHECK(density_refused.cause.find("DensityUnavailable") == 0
+        && !density_refused.osmotic_coefficient && density_refused.osmotic_cause.empty());
     auto vapor = bad; vapor.pressure_density_derivative = 1.0;
     vapor.density_branch = DensityBranch::Unspecified; vapor.negative_slope_density = 2*vapor.molar_density;
-    CHECK(solvent_activity(model, 298.15, 1e5, x, ref, vapor).cause.find("VaporSideState") == 0);
+    const auto vapor_refused = solvent_activity(model, 298.15, 1e5, x, ref, vapor);
+    CHECK(vapor_refused.cause.find("VaporSideState") == 0
+        && !vapor_refused.osmotic_coefficient && vapor_refused.osmotic_cause.empty());
 }
 
 void density_and_reference() {

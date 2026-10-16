@@ -820,7 +820,7 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         result.cause = "SolventReferenceMismatch"; return result;
     }
     if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
-        result.status = reference.solvent_status;
+        if (reference.solvent_status != PropertyActionStatus::Available) result.status = reference.solvent_status;
         result.cause = reference.solvent_cause.empty() ? "PureSolventUnavailable: missing pure reference" : reference.solvent_cause;
         result.state.density_convergence = reference.solvent_convergence; return result;
     }
@@ -838,9 +838,9 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
     const auto& pure = *reference.pure_solvent_state;
     // Preserve the one-salt declaration's particle ratio without a round trip through mole fractions.
     const double D = formula_solute_ratio.value_or(solute / composition[solvent]);
-    result.osmotic_cause = D == 0.0 ? "OsmoticUndefinedPureSolvent" : "OsmoticMolalityFloor";
-    result.osmotic_coefficient = core::Stop::converged_to_floor;
     if (D == 0.0) {
+        result.osmotic_cause = "OsmoticUndefinedPureSolvent";
+        result.osmotic_coefficient = core::Stop::converged_to_floor;
         result.state = pure; result.solvent_activity = 1.0; result.status = PropertyActionStatus::Available;
         result.parameter_status.assign(columns, PropertyActionStatus::Available);
         result.solvent_activity_parameter_derivative.assign(columns, 0.0); return result;
@@ -873,7 +873,11 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
     result.solvent_activity = activity; result.status = PropertyActionStatus::Available;
     result.parameter_status.assign(columns, PropertyActionStatus::Available);
     const bool admitted = D / model.parameters().molar_mass_kg_per_mol[solvent] >= policy::OSMOTIC_MOLALITY_FLOOR.value;
-    if (admitted) { result.osmotic_coefficient = -L / D; result.osmotic_cause.clear(); }
+    if (admitted) result.osmotic_coefficient = -L / D;
+    else {
+        result.osmotic_coefficient = core::Stop::converged_to_floor;
+        result.osmotic_cause = "OsmoticMolalityFloor";
+    }
     // EqID: electrolyte_activity_parameter_derivative; physical coordinates at fixed T/P/x.
     for (std::size_t a = 0; a < columns; ++a) {
         const auto index = solvent * columns + a;
