@@ -101,7 +101,7 @@ void register_thermal_inputs(nb::module_& module) {
         EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
             DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
             DispersionEnergyOverK, Kij, Lij, AssociationEnergyOverK, AssociationVolume, KijReciprocalTemperatureSlope,
-            DielectricVolume, DielectricTemperature);
+            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     nb::class_<ActiveParameter>(module, "ActiveParameter")
         .def(nb::init<ParameterFamily, std::vector<std::size_t>>(), nb::arg("family"), nb::arg("indices"))
@@ -125,7 +125,9 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)
         .def_prop_ro("site_count", &epcsaft::Parameters::site_count)
-        .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order");
+        .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order")
+        .def_ro("temperature_law_coefficient_identities", &epcsaft::Parameters::temperature_law_coefficient_identity,
+            "source identity of each TemperatureLawCoefficient slot");
     nb::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
         EPCSAFT_VALUES(epcsaft::DerivativeOrder, Value, Gradient, PressureSlope, Hessian);
     nb::enum_<epcsaft::NeutralProperty>(module, "NeutralProperty")
@@ -206,7 +208,11 @@ void register_eos(nb::module_& module) {
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
-        .def("state", &epcsaft::HelmholtzModel::state)
+        .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
+                         const std::vector<double>& composition) {
+            model.validate_electroneutrality(composition);
+            return model.state(temperature, molar_density, composition);
+        })
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
                                     double temperature, double molar_density,
@@ -214,6 +220,7 @@ void register_eos(nb::module_& module) {
                                     const std::vector<epcsaft::PropertyObservable>& observables,
                                     const std::vector<epcsaft::DensityActionDirection>& directions) {
             epcsaft::core::Scope scope("density_actions");
+            model.validate_electroneutrality(composition);
             return model.density_actions(
                 temperature, molar_density, composition, observables, directions);
         })
@@ -225,6 +232,7 @@ void register_eos(nb::module_& module) {
                                      const std::vector<epcsaft::PressureActionDirection>& directions,
                                      std::optional<double> anchor_density) {
             epcsaft::core::Scope scope("pressure_actions");
+            model.validate_electroneutrality(composition);
             return model.pressure_actions(temperature, pressure, composition, branch,
                 observables, directions, anchor_density);
         },
@@ -236,7 +244,12 @@ void register_eos(nb::module_& module) {
             epcsaft::core::Scope scope("packing_fraction_coefficient");
             return model.packing_fraction_coefficient(temperature, composition);
         })
-        .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
+        .def("state_at_pressure", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+                                     const std::vector<double>& composition, epcsaft::DensityBranch branch,
+                                     std::optional<double> anchor_density) {
+            model.validate_electroneutrality(composition);
+            return model.state_at_pressure(temperature, pressure, composition, branch, anchor_density);
+        },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("anchor_density") = std::nullopt)
         .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound)

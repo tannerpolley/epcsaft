@@ -104,6 +104,8 @@ class Parameters:
     def site_count(self) -> int: ...
     @property
     def molar_masses(self) -> list[float]: ...  # kg/mol, component_ids order
+    @property
+    def temperature_law_coefficient_identities(self) -> list[str]: ...
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
 
@@ -190,6 +192,7 @@ class ParameterFamily:
     KijReciprocalTemperatureSlope: ParameterFamily
     DielectricVolume: ParameterFamily
     DielectricTemperature: ParameterFamily
+    TemperatureLawCoefficient: ParameterFamily
 
 class ActiveParameter:
     family: ParameterFamily

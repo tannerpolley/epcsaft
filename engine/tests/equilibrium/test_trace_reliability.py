@@ -508,3 +508,8 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     same(evidence, "mea-unloaded/equilibrium-cp", heat_capacity, (enthalpy[1] - enthalpy[0]) / 0.1 / mass / 1000.0,
          atol=0.0, rtol=1e-6, unit="kJ/(kg K)", inputs=inputs, basis="Identity", method="centered-enthalpy-difference",
          claim="the equilibrium heat-capacity action equals the re-solved enthalpy slope")
+    # #563: at 298.15 K the trace-ion phase of this neutral feed carries sum z x = -3.7e-16 (3.6e-12 of
+    # sum |z| x); the absolute charge rule admits it back into the public state.
+    _, cold = solve(298.15)
+    for p in range(cold.phase_count):
+        model.state(298.15, rho=cold.molar_densities[p], x=cold.phase_mole_fractions(p))
