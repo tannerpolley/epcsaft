@@ -1425,17 +1425,26 @@ d ln T, d ln P, d ln rho_p and d ln K_i per ds. The largest of the dimensionless
 tangent and restarts s at the current coordinate value, held per accepted state
 so a rejected attempt keeps its coordinate. The direction keeps the sign of the
 dimensionless tangent (d ln T, d ln P, d ln K)/ds from the previous step, not the
-raw chart product. The Euler predictor step is the caller's maximum log step,
-at most 0.9 W / max_p |d ln rho_p/ds| with W = `DENSITY_ANCHOR_LOG_WINDOW` (a
-larger fraction lets the predictor's curvature leave the anchored window), and
-the same driver corrects with the carried anchors. A rejected step halves from
-the attempted step down to the caller's minimum step and retry allowance.
+raw chart product. Each attempt's density anchors are the Euler-predicted
+densities ln rho_p + Δs d ln rho_p/ds, and the same driver corrects inside the
+anchored window W = `DENSITY_ANCHOR_LOG_WINDOW` around them. The first step is
+at most 0.9 W / max_p |d ln rho_p/ds| and the caller's maximum log step. After
+each accepted step of size h, e = max_p |ln rho_p − ln rhô_p| is the measured
+predictor error, and the next step is h min(2, sqrt(W/(2e))), capped by the
+maximum log step: the Euler error grows as h², so this targets e ≈ W/2 (#571).
+A rejected ordinary step halves from the attempted step down to the caller's
+minimum step and retry allowance, including a corrected density outside the
+anchored window (`branch_lost`) and a corrector that returns no state because
+it ended on coincident phases (the near-critical approach to the straddle
+threshold at cap 0.05). A singular tangent and an identity swap between
+accepted states stay terminal.
 
 A mixture passes its critical point once, by a straddle in ln K. When the selected
 ln K_k is decreasing in magnitude (s times the step sign is negative), an ordinary
 step lands at most at the same-sign threshold; from |s| <= threshold the straddle
 requests -s, never s = 0. That attempt already expects the feed on the other
-density branch: the phase kinds and the feed and incipient anchors are swapped.
+density branch: the phase kinds are swapped, and the predicted anchors carry
+the densities through the crossing.
 It passes only with two distinct accepted states whose pair identities swap.
 Both endpoint tangents in the same s give cubic Hermite values of ln T, ln P
 and both ln rho at s = 0; their mean log density and the common-volume
@@ -1455,6 +1464,26 @@ displacement mode) ends the trace as `critical_endpoint`, with the last
 distinct saturation state retained; it is not closure on another branch.
 Liquid–liquid, reactive, charged, three-phase and disconnected envelopes,
 critical stability and E6 remain outside this method.
+
+An azeotrope cell (`Problem(azeotrope=True)`, EqID: `azeotrope_condition`) is a
+binary bubble/dew cell on the full support of a positive feed: one free and one
+zero-pinned phase of opposite liquid/vapor kinds, exactly one of T and P free,
+and no other condition, ion or reaction. In the species-identity balance basis
+the last row becomes the all-ones row (B' = T B, so λ'·B' = λ·B leaves the
+chemical rows unchanged); only that total-amount row is emitted, and the other
+C − 1 balance rows are replaced by ln x_k^inc − ln x_k^feed = 0 for the first
+C − 1 support species. The layout and degrees of freedom are the bubble cell's;
+the declared feed composition is only the seed, and the solved feed-phase
+composition is the azeotrope. Published multipliers are in the B' basis. The
+cell is regular at a simple x = y crossing (by Gibbs–Duhem the free T or P
+column lies outside the composition columns' range, Δs_vap or Δv_vap ≠ 0) and
+Ipopt solves it alone (ADR 0009, #571). A refusal means no azeotrope was
+reached from this start, not that none exists. Every critical point and
+same-root state also satisfies x = y: the topology predicate refuses
+coincident phases, and local phase stability refuses the near-pseudo-critical
+states it misses. Qualification covers homogeneous binary VLE azeotropes
+against FeOs `binary_azeotrope` (A1); uniqueness, global stability,
+heteroazeotropes, C > 2 and azeotrope-line continuation are outside it.
 
 ### Polish and endpoint trace records
 

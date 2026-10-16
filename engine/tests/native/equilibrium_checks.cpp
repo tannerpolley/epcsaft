@@ -49,6 +49,7 @@ void binary_critical();
 void curvature();
 void mixture();
 void pure();
+void azeotrope();
 }  // namespace critical_envelope_checks
 namespace reactive_caloric_checks {
 void cheap();
@@ -73,6 +74,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.critical-curvature", "critical-curvature", "Automatic_fast"}, critical_envelope_checks::curvature, "critical-envelope"},
         {{"native.equilibrium.envelope-mixture", "envelope-mixture", "Explicit"}, critical_envelope_checks::mixture, "critical-envelope"},
         {{"native.equilibrium.envelope-pure", "envelope-pure", "Explicit"}, critical_envelope_checks::pure, "critical-envelope"},
+        {{"native.equilibrium.azeotrope", "azeotrope", "Automatic_fast"}, critical_envelope_checks::azeotrope, "critical-envelope"},
         {{"native.equilibrium.removal", "TPD", "Automatic_fast"}, check_phase_removal_inventory},
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
