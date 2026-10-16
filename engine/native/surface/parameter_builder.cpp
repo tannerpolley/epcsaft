@@ -32,7 +32,8 @@ bool symmetric_field(const std::string& field) {
         || field == "k_ij_reciprocal_temperature_slope"
         || field == "k_ij_reference_temperature"
         || field == "association_energy_over_k"
-        || field == "association_volume" || field == "no_cross_association";
+        || field == "association_volume"
+        || field == "association_volume_correction" || field == "no_cross_association";
 }
 
 Index canonical_index(const ParameterEntry& entry) {
@@ -72,10 +73,11 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
     reject("unit " + entry.unit + " for " + message.str());
 }
 
-double unit_factor(const ParameterEntry& entry, int power) {
-    const std::string expected = power == 1
-        ? "1 / kelvin"
-        : "1 / kelvin ** " + std::to_string(power);
+// The unit kelvin ** exponent, in the closed vocabulary dimensionless, kelvin ** n and 1 / kelvin ** n.
+double unit_factor(const ParameterEntry& entry, int exponent) {
+    const int magnitude = std::abs(exponent);
+    const std::string kelvin = magnitude == 1 ? "kelvin" : "kelvin ** " + std::to_string(magnitude);
+    const std::string expected = exponent == 0 ? "dimensionless" : exponent > 0 ? kelvin : "1 / " + kelvin;
     if (entry.unit != expected) {
         reject("unit " + entry.unit + " for " + where(entry) + ": expected " + expected);
     }
@@ -121,6 +123,18 @@ struct Rule final {
     std::string identity;
     std::array<std::size_t, 6> index{};
 };
+
+// Law targets in TemperatureLaw order; the volume correction (5) is consumed by a combining rule.
+int law_target(const std::string& field) {
+    const std::array<const char*, 5> targets = {"k_ij", "l_ij", "association_energy_over_k", "association_volume",
+                                                "association_volume_correction"};
+    for (std::size_t i = 0; i < targets.size(); ++i) if (field == targets[i]) return static_cast<int>(i) + 1;
+    reject("unknown temperature law target " + field);
+}
+
+std::size_t canonical_slot(std::size_t a, std::size_t b, std::size_t size) {
+    return std::min(a, b) * size + std::max(a, b);
+}
 
 }  // namespace
 
@@ -215,6 +229,9 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::pair<std::size_t, std::size_t>> no_cross;
     std::map<std::size_t, std::size_t> sigma_term_components;
     std::map<std::size_t, std::size_t> permittivity_term_components;
+    std::map<std::size_t, std::pair<std::string, double>> laws;  // quantity, reference (0: constant correction)
+    std::set<std::pair<int, std::size_t>> law_slots;   // (target, canonical slot)
+    std::map<std::size_t, std::size_t> corrections;   // canonical rule edge -> law
     // Density-dependent forms consume only their own records (full EOS 6.2, 6.4).
     const bool density_temperature = document.permittivity_choice == "solvent-density-temperature";
     const bool dipolar = document.permittivity_choice == "dipolar-perturbation";
@@ -237,7 +254,17 @@ Parameters build_parameters(const ParameterDocument& document) {
                 && document.electrolyte_choice != "born")) {
             reject("unconsumed " + where(entry));
         }
-        const auto key = std::make_tuple(entry.field, canonical_index(entry));
+        // A law [law, a, b] or volume correction owns its quantity's (a, b) value: one of value or law.
+        const std::string suffix = "_temperature_law";
+        const bool law = entry.field.size() > suffix.size() && entry.field.substr(entry.field.size() - suffix.size()) == suffix;
+        const bool correction = law || entry.field == "association_volume_correction";
+        ParameterEntry owned = entry;
+        if (correction) {
+            require_index(entry, 3, "temperature law index");
+            owned.field = law ? entry.field.substr(0, entry.field.size() - suffix.size()) : entry.field;
+            owned.index = {entry.index[1], entry.index[2]};
+        }
+        const auto key = std::make_tuple(owned.field, canonical_index(owned));
         if (!seen.emplace(key).second) reject("duplicate " + where(entry));
         double factor = 1.0;
         if (entry.field == "molar_mass") {
@@ -348,6 +375,23 @@ Parameters build_parameters(const ParameterDocument& document) {
             require_index(entry, 6, "combining rule index");
             for (const auto index : entry.index) if (index >= sites) reject("site index out of range for " + where(entry));
             rules.push_back({entry.identity, {entry.index[0], entry.index[1], entry.index[2], entry.index[3], entry.index[4], entry.index[5]}});
+        } else if (correction) {
+            const int target = law_target(owned.field);
+            const bool site = target > 2;
+            const auto [a, b] = site ? site_index(owned, sites) : pair_index(owned, components);
+            const std::pair declared{owned.field, law ? entry.magnitude * unit_factor(entry, "kelvin") : 0.0};
+            if (law && !(std::isfinite(declared.second) && declared.second > 0.0)) reject("invalid reference temperature for " + where(entry));
+            if (laws.emplace(entry.index[0], declared).first->second != declared) reject("conflicting temperature law " + where(entry));
+            const auto slot = canonical_slot(a, b, site ? sites : components);
+            if (target == 5) {
+                corrections[slot] = entry.index[0];
+            } else {
+                law_slots.insert({target, slot});
+                result.temperature_law_slot.push_back({target, static_cast<int>(slot), static_cast<int>(entry.index[0])});
+                if (site) result.association_active[a * sites + b] = result.association_active[b * sites + a] = 1;
+            }
+        } else if (entry.field == "temperature_law_coefficient" || entry.field == "temperature_law_reciprocal_slope") {
+            // Read in the term pass below, after every law is declared.
         } else if (entry.field == "no_cross_association") {
             // A declaration marker, not an association quantity: every unlike site edge stays inactive.
             const auto [i, j] = pair_index(entry, components);
@@ -377,7 +421,8 @@ Parameters build_parameters(const ParameterDocument& document) {
     result.permittivity_term_component.assign(permittivity_terms, 0);
     result.permittivity_term_coefficient.assign(permittivity_terms, 0.0);
     result.permittivity_term_power.assign(permittivity_terms, 0);
-    std::set<std::size_t> sigma_amplitude, sigma_exponent, permittivity_coefficients;
+    std::set<std::size_t> sigma_amplitude, sigma_exponent, permittivity_coefficients, intercepts;
+    std::set<std::string> coefficient_identities;
     for (const auto& entry : document.entries) {
         if (entry.field == "sigma_term_amplitude" || entry.field == "sigma_term_exponent") {
             const auto term = entry.index[0];
@@ -392,9 +437,32 @@ Parameters build_parameters(const ParameterDocument& document) {
             const auto term = entry.index[0];
             result.permittivity_term_component[term] = static_cast<int>(entry.index[1]);
             result.permittivity_term_power[term] = static_cast<int>(entry.index[2]);
-            result.permittivity_term_coefficient[term] = entry.magnitude * unit_factor(entry, static_cast<int>(entry.index[2]));
+            result.permittivity_term_coefficient[term] = entry.magnitude * unit_factor(entry, -static_cast<int>(entry.index[2]));
             permittivity_coefficients.insert(term);
+        } else if (entry.field == "temperature_law_coefficient" || entry.field == "temperature_law_reciprocal_slope"
+                   || (entry.field == "association_volume_correction" && !intercepts.count(entry.index[0]))) {
+            // Coefficient a_p has unit K^(e-p) and s unit K^(e+1), e = 1 for an energy law and 0 otherwise.
+            const bool slope = entry.field == "temperature_law_reciprocal_slope", constant = entry.field == "association_volume_correction";
+            require_index(entry, slope ? 1 : (constant ? 3 : 2), "temperature law term index");
+            const auto found = laws.find(entry.index[0]);
+            if (found == laws.end()) reject("temperature law term without its law: " + where(entry));
+            const int power = slope ? -1 : (constant ? 0 : static_cast<int>(entry.index[1]));
+            if (power > 3 || (found->second.second == 0.0) != constant) reject("invalid temperature law term " + where(entry));
+            const int energy = found->second.first == "association_energy_over_k" ? 1 : 0;
+            const double value = entry.magnitude * unit_factor(entry, energy + (slope ? 1 : -power));
+            if (!std::isfinite(value)) reject("nonfinite " + where(entry));
+            if (!coefficient_identities.insert(entry.identity).second) reject("repeated temperature law coefficient " + where(entry));
+            if (power == 0) intercepts.insert(entry.index[0]);
+            result.temperature_law_term_law.push_back(static_cast<int>(entry.index[0]));
+            result.temperature_law_term_power.push_back(power);
+            result.temperature_law_coefficient_identity.push_back(entry.identity);
+            result.temperature_law_coefficient.push_back(value);
         }
+    }
+    for (const auto& [number, law] : laws) {
+        if (number != result.temperature_law_reference_k.size()) reject("temperature laws are not numbered consecutively");
+        if (!intercepts.count(number)) reject("temperature law without its power-0 coefficient: " + law.first);
+        result.temperature_law_reference_k.push_back(law.second);
     }
     if (sigma_amplitude != sigma_exponent || sigma_amplitude.size() != sigma_terms) reject("incomplete sigma term");
     if (permittivity_coefficients.size() != permittivity_terms) reject("incomplete permittivity term");
@@ -426,7 +494,10 @@ Parameters build_parameters(const ParameterDocument& document) {
     }
     for (std::size_t i = 0; i < components; ++i) for (std::size_t j = i + 1; j < components; ++j) {
         const bool same_sign = result.charge_number[i] * result.charge_number[j] > 0;
+        const bool k_law = law_slots.count({1, i * components + j}) != 0;
+        if (k_law && result.k_ij_reference_temperature_k[i * components + j] != 0.0) reject("unconsumed k_ij slope of a temperature law pair");
         if (same_sign && result.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)) {
+            if (k_law) reject("unconsumed k_ij temperature law under exclude-same-sign-ion-pairs");
             for (const auto& entry : document.entries) {
                 if (entry.index.size() != 2
                     || !((entry.index[0] == i && entry.index[1] == j)
@@ -442,7 +513,7 @@ Parameters build_parameters(const ParameterDocument& document) {
             }
             continue;
         }
-        if (result.k_ij[i * components + j] == 0.0 && result.k_ij[j * components + i] == 0.0) {
+        if (!k_law && result.k_ij[i * components + j] == 0.0 && result.k_ij[j * components + i] == 0.0) {
             bool present = false;
             for (const auto& entry : document.entries) if (entry.field == "k_ij" && entry.index.size() == 2 && ((entry.index[0] == i && entry.index[1] == j) || (entry.index[0] == j && entry.index[1] == i))) present = true;
             if (!present) {
@@ -473,15 +544,26 @@ Parameters build_parameters(const ParameterDocument& document) {
         const auto self2 = rule.index[4] * sites + rule.index[5];
         if (result.association_active[self1] == 0 || result.association_active[self2] == 0) reject("combining rule self edge inactive: " + rule.identity);
         if (result.association_active[output] != 0) reject("duplicate " + rule.identity);
-        const double energy = 0.5 * (result.association_energy_over_k[self1] + result.association_energy_over_k[self2]);
-        const double volume = std::sqrt(result.association_volume[self1] * result.association_volume[self2]);
         const auto reverse = rule.index[1] * sites + rule.index[0];
         result.association_active[output] = result.association_active[reverse] = rule.identity == "wolbach-sandler" ? 2 : 1;
+        // A declared correction or self-edge law evaluates this edge at each temperature (association_volume_correction).
+        const auto first = canonical_slot(rule.index[2], rule.index[3], sites), second = canonical_slot(rule.index[4], rule.index[5], sites);
+        const auto correction = corrections.find(canonical_slot(rule.index[0], rule.index[1], sites));
+        if (correction != corrections.end() || law_slots.count({3, first}) || law_slots.count({4, first})
+            || law_slots.count({3, second}) || law_slots.count({4, second})) {
+            result.association_thermal_rule.push_back({static_cast<int>(output), static_cast<int>(reverse), static_cast<int>(first), static_cast<int>(second),
+                correction == corrections.end() ? -1 : static_cast<int>(correction->second)});
+            if (correction != corrections.end()) corrections.erase(correction);
+            continue;
+        }
+        const double energy = 0.5 * (result.association_energy_over_k[self1] + result.association_energy_over_k[self2]);
+        const double volume = std::sqrt(result.association_volume[self1] * result.association_volume[self2]);
         result.association_energy_over_k[output] = energy;
         result.association_energy_over_k[reverse] = energy;
         result.association_volume[output] = volume;
         result.association_volume[reverse] = volume;
     }
+    if (!corrections.empty()) reject("unconsumed association_volume_correction");
     // Full EOS §5: omitted cross edges stay inactive, so each site-bearing component pair declares a cross
     // edge or no_cross_association; nothing is inferred.
     std::map<std::pair<std::size_t, std::size_t>, bool> cross;  // site-bearing component pair -> any active cross edge

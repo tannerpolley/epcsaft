@@ -26,6 +26,9 @@ Correct mathematics is not weakened to match an implementation defect.
 | Perdomo2025 | Perdomo et al., *Comput. Chem. Eng.* 2025, 194, 108977, DOI `10.1016/j.compchemeng.2024.108977` | Read-only NaCl--water vapor/liquid endpoint diagnostic; not an ePC-SAFT parameter source |
 | Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Source-complete water plus all 29 Table 2 ion parameters and fully dissociated water-electrolyte formulation; package reference domain 298.15 K and 1 bar |
 | Bulow2021 | Bülow, Ascani, and Held, *Fluid Phase Equilibria* 2021, 537, 112989, DOI `10.1016/j.fluid.2021.112989` | Linear ion-mole permittivity rule (§2.3, Table 5) and Born charging work (Eq. 24) for salts in an ionic liquid, with no neutral species |
+| Held2014 | Held et al., *Chem. Eng. Res. Des.* 2014, 92, 2884-2897, DOI `10.1016/j.cherd.2014.05.017` | Affine `k_ij(T)` laws of Tables 1-2 (pp. 2888-2889), temperature-law falsifiers only |
+| Uyan2015 | Uyan et al., *Fluid Phase Equilibria* 2015, 393, 91-100, DOI `10.1016/j.fluid.2015.02.026` | Quadratic `k_ij(T)` at 298 K, Eqs. (26)-(27), and the Wolbach--Sandler volume correction outside the square root, Eq. (9) and Table 5 |
+| Bulow2021MDEA | Bülow et al., *Ind. Eng. Chem. Res.* 2021, 60, 6327-6336, DOI `10.1021/acs.iecr.1c00176` | Cubic water--MDEA `k_ij(T)`, Eq. (26) and Table 3, temperature-law falsifier only |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
@@ -333,6 +336,44 @@ explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
 `1-k_ij^hb` with the source value `k_ij^hb=0.026`; their volume is evaluated
 once from the cited Wolbach--Sandler rule. The distinct `k_ij^hb` provenance is
 therefore retained without adding a runtime pair matrix or overloading `k_ij`.
+
+**Temperature laws** (#567). A pair `k_ij` or `l_ij` record, an explicit edge's
+`energy_over_k` or `volume`, and a combining-rule edge's `volume_correction`
+carry exactly one of `value` or `temperature_law`:
+
+```json
+{"identity": "uyan2015/water-co2/k_ij", "family": "k_ij",
+ "temperature_law": {"form": "polynomial-plus-reciprocal-temperature",
+   "reference_temperature": {"magnitude": 298.0, "unit": "kelvin"},
+   "terms": [{"power": 0, "coefficient": {"identity": "uyan2015/water-co2/a0", "value": {"magnitude": -0.022, "unit": "dimensionless"}}},
+             {"power": 1, "coefficient": {"identity": "uyan2015/water-co2/a1", "value": {"magnitude": 0.00042, "unit": "1 / kelvin"}}}],
+   "reciprocal_temperature_slope": {"identity": "...", "value": {"magnitude": 0.0, "unit": "kelvin"}}}}
+```
+
+Defining relation: [EqID: `pair_parameter_temperature_law`](../equations.md#pair_parameter_temperature_law).
+Powers are unique integers 0-3 and the power-0 term is required; omitted terms
+are absent. `T_r > 0` is fixed, not fitted. Coefficient `a_p` has unit
+`kelvin ** (e - p)` and `s` unit `kelvin ** (e + 1)`, with `e = 1` for the
+association energy and `e = 0` otherwise, spelled `dimensionless`, `kelvin`,
+`kelvin ** n`, `1 / kelvin` or `1 / kelvin ** n`. Each coefficient is one
+`temperature_law_coefficient` active slot selected by its identity; a law owns
+its symmetric pair in both directions, and its stored constant and `k_ij`
+reciprocal slope are unconsumed. A record repeated under one identity (for
+example one volume correction on both cross edges of a component pair) is one
+law and one set of slots. Source validity ranges remain the caller's. An
+evaluated `k_ij` must be finite, `l_ij < 1`, association energy and volume
+nonnegative, at every state: a law leaving that domain is refused with its
+target and temperature, never clamped.
+
+A combining-rule edge that declares a `volume_correction`, or whose self edges
+carry a law, is evaluated at each temperature from its explicit self edges:
+[EqID: `association_volume_correction`](../equations.md#association_volume_correction),
+the Uyan2015 Eq. (9) convention with `(1 - c)` outside the square root and the
+size factor applied once by `wolbach-sandler`. Its self-edge constants keep
+their derivative chain; its own energy and volume are not coordinates. Rule
+edges without these declarations keep construction-time resolution. Held2014's
+corrected water/1-butanol cross energy (2420.53610 K) is representable as an
+explicit energy; adopting that whole edge, with its Eq. (18) volume, is not.
 
 The association Helmholtz contribution is
 

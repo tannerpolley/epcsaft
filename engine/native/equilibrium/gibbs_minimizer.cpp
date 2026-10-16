@@ -1456,7 +1456,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
 static bool newton_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
-        || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery
+        || compiled.has_caloric_condition() || p.critical || p.envelope || p.azeotrope || p.discovery
         || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2 || compiled.free_intensive_count != 1) return false;
     const auto& a = p.phases[0]; const auto& b = p.phases[1];
     return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));

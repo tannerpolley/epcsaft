@@ -162,6 +162,7 @@ class Problem:
     neutral_reference: NeutralReference | None = None
     critical: _core.CriticalDeclaration | None = None
     envelope: _core.EnvelopeCondition | None = None
+    azeotrope: bool = False
 
     def __post_init__(self) -> None:  # None selects each default
         discover = isinstance(self.phases, Discover)
@@ -184,6 +185,7 @@ class Problem:
         native.entropy_j_per_k = self.entropy_j_per_k
         native.critical = self.critical
         native.envelope = self.envelope
+        native.azeotrope = self.azeotrope
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
