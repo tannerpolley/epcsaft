@@ -89,7 +89,8 @@ Budget changes must not silently change scientific scope.
   **27,066 → 27,166**, the layer-ceiling sum. One native inverse beside
   `build_parameters` writes fitted slots back into the start document, and one
   form-tagged interval writer and reader replace the NASA9-only record.
-
+- 2026-10-16, #571 (lead allowance under the #577 rule: Equilibrium +45/50, Bindings +3/3, Python +4/4 net/gross, other layers 0; the lead approved a 2-line in-place edit of the parameter Regression fit worker serializer, net 0): the direct azeotrope cell and predicted-anchor envelope steps use net +36/0/+2/0 and gross 49/2/2/2 (Equilibrium/Bindings/Python/parameter Regression) against `fd14723c`. Equilibrium **9,688 → 9,796**, count 9,699 plus its band 97; the total ceiling stays 27,364 above count 27,258.
+- 2026-10-16, #567 (lead allowance under the #577 rule: Core +50/65, Contributions +100/150, Properties +30/45, parameter Regression +15/20, Surface +100/135, Bindings +5/10, Python +65/100 net/gross): temperature laws use net +23/+100/+30/0/+95/+2/+57 and gross 23/114/32/9/105/8/73 against `16fccc32`. Core **1,327 → 1,359**, Contributions **1,276 → 1,389**, Surface **577 → 673**, Python **2,143 → 2,200**, each count plus its 1% band; total **27,066 → 27,364**, the layer-ceiling sum, below count 27,220 plus band 273. Properties, parameter Regression and Bindings stay within their bands.
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,

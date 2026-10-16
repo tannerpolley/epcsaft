@@ -34,6 +34,7 @@ _FAMILIES = {
     "k_ij_reciprocal_temperature_slope": _core.ParameterFamily.KijReciprocalTemperatureSlope,
     "dielectric_volume": _core.ParameterFamily.DielectricVolume,  # m3/mol; an L/mol coordinate takes coefficient 1e-3
     "dielectric_temperature": _core.ParameterFamily.DielectricTemperature,
+    "temperature_law_coefficient": _core.ParameterFamily.TemperatureLawCoefficient,  # target: the coefficient identity
 }
 _PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}
@@ -96,6 +97,8 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
         if target is not None:
             raise ParameterError(f"{family} is global and takes no component target")
         return [0]
+    if family == "temperature_law_coefficient":
+        return [_index(parameters._native.temperature_law_coefficient_identities, target, "temperature-law coefficient")]
     if family not in _PAIRS and family not in _SITE_PAIRS:
         return [_index(parameters.component_ids, target, "component")]
     if not isinstance(target, tuple) or len(target) != 2:

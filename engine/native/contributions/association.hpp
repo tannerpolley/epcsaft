@@ -34,10 +34,39 @@ std::vector<Scalar> association_delta_values(
     const std::vector<Fixed>& association_energy_over_k,
     const std::vector<Fixed>& association_volume
 ) {
-    const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
     const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
+    // Declared laws, then thermal combining rules over their explicit self edges, give energy and
+    // volume at this temperature; without them the stored values are read unchanged.
+    const auto laws = temperature_law_values(temperature, parameters);
+    const bool thermal = !parameters.temperature_law_slot.empty() || !parameters.association_thermal_rule.empty();
+    std::vector<Fixed> law_energy, law_volume;
+    if (thermal) {
+        law_energy = association_energy_over_k;
+        law_volume = association_volume;
+        for (std::size_t a = 0; a < sites; ++a)
+            for (std::size_t b = a; b < sites; ++b) {
+                const std::size_t slot = a * sites + b, mirror = b * sites + a;
+                if (auto value = temperature_law_value(temperature, parameters, laws, TemperatureLaw::AssociationEnergyOverK, slot, sites))
+                    law_energy[slot] = law_energy[mirror] = *value;
+                if (auto value = temperature_law_value(temperature, parameters, laws, TemperatureLaw::AssociationVolume, slot, sites))
+                    law_volume[slot] = law_volume[mirror] = *value;
+            }
+        for (const auto& [edge, reverse, self_1, self_2, correction] : parameters.association_thermal_rule) {
+            const auto slot = static_cast<std::size_t>(edge), mirror = static_cast<std::size_t>(reverse);
+            const auto first = static_cast<std::size_t>(self_1), second = static_cast<std::size_t>(self_2);
+            law_energy[slot] = law_energy[mirror] = Fixed(0.5) * (law_energy[first] + law_energy[second]);
+            // EqID: association_volume_correction
+            Fixed volume = scalar_sqrt(law_volume[first] * law_volume[second]);
+            if (correction >= 0) volume *= Fixed(1.0) - laws[static_cast<std::size_t>(correction)];
+            if constexpr (std::is_same_v<Fixed, double>)
+                if (!(volume >= 0.0)) throw std::invalid_argument(law_domain_failure("association_volume", slot, sites, temperature));
+            law_volume[slot] = law_volume[mirror] = volume;
+        }
+    }
+    const auto& energy = thermal ? law_energy : association_energy_over_k;
+    const auto& volume = thermal ? law_volume : association_volume;
 
     std::vector<Scalar> delta(sites * sites, Scalar(0.0));
     for (std::size_t a = 0; a < sites; ++a) {
@@ -55,14 +84,14 @@ std::vector<Scalar> association_delta_values(
             // factor times sigma_ij^3 is the geometric-mean diameter cubed.
             const Fixed size_ij = (parameters.association_active[pair] == 2
                     ? scalar_sqrt(sigma[i] * sigma[j]) : Fixed(0.5) * (sigma[i] + sigma[j]))
-                * (Fixed(1.0) - parameters.l_ij[i * components + j]);
+                * (Fixed(1.0) - pair_correction(temperature, parameters, laws, TemperatureLaw::Lij, i, j));
             // EqID: association_strength
             delta[pair] = contact
                 * (scalar_exp(
-                       association_energy_over_k[pair] / temperature
+                       energy[pair] / temperature
                    ) - Fixed(1.0))
                 * size_ij * size_ij * size_ij
-                * association_volume[pair];
+                * volume[pair];
         }
     }
     return delta;

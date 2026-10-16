@@ -204,6 +204,20 @@ $$
 \sigma_{ij}^3\kappa_{AB}^{ij}.
 $$
 
+## `association_volume_correction`
+
+- Section: Contribution intermediates / Association
+- Status: Source equation
+- Source: [Uyan2015], Eqs.~(8)--(9) and Table 5
+- Description: Volume of a combining-rule edge evaluated at the state temperature from its explicit self edges and a declared volume correction c; the Wolbach--Sandler size factor stays in `association_strength`.
+- Change note: (1 - c) multiplies the volume once, outside the square root (#567); c = 0 recovers the existing rule.
+
+$$
+\frac{\epsilon_{AB}^{ij}}{k_B}=\frac12\left[\frac{\epsilon_{AB}^{ii}(T)}{k_B}+\frac{\epsilon_{AB}^{jj}(T)}{k_B}\right],
+\qquad
+\kappa_{AB}^{ij}=\sqrt{\kappa_{AB}^{ii}(T)\,\kappa_{AB}^{jj}(T)}\,\bigl[1-c_{ij}(T)\bigr].
+$$
+
 ## `born_outer_shell_diameter`
 
 - Section: Born solvation relations
@@ -1294,6 +1308,18 @@ $$
 V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
 \qquad
 V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
+$$
+
+## `pair_parameter_temperature_law`
+
+- Section: Parameter setup
+- Status: Implementation convention
+- Source: [Held2014], Tables 1--2; [Uyan2015], Eqs.~(26)--(27); [Bulow2021MDEA], Eq.~(26)
+- Description: One declared temperature law for k_ij, l_ij, explicit association energy over k_B or volume, or a combining-rule volume correction; the family covers the cited affine, quadratic and cubic laws and the existing reciprocal-temperature term.
+- Change note: Coefficients are active slots; T_r and the term powers are fixed declarations (#567). Undeclared k_ij keeps `cross_dispersion_energy`'s constant and reciprocal-slope arithmetic.
+
+$$
+q(T)=\sum_{p=0}^{3}a_p\,(T-T_r)^p+s\left(\frac1T-\frac1{T_r}\right),\qquad T,\ T_r>0.
 $$
 
 ## `phase_dimensionless_helmholtz`
@@ -2587,4 +2613,16 @@ $$
 
 $$
 \ln(T/T_{unit})-s=0,\quad \ln(P/P_{unit})-s=0,\quad \ln x_k^{inc}-\ln x_k^{feed}-s=0.
+$$
+
+## `azeotrope_condition`
+
+- Section: Equilibrium critical and envelope conditions
+- Status: Source equation
+- Source: equal phase compositions at a homogeneous azeotrope (Gibbs–Konovalov); FeOs `PhaseEquilibrium.binary_azeotrope` as the independent implementation; issue #571
+- Description: The C − 1 rows of a binary azeotrope cell (a free feed phase and an incipient phase pinned at zero amount, exactly one of T and P free) that replace the first C − 1 species balances; the remaining balance is the total amount, and the declared feed composition is only the seed.
+- Change note: The rows are affine in the log-composition chart and add no Hessian. The C-th equality follows from the two normalization rows.
+
+$$
+\ln x_k^{inc}-\ln x_k^{feed}=0,\quad k=\text{support}[0..C-2],\qquad \sum_p N_p\sum_i x_{p,i}-N_{feed}=0.
 $$

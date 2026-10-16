@@ -368,6 +368,17 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
 // Critical and envelope cells: one condition, neutral, nonreactive, T and P free.
 void admit_conditions(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
+    // An azeotrope cell: binary VLE bubble/dew on the full support of its feed (so a positive one), one of T and P free.
+    if (p.azeotrope) {
+        if (p.critical || p.envelope || compiled.has_caloric_condition() || p.discovery || compiled.has_ions
+            || compiled.has_reaction || p.source_reference || p.temperature.free == p.pressure.free || p.phases.size() != 2
+            || compiled.pinned_count != 1 || !(p.phases[0].is_zero_pinned() || p.phases[1].is_zero_pinned())
+            || p.phases[0].kind == p.phases[1].kind || compiled.n_feed.size() != 2 || p.phases[0].support.size() != 2
+            || p.phases[1].support != p.phases[0].support)
+            throw std::invalid_argument("azeotrope cell requires a binary feed, one free and one zero-pinned phase of "
+                "opposite kinds on its full support, exactly one of T and P free and no other condition");
+        return;
+    }
     if (!p.critical && !p.envelope) return;
     if ((p.critical && p.envelope) || compiled.has_caloric_condition() || !p.temperature.free || !p.pressure.free
         || p.discovery || compiled.has_ions || compiled.has_reaction || p.source_reference)
@@ -701,6 +712,11 @@ CppAD::ADFun<double> record_geometry(
         row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
             / (feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0)));
     }
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+        if (compiled.rows[row].kind == RowKind::AzeotropeCondition) {  // EqID azeotrope_condition: ln K below at 0
+            const std::size_t pin = problem.phases[0].is_pinned() ? 0 : 1, local = compiled.rows[row].index;
+            row_values[row] = u[prepared.shape[pin].x[local]] - u[prepared.shape[1 - pin].x[local]];
+        }
     if (problem.envelope) {
         // EqID envelope_local_condition; both phases share one support and the incipient phase is the zero pin.
         const auto& e = *problem.envelope;
@@ -1067,6 +1083,8 @@ static CompiledSystem compile_with_basis(
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
     compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
+    // An azeotrope cell's B' = T B makes the last row the total amount, the only balance row it keeps.
+    if (request.azeotrope && request.reactions.empty()) compiled.B.back().assign(components, 1.0);
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = compiled.seed_temperature();
@@ -1202,7 +1220,7 @@ static CompiledSystem compile_with_basis(
             ++compiled.charge_row_count;
         }
     }
-    for (std::size_t row = 0; row < compiled.B.size(); ++row)
+    for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         compiled.rows.push_back({RowKind::Normalization, phase, 0});
@@ -1214,6 +1232,7 @@ static CompiledSystem compile_with_basis(
             : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
         compiled.rows.push_back({kind, 0, i});
     }
+    for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
