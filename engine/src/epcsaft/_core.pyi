@@ -930,6 +930,28 @@ class InfiniteDilutionReference:
     molality: float
     convergence_error: float
     pure_solvent_log_fugacity: Optional[float]
+    pure_solvent_state: Optional[State]
+    solvent_status: PropertyActionStatus
+    solvent_cause: str
+    solvent_convergence: Optional[Convergence]
+
+class SolventActivity:
+    """Same-T/P pure-solvent activity and practical osmotic coefficient; None preserves unavailability."""
+    solvent_activity: Optional[float]
+    osmotic_coefficient: Optional[Union[float, Stop]]
+    solvent_activity_parameter_derivative: list[Optional[float]]
+    osmotic_parameter_derivative: list[Optional[float]]
+    parameter_status: list[PropertyActionStatus]  # activity columns; osmotic columns also require empty osmotic_cause
+    parameter_cause: list[str]
+    status: PropertyActionStatus
+    cause: str
+    osmotic_cause: str
+    state: State
+
+def solvent_reference(model: HelmholtzModel, temperature: float, pressure: float,
+    solvent_fractions: Sequence[float]) -> InfiniteDilutionReference: ...
+def solvent_activity(model: HelmholtzModel, temperature: float, pressure: float,
+    composition: Sequence[float], reference: InfiniteDilutionReference) -> SolventActivity: ...
 
 class ElectrolyteActivity:
     solver_options: list[dict[str, Any]]

@@ -382,7 +382,80 @@ void parameter_derivative_and_helpers() {
     CHECK(threw);
 }
 
+void solvent_activity_properties() {
+    using namespace epcsaft;
+    using F = ParameterFamily;
+    for (const auto& p : {properties_support::associating_binary(), properties_support::nine_species()}) {
+        const bool electrolyte = p.component_count() == 9;
+        const std::size_t s = electrolyte ? 0 : 1;
+        std::vector<double> solvent(p.component_count(), 0.0); solvent[s] = 1.0;
+        const std::vector<double> x = electrolyte
+            ? std::vector<double>{0.8,0.1,0.05,0.02,0.02,0.005,0,0.005,0}
+            : std::vector<double>{0.05,0.95};
+        const std::vector<ActiveParameter> active{{F::DispersionEnergyOverK,{s}}};
+        HelmholtzModel model(p, active);
+        const auto ref = solvent_reference(model, 298.15, 1e5, solvent);
+        const auto result = solvent_activity(model, 298.15, 1e5, x, ref);
+        CHECK(result.solvent_activity.has_value());
+        const double identity = x[s] * std::exp(require_component_property(result.state.log_fugacity_coefficient->at(s))
+            - require_component_property(ref.pure_solvent_state->log_fugacity_coefficient->at(s)));
+        CHECK(close(*result.solvent_activity, identity, 1e-10));
+        CHECK(close(std::get<double>(*result.osmotic_coefficient), -std::log(identity) / ((1.0-x[s])/x[s]), 1e-10));
+        CHECK(result.state.pressure_density_derivative > 0.0);
+        const double scale = p.dispersion_energy_over_k[s];
+        for (double relative : {1e-5,0.5e-5}) {
+            const double h = scale * relative;
+            auto plus = p, minus = p;
+            plus.dispersion_energy_over_k[s] += h; minus.dispersion_energy_over_k[s] -= h;
+            HelmholtzModel positive(plus), negative(minus);
+            const auto a = solvent_activity(positive, 298.15, 1e5, x, solvent_reference(positive, 298.15, 1e5, solvent));
+            const auto b = solvent_activity(negative, 298.15, 1e5, x, solvent_reference(negative, 298.15, 1e5, solvent));
+            CHECK(close(scale * *result.solvent_activity_parameter_derivative[0],
+                scale * (*a.solvent_activity-*b.solvent_activity)/(2*h), 2e-6));
+            CHECK(close(scale * *result.osmotic_parameter_derivative[0],
+                scale * (std::get<double>(*a.osmotic_coefficient)-std::get<double>(*b.osmotic_coefficient))/(2*h), 2e-6));
+        }
+        const auto pure = solvent_activity(model, 298.15, 1e5, solvent, ref);
+        CHECK(pure.solvent_activity == 1.0 && pure.solvent_activity_parameter_derivative[0] == 0.0);
+        CHECK(pure.osmotic_cause == "OsmoticUndefinedPureSolvent" && !pure.osmotic_parameter_derivative[0]);
+        CHECK(solvent_activity(model, 299.0, 1e5, x, ref).cause == "SolventReferenceMismatch");
+        auto absent = x; absent[s] = 0.0; absent[1-s] += x[s];
+        CHECK(solvent_activity(model, 298.15, 1e5, absent, ref).cause.find("PureSolventUnavailable") == 0);
+        auto failed = ref; failed.pure_solvent_state.reset();
+        CHECK(solvent_activity(model, 298.15, 1e5, x, failed).cause.find("PureSolventUnavailable") == 0);
+        CHECK(solvent_reference(model, 298.15, 1e5, x).solvent_cause.find("PureSolventUnavailable") == 0);
+        auto missing = ref;
+        missing.pure_solvent_state->log_fugacity_parameter_derivative[s].reset();
+        missing.pure_solvent_state->component_property_status[s] = PropertyActionStatus::AssociationIllConditioned;
+        const auto unavailable = solvent_activity(model, 298.15, 1e5, x, missing);
+        CHECK(unavailable.solvent_activity.has_value() && !unavailable.solvent_activity_parameter_derivative[0]
+            && !unavailable.osmotic_parameter_derivative[0]);
+        CHECK(unavailable.parameter_status[0] == PropertyActionStatus::AssociationIllConditioned);
+    }
+    HelmholtzModel model(properties_support::aqueous_electrolyte(), {{F::DispersionEnergyOverK,{0}}});
+    const std::vector<double> solvent{1,0,0};
+    const auto ref = solvent_reference(model, 298.15, 1e5, solvent);
+    for (double q : {0.5e-8,1e-8,2e-8}) {
+        // Construct the declared particle ratio directly: formula_composition rounds the exact-floor case below it.
+        const double D = q * model.parameters().molar_mass_kg_per_mol[0], water = 1/(1+D);
+        const std::vector<double> x{water,D*water/2,D*water/2};
+        const auto result = solvent_activity(model, 298.15, 1e5, x, ref);
+        CHECK(result.solvent_activity.has_value());
+        CHECK(std::holds_alternative<double>(*result.osmotic_coefficient) == (q >= 1e-8));
+        CHECK(result.solvent_activity_parameter_derivative[0].has_value());
+        CHECK(result.osmotic_parameter_derivative[0].has_value() == (q >= 1e-8));
+    }
+    CHECK(solvent_reference(model, 650.0, 100.0, solvent).solvent_cause.find("VaporSideState") == 0);
+    auto bad = *ref.pure_solvent_state; bad.pressure_density_derivative = 0.0;
+    const auto x = formula_composition(solvent, model.parameters(), {1,2}, {1,1}, 1.0);
+    CHECK(solvent_activity(model, 298.15, 1e5, x, ref, bad).cause.find("DensityUnavailable") == 0);
+    auto vapor = bad; vapor.pressure_density_derivative = 1.0;
+    vapor.density_branch = DensityBranch::Unspecified; vapor.negative_slope_density = 2*vapor.molar_density;
+    CHECK(solvent_activity(model, 298.15, 1e5, x, ref, vapor).cause.find("VaporSideState") == 0);
+}
+
 void density_and_reference() {
+    solvent_activity_properties();
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     const auto reference_rows = std::array<std::tuple<double, double, double, double>, 2>{
         std::tuple{200.0, 217800.69494692178, 0.007241100995,

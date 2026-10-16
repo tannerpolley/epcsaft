@@ -500,6 +500,12 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
 
 struct InfiniteDilutionReference final {
     policy::SolverOptions solver_options;
+    const HelmholtzModel* model = nullptr;
+    double temperature = 0.0, pressure = 0.0;
+    std::vector<double> solvent_fractions;
+    PropertyActionStatus solvent_status = PropertyActionStatus::CentralPropertyUnavailable;
+    std::string solvent_cause;
+    std::optional<core::Convergence> solvent_convergence;
     std::array<double, 2> log_fugacity{};
     double molality = 0.0;
     double convergence_error = 0.0;
@@ -512,6 +518,22 @@ struct InfiniteDilutionReference final {
     std::array<double, 2> value_difference{}, witness_difference{};
     std::vector<std::array<double, 2>> parameter_difference, witness_parameter_difference;
 };
+
+struct SolventActivity final {
+    std::optional<double> solvent_activity;
+    std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
+    std::vector<std::optional<double>> solvent_activity_parameter_derivative, osmotic_parameter_derivative;
+    std::vector<PropertyActionStatus> parameter_status;
+    std::vector<std::string> parameter_cause;
+    PropertyActionStatus status = PropertyActionStatus::CentralPropertyUnavailable;
+    std::string cause, osmotic_cause;
+    State state;
+};
+InfiniteDilutionReference solvent_reference(const HelmholtzModel&, double, double, const std::vector<double>&,
+    std::optional<double> density = std::nullopt);
+SolventActivity solvent_activity(const HelmholtzModel&, double, double, const std::vector<double>&,
+    const InfiniteDilutionReference&, std::optional<State> state = std::nullopt,
+    std::optional<double> formula_solute_ratio = std::nullopt);
 
 struct ElectrolyteActivity final {
     policy::SolverOptions solver_options;

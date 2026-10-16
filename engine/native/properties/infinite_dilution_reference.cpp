@@ -763,6 +763,132 @@ NeutralReferenceReactionDiagnostic reaction_reference(
         {stoichiometry}, {reference}).front();
 }
 
+InfiniteDilutionReference solvent_reference(const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& fractions, std::optional<double> density) {
+    InfiniteDilutionReference result;
+    result.solver_options = model.solver_options();
+    result.model = &model; result.temperature = temperature; result.pressure = pressure;
+    result.solvent_fractions = fractions;
+    const auto& parameters = model.parameters();
+    double sum = 0.0;
+    std::size_t solvent = fractions.size(), occupied = 0;
+    for (std::size_t i = 0; i < fractions.size(); ++i) {
+        if (!std::isfinite(fractions[i]) || fractions[i] < 0.0) {
+            result.solvent_cause = "PureSolventUnavailable: invalid solvent fractions"; return result;
+        }
+        sum += fractions[i];
+        if (fractions[i] > 0.0) { solvent = i; ++occupied; }
+    }
+    if (fractions.size() != parameters.component_count() || occupied != 1
+        || std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value
+        || parameters.charge_number[solvent] != 0
+        || !std::isfinite(parameters.molar_mass_kg_per_mol[solvent]) || parameters.molar_mass_kg_per_mol[solvent] <= 0.0) {
+        result.solvent_cause = "PureSolventUnavailable: require one neutral solvent with positive molar mass"; return result;
+    }
+    std::vector<double> pure(fractions.size(), 0.0);
+    pure[solvent] = 1.0;
+    try {
+        result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, density);
+        const auto& state = *result.pure_solvent_state;
+        if (const auto cause = properties::vapor_side(state)) result.solvent_cause = "VaporSideState: pure solvent: " + *cause;
+        else if (!properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence))
+            result.solvent_cause = "DensityUnavailable: pure solvent regularity";
+        else {
+            result.solvent_status = PropertyActionStatus::Available;
+            if (state.log_fugacity_coefficient) result.pure_solvent_log_fugacity = (*state.log_fugacity_coefficient)[solvent];
+            return result;
+        }
+    } catch (const std::runtime_error& error) {
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.solvent_convergence = failure->record;
+        result.solvent_cause = "DensityUnavailable: pure solvent: " + std::string(error.what());
+    }
+    result.solvent_status = PropertyActionStatus::DensityUnavailable;
+    return result;
+}
+
+SolventActivity solvent_activity(const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& composition, const InfiniteDilutionReference& reference, std::optional<State> finite,
+    std::optional<double> formula_solute_ratio) {
+    SolventActivity result;
+    const std::size_t columns = model.active_parameters().size();
+    result.solvent_activity_parameter_derivative.resize(columns);
+    result.osmotic_parameter_derivative.resize(columns);
+    result.parameter_status.assign(columns, PropertyActionStatus::CentralPropertyUnavailable);
+    result.parameter_cause.resize(columns);
+    if (reference.model && (reference.model != &model || reference.temperature != temperature || reference.pressure != pressure
+        || !(reference.solver_options == model.solver_options()))) {
+        result.cause = "SolventReferenceMismatch"; return result;
+    }
+    if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
+        result.status = reference.solvent_status;
+        result.cause = reference.solvent_cause.empty() ? "PureSolventUnavailable: missing pure reference" : reference.solvent_cause;
+        result.state.density_convergence = reference.solvent_convergence; return result;
+    }
+    const auto solvent = std::size_t(std::max_element(reference.solvent_fractions.begin(), reference.solvent_fractions.end()) - reference.solvent_fractions.begin());
+    if (composition.size() != model.parameters().component_count()) throw std::invalid_argument("invalid composition size");
+    double sum = 0.0, charge = 0.0, solute = 0.0;
+    for (std::size_t i = 0; i < composition.size(); ++i) {
+        if (!std::isfinite(composition[i]) || composition[i] < 0.0) throw std::invalid_argument("invalid composition fraction");
+        sum += composition[i]; charge += composition[i] * model.parameters().charge_number[i];
+        if (i != solvent) solute += composition[i];
+    }
+    if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value
+        || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value) throw std::invalid_argument("invalid normalized neutral composition");
+    if (composition[solvent] <= 0.0) { result.cause = "PureSolventUnavailable: zero solvent fraction"; return result; }
+    const auto& pure = *reference.pure_solvent_state;
+    // Preserve the one-salt declaration's particle ratio without a round trip through mole fractions.
+    const double D = formula_solute_ratio.value_or(solute / composition[solvent]);
+    result.osmotic_cause = D == 0.0 ? "OsmoticUndefinedPureSolvent" : "OsmoticMolalityFloor";
+    result.osmotic_coefficient = core::Stop::converged_to_floor;
+    if (D == 0.0) {
+        result.state = pure; result.solvent_activity = 1.0; result.status = PropertyActionStatus::Available;
+        result.parameter_status.assign(columns, PropertyActionStatus::Available);
+        result.solvent_activity_parameter_derivative.assign(columns, 0.0); return result;
+    }
+    try {
+        result.state = finite ? std::move(*finite) : properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, std::nullopt);
+    } catch (const std::runtime_error& error) {
+        result.status = PropertyActionStatus::DensityUnavailable;
+        result.cause = "DensityUnavailable: mixture: " + std::string(error.what());
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.state.density_convergence = failure->record;
+        return result;
+    }
+    const auto& state = result.state;
+    if (const auto cause = properties::vapor_side(state)) { result.cause = "VaporSideState: mixture: " + *cause; return result; }
+    if (!properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) {
+        result.status = PropertyActionStatus::DensityUnavailable; result.cause = "DensityUnavailable: mixture regularity"; return result;
+    }
+    // EqID: practical_osmotic_coefficient; extensive Helmholtz Euler identity at common pressure.
+    long double chemical_difference = static_cast<long double>(state.residual_helmholtz) - pure.residual_helmholtz;
+    chemical_difference += pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature)
+        * ((static_cast<long double>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<long double>(pure.molar_density)));
+    for (std::size_t i = 0; i < composition.size(); ++i) if (i != solvent && composition[i] > 0.0)
+        chemical_difference -= composition[i] * (static_cast<long double>(require_component_property(state.residual_chemical_potential_over_rt[i]))
+            - require_component_property(pure.residual_chemical_potential_over_rt[solvent]));
+    chemical_difference /= composition[solvent];
+    const double L = -std::log1p(D) + static_cast<double>(chemical_difference)
+        + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
+    const double activity = std::exp(L);
+    if (!std::isfinite(L) || !std::isfinite(activity)) { result.status = PropertyActionStatus::Nonfinite; result.cause = "Nonfinite: solvent activity"; return result; }
+    result.solvent_activity = activity; result.status = PropertyActionStatus::Available;
+    result.parameter_status.assign(columns, PropertyActionStatus::Available);
+    const bool admitted = D / model.parameters().molar_mass_kg_per_mol[solvent] >= policy::OSMOTIC_MOLALITY_FLOOR.value;
+    if (admitted) { result.osmotic_coefficient = -L / D; result.osmotic_cause.clear(); }
+    // EqID: electrolyte_activity_parameter_derivative; physical coordinates at fixed T/P/x.
+    for (std::size_t a = 0; a < columns; ++a) {
+        const auto index = solvent * columns + a;
+        const auto f = state.log_fugacity_parameter_derivative.at(index), p = pure.log_fugacity_parameter_derivative.at(index);
+        if (f && p && std::isfinite(*f - *p)) {
+            result.solvent_activity_parameter_derivative[a] = *result.solvent_activity * (*f - *p);
+            if (admitted) result.osmotic_parameter_derivative[a] = -(*f - *p) / D;
+        } else {
+            result.parameter_status[a] = !f ? state.component_property_status[solvent] : !p ? pure.component_property_status[solvent] : PropertyActionStatus::Nonfinite;
+            result.parameter_cause[a] = !f ? "mixture solvent fugacity column unavailable" : "pure solvent fugacity column unavailable or nonfinite";
+        }
+    }
+    return result;
+}
+
 InfiniteDilutionReference infinite_dilution_reference(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& solvent_fractions, const std::array<std::size_t, 2>& ion_indices,
@@ -832,13 +958,12 @@ InfiniteDilutionReference infinite_dilution_reference(
             && result.parameter_convergence_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
             result.parameter_derivative[a] = {previous_columns[a][0], previous_columns[a][1]};
     if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x > 0.0; }) == 1) {
-        const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
-        std::vector<double> pure(solvent_fractions.size(), 0.0);
-        pure[solvent] = 1.0;
-        result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, pure_solvent_density);
-        if (const auto cause = properties::vapor_side(*result.pure_solvent_state)) throw std::runtime_error(*cause);
-        if (result.pure_solvent_state->log_fugacity_coefficient)
-            result.pure_solvent_log_fugacity = (*result.pure_solvent_state->log_fugacity_coefficient)[solvent];
+        auto pure = solvent_reference(model, temperature, pressure, solvent_fractions, pure_solvent_density);
+        if (pure.solvent_status != PropertyActionStatus::Available) throw std::runtime_error(pure.solvent_cause);
+        result.model = pure.model; result.temperature = temperature; result.pressure = pressure;
+        result.solvent_fractions = solvent_fractions; result.solvent_status = pure.solvent_status;
+        result.pure_solvent_state = std::move(pure.pure_solvent_state);
+        result.pure_solvent_log_fugacity = pure.pure_solvent_log_fugacity;
     }
     return result;
 }
@@ -854,6 +979,7 @@ ElectrolyteActivity electrolyte_activity(
     const InfiniteDilutionReference& reference, std::optional<double> finite_density
 ) {
     core::Scope scope("electrolyte_activity");
+    if (reference.model && reference.molality == 0.0) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
     if (!(reference.solver_options == model.solver_options()))
         throw std::invalid_argument("electrolyte reference solver options do not match the model");
     const auto composition = formula_composition(
@@ -877,8 +1003,6 @@ ElectrolyteActivity electrolyte_activity(
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
     ) / coefficient_sum;
-    const auto solvent = std::distance(solvent_fractions.begin(),
-        std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
     double solvent_mass = 0.0;
     for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
         solvent_mass += solvent_fractions[component]
@@ -891,24 +1015,16 @@ ElectrolyteActivity electrolyte_activity(
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
     result.mean_ionic_molality_scale = std::exp(mean_log_m);
-    if (reference.pure_solvent_state.has_value()) {
-        if (molality < policy::OSMOTIC_MOLALITY_FLOOR.value) {
-            result.osmotic_coefficient = core::Stop::converged_to_floor;
-        } else {
-            const auto& pure = *reference.pure_solvent_state;
-            const double s = coefficient_sum * molality * solvent_mass;
-            // Extensive Helmholtz Euler identity, with the prescribed pressure in Z.
-            long double chemical_difference = static_cast<long double>(state.residual_helmholtz) - pure.residual_helmholtz;
-            chemical_difference += pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature)
-                * ((static_cast<long double>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<long double>(pure.molar_density)));
-            for (const auto ion : ion_indices) chemical_difference -= composition[ion]
-                * (static_cast<long double>(require_component_property(state.residual_chemical_potential_over_rt[ion])) - require_component_property(pure.residual_chemical_potential_over_rt[solvent]));
-            chemical_difference /= composition[solvent];
-            const double log_activity = -std::log1p(s) + static_cast<double>(chemical_difference)
-                + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
-            // EqID: practical_osmotic_coefficient
-            result.osmotic_coefficient = -log_activity / s;
-        }
+    if (reference.pure_solvent_state && molality < policy::OSMOTIC_MOLALITY_FLOOR.value)
+        result.osmotic_coefficient = core::Stop::converged_to_floor;
+    else if (reference.pure_solvent_state) {
+        auto water = solvent_activity(model, temperature, pressure, composition, reference, std::move(result.state),
+            coefficient_sum * molality * solvent_mass);
+        result.state = std::move(water.state);
+        if (!water.solvent_activity) throw std::runtime_error(water.cause);
+        result.osmotic_coefficient = water.osmotic_coefficient;
+        for (const auto& column : water.osmotic_parameter_derivative)
+            result.osmotic_parameter_derivative.push_back(require_component_property(column));
     }
     const std::size_t columns = model.active_parameters().size();
     for (std::size_t a = 0; a < columns; ++a) {
@@ -918,11 +1034,6 @@ ElectrolyteActivity electrolyte_activity(
         result.mean_ionic_parameter_derivative.push_back(ref[0] && ref[1]
             ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
                 + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
-        if (result.osmotic_coefficient && std::holds_alternative<double>(*result.osmotic_coefficient)) {
-            result.osmotic_parameter_derivative.push_back(-(g(solvent)
-                - require_component_property(reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a)))
-                / (coefficient_sum * molality * solvent_mass));
-        }
     }
     return result;
 }

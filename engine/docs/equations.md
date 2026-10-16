@@ -1160,13 +1160,14 @@ $$
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
 - Source: [Figiel2025], mole-fraction to molality activity conversion
-- Description: Convert the mean ionic coefficient to the formula-unit molality basis.
-- Change note: Uses salt-free solvent molar mass in kilograms per mole.
+- Description: Convert the mean ionic coefficient to formula-unit molality; define total solute-species molality for a single solvent.
+- Change note: Uses solvent molar mass in kilograms per mole. Each occupied non-solvent molecular or ionic species contributes once to q.
 
 $$
 \gamma_\pm^{(m)}=
 \frac{\gamma_\pm^{(x)}}
 {1+\overline M_s\,m(\nu_++\nu_-)}.
+\qquad m_i=\frac{x_i}{x_s M_s},\quad q=\sum_{i\ne s}m_i,\quad D=M_s q.
 $$
 
 ## `multiplier_potential_link`
@@ -1435,12 +1436,12 @@ $$
 - Status: Source equation
 - Source: [HamerWu1972], practical molal osmotic-coefficient definition; common-pressure identity from Eqs.~`log_fugacity_coefficient` and `pressure`
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
-- Change note: Defined only for the admitted single-active-solvent aqueous path; Evaluated at common prescribed T/P; the scalar residual chemical-potential difference uses the extensive Helmholtz Euler identity in extended precision, with Z=P/(RT rho). Exact parameter columns retain the shared fugacity derivative contraction. Subscripts f and p denote the finite solution and pure solvent, a^r is per mole, and the sum excludes the solvent.
+- Change note: One neutral solvent, evaluated at common prescribed T/P with the same parameters and permittivity model. The scalar residual chemical-potential difference uses the extensive Helmholtz Euler identity in extended precision, with Z=P/(RT rho). Subscripts f and p denote the finite solution and pure solvent, a^r is per mole, and the sum traverses occupied non-solvent species. For one salt, q=(nu_++nu_-)m. At q=0 activity is exactly one and Phi is undefined; below the total-species molality floor Phi is unavailable. The one-salt helper also retains its formula-molality floor. Liquid-side regularity is required; this does not establish global phase stability.
 
 $$
 \Phi=
 -\frac{\ln a_s}
-{(\nu_++\nu_-)mM_s},
+{M_s q},
 \qquad
 \ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}
 =\ln x_s+\frac{\mu_s^r-\mu_s^{r,\mathrm{pure}}}{RT}
@@ -2506,14 +2507,15 @@ $$
 - Section: Properties / Electrolyte reference actions
 - Status: Exact derivation
 - Source: `mean_ionic_activity_coefficient`, `molality_activity_conversion`, `practical_osmotic_coefficient` and `log_fugacity_coefficient_parameter_derivative`.
-- Description: Molality-scale mean ionic activity and single-solvent osmotic first columns, with the admitted terminal infinite-dilution reference.
-- Change note: The reference column stays at the returned 1e-12 mol/kg endpoint; a finer witness admits that column without replacing it. The osmotic domain is unchanged; the scalar chemical-potential difference uses the extensive Euler identity at prescribed pressure. Energies multiply the same reference columns by RT in J/mol.
+- Description: Molality-scale mean ionic activity, solvent activity and practical osmotic first parameter columns.
+- Change note: Ionic reference columns stay at the returned 1e-12 mol/kg endpoint; a finer witness admits them without replacement. Solvent columns subtract the same-T/P pure-solvent column, including the implicit density, association and dielectric/Born derivatives. Physical coordinates, composition, T/P and molar masses are held fixed. At pure solvent activity columns are zero; unavailable Phi has unavailable columns. Energies multiply ionic reference columns by RT in J/mol.
 
 $$
 \frac{\partial\gamma_\pm^{(m)}}{\partial\theta_a}
 =\gamma_\pm^{(m)}\frac{\sum_k\nu_k(g_{k,a}-g^\infty_{k,a})}{\sum_k\nu_k},
 \qquad \frac{\partial\Phi}{\partial\theta_a}
-=-\frac{g_{s,a}-g^\mathrm{pure}_{s,a}}{m M_s\sum_k\nu_k}.
+=-\frac{g_{s,a}-g^\mathrm{pure}_{s,a}}{M_s q},\qquad
+\frac{\partial a_s}{\partial\theta_a}=a_s(g_{s,a}-g^\mathrm{pure}_{s,a}).
 $$
 
 ## `dependent_born_diameter_derivative`
