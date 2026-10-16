@@ -2244,7 +2244,7 @@ An unavailable outer action preserves an independently available Cp value.
 
 ## ALG-FIT
 
-A caller-declared independent measurement-error model augments the existing
+A caller-declared Gaussian measurement-error model augments the existing
 Ceres least-squares fit with standardized physical input corrections (EqIDs
 `errors_in_variables_objective`, `independent_feed_measurement_coordinates`,
 `errors_in_variables_residual_derivative`). Output differences divided by
@@ -2254,8 +2254,18 @@ provide columns. Zero input sigma eliminates that coordinate; absent or empty
 declarations request no input action and retain ordinary fitting work.
 The [formulation](../regression/science/pure-saturation-regression.md#declared-measurement-uncertainty)
 owns admitted observation/input combinations, physical units, Difference-only
-weighting, the per-group reference-action limit and exclusions. Correlated
-errors, unsupported declarations and nonunit positive relative weights are
+weighting, the per-group reference-action limit and exclusions. One optional
+known covariance or correlation spans the positive-weight output errors, then
+the active input corrections, across measurement groups. The measurement chart
+admits it before fitting (size, finite entries, unit diagonal and symmetry
+within 64 m epsilon in standardized units, positive Eigen LLT pivots) and
+factors it once; it is never jittered, repaired or pseudo-inverted. After every
+successful row evaluation the parent solves L z = e on the gathered compact rows
+of the residual and of every complete column, scatters them back and leaves
+excluded rows zero; a nonfinite result is a trial failure. Raw prediction
+columns are formed from the physical actions and the coordinate map, never from
+whitened rows. Requests without a matrix keep their arithmetic bitwise.
+Unsupported declarations and nonunit positive relative weights are
 refused. All model/input coordinates share Ceres controls, the declared box,
 iteration and elapsed budget. The one admitted measurement-membership map
 supplies allocation, worker partitioning, penalties and result identities;
@@ -2263,12 +2273,14 @@ equal states do not establish shared measurements. Same-point promotion keeps
 its accepted state. Changed relevant physical inputs withhold optional prior
 density seeds; input movement rebuilds trial state/reference declarations.
 Failures publish no new trial cache or start and preserve their native cause.
-Local covariance uses the complete standardized Jacobian and eliminates input
-directions; it is unavailable at an active bound, deficient rank or unfinished
-fit. Known absolute sigmas supply no estimated common variance factor.
+Local covariance uses the complete standardized (whitened, with a matrix)
+Jacobian and eliminates input directions; it is unavailable at an active bound,
+deficient rank or unfinished fit. Known absolute sigmas or covariance supply no
+estimated common variance factor.
 Reconciled-input predictions and original measured-input checks retain separate
 meanings. Fitted model parameters and inputs remain candidates. The frozen
-synthetic comparison is retained in `analyses/2026-errors-in-variables/` when run.
+synthetic comparison is retained in `analyses/2026-errors-in-variables/` when run;
+the known-covariance comparison is in `analyses/2026-correlated-measurement-errors/`.
 
 Optional fitting densities come only from the previous fully successful native
 evaluator trial. Exact closure identity, the complete 10% physical-chart gate,

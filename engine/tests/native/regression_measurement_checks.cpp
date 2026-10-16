@@ -87,7 +87,179 @@ FitRequest linear_measurements(bool shared = false) {
     if (shared) request.uncertainty->groups = {{{0, 1, 2}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0}};
     return request;
 }
+constexpr double D_LAW = 0.0045, RHO = 0.5;  // #572 joint case: R_ij = rho^|i-j| over y, then T
+Eigen::MatrixXd kac(Eigen::Index m, double rho, bool inverse) {  // rho^|i-j|, or its tridiagonal inverse
+    Eigen::MatrixXd r(m, m);
+    for (Eigen::Index i = 0; i < m; ++i) for (Eigen::Index j = 0; j < m; ++j)
+        r(i, j) = !inverse ? std::pow(rho, double(std::abs(i - j)))
+            : (i == j ? (i == 0 || i == m - 1 ? 1.0 : 1 + rho*rho) : std::abs(i - j) == 1 ? -rho : 0.0) / (1 - rho*rho);
+    return r;
+}
+std::vector<double> row_major(const Eigen::MatrixXd& m) {
+    std::vector<double> out; for (Eigen::Index i = 0; i < m.rows(); ++i) for (Eigen::Index j = 0; j < m.cols(); ++j) out.push_back(m(i, j));
+    return out;
+}
+bool scaled(const std::string& id, const char* quantity, const char* unit, double model, double reference, double s) {
+    return reference_scale_agrees(id, quantity, unit, model, reference, 1e-10*std::max(s, std::abs(reference)), 0, "",
+        "independent joint covariance reference", "measurement-correlation");
+}
 }  // namespace
+
+void check_measurement_correlation() {
+    const Eigen::Vector3d t(300, 320, 340), y = Eigen::Vector3d::Constant(0.1) + D_LAW*t + Eigen::Vector3d(0.02, -0.03, 0.01);
+    Eigen::VectorXd sd(6); sd << 0.02, 0.02, 0.02, 2, 2, 2;
+    const auto joint = [&](double rho, bool covariance) {
+        auto request = intercept_request({300, 320, 340}, {y[0], y[1], y[2]}, {0.02, 0.02, 0.02});
+        for (std::size_t i = 0; i < 3; ++i) request.uncertainty->groups.push_back({{i}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0});
+        const Eigen::MatrixXd r = kac(6, rho, false);
+        if (covariance) request.uncertainty->covariance = row_major(sd.asDiagonal() * r * sd.asDiagonal());
+        else request.uncertainty->correlation = row_major(r);
+        return request;
+    };
+    for (const double rho : {0.0, RHO}) for (const bool covariance : {false, true}) {
+        const auto id = std::string(covariance ? "covariance" : "correlation") + "/rho=" + std::to_string(rho);
+        // Independent normal equations: beta = (A, dT), H = [[1, d I], [0, I]], b = (y - d T_M, 0), C^-1 = D^-1 R^-1 D^-1.
+        const Eigen::MatrixXd w = sd.cwiseInverse().asDiagonal() * kac(6, rho, true) * sd.cwiseInverse().asDiagonal();
+        Eigen::MatrixXd h = Eigen::MatrixXd::Zero(6, 4); Eigen::VectorXd b = Eigen::VectorXd::Zero(6);
+        for (Eigen::Index i = 0; i < 3; ++i) { h(i, 0) = 1; h(i, 1 + i) = D_LAW; h(3 + i, 1 + i) = 1; b[i] = y[i] - D_LAW*t[i]; }
+        const Eigen::MatrixXd information = h.transpose()*w*h;
+        const Eigen::VectorXd beta = information.ldlt().solve(h.transpose()*w*b), e = h*beta - b;
+        const Eigen::Vector3d ey = e.head(3) / 0.02;
+        const double cost = 0.5*e.dot(w*e), output_cost = 0.5*ey.dot(kac(3, rho, true)*ey);
+        const auto result = fit(joint(rho, covariance));
+        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
+        CHECK(result.covariance.assumption.find("joint") != std::string::npos && !result.covariance.variance_factor);
+        const auto& rec = *result.reconciliation;
+        const double variance = information.inverse()(0, 0);
+        std::cout << std::setprecision(17) << "JOINT_REFERENCE " << id << " A=" << result.physical[0] << " reference_A=" << beta[0]
+            << " variance=" << result.covariance.optimizer[0] << " reference_variance=" << variance << " cost=" << result.final_cost
+            << " reference_cost=" << cost << " iterations=" << result.iterations << " projected_gradient=" << result.covariance.projected_gradient_norm
+            << " message=" << result.message << '\n';
+        // Lead-approved allowance (2026-10-16, cost resolution): each fitted coordinate adds its component of one
+        // Gauss-Newton step from the returned endpoint, z = L^-1 (r/sigma_y, u) and the returned complete whitened columns.
+        Eigen::VectorXd ez(6); Eigen::MatrixXd jr(6, 4);
+        for (Eigen::Index i = 0; i < 6; ++i) {
+            ez[i] = i < 3 ? result.residuals[std::size_t(i)] / 0.02 : rec.corrections[std::size_t(i - 3)];
+            for (Eigen::Index c = 0; c < 4; ++c) jr(i, c) = rec.jacobian[std::size_t(i*4 + c)];
+        }
+        for (Eigen::Index i = 5; i > 0; --i) ez[i] = (ez[i] - rho*ez[i - 1]) / std::sqrt(1 - rho*rho);
+        const Eigen::VectorXd step = (jr.transpose()*jr).ldlt().solve(jr.transpose()*ez);
+        const double decrease = 0.5*step.dot(jr.transpose()*ez);
+        const auto within = [&](const std::string& name, const char* quantity, const char* unit, double model, double reference, double s, double component) {
+            std::cout << std::setprecision(17) << "JOINT_STEP_BOUND " << id << '/' << name << " raw_error=" << std::abs(model - reference)
+                << " step_component=" << component << " predicted_decrease=" << decrease << '\n';
+            reference_scale_agrees(id + "/" + name, quantity, unit, model, reference, 1e-10*std::max(s, std::abs(reference)) + component, 0,
+                fields({field("step_component", component)}), "independent joint reference within the one-step stationarity allowance",
+                "measurement-correlation");
+        };
+        within("A", "A", "1", result.physical[0], beta[0], 1, std::abs(step[0]));
+        for (std::size_t c = 0; c < 3; ++c) {
+            const auto k = Eigen::Index(1 + c);
+            within("dT/" + std::to_string(c), "temperature_correction", "K", rec.values[c] - t[k - 1], beta[k], 2, 2*std::abs(step[k]));
+            within("u/" + std::to_string(c), "standardized_correction", "1", rec.corrections[c], beta[k] / 2, 1, std::abs(step[k]));
+        }
+        // Lead decision 2026-10-16: the split is not stationary, so it is checked against the independent decomposition at
+        // the returned endpoint; the reference-point differences are first order in the endpoint offset and only printed.
+        const Eigen::VectorXd ee = [&] { Eigen::VectorXd v(6); for (Eigen::Index i = 0; i < 6; ++i)
+            v[i] = i < 3 ? result.residuals[std::size_t(i)] / 0.02 : rec.corrections[std::size_t(i - 3)]; return v; }();
+        const Eigen::Vector3d ye = ee.head(3);
+        const double endpoint_cost = 0.5*ee.dot(kac(6, rho, true)*ee), endpoint_output = 0.5*ye.dot(kac(3, rho, true)*ye);
+        std::cout << std::setprecision(17) << "COST_SPLIT " << id << " output=" << rec.output_cost << " endpoint_reference=" << endpoint_output
+            << " reference_point=" << output_cost << " input=" << rec.input_cost << " endpoint_reference=" << endpoint_cost - endpoint_output
+            << " reference_point=" << cost - output_cost << '\n';
+        scaled(id + "/cost", "objective", "1", result.final_cost, cost, 1);
+        scaled(id + "/output_cost", "output_cost", "1", rec.output_cost, endpoint_output, 1);
+        scaled(id + "/input_cost", "input_cost", "1", rec.input_cost, endpoint_cost - endpoint_output, 1);
+        scaled(id + "/variance/optimizer", "A_variance", "1", result.covariance.optimizer[0], variance, 1);
+        scaled(id + "/variance/physical", "A_variance", "1", result.covariance.physical[0], variance, 1);
+    }
+    // Nonstationary point: raw prediction columns [1, 2d I] and the independently whitened complete objective.
+    const std::vector<double> z0{0, 0.25, -0.5, 0.75};
+    const auto request = joint(RHO, false);
+    const auto at = point(request, z0);
+    Eigen::VectorXd e(6); Eigen::MatrixXd j = Eigen::MatrixXd::Zero(6, 4);
+    for (Eigen::Index i = 0; i < 3; ++i) {
+        e[i] = (D_LAW*(t[i] + 2*z0[std::size_t(1 + i)]) - y[i]) / 0.02; e[3 + i] = z0[std::size_t(1 + i)];
+        j(i, 0) = 50; j(i, 1 + i) = 2*D_LAW/0.02; j(3 + i, 1 + i) = 1;
+    }
+    const auto whiten = [](Eigen::MatrixXd v) {  // z_0 = e_0, z_i = (e_i - rho e_(i-1)) / sqrt(1 - rho^2)
+        for (Eigen::Index i = v.rows() - 1; i > 0; --i) v.row(i) = (v.row(i) - RHO*v.row(i - 1)) / std::sqrt(1 - RHO*RHO);
+        return v;
+    };
+    const Eigen::VectorXd z = whiten(e); const Eigen::MatrixXd jz = whiten(j);
+    for (std::size_t i = 0; i < 3; ++i) for (std::size_t c = 0; c < 4; ++c)
+        scaled("point/raw/" + std::to_string(i) + "/" + std::to_string(c), "raw_prediction_column", "1", at.optimizer_gradient[i*4 + c],
+            c == 0 ? 1.0 : c == 1 + i ? 2*D_LAW : 0.0, c == 0 ? 1 : 2*D_LAW);
+    for (std::size_t i = 0; i < 6; ++i) {
+        scaled("point/whitened_residual/" + std::to_string(i), "whitened_residual", "1", at.weighted[i], z[Eigen::Index(i)], 1);
+        for (std::size_t c = 0; c < 4; ++c) {
+            const double reference = jz(Eigen::Index(i), Eigen::Index(c));
+            scaled("point/whitened_column/" + std::to_string(i) + "/" + std::to_string(c), "whitened_column", "1", at.residual_optimizer_gradient[i*4 + c], reference, 1);
+            CHECK(at.reconciliation->jacobian[i*4 + c] == at.residual_optimizer_gradient[i*4 + c]);
+        }
+    }
+    scaled("point/whitened_A/0", "whitened_column", "1", at.residual_optimizer_gradient[0], 50, 1);
+    scaled("point/whitened_A/1", "whitened_column", "1", at.residual_optimizer_gradient[4], 50/std::sqrt(3.0), 1);
+    const Eigen::Vector3d ey = e.head(3);
+    const double cost = 0.5*e.dot(kac(6, RHO, true)*e), output_cost = 0.5*ey.dot(kac(3, RHO, true)*ey);
+    scaled("point/cost", "objective", "1", at.cost, cost, 1);
+    scaled("point/output_cost", "output_cost", "1", at.reconciliation->output_cost, output_cost, 1);
+    scaled("point/input_cost", "input_cost", "1", at.reconciliation->input_cost, cost - output_cost, 1);
+    for (std::size_t c = 0; c < 3; ++c) {
+        scaled("point/penalty/" + std::to_string(c), "penalty", "1", at.reconciliation->penalties[c], z[Eigen::Index(3 + c)]*z[Eigen::Index(3 + c)], 1);
+        CHECK(at.reconciliation->corrections[c] == z0[1 + c]);
+    }
+    std::cout << std::setprecision(17) << "CORRELATED_POINT raw_A=" << at.optimizer_gradient[0] << ',' << at.optimizer_gradient[4] << ','
+        << at.optimizer_gradient[8] << " whitened_A=" << at.residual_optimizer_gradient[0] << ',' << at.residual_optimizer_gradient[4] << '\n';
+    derivative_probe("correlated", request, z0);
+    // Admission: refused before fitting, never repaired; roundoff-level asymmetry within 64 m eps is admitted.
+    const auto refused = [&](const std::string& cause, const std::function<void(FitRequest&)>& edit) {
+        auto item = joint(RHO, false); edit(item); const auto result = fit(item);
+        truth("correlation-refusal/" + cause, "invalid measurement matrices retain their cause",
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos, fields({field("message", result.message)}), "measurement-correlation");
+    };
+    refused("both", [&](auto& item) { item.uncertainty->covariance = item.uncertainty->correlation; });
+    refused("dimension", [&](auto& item) { item.uncertainty->correlation->resize(25); });
+    refused("finite", [&](auto& item) { (*item.uncertainty->correlation)[1] = NAN; });
+    refused("symmetric", [&](auto& item) { (*item.uncertainty->correlation)[1] = 0.6; });
+    refused("positive definite", [&](auto& item) { (*item.uncertainty->correlation)[1] = (*item.uncertainty->correlation)[6] = 1; });
+    refused("diagonal", [&](auto& item) { item.uncertainty->covariance = row_major(sd.asDiagonal() * kac(6, RHO, false) * sd.asDiagonal());
+        item.uncertainty->correlation.reset(); (*item.uncertainty->covariance)[0] *= 1.01; });
+    auto roundoff = joint(RHO, false); (*roundoff.uncertainty->correlation)[1] += 4e-14;
+    CHECK(fit(roundoff).status == "converged");
+    // Permuted groups with an intervening zero-weight output and a fixed zero-sigma input equal the canonical order.
+    auto canonical = intercept_request({300, 320, 340}, {y[0], y[1], y[2]}, {0.02, 0.02, 0.02});
+    canonical.uncertainty->groups = {{{0}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0},
+        {{1}, {input(MeasuredInputKind::Temperature, 0, 320, 320)}, {}, 0}, {{2}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0}};
+    const Eigen::MatrixXd rc = kac(5, RHO, false);  // y300, y320, y340, T300, T340
+    canonical.uncertainty->correlation = row_major(rc);
+    auto permuted = intercept_request({340, 330, 300, 320}, {y[2], 1.6, y[0], y[1]}, {0.02, 0.02, 0.02, 0.02});
+    permuted.weights = {1, 0, 1, 1};
+    permuted.uncertainty->groups = {{{2}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0},
+        {{3}, {input(MeasuredInputKind::Temperature, 0, 320, 320)}, {}, 0}, {{0}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0}};
+    const std::array<Eigen::Index, 5> order{2, 0, 1, 3, 4};  // compact rows y340, y300, y320, T300, T340
+    Eigen::MatrixXd rp(5, 5);
+    for (Eigen::Index i = 0; i < 5; ++i) for (Eigen::Index k = 0; k < 5; ++k) rp(i, k) = rc(order[std::size_t(i)], order[std::size_t(k)]);
+    permuted.uncertainty->correlation = row_major(rp);
+    const auto a = fit(canonical), p = fit(permuted);
+    CHECK(a.usable && p.usable && a.status == "converged" && p.status == "converged" && p.reconciliation && a.reconciliation);
+    const auto& pr = *p.reconciliation;
+    CHECK(p.weighted_residuals.size() == 4 && p.weighted_residuals[1] == 0.0 && pr.jacobian.size() == 6*3);
+    CHECK(pr.jacobian[3] == 0.0 && pr.jacobian[4] == 0.0 && pr.jacobian[5] == 0.0);
+    CHECK((pr.column_groups == std::vector<std::size_t>{0, 2}) && (pr.column_inputs == std::vector<std::size_t>{0, 0}));
+    CHECK((pr.row_groups == std::vector<std::size_t>{2, 4, 0, 1, 0, 2}) && p.covariance.objective_rows.size() == 5);
+    scaled("order/A", "A", "1", p.physical[0], a.physical[0], 1);
+    scaled("order/cost", "objective", "1", p.final_cost, a.final_cost, 1);
+    scaled("order/variance", "A_variance", "1", p.covariance.optimizer[0], a.covariance.optimizer[0], 1);
+    for (std::size_t c = 0; c < 2; ++c) {
+        scaled("order/u/" + std::to_string(c), "standardized_correction", "1", pr.corrections[c], a.reconciliation->corrections[c], 1);
+        scaled("order/penalty/" + std::to_string(c), "penalty", "1", pr.penalties[c], a.reconciliation->penalties[c], 1);
+    }
+    scaled("order/output_cost", "output_cost", "1", pr.output_cost, a.reconciliation->output_cost, 1);
+    const std::array<std::size_t, 3> rows{2, 3, 0};  // canonical output i at permuted row
+    for (std::size_t i = 0; i < 3; ++i)
+        scaled("order/residual/" + std::to_string(i), "ln_K_residual", "1", p.residuals[rows[i]], a.residuals[i], 0.02);
+}
 
 void check_measurement_columns() {
     auto ionic = ionic_measurements(); derivative_probe("ionic", ionic, {1, 0, 0, 0});
@@ -321,8 +493,8 @@ void check_measurement_admission() {
     auto item = request; item.uncertainty->output_sigma.clear(); reject(item, "output sigma");
     item = request; item.uncertainty->groups[0].inputs[0].sigma = -1; reject(item, "nonnegative");
     item = request; item.uncertainty->groups[0].inputs[0].unit = "C"; reject(item, "unit");
-    item = request; item.uncertainty->correlation = std::vector<double>{}; reject(item, "correlated");
-    item = request; item.uncertainty->covariance = std::vector<double>{}; reject(item, "correlated");
+    item = request; item.uncertainty->correlation = std::vector<double>{}; reject(item, "dimension");
+    item = request; item.uncertainty->covariance = std::vector<double>{}; reject(item, "dimension");
     item = request; item.weights = {1,2,1}; reject(item, "relative weights");
     item = ionic_measurements(); item.observations[0].form = ResidualForm::LogRatio; reject(item, "LogRatio");
     item = request; item.uncertainty->groups[1].rows = {0}; reject(item, "overlapping");

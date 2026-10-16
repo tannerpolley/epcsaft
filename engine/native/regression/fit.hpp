@@ -81,8 +81,11 @@ struct MeasurementGroup final {
 struct MeasurementUncertainty final {
     std::vector<MeasurementGroup> groups;
     std::vector<double> output_sigma;
-    std::optional<std::vector<double>> covariance, correlation;  // refused even when explicitly empty
+    // At most one, row-major m x m: positive-weight outputs in row order, then active inputs in column order.
+    std::optional<std::vector<double>> covariance, correlation;
 };
+// Under a declared matrix, penalties are squared whitened input components, input_cost is conditional on the
+// outputs and jacobian is whitened; corrections stay standardized physical corrections.
 struct InputReconciliation final {
     std::vector<double> values, corrections, penalties, jacobian;
     std::vector<std::size_t> row_groups, column_groups, column_inputs;
@@ -117,7 +120,7 @@ struct TrialFailure final {
     bool jacobian = false;
 };
 
-// (J^T J)^-1 of the weighted optimizer Jacobian, mapped to physical rows by the evaluated D.
+// (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
     std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable | minimax_unavailable
@@ -145,7 +148,7 @@ struct FitResult final {
     Parameters parameters;
     std::vector<double> predictions;
     std::vector<double> residuals;           // declared form, unweighted
-    std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual
+    std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual; whitened under a declared matrix
     std::vector<double> physical_jacobian;   // n x R: d(value)/d(theta)
     std::vector<double> optimizer_jacobian;  // n x U: Ceres weighted residual columns; minimax raw value columns
     std::vector<ObservationStatus> statuses;  // NotEvaluated for skipped rows or rows after a failed prediction
@@ -170,7 +173,8 @@ struct FitResult final {
 struct ObservationEvaluation final {
     policy::SolverOptions solver_options;
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
-    // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight.
+    // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight (with uncertainty, the
+    // complete standardized and, under a declared matrix, whitened objective columns).
     std::vector<double> residual_optimizer_gradient;
     std::vector<ObservationStatus> statuses;
     double cost = 0.0;

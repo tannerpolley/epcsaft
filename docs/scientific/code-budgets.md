@@ -82,6 +82,15 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #572 (lead allowance under the #577 delegation: parameter
+  Regression +180 net / 200 gross formatted runtime lines, every other runtime
+  layer zero, against `517a3450`): measured growth is 103 added, 20 removed,
+  +83 net in `fit.cpp`/`fit.hpp`. Parameter Regression **3,873 → 3,957**, the
+  count 3,917 plus its band 40. The total ceiling 27,066 stays within one band
+  of the count 26,969. The +83 counts toward the delegation's +2,000 cap. The
+  joint measurement covariance replaces the blanket correlated-declaration
+  refusal within the existing measurement chart and evaluator.
+
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
