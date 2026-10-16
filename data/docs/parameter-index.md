@@ -29,6 +29,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
 | `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
+| `saad-padova-marcus-1980-nacl-kcl-cacl2-observations` | 1 | 1 | Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980). |
 | `zuber-2014-electrolyte-permittivity` | 1 | 1 | Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol. |
 
 ## Components

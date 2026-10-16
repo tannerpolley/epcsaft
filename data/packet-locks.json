@@ -289,6 +289,13 @@
       "packet_path": "data/packets/mixed-chloride-water-observations/1",
       "packet_fingerprint": "2234735befdff30e54b82250b1b2a8d69daaca95af98abb65a1490c9dafd3679",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",
+      "packet_fingerprint": "7719154a02443a0745a369e559b0ea01991b093241519f18603a6f64749e9696",
+      "materialization": "byte-for-byte"
     }
   ]
 }
