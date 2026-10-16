@@ -83,9 +83,9 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-16, #565 (lead allowance under the #577 rule: Equilibrium +270 net / 270 gross, Core +10 / 10, other
-  layers 0, against `517a3450`): measured growth is Equilibrium +150 net / 162 gross and Core +9 / 9 formatted
-  runtime lines. Equilibrium **9,688 → 9,912** and Core **1,327 → 1,345**, each the measured count plus its 1% band.
-  Total **27,066 → 27,308**, the layer-ceiling sum, within the count 27,072 plus its band 271.
+  layers 0, against `517a3450`): measured growth is Equilibrium +153 net / 166 gross and Core +9 / 9 formatted
+  runtime lines. Equilibrium **9,688 → 9,915** and Core **1,327 → 1,345**, each the measured count plus its 1% band.
+  Total **27,066 → 27,311**, the layer-ceiling sum, within the count 27,075 plus its band 271.
 
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
