@@ -55,6 +55,9 @@ Ipopt.
 
 These are saturation, bubble and dew points.
 
+**Clarification 2026-10-16 (#571, lead).** An azeotrope cell (EqID `azeotrope_condition`) is excluded:
+it meets the list above literally, but #476's corpus does not qualify it, so Ipopt solves it alone.
+
 **Callers.** Public solves, fit observations and the declared solve inside `cooling_onset` enter
 `solve_compiled`. The following keep the Ipopt driver alone:
 

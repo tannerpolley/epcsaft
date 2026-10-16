@@ -138,13 +138,14 @@ struct EquilibriumProblem final {
     std::optional<double> entropy_j_per_k;
     std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
+    bool azeotrope = false;  // EqID azeotrope_condition: a binary bubble/dew cell whose feed composition is the seed
     // Caller row criterion for the solve; the named policy value is the only default.
     policy::SolverOptions solver_options;
 };
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition
 };
 
 inline const char* row_kind_name(RowKind kind) noexcept {
@@ -159,6 +160,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::CriticalMode: case RowKind::CriticalNormalization: case RowKind::CriticalCubic:
         return "critical_equations";
     case RowKind::EnvelopeCondition: return "envelope_local_condition";
+    case RowKind::AzeotropeCondition: return "azeotrope_condition";
     }
     return "unknown";
 }

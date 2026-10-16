@@ -1460,7 +1460,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
 static bool newton_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
-        || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery
+        || compiled.has_caloric_condition() || p.critical || p.envelope || p.azeotrope || p.discovery
         || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2 || compiled.free_intensive_count != 1) return false;
     const auto& a = p.phases[0]; const auto& b = p.phases[1];
     return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));
@@ -1482,12 +1482,13 @@ static bool free_amount_newton_eligible(const CompiledSystem& compiled) {
     return true;
 }
 
-// The #565 recovery domain: a neutral nonreacting non-associating L+V boundary or TP flash on the full positive feed.
+// The #565 recovery domain: a neutral nonreacting non-associating L+V boundary or TP flash on the full positive feed,
+// never an azeotrope cell.
 static bool recovery_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     const auto components = compiled.model->parameters().component_count();
     return (newton_eligible(compiled) || free_amount_newton_eligible(compiled)) && p.phases[0].kind != p.phases[1].kind
-        && !p.source_reference && compiled.model->parameters().site_component.empty()
+        && !p.source_reference && !p.azeotrope && compiled.model->parameters().site_component.empty()
         && p.phases[0].support.size() == components && p.phases[1].support.size() == components
         && std::all_of(compiled.n_feed.begin(), compiled.n_feed.end(), [](double n) { return n > 0.0; });
 }
