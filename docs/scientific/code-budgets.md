@@ -82,6 +82,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #565 (lead allowance under the #577 rule: Equilibrium +270 net / 270 gross, Core +10 / 10, other
+  layers 0, net over the merge base): measured growth against main `8fb04d01` (after #568, #569 and #570) is
+  Equilibrium +154 net and Core +9 formatted runtime lines. Equilibrium **9,796 → 9,977** (count 9,878 plus band
+  99). Core 1,359 sits exactly at its ceiling 1,359 and is not raised. The total ceiling stays main's **27,966**,
+  above the count 27,880 by less than its band.
 - 2026-10-16, #569 (lead allowance under the #577 rule after Ready: Surface +40, Bindings +10, Python +50, other runtime layers 0): measured growth against main `fe47081d` is Surface +39, Bindings +2, Python +50 formatted runtime lines (total 27,626 → 27,717). Surface **729 → 768** and Python **2,200 → 2,271**, each the count plus its 1% band; Bindings 2,219 stays within its ceiling 2,240. The total ceiling is **27,681 → 27,966**, the layer-ceiling sum. One native cross-association admission owner and one native NASA9 gas-constant rescale replace no existing runtime code.
 - 2026-10-16, #570 (lead allowance under the #577 rule: Surface +55, Bindings +35, Python +8 net, other layers 0; Surface includes +1 for delivered review r2's law-term field guard): fitted-parameter write-back and form-tagged ASL thermochemistry records use net +55/+34/+6 against `16fccc32`, re-measured after merging main `35cbe62a`. Surface **673 → 729** and Bindings **2,205 → 2,240**, the counts 721 and 2,217 plus their 1% bands; Python 2,198 stays within its ceiling. The total ceiling stays main's **27,681**, above the count 27,626 by less than its band. One native inverse beside `build_parameters` writes fitted slots, temperature-law coefficients included, back into the start document, and one form-tagged interval writer and reader replace the NASA9-only record.
 - 2026-10-16, #572 (lead allowance under the #577 delegation: parameter

@@ -318,9 +318,13 @@ void check_f9_f10() {
     coincident.feed.values = {0.5, 0.5};
     coincident.temperature.value = 280.0;
     const auto topology = predict(model, solved(ObservationKind::EquilibriumPressure, coincident));
+    // #565: observations keep the ordinary solve, without recovery: the convergence record is the default solve's.
+    const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, coincident)).convergence;
     truth("r1-f9/topology_event", "the s15c coincident state is typed topology_event whatever success says",
           topology.status == ObservationStatus::TopologyEvent && !topology.value.has_value()
-              && topology.message.find("phases_coincide") != std::string::npos,
+              && topology.message.find("phases_coincide") != std::string::npos && topology.convergence.has_value()
+              && topology.convergence->iterations == ordinary.iterations && topology.convergence->evaluations == ordinary.evaluations
+              && topology.convergence->stop == ordinary.stop && topology.convergence->residual == ordinary.residual,
           fields({field("status", observation_status_name(topology.status)), field("message", topology.message)}), "r1-f9");
     const HelmholtzModel ethane(properties_support::ethane());
     // A declared branch selects among two stable roots; one stable root is returned as Unspecified with

@@ -48,9 +48,13 @@ MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df
 ACCEPTED = dict(
     cameretti=dict(states=1800, default_successes=1800, declared_all_succeeded=True),
     gross=dict(rows=724, failed_lines=[558, 722, 723]),
-    neutral=dict(rows=70, successes={240: [2.02606e6, 3e6, 5e6, 6.75e6, 7e6], 250: [3e6, 5e6, 6.75e6, 7e6], 255: [5e6],
-                                     260: [5e6, 6.75e6], 262: [5e6, 7e6], 264: [3e6, 5e6, 6.75e6, 7e6],
-                                     265: [3e6, 6.75e6, 7e6], 265.5: [6.75e6, 7e6], 265.95: [6.75e6, 7e6], 266.5: [5e6]}),
+    # #565: the neutral recovery adds 38 rows at 240-265.95 K. FeOs 0.10.1 bubble points at identical parameters agree
+    # within 3.1e-10 (240-265 K) and, from an initial guess, 1.1e-10 (265.5 K). At 265.95 K, 0.02 K below the mixture
+    # critical point, the default 1e-10 row criterion leaves about 2e-8 in P, 6e-6 in y and 3e-5 in the vapor density;
+    # tightening the Engine's own tolerance to 1e-13 converges onto FeOs (1.1e-9 in P), so the gap is the tolerance, not
+    # a code disagreement (build/issue-565/delivered-review-r1.md). This check compares B against A; it claims no accuracy.
+    neutral=dict(rows=70, successes={**{T: [1e5, 1e6, 2.02606e6, 3e6, 5e6, 6.75e6, 7e6]
+                                        for T in (240, 250, 255, 260, 262, 264, 265, 265.5, 265.95)}, 266.5: [5e6]}),
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
