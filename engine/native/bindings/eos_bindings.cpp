@@ -122,6 +122,7 @@ void register_eos(nb::module_& module) {
             entries);
     module.def("build_parameters", &epcsaft::build_parameters);
     module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
+    module.def("fitted_document", &epcsaft::fitted_document);
 
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)

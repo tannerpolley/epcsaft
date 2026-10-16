@@ -597,7 +597,7 @@ struct PropertyContext final {
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v1");
+    reader.field("epcsaft.asl.property.v2");
     const auto document = read_document(reader);
     epcsaft::policy::SolverOptions solver_options;
     reader.field("solver_options");
@@ -610,9 +610,18 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
         return reader.vector([&] {
             epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
             item.correlation.source_pressure = reader.number();
-            epcsaft::IdealNASA9 nasa9{};
-            for (double& a : nasa9.coefficients) a = reader.number();
-            item.correlation.form = nasa9;
+            const auto tag = reader.next();
+            const auto form = std::find(eq::ideal_tags.begin(), eq::ideal_tags.end(), tag) - eq::ideal_tags.begin();
+            if (form == 5) reject("unknown ASL thermochemistry form " + tag);
+            item.correlation.form = eq::ideal_forms[form];
+            std::visit([&](auto& c) {
+                const auto count = reader.integer();
+                if constexpr (std::is_same_v<decltype(c), epcsaft::IdealPolynomial&>) c.coefficients.resize(count);
+                if (count != c.coefficients.size()) reject("invalid ASL interval");
+                for (double& value : c.coefficients) value = reader.number();
+                if (reader.integer() != eq::ideal_anchors(c).size()) reject("invalid ASL interval");
+                for (double* value : eq::ideal_anchors(c)) *value = reader.number();
+            }, item.correlation.form);
             return item;
         });
     });
@@ -674,7 +683,7 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
         actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
         for (std::size_t row = 1; row < n; ++row) {
             const auto& item = batch.results[row - 1];
-            if (first && item.value) branch.values[row] = *item.value;  // an owned NASA9 endpoint keeps its value
+            if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
             if (first && !item.value) fail(row, 0, item.status);
             actions[row] = item.action.value_or(0.0);
             if (item.status != Status::Available || !item.action) fail(row, static_cast<int>(directions.size()), item.status);
