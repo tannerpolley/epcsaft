@@ -73,7 +73,7 @@ void register_regression(nb::module_& module) {
         return formula_composition(solvent, parameters, ions, stoichiometry, molality);
     });
     nb::enum_<ObservationKind>(module, "ObservationKind")
-        EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, SolvationGibbsEnergy,
+        EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
             PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy);

@@ -154,6 +154,16 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             };
             admit(observation.composition);
             if (!observation.reference_composition.empty()) admit(observation.reference_composition);
+        } else if (observation.kind == ObservationKind::MixtureOsmoticCoefficient) {
+            model.validate_electroneutrality(observation.composition);
+            const auto& parameters = model.parameters();
+            std::size_t solvents = 0, solvent = 0;
+            double solute = 0.0;
+            for (std::size_t i = 0; i < components; ++i) if (observation.composition[i] > 0.0) {
+                if (parameters.charge_number[i] == 0) { ++solvents; solvent = i; } else solute += observation.composition[i];
+            }
+            require(solvents == 1 && solute / (observation.composition[solvent] * parameters.molar_mass_kg_per_mol[solvent])
+                >= policy::OSMOTIC_MOLALITY_FLOOR.value, "osmotic domain: one neutral solvent, solute molality above the floor");
         } else {
             (void)formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, 1.0);
             if (observation.kind == ObservationKind::OsmoticCoefficient)
@@ -269,6 +279,21 @@ Prediction predict(
                 result.state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
                 if (!observation.reference_composition.empty()) result.reference_state = close(observation.reference_composition,
                     previous && previous->reference_state ? &*previous->reference_state : nullptr);
+            } else if (observation.kind == ObservationKind::MixtureOsmoticCoefficient) {
+                std::vector<double> water(observation.composition.size(), 0.0);
+                for (std::size_t i = 0; i < water.size(); ++i)
+                    if (observation.composition[i] > 0.0 && model.parameters().charge_number[i] == 0) water[i] = 1.0;
+                const State* pure = previous && previous->reference && previous->reference->pure_solvent_state ? &*previous->reference->pure_solvent_state : nullptr;
+                const auto anchor = prior(pure, water, water, DensityBranch::Liquid);
+                result.reference = solvent_reference(model, observation.temperature, observation.pressure, water, anchor);
+                if (result.reference->pure_solvent_state) accepted(*result.reference->pure_solvent_state, pure, anchor);
+                auto activity = solvent_activity(model, observation.temperature, observation.pressure, observation.composition, *result.reference,
+                    close(observation.composition, previous && previous->activity ? &previous->activity->state : nullptr));
+                if (!activity.solvent_activity) throw std::runtime_error(activity.cause);
+                result.activity.emplace();
+                result.activity->state = std::move(activity.state);
+                result.activity->osmotic_coefficient = activity.osmotic_coefficient;
+                for (const auto& column : activity.osmotic_parameter_derivative) result.activity->osmotic_parameter_derivative.push_back(column.value_or(NAN));
             } else {
                 ReferenceCache local;
                 auto& cache = references ? *references : local;
@@ -440,6 +465,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
             break;
         case ObservationKind::MeanIonicActivityCoefficient: value = result.activity ? result.activity->mean_ionic_molality_scale : 1.0; break;
         case ObservationKind::OsmoticCoefficient:
+        case ObservationKind::MixtureOsmoticCoefficient:
             if (!result.activity->osmotic_coefficient || !std::holds_alternative<double>(*result.activity->osmotic_coefficient)) {
                 result.status = ObservationStatus::ActionUnavailable; result.message = "osmotic precision floor or missing pure solvent"; return;
             }
@@ -548,7 +574,8 @@ PredictionGradient differentiate(
                 }
             } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient)
                 value = prediction.activity ? prediction.activity->mean_ionic_parameter_derivative.at(a) : 0.0;
-            else if (observation.kind == ObservationKind::OsmoticCoefficient) value = prediction.activity->osmotic_parameter_derivative.at(a);
+            else if (observation.kind == ObservationKind::OsmoticCoefficient || observation.kind == ObservationKind::MixtureOsmoticCoefficient)
+                value = prediction.activity->osmotic_parameter_derivative.at(a);
             else {
                 const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
                 const auto column = prediction.reference->parameter_derivative.at(a)[ion];

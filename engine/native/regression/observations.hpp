@@ -13,8 +13,9 @@ namespace epcsaft::regression {
 // The built-in observation inventory. Values come from the shared owners only:
 // Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
+// MixtureOsmoticCoefficient is -ln a_w / (M_w sum_j m_j) of a full electroneutral liquid composition in one solvent.
 enum class ObservationKind {
-    MeanIonicActivityCoefficient, OsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
+    MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
 };

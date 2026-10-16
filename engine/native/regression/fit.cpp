@@ -171,7 +171,7 @@ struct MeasurementChart final {
                         ? policy::OSMOTIC_MOLALITY_FLOOR.value : 0.0);
                 }), "molality box leaves the admitted domain");
                 if (ionic) require(std::count(anchor.composition.begin(), anchor.composition.end(), 1.0) == 1
-                    && (input.kind == K::Temperature || input.kind == K::Pressure || input.kind == K::Molality), "mixed-solvent uncertainty is unsupported");
+                    && (input.kind == K::Temperature || input.kind == K::Pressure || input.kind == K::Molality), "input uncertainty needs a one-salt declaration in one pure solvent");
                 std::vector<double> dx(count, 0.0);
                 double value = input.kind == K::Temperature ? (ionic || pressure ? anchor.temperature : anchor.problem.temperature.value)
                     : input.kind == K::Pressure ? (ionic || pressure ? anchor.pressure : anchor.problem.pressure.value) : anchor.molality;

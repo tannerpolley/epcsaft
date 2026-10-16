@@ -974,6 +974,7 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
 class ObservationKind:
     MeanIonicActivityCoefficient: ObservationKind
     OsmoticCoefficient: ObservationKind
+    MixtureOsmoticCoefficient: ObservationKind
     SolvationGibbsEnergy: ObservationKind
     TransferGibbsEnergy: ObservationKind
     BulkRelativePermittivity: ObservationKind
