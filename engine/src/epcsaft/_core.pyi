@@ -678,7 +678,7 @@ class RowKind:
     CriticalCubic: RowKind
     EnvelopeCondition: RowKind
     AzeotropeCondition: RowKind
-    Saturation: RowKind
+    SolidAffinity: RowKind
 
 class Row:
     kind: RowKind
@@ -752,7 +752,7 @@ class EquilibriumResult:
     topology_pair: Optional[tuple[int, int]]
     critical: Optional[CriticalRecord]
     solid_amounts: list[float]  # mol, per declared solid
-    saturation_indices: list[float]  # SI_s in decades, per declared solid
+    solid_affinity_decades: list[float]  # SI_s in decades, per declared solid
     def phase_mole_fractions(self, phase: int) -> list[float]: ...  # one declared phase, component_ids order
 
 class TopologyEvent:

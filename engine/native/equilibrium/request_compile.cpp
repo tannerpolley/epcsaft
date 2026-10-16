@@ -401,7 +401,7 @@ void admit_conditions(const CompiledSystem& compiled) {
 }
 
 // Caloric, critical and envelope rows: analytic in record_geometry, completed by row_series.
-bool condition_row(RowKind kind) { return kind >= RowKind::Enthalpy && kind != RowKind::Saturation; }
+bool condition_row(RowKind kind) { return kind >= RowKind::Enthalpy && kind != RowKind::SolidAffinity; }
 
 template<class Scalar>
 IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::size_t phase,
@@ -678,7 +678,7 @@ CppAD::ADFun<double> record_geometry(
         }
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
             const auto& item = compiled.rows[row];
-            if (condition_row(item.kind) || item.kind == RowKind::Saturation) continue;
+            if (condition_row(item.kind) || item.kind == RowKind::SolidAffinity) continue;
             if (item.kind == RowKind::Moiety) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += amount * compiled.B[item.index][species] * x[species];
@@ -718,7 +718,7 @@ CppAD::ADFun<double> record_geometry(
     }
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
         const auto& item = compiled.rows[row];
-        if (item.kind == RowKind::Saturation)
+        if (item.kind == RowKind::SolidAffinity)
             row_values[row] = compiled.solids[item.index].present ? -solid_output[2 * item.index + 1] : solid_output[2 * item.index];
         if (item.kind != RowKind::Moiety) continue;
         for (std::size_t species = 0; species < components; ++species)
@@ -1298,7 +1298,7 @@ static CompiledSystem compile_with_basis(
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         compiled.rows.push_back({RowKind::Normalization, phase, 0});
     for (std::size_t s = 0; s < request.solids.size(); ++s)
-        if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::Saturation, 0, s});
+        if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
     if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
     compiled.mode_count = request.critical ? components : 0;
@@ -1518,7 +1518,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
             value = (value - balance[row.index]) / feed_total;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
-        } else if (row.kind == RowKind::Saturation) {
+        } else if (row.kind == RowKind::SolidAffinity) {
             const auto& solid = solids[row.index];
             value = solid.present ? -solid_affinity(prepared, row.index) : point[*solid.column];
         } else if (condition_row(row.kind)) {
@@ -1682,7 +1682,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
             }
             for (const auto& solid : solids)
                 if (solid.column) at(row_index, *solid.column) = solid.balance[row.index] / feed_total;
-        } else if (row.kind == RowKind::Saturation) {
+        } else if (row.kind == RowKind::SolidAffinity) {
             const auto& solid = solids[row.index];
             if (!solid.present) at(row_index, *solid.column) = 1.0;
             for (std::size_t j = 0; solid.present && primal_size + j < n; ++j) at(row_index, primal_size + j) = -solid.balance[j];

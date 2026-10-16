@@ -106,7 +106,7 @@ void register_equilibrium(nb::module_& module) {
             entropy_j_per_k, critical, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, Saturation);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });
@@ -142,7 +142,7 @@ void register_equilibrium(nb::module_& module) {
             hessian_calls, objective, reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
-            solid_amounts, saturation_indices);
+            solid_amounts, solid_affinity_decades);
     nb::class_<CriticalRecord>(module, "CriticalRecord")
         EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     nb::class_<StabilityTrial>(module, "StabilityTrial")

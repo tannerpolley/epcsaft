@@ -158,12 +158,12 @@ struct EquilibriumProblem final {
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, Saturation
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity
 };
 
 // Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
 inline bool stationarity_row(RowKind kind) noexcept {
-    return kind == RowKind::Chemical || kind == RowKind::Pressure || kind == RowKind::Saturation;
+    return kind == RowKind::Chemical || kind == RowKind::Pressure || kind == RowKind::SolidAffinity;
 }
 
 inline const char* row_kind_name(RowKind kind) noexcept {
@@ -179,7 +179,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
         return "critical_equations";
     case RowKind::EnvelopeCondition: return "envelope_local_condition";
     case RowKind::AzeotropeCondition: return "azeotrope_condition";
-    case RowKind::Saturation: return "solid_saturation_index";
+    case RowKind::SolidAffinity: return "solid_saturation_index";
     }
     return "unknown";
 }
@@ -475,7 +475,7 @@ struct EquilibriumResult final {
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
     std::optional<CriticalRecord> critical;
-    std::vector<double> solid_amounts, saturation_indices;  // per declared solid: mol, and SI_s in decades
+    std::vector<double> solid_amounts, solid_affinity_decades;  // per declared solid: mol, and SI_s in decades
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()

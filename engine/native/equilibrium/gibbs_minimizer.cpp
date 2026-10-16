@@ -281,7 +281,7 @@ void clear_state(EquilibriumResult& result) {
     result.constraint_multipliers.clear();
     result.coordinates.clear();
     result.solid_amounts.clear();
-    result.saturation_indices.clear();
+    result.solid_affinity_decades.clear();
 }
 
 std::vector<double> add_multipliers(
@@ -1314,7 +1314,7 @@ static EquilibriumResult run_driver_once(
     if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
     for (std::size_t s = 0; s < compiled.solids.size(); ++s) {  // EqID solid_saturation_index
         result.solid_amounts.push_back(compiled.solids[s].column ? full[*compiled.solids[s].column] : 0.0);
-        result.saturation_indices.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
+        result.solid_affinity_decades.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
     }
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());

@@ -80,7 +80,7 @@ def test_halite_solubility_and_complementarity(evidence: Any) -> None:
          method="native solid-liquid solve", claim="Held 2014 set within the 0.02-decade target at saturation")
     same(evidence, "halite/F2/ln-ion-product", reference_log_ip(m_s), 0.0, rtol=0.0, atol=1e-9,
          method="Reference.activity at the solved molality", claim="the saturation row imposes 2 ln(m g) = ln K")
-    assert saturated.saturation_indices[0] == pytest.approx(0.0, abs=1e-10)
+    assert saturated.solid_affinity_decades[0] == pytest.approx(0.0, abs=1e-10)
     excess = solve(7.5)
     same(evidence, "halite/F3/feed-invariant-molality", liquid_molality(excess), m_s, rtol=1e-8, atol=0.0,
          method="native solves at 6.5 and 7.5 mol/kg", claim="the saturated liquid is feed invariant")
@@ -89,14 +89,14 @@ def test_halite_solubility_and_complementarity(evidence: Any) -> None:
              rtol=0.0, atol=1e-10 * feed, method="element balance", claim="n_s is the feed excess")
     dilute = solve(5.0)
     assert dilute.solid_amounts == [0.0]
-    assert dilute.saturation_indices[0] < 0.0
+    assert dilute.solid_affinity_decades[0] < 0.0
 
 
 @pytest.mark.parametrize(("molality", "phreeqc"), [(5.0, -0.29986498), (6.0, -0.03325842)])
 def test_pinned_halite_saturation_index(evidence: Any, molality: float, phreeqc: float) -> None:
     """F4a exact Pinned(0) identity; F4b Held ePC-SAFT against PHREEQC pitzer.dat (model against model)."""
     result = solve(molality, Pinned(0.0))
-    index = result.saturation_indices[0]
+    index = result.solid_affinity_decades[0]
     same(evidence, f"halite/F4a/{molality}", index, reference_log_ip(molality) / math.log(10.0), rtol=0.0, atol=1e-9,
          method="Reference.activity", claim="SI = [2 ln(m g) - ln K]/ln 10")
     same(evidence, f"halite/F4b/{molality}", index, phreeqc, rtol=0.0, atol=0.04,
@@ -145,8 +145,8 @@ def test_halite_pressure_reference(evidence: Any) -> None:
     same(evidence, "halite/F6/dg_dP", R * T * (d_sodium + d_chloride - math.log(10.0) * d_index), V_SOLID,
          rtol=1e-9, atol=0.0, method="exact pressure actions", claim="dg_s/dP = V_s")
     h = 5.0e4
-    fd = (solve(6.0, Pinned(0.0), pressure=P + h).saturation_indices[0]
-          - solve(6.0, Pinned(0.0), pressure=P - h).saturation_indices[0]) / (2 * h)
+    fd = (solve(6.0, Pinned(0.0), pressure=P + h).solid_affinity_decades[0]
+          - solve(6.0, Pinned(0.0), pressure=P - h).solid_affinity_decades[0]) / (2 * h)
     same(evidence, "halite/F6/dSI_dP", d_index, fd, rtol=1e-6, atol=0.0, method="central difference, 0.5 bar",
          claim="the reference transfer stays at P0 when the system pressure moves")
 
