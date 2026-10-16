@@ -137,11 +137,12 @@ void check_measurement_correlation() {
             << " message=" << result.message << '\n';
         // Lead-approved allowance (2026-10-16, cost resolution): each fitted coordinate adds its component of one
         // Gauss-Newton step from the returned endpoint, z = L^-1 (r/sigma_y, u) and the returned complete whitened columns.
-        Eigen::VectorXd ez(6); Eigen::MatrixXd jr(6, 4);
+        Eigen::VectorXd ee(6); Eigen::MatrixXd jr(6, 4);
         for (Eigen::Index i = 0; i < 6; ++i) {
-            ez[i] = i < 3 ? result.residuals[std::size_t(i)] / 0.02 : rec.corrections[std::size_t(i - 3)];
+            ee[i] = i < 3 ? result.residuals[std::size_t(i)] / 0.02 : rec.corrections[std::size_t(i - 3)];
             for (Eigen::Index c = 0; c < 4; ++c) jr(i, c) = rec.jacobian[std::size_t(i*4 + c)];
         }
+        Eigen::VectorXd ez = ee;
         for (Eigen::Index i = 5; i > 0; --i) ez[i] = (ez[i] - rho*ez[i - 1]) / std::sqrt(1 - rho*rho);
         const Eigen::VectorXd step = (jr.transpose()*jr).ldlt().solve(jr.transpose()*ez);
         const double decrease = 0.5*step.dot(jr.transpose()*ez);
@@ -160,8 +161,6 @@ void check_measurement_correlation() {
         }
         // Lead decision 2026-10-16: the split is not stationary, so it is checked against the independent decomposition at
         // the returned endpoint; the reference-point differences are first order in the endpoint offset and only printed.
-        const Eigen::VectorXd ee = [&] { Eigen::VectorXd v(6); for (Eigen::Index i = 0; i < 6; ++i)
-            v[i] = i < 3 ? result.residuals[std::size_t(i)] / 0.02 : rec.corrections[std::size_t(i - 3)]; return v; }();
         const Eigen::Vector3d ye = ee.head(3);
         const double endpoint_cost = 0.5*ee.dot(kac(6, rho, true)*ee), endpoint_output = 0.5*ye.dot(kac(3, rho, true)*ye);
         std::cout << std::setprecision(17) << "COST_SPLIT " << id << " output=" << rec.output_cost << " endpoint_reference=" << endpoint_output
