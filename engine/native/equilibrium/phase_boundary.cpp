@@ -792,8 +792,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         const bool straddle = toward_zero && std::abs(s) <= straddle_band;
         double s_try = closing ? closing_pressure : -s;
         if (!closing && !straddle) {
-            // The first predictor changes the densities by 0.9 W at most; later steps come from the measured
-            // predictor error. A pure fluid also stays within 3/8 of the coalescence gap.
+            // First step: density change at most 0.9 W; later: the predictor error; a pure fluid: 3/8 of the gap.
             double delta = step > 0.0 ? step
                 : std::min(options.envelope_max_log_step, 0.9 * window / std::max(std::abs(c[2][1]), std::abs(c[3][1])));
             if (pure) delta = std::min(delta, 0.375 * std::abs(gap / (c[2][1] - c[3][1])));
@@ -803,11 +802,11 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         auto problem = base;
         problem.envelope = active;
         problem.envelope->target = s_try;
-        // Each anchor is the Euler-predicted density; it carries the densities through the straddle's crossing.
-        std::vector<double> expected(2);
-        for (std::size_t p = 0; p < 2; ++p) expected[p] = std::exp(c[2 + p][0] + (s_try - s) * c[2 + p][1]);
-        if (straddle)  // the straddle attempt itself expects the feed on the other density branch
+        // Each anchor is the Euler-predicted density, also through the straddle's crossing.
+        std::vector<double> expected{std::exp(c[2][0] + (s_try - s) * c[2][1]), std::exp(c[3][0] + (s_try - s) * c[3][1])};
+        if (straddle) {  // the straddle attempt itself expects the feed on the other density branch
             for (auto& phase : problem.phases) phase.kind = phase.kind == PhaseKind::Liquid ? PhaseKind::Vapor : PhaseKind::Liquid;
+        }
         ++result.attempts;
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
@@ -845,9 +844,9 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             local_retries = 0;
             transfer = true;
             // Euler error grows as h^2: the next step targets a predictor density error of W/2.
-            double error = 0.0;
-            for (std::size_t p = 0; p < 2; ++p) error = std::max(error, std::abs(std::log(attempt.result->molar_densities[p] / expected[p])));
-            step = std::min(options.envelope_max_log_step, std::abs(s_try - s) * std::min(2.0, std::sqrt(window / (2.0 * error))));
+            const auto& rho = attempt.result->molar_densities;
+            const double e = std::max(std::abs(std::log(rho[0] / expected[0])), std::abs(std::log(rho[1] / expected[1])));
+            step = std::min(options.envelope_max_log_step, std::abs(s_try - s) * std::min(2.0, std::sqrt(window / (2.0 * e))));
             motion = heading;
             y = attempt.result->coordinates;
             base = problem;
@@ -861,12 +860,11 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         }
         transfer = false;
         reject(result, attempt, s_try);
-        // A straddle or closing target cannot change by halving: its refusal ends the trace as a prefix. An ordinary
-        // step that leaves the anchored branch window, or whose corrector ends on coincident phases, halves.
-        const bool halves = attempt.stop == ContinuationStop::branch_lost
-            || (attempt.stop == ContinuationStop::phases_coalesced && attempt.result && !attempt.result->has_state());
-        if ((attempt.terminal && !halves) || straddle || closing)
-            return finish(std::move(result), attempt.stop, attempt.message);
+        // A straddle or closing target cannot change by halving: its refusal ends the trace as a prefix.
+        // An ordinary step that leaves the branch window or whose corrector ends on coincident phases halves.
+        attempt.terminal &= attempt.stop != ContinuationStop::branch_lost
+            && (attempt.stop != ContinuationStop::phases_coalesced || attempt.result->has_state());
+        if (attempt.terminal || straddle || closing) return finish(std::move(result), attempt.stop, attempt.message);
         step = std::abs(s_try - s) / 2.0;
         if (step < options.minimum_step) return finish(std::move(result), ContinuationStop::step_too_small, attempt.message);
         if (local_retries++ >= options.max_retries_per_step)
