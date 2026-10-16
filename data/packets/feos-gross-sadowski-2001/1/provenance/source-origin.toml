@@ -1,0 +1,23 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+transformations = ["molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)", "m, sigma, epsilon_k -> segment_count, segment_diameter, dispersion_energy_over_k"]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "cefc2e03edb436121c4270492071c86b1f1021a58168c3348fc421d9143aaa6f"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/gross2001.json"
+origin_sha256 = "f4b4018c7f02341b937c086cbb38626b72c1f3f3d9677a26b463112e16dfd404"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "sources/record-accounting.csv"
+sha256 = "fd4854bef35cc4347743fc4b03ad13dbfa3afc336570277ae88fca7b13c3f2d8"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/gross2001.json"
+origin_sha256 = "f4b4018c7f02341b937c086cbb38626b72c1f3f3d9677a26b463112e16dfd404"
+recipe = "data/tools/import_feos.py"
