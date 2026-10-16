@@ -324,6 +324,20 @@
       "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",
       "packet_fingerprint": "7719154a02443a0745a369e559b0ea01991b093241519f18603a6f64749e9696",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2014-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-chloride-mixture-refit/1",
+      "packet_fingerprint": "f6aa205225c870d04c0d747b17a45b77e61af86d533cd5cd5808ff547e90fc22",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
+      "packet_fingerprint": "ef4a1bbaac3bb76530288ce616e74faac8c471e409f703e5b3633704511f79ef",
+      "materialization": "byte-for-byte"
     }
   ]
 }
