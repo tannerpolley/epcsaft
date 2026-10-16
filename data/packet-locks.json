@@ -343,7 +343,7 @@
       "packet_id": "figiel-2025-chloride-mixture-refit",
       "packet_version": "1",
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
-      "packet_fingerprint": "7d109a42e38baf54861b3da3d69ce94e82c230df90f9b243008fe95a16f5b0cf",
+      "packet_fingerprint": "ad1194a1dab24e5cd748e8992500e91b664715be59892cdd82ac5888a7b85004",
       "materialization": "byte-for-byte"
     }
   ]

@@ -4,7 +4,7 @@ transformations = ["Native Ceres multistart joint fit (F form); the lowest-train
 
 [[records]]
 retained_path = "parameters/parameters.json"
-sha256 = "bc57e59efedc2a385a9e6e27217de74d204a8a782f0bc402a99aff6db6967193"
+sha256 = "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33"
 
 [[sources]]
 source_id = "input-0"
