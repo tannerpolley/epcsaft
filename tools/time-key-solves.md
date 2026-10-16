@@ -86,17 +86,34 @@ hiding changed species or heat outputs.
 
 Serial CPU is process CPU around the native `evaluate_observations` call with
 non-diagnostic trace capture. Declaration decoding, trace reduction, process
-startup and output writing are excluded. Both arms must use at most 1.25 times
+startup and output writing are excluded. Candidate B must use at most 1.25 times
 the fixed CPU value in the fixture identity file; `--expect-change` cannot waive
 this ceiling. The frozen value does not follow later main timings upward.
-An over-ceiling baseline A invalidates the host measurement. The command repeats
+A baseline A, or either arm of an A=A control, measures the host only when its
+four work counts equal the identity file's frozen counts; an arm doing other work,
+such as a baseline from before a work change, is not compared with the ceiling (#595).
+A host-measuring arm over the ceiling invalidates the host measurement. The command repeats
 the serial A/B pair up to three times, sequentially, to obtain a valid baseline.
 If all three controls exceed the ceiling, it exits nonzero with
 `invalid host measurement: rerun on a quieter host`. This is not a ceiling
 failure or a pass. With a valid control, candidate B must still meet the same
 absolute ceiling. Every attempt's work and states remain subject to the work
-and numerical comparisons; `f1_serial_attempts` retains both CPU times per pair.
+and numerical comparisons; `serial_attempts` retains both CPU times per pair and fixture.
 The historical 21.79 s measurement on `36485a88` is **wall time**, not CPU.
+
+**Reacting Cp evaluation (#595).** The eighth case is the frozen
+`tools/fixtures/mea-cp.json.gz`: the Hilliard (2008) equilibrium isobaric heat capacity
+row at 353.15 K, 101325 Pa and CO₂ loading 0.358 (feed MEA 1, water 7.929776437398854,
+CO₂ 0.358 mol; liquid only, five reactions) at the #170 Route 2b larger-dV start of 16
+coordinates. Its value and exact derivatives need the solved state's third temperature
+and mixed temperature-parameter reference columns. The packet carries the CO₂/MEA
+`no_cross_association` declaration inside its hash; the identity file records both
+source hashes. It runs the F1 serial A/B evaluation, work counts, numerical comparison,
+host rule and CPU ceiling, without a fit arm; an A=A `--fit` control checks its serial
+evaluations only. Its 20 physical columns (17 active parameters and three reaction-law
+directions) do not map one-to-one to coordinates, so a physical derivative's floor is
+the row's largest physical derivative. Frozen work is **3 / 280 / 35 / 13** in the F1
+count order; serial CPU **1.978993 s** (ceiling **2.473741 s**) on the reference host.
 
 **Full fit.** `--fit` uses the same prepared environments and worker protocol
 for one complete fit per arm, with 40 iterations maximum, a 120 s time budget,
@@ -140,7 +157,7 @@ counts or physical-validation claim follow from these measurements.
 | Residual / Jacobian evaluations | 15 / 11 | 15 / 12 |
 | Critical-path compute CPU, s | not recorded for this F1 packet | 28.646385–29.049397 |
 
-Both fits used 32 workers and converged. The fixed serial CPU ceiling is **20.349267 s**. Current work per evaluation is **296 / 3462 / 2637 / 1426** in the four-count order above. The input identity file owns these values and their source and measurement identities.
+Both fits used 32 workers and converged. The fixed serial CPU ceiling is **20.349267 s**. Current work per evaluation is **295 / 3388 / 2627 / 1426** in the four-count order above, refrozen by #595, which stopped computing unread reference columns; the serial CPU value is unchanged. The input identity file owns these values and their source and measurement identities.
 
 The main A=A command with `--fit` took 143.596 s; the default main-versus-candidate command took 39.391 s. Full fitting is explicit because it repeats the fixed-point work throughout the optimizer, while the default command already checks the four work counts and serial ceiling on every runtime change. The Gates table requires full fits for changes that can change this repeated work or worker distribution.
 

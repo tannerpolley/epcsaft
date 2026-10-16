@@ -123,6 +123,11 @@ bool has_reaction_reference(const EquilibriumProblem& problem) {
         [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
 }
 
+// The compiled pure-solvent liquid density starts every later reference ladder of the problem.
+std::optional<double> reference_solvent_anchor(const std::vector<NeutralReferenceReactionDiagnostic>& d) {
+    return d.empty() || !(d.front().solvent_density > 0.0) ? std::nullopt : std::optional(d.front().solvent_density);
+}
+
 std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
     std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, bool pressure_jets,
@@ -165,9 +170,7 @@ std::vector<ReactionSpec> central_reference_reactions(
         stoichiometries.push_back(reaction.stoichiometry);
         references.push_back(*reaction.reference);
     }
-    std::optional<double> solvent_anchor;
-    if (fixed_pressure != nullptr && !fixed_pressure->empty() && fixed_pressure->front().solvent_density > 0.0)
-        solvent_anchor = fixed_pressure->front().solvent_density;
+    const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference, stoichiometries, references, pressure_jets,
         solvent_anchor, temperature_order, parameter_jets, reference_order);
@@ -1046,7 +1049,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         references.empty()
             ? std::vector<NeutralReferenceReactionDiagnostic>{}
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
-                                  pressure_slope, std::nullopt, std::min(derivative_order, std::size_t(2)),
+                                  pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
+                                  std::min(derivative_order, std::size_t(2)),
                                   parameter_slopes, derivative_order);
     for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
         for (std::size_t a = 0; a + c <= derivative_order; ++a)
