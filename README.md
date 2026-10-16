@@ -157,6 +157,10 @@ After merges, `tools/refresh-main-wheel` compares retained previous/candidate
 prepared environments before packaging main. Select the retained baseline with
 `EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
 Set `EPCSAFT_NUMERICAL_EVIDENCE` to space-separated existing evidence paths.
+Wheels are `auditwheel`-repaired `manylinux_2_39` wheels carrying Ipopt, MUMPS and
+Ceres; before retaining one it runs `tools/check-wheel-container.sh`, which refuses
+any HSL member and runs `verify-installed-wheel.py` and the Python suite in a
+digest-pinned `python:3.13-slim` container without those host libraries.
 It retains the wheel in `build/wheels/main-<short-commit>/`, verifies a draft's
 uploaded bytes and full commit tag, then publishes the private prerelease
 `main-<full-commit>` with `latest=false`. Retries reuse the retained wheel and
@@ -166,7 +170,9 @@ unequal or unreadable existing assets stop for owner diagnosis; the tool never
 deletes or replaces them. A different identity also stops without replacement.
 `build/wheels/main-current/` is updated after confirmed publication. The
 [downstream guide](downstream/README.md) owns authenticated download and file pins.
-There is no scientific CI/CD.
+There is no scientific CI/CD. `bash tools/check-all-container.sh` runs
+`check-all.sh` on HEAD from a cold build in a digest-pinned `ubuntu:24.04`
+container, the system a hosted runner would use, at no GitHub minutes.
 
 Run a canonical end-to-end workflow with:
 
