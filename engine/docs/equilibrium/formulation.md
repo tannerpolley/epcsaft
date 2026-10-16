@@ -236,6 +236,24 @@ the same specification. Admission and numerical qualification must cover
 phase/support, reaction, charge, pin and free-intensive combinations explicitly;
 structural acceptance of a cell is not evidence that it solves.
 
+### Pure stoichiometric solids
+
+A pure solid s (ADR 0013) is not a fluid phase: it has no composition, density
+root, pressure, normalization or charge row. It declares a charge-neutral
+dissolution stoichiometry ν_s over model components, exactly one sourced ln K_s
+or P3 law with its reaction reference, the reference's source standard pressure
+P° (required) and its molar volume V_s. EqIDs: `solid_standard_gibbs`,
+`solid_saturation_index`, `solid_amount_complementarity`,
+`solid_material_balance`. A free solid adds one amount coordinate n_s ≥ 0 with
+no upper bound and no stationarity row in the optimizer; it is counted as a
+complementarity pair, and one endpoint classification adds either its
+saturation row or n_s = 0, so the classified declaration is square. A
+`Pinned(0)` solid adds no coordinate and reports SI_s only. Solids require fixed
+T and P and a neutral reference; PH/PS, critical, envelope, azeotrope, pinned
+free-intensive cells, discovery, stability trials, continuation, fit
+observations and ASL records refuse them. Solid solutions and kinetics are not
+expressible.
+
 ## Stationarity, feasibility and stability
 
 For free phase amounts at fixed T/P, the rows are first-order conditions of the

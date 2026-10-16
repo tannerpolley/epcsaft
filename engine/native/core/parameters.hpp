@@ -89,9 +89,11 @@ struct FixedParameters {
     std::vector<double> polarizability_scaling_angstrom3;
     std::vector<double> correlation_integral_parameter;
 
-    // Optional residual dipole-dipole term (ADR 0011); empty unless declared
+    // Optional residual dipole-dipole (ADR 0011) or quadrupole-quadrupole (ADR 0014) term; empty unless declared
     std::vector<double> dipole_moment_debye;
     std::vector<double> dipole_count;
+    std::vector<double> quadrupole_moment_debye_angstrom;
+    std::vector<double> quadrupole_count;
 
     std::vector<int> form_identity() const {
         return {electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,

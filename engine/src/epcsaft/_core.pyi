@@ -332,7 +332,7 @@ class State:
     association: float
     debye_huckel: float
     born: float
-    dipolar: float
+    dipolar: float  # the declared polar term: dipole-dipole or quadrupole-quadrupole
     bulk_relative_permittivity: float
     residual_helmholtz: float
     compressibility_factor: float
@@ -553,6 +553,16 @@ class ReactionSpec:
     reference: Optional[ReactionReference]
     def __init__(self) -> None: ...
 
+class SolidSpec:
+    name: str
+    stoichiometry: list[float]
+    equilibrium_constant: Optional[float]
+    correlation: Optional[ReactionLogPolynomial]
+    reference: Optional[ReactionReference]
+    molar_volume_m3_per_mol: float
+    amount: AmountSpec
+    def __init__(self) -> None: ...
+
 class StabilityOptions:
     evaluate_supplied_trials: bool
     trials: Optional[list[PhaseSpec]]
@@ -648,6 +658,7 @@ class EquilibriumProblem:
     envelope: Optional[EnvelopeCondition]
     azeotrope: bool
     neutral_reference: Optional[NeutralReferenceDeclaration]
+    solids: list[SolidSpec]
     def __init__(self) -> None: ...
 
 class InventoryBound:
@@ -686,6 +697,7 @@ class RowKind:
     CriticalCubic: RowKind
     EnvelopeCondition: RowKind
     AzeotropeCondition: RowKind
+    SolidAffinity: RowKind
 
 class Row:
     kind: RowKind
@@ -758,6 +770,8 @@ class EquilibriumResult:
     topology_phase: Optional[int]
     topology_pair: Optional[tuple[int, int]]
     critical: Optional[CriticalRecord]
+    solid_amounts: list[float]  # mol, per declared solid
+    solid_affinity_decades: list[float]  # SI_s in decades, per declared solid
     def phase_mole_fractions(self, phase: int) -> list[float]: ...  # one declared phase, component_ids order
 
 class TopologyEvent:
@@ -851,6 +865,8 @@ class SolvedStateObservableKind:
     PhaseGibbsMolarVolume: SolvedStateObservableKind
     SystemEnthalpy: SolvedStateObservableKind
     EquilibriumIsobaricHeatCapacity: SolvedStateObservableKind
+    SolidAmount: SolvedStateObservableKind
+    SolidSaturationIndex: SolvedStateObservableKind
 
 class SolvedStateObservable:
     kind: SolvedStateObservableKind
@@ -959,6 +975,7 @@ class InfiniteDilutionReference:
     solvent_status: PropertyActionStatus
     solvent_cause: str
     solvent_convergence: Optional[Convergence]
+    value_difference: tuple[float, float]  # terminal-rung ion log-fugacity change from the previous rung
 
 class SolventActivity:
     """Same-T/P pure-solvent activity and practical osmotic coefficient; None preserves unavailability."""

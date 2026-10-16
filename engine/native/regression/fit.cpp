@@ -318,7 +318,7 @@ const int native_image = open_image(reinterpret_cast<const void*>(&interrupted))
 // Every member of a request aggregate in declaration order, named by position: the structured binding stops
 // compiling when a member is added or removed, so a worker's request cannot silently omit one.
 #define FIELDS(T, ...) auto fields(T& item) { auto& [__VA_ARGS__] = item; return std::tie(__VA_ARGS__); }
-FIELDS(FixedParameters, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad)
+FIELDS(FixedParameters, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)
@@ -339,9 +339,9 @@ FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
 FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
-// Observation validation refuses discovery options (a fit declares its phases), so none are sent.
+// Observation validation refuses discovery options (a fit declares its phases) and solids, so neither is sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
-    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n, o] = item;
+    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n, o, solids] = item;
     return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, n, o);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.

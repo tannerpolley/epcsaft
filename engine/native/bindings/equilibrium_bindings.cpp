@@ -87,6 +87,10 @@ void register_equilibrium(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(ReactionSpec, name, stoichiometry, equilibrium_constant, affinity_j_per_mol, correlation,
             reference);
+    nb::class_<SolidSpec>(module, "SolidSpec")
+        .def(nb::init<>())
+        EPCSAFT_READWRITE(SolidSpec, name, stoichiometry, equilibrium_constant, correlation, reference,
+            molar_volume_m3_per_mol, amount);
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
         EPCSAFT_READWRITE(StabilityOptions, evaluate_supplied_trials, trials, declaration_budget, trial_budget,
@@ -108,10 +112,10 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, critical, envelope, azeotrope, discovery);
+            entropy_j_per_k, critical, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });
@@ -145,7 +149,9 @@ void register_equilibrium(nb::module_& module) {
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
             hessian_calls, objective, reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank,
-            generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical);
+            generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
+            // Per declared solid: amount in mol and saturation index SI_s in decades.
+            solid_amounts, solid_affinity_decades);
     nb::class_<CriticalRecord>(module, "CriticalRecord")
         EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     nb::class_<StabilityTrial>(module, "StabilityTrial")
@@ -214,7 +220,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(SolvedStateObservableKind, Temperature, Pressure, PhaseAmount, PhaseComponentAmount,
             PhaseMoleFraction, PhaseVolume, PhaseMolarDensity, PhasePackingFraction, PhasePressure,
             PhaseResidualChemicalPotentialOverRt, PhaseProperty, PhaseLogActivity, PhaseGibbsMolarVolume, SystemEnthalpy,
-            EquilibriumIsobaricHeatCapacity);
+            EquilibriumIsobaricHeatCapacity, SolidAmount, SolidSaturationIndex);
     nb::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(nb::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), nb::arg("kind"), nb::arg("phase") = 0, nb::arg("component") = 0,
             nb::arg("property") = PropertyObservable::IdealEnthalpy)
@@ -267,6 +273,7 @@ void register_equilibrium(nb::module_& module) {
         if (!native.active_parameters().empty() || native.thermochemistry())
             throw std::invalid_argument("ASL record requires inactive parameters and explicit problem reaction references");
         const auto p = nb::cast<EquilibriumProblem>(problem.attr("_native")(model));
+        if (!p.solids.empty()) throw std::invalid_argument("ASL record does not carry solids");
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
         compile_problem(native, p);

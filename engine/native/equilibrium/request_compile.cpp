@@ -404,7 +404,7 @@ void admit_conditions(const CompiledSystem& compiled) {
 }
 
 // Caloric, critical and envelope rows: analytic in record_geometry, completed by row_series.
-bool condition_row(RowKind kind) { return kind >= RowKind::Enthalpy; }
+bool condition_row(RowKind kind) { return kind >= RowKind::Enthalpy && kind != RowKind::SolidAffinity; }
 
 template<class Scalar>
 IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::size_t phase,
@@ -619,6 +619,27 @@ CppAD::ADFun<double> record_geometry(
     std::vector<AD> row_values(compiled.rows.size(), AD(0.0));
     const AD delta_T = T - prepared.temperature;
     const AD delta_P = P - prepared.pressure;
+    // Adds the exact Taylor term of species g/RT in the free or driven temperature, pressure and parameters.
+    const auto add_standard = [&](AD value, std::size_t species) {
+        AD power = AD(1.0);
+        for (std::size_t k = 0; k < standard.derivative.size(); ++k) {
+            value += standard.derivative[k][species] * power;
+            power *= delta_T / AD(static_cast<double>(k + 1));
+        }
+        value += standard.pressure_derivative[species] * delta_P
+            + 0.5 * standard.pressure_second_derivative[species] * delta_P * delta_P;
+        if (!standard.temperature_pressure_derivative.empty())
+            value += standard.temperature_pressure_derivative[species] * delta_T * delta_P;
+        for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a) {
+            AD slope = standard.parameter_derivative[a][species];
+            if (!standard.temperature_parameter_derivative.empty())
+                slope += standard.temperature_parameter_derivative[a][species] * delta_T;
+            if (!standard.pressure_parameter_derivative.empty())
+                slope += standard.pressure_parameter_derivative[a][species] * delta_P;
+            value += slope * (theta[a] - theta_center[a]);
+        }
+        return value;
+    };
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
         const auto& spec = problem.phases[phase];
         const auto& layout = prepared.shape[phase];
@@ -660,7 +681,7 @@ CppAD::ADFun<double> record_geometry(
         }
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
             const auto& item = compiled.rows[row];
-            if (condition_row(item.kind)) continue;
+            if (condition_row(item.kind) || item.kind == RowKind::SolidAffinity) continue;
             if (item.kind == RowKind::Moiety) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += amount * compiled.B[item.index][species] * x[species];
@@ -669,26 +690,7 @@ CppAD::ADFun<double> record_geometry(
             if (item.phase != phase) continue;
             if (item.kind == RowKind::Chemical) {
                 const std::size_t species = item.index;
-                AD value = CppAD::log(x[species]) - CppAD::log(volume);
-                AD power = AD(1.0);
-                // Exact Taylor term of the standard state in the free or driven temperature.
-                for (std::size_t k = 0; k < standard.derivative.size(); ++k) {
-                    value += standard.derivative[k][species] * power;
-                    power *= delta_T / AD(static_cast<double>(k + 1));
-                }
-                value += standard.pressure_derivative[species] * delta_P
-                    + 0.5 * standard.pressure_second_derivative[species]
-                        * delta_P * delta_P;
-                if (!standard.temperature_pressure_derivative.empty())
-                    value += standard.temperature_pressure_derivative[species] * delta_T * delta_P;
-                for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a) {
-                    AD slope = standard.parameter_derivative[a][species];
-                    if (!standard.temperature_parameter_derivative.empty())
-                        slope += standard.temperature_parameter_derivative[a][species] * delta_T;
-                    if (!standard.pressure_parameter_derivative.empty())
-                        slope += standard.pressure_parameter_derivative[a][species] * delta_P;
-                    value += slope * (theta[a] - theta_center[a]);
-                }
+                AD value = add_standard(CppAD::log(x[species]) - CppAD::log(volume), species);
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
                     value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
@@ -704,10 +706,28 @@ CppAD::ADFun<double> record_geometry(
             }
         }
     }
+    // EqIDs solid_standard_gibbs and solid_saturation_index; ln K^rho is linear in T (first-order T actions).
+    std::vector<AD> solid_output;
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s) {
+        const auto& solid = compiled.solids[s];
+        const auto& spec = problem.solids[s];
+        AD affinity = -(solid.log_k + solid.log_k_slope.value_or(0.0) * delta_T + spec.molar_volume_m3_per_mol
+            * (P - *spec.reference->reference_pressure_pa) / (GAS_CONSTANT_J_PER_MOL_K * T));
+        for (std::size_t i = 0; i < components; ++i)
+            if (spec.stoichiometry[i] != 0.0) affinity -= spec.stoichiometry[i] * add_standard(AD(0.0), i);
+        for (std::size_t j = 0; j < compiled.rank; ++j) affinity += u[compiled.primal_size + j] * solid.balance[j];
+        solid_output.push_back(solid.column ? u[*solid.column] : AD(0.0));
+        solid_output.push_back(affinity);
+    }
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        if (compiled.rows[row].kind != RowKind::Moiety) continue;
+        const auto& item = compiled.rows[row];
+        if (item.kind == RowKind::SolidAffinity)
+            row_values[row] = compiled.solids[item.index].present ? -solid_output[2 * item.index + 1] : solid_output[2 * item.index];
+        if (item.kind != RowKind::Moiety) continue;
         for (std::size_t species = 0; species < components; ++species)
-            row_values[row] -= compiled.B[compiled.rows[row].index][species] * u[n + 2 + species];
+            row_values[row] -= compiled.B[item.index][species] * u[n + 2 + species];
+        for (std::size_t s = 0; s < compiled.solids.size(); ++s)
+            row_values[row] += compiled.solids[s].balance[item.index] * solid_output[2 * s];
         row_values[row] /= AD(compiled.feed_total);
     }
     if (compiled.has_caloric_condition()) {
@@ -731,6 +751,7 @@ CppAD::ADFun<double> record_geometry(
             : u[prepared.shape[pin].x[local]] - u[prepared.shape[1 - pin].x[local]]) - e.target;
     }
     output.insert(output.end(), row_values.begin(), row_values.end());
+    output.insert(output.end(), solid_output.begin(), solid_output.end());
     return CppAD::ADFun<double>(u, output);
 }
 
@@ -847,6 +868,57 @@ void admit_pins(CompiledSystem& compiled) {
     if (pinned == compiled.problem.phases.size() && pin_sum != 1.0) {
         throw std::invalid_argument("all-pinned phase fractions must sum to one: S_pin="
                                     + core::optional_number(pin_sum));
+    }
+}
+
+// EqID solid_standard_gibbs: ln K^rho(T, P0) from the one reaction-reference owner at the declared source
+// pressure P0, so the pressure slope of g_s is V_s alone. Fixed T and P exclude PH/PS, critical, envelope,
+// azeotrope and pinned cells.
+void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
+    const auto& p = compiled.problem;
+    if (p.solids.empty()) return;
+    if (p.temperature.free || p.pressure.free) throw std::invalid_argument("solids require fixed T and P");
+    const auto& model = *compiled.model;
+    const auto& z = model.parameters().charge_number;
+    std::vector<std::vector<double>> nu;
+    std::vector<ReactionReference> references;
+    for (const auto& solid : p.solids) {
+        const auto refuse = [&](const std::string& cause) { return std::invalid_argument("solid " + solid.name + ": " + cause); };
+        const auto& v = solid.stoichiometry;
+        if (v.size() != z.size() || std::all_of(v.begin(), v.end(), [](double x) { return x == 0.0; })
+            || std::abs(std::inner_product(v.begin(), v.end(), z.begin(), 0.0)) > std::sqrt(std::numeric_limits<double>::epsilon()))
+            throw refuse("stoichiometry must be nonzero, charge neutral and of component width");
+        for (std::size_t i = 0; i < v.size(); ++i)
+            if (v[i] != 0.0 && !covered[i]) throw refuse("species " + std::to_string(i) + " has no phase support");
+        if (solid.equilibrium_constant.has_value() == solid.correlation.has_value()
+            || (solid.equilibrium_constant && !(std::isfinite(*solid.equilibrium_constant) && *solid.equilibrium_constant > 0.0)))
+            throw refuse("needs exactly one of a positive equilibrium constant or a correlation");
+        if (!solid.reference || !solid.reference->reference_pressure_pa || !p.source_reference)
+            throw refuse("needs a neutral reference and reference_pressure_pa, the source standard pressure");
+        if (!(std::isfinite(solid.molar_volume_m3_per_mol) && solid.molar_volume_m3_per_mol > 0.0))
+            throw refuse("molar volume must be positive and finite");
+        if (solid.amount.kind == AmountKind::Pinned && solid.amount.fraction != 0.0) throw refuse("amount must be Free or Pinned(0)");
+        nu.push_back(v);
+        references.push_back(*solid.reference);
+    }
+    const double T = p.temperature.value;
+    const auto diagnostics = reaction_references(model, T, p.pressure.value, *p.source_reference, nu, references, false, std::nullopt, 1);
+    for (std::size_t s = 0; s < p.solids.size(); ++s) {
+        const auto& solid = p.solids[s];
+        const auto& reference = diagnostics[s];
+        if (reference.status != NeutralReferenceStatus::Available || !reference.terminal_contraction)
+            throw std::invalid_argument("reference_unavailable: solid " + solid.name + " " + reference.message);
+        const double ln_k = solid.correlation ? evaluate_reaction_properties(*solid.correlation, T).ln_k
+                                              : std::log(*solid.equilibrium_constant);
+        const double scale = solid.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
+            ? reaction_reference_log_scale(model, *p.source_reference, solid.stoichiometry) : 0.0;
+        CompiledSolid item{std::nullopt, matvec(compiled.B, solid.stoichiometry), ln_k + scale + *reference.terminal_contraction,
+                           std::nullopt, false};
+        // A scalar K carries no temperature law: its T actions are refused.
+        if (solid.correlation && reference.terminal_contraction_temperature_derivative)
+            item.log_k_slope = evaluate_reaction_properties(*solid.correlation, T).derivative
+                + *reference.terminal_contraction_temperature_derivative;
+        compiled.solids.push_back(std::move(item));
     }
 }
 
@@ -1186,6 +1258,7 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
+    admit_solids(compiled, covered);
     const auto& phases = compiled.problem.phases;
     const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
     compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
@@ -1228,6 +1301,8 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({RowKind::Moiety, 0, row});
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         compiled.rows.push_back({RowKind::Normalization, phase, 0});
+    for (std::size_t s = 0; s < request.solids.size(); ++s)
+        if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
     if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
     compiled.mode_count = request.critical ? components : 0;
@@ -1240,6 +1315,8 @@ static CompiledSystem compile_with_basis(
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s)  // free solid amounts follow the phase coordinates
+        if (request.solids[s].amount.kind == AmountKind::Free) compiled.solids[s].column = compiled.primal_size++;
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
@@ -1440,9 +1517,14 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
                     value += amount[phase] * B[row.index][species] * x[phase][species];
                 }
             }
+            for (const auto& solid : solids)
+                if (solid.column) value += solid.balance[row.index] * point[*solid.column];
             value = (value - balance[row.index]) / feed_total;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
+        } else if (row.kind == RowKind::SolidAffinity) {
+            const auto& solid = solids[row.index];
+            value = solid.present ? -solid_affinity(prepared, row.index) : point[*solid.column];
         } else if (condition_row(row.kind)) {
             if (series.empty())
                 series = row_series(prepared, {point}, std::vector<double>(control_width()), 0).rows[0];
@@ -1462,7 +1544,30 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
             + std::inner_product(standard.begin(), standard.end(), x[phase].begin(), 0.0)
         );
     }
+    for (std::size_t s = 0; s < solids.size(); ++s)
+        if (solids[s].column) result.objective += point[*solids[s].column] * solid_gibbs(prepared, s);
     return result;
+}
+
+double CompiledSystem::solid_gibbs(const PhasePoint& prepared, std::size_t solid) const {
+    const auto& spec = problem.solids[solid];
+    double value = solids[solid].log_k + spec.molar_volume_m3_per_mol * (prepared.pressure - *spec.reference->reference_pressure_pa)
+        / (GAS_CONSTANT_J_PER_MOL_K * prepared.temperature);
+    for (std::size_t i = 0; i < spec.stoichiometry.size(); ++i) value += spec.stoichiometry[i] * prepared.standard.derivative[0][i];
+    return value;
+}
+
+double CompiledSystem::solid_affinity(const PhasePoint& prepared, std::size_t solid) const {
+    double value = -solid_gibbs(prepared, solid);
+    for (std::size_t j = 0; j < rank && primal_size + j < prepared.point.size(); ++j)
+        value += prepared.point[primal_size + j] * solids[solid].balance[j];
+    return value;
+}
+
+CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point) {
+    for (auto& solid : compiled.solids)
+        solid.present = solid.column && *solid.column < point.size() && point[*solid.column] > 0.0;
+    return compiled;
 }
 
 std::vector<double> CompiledSystem::classified_residuals(
@@ -1579,6 +1684,12 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                             * compositions[phase][species] / feed_total;
                 }
             }
+            for (const auto& solid : solids)
+                if (solid.column) at(row_index, *solid.column) = solid.balance[row.index] / feed_total;
+        } else if (row.kind == RowKind::SolidAffinity) {
+            const auto& solid = solids[row.index];
+            if (!solid.present) at(row_index, *solid.column) = 1.0;
+            for (std::size_t j = 0; solid.present && primal_size + j < n; ++j) at(row_index, primal_size + j) = -solid.balance[j];
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
                 at(row_index, shape[row.phase].x[local]) =
@@ -1674,6 +1785,8 @@ std::vector<double> CompiledSystem::objective_gradient_at(const PhasePoint& prep
         result[layout.volume] = -amount * volume * physical_v;
         result[*layout.amount] = bracket;
     }
+    for (std::size_t s = 0; s < solids.size(); ++s)
+        if (solids[s].column) result[*solids[s].column] = solid_gibbs(prepared, s);
     return result;
 }
 
@@ -1779,6 +1892,9 @@ RowSeries CompiledSystem::row_series(
     const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
+    for (std::size_t s = 0; control[0] != 0.0 && s < solids.size(); ++s)
+        if (!solids[s].log_k_slope)
+            throw std::invalid_argument("reference_unavailable: solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
     if (!reference_diagnostics.empty() &&
         (order > 2 && (parameter_jets || pressure_jets || temperature_jets))) {
         throw std::invalid_argument(
@@ -1826,8 +1942,14 @@ RowSeries CompiledSystem::row_series(
     result.phase.resize(problem.phases.size());
     const std::size_t row_offset = problem.phases.size() * stride;
     const std::size_t temperature_index = primal_size - free_intensive_count;
+    result.solid_amount.assign(solids.size(), std::vector<double>(order + 1));
+    result.solid_affinity = result.solid_amount;
     for (std::size_t k = 0; k <= order; ++k) {
         for (std::size_t row = 0; row < rows.size(); ++row) result.rows[k][row] = output[k][row_offset + row];
+        for (std::size_t s = 0; s < solids.size(); ++s) {
+            result.solid_amount[s][k] = output[k][row_offset + rows.size() + 2 * s];
+            result.solid_affinity[s][k] = output[k][row_offset + rows.size() + 2 * s + 1];
+        }
         result.temperature[k] = k == 0 ? prepared.temperature
             : problem.temperature.free ? state[k][temperature_index] : k == 1 ? control[0] : 0.0;
         result.pressure[k] = k == 0 ? prepared.pressure
@@ -2004,7 +2126,7 @@ std::vector<double> CompiledSystem::constraint_hessian_at(
     if (constraint_multipliers.empty()) return result;
     std::size_t multiplier = 0;
     for (const auto& row : rows) {
-        if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
+        if (stationarity_row(row.kind)) continue;
         if (multiplier >= constraint_multipliers.size()) {
             throw std::invalid_argument("constraint multiplier count");
         }

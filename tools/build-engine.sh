@@ -86,8 +86,14 @@ config=(-C "build-dir=$build_dir" -C "setup-args=-Dpkg_config_path=$highs_prefix
 
 build_wheel() {
     # Commit-time member timestamps: the same commit and bytes give the same wheel SHA-256,
-    # which tools/refresh-main-wheel reads as "unchanged".
-    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}" uv build --python "$python" --wheel --no-build-isolation --out-dir "$1" "${config[@]}" engine >&2
+    # which tools/refresh-main-wheel reads as "unchanged" (while the bundled apt packages are unchanged).
+    # auditwheel copies the Ipopt, MUMPS and Ceres closure into epcsaft.libs/, so the wheel runs on
+    # glibc 2.39 or newer without them (#576); HSL loads at run time and never enters the wheel.
+    local epoch="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}"
+    rm -rf -- "$1/unrepaired"
+    SOURCE_DATE_EPOCH="$epoch" uv build --python "$python" --wheel --no-build-isolation --out-dir "$1/unrepaired" "${config[@]}" engine >&2
+    SOURCE_DATE_EPOCH="$epoch" auditwheel repair --plat manylinux_2_39_x86_64 -w "$1" "$1"/unrepaired/epcsaft-*.whl >&2
+    rm -rf -- "$1/unrepaired"
     find "$1" -maxdepth 1 -name 'epcsaft-*.whl'
 }
 

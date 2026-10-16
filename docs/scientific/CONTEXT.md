@@ -22,8 +22,9 @@ MEA-Absorption-Column requires consistent total caloric properties and the
 solved-state actions its process equations consume; Lithium_Extraction requires
 reactive liquid-liquid equilibrium and extraction observations. Their chemistry,
 parameter adoption, transport and process models belong to the applications.
-Solids remain a separately justified extension; kinetics and process simulation
-are not current Engine responsibilities.
+Pure stoichiometric solids use the one equilibrium driver
+([ADR 0013](decisions/0013-pure-solids-one-driver.md)); solid solutions, kinetics and
+process simulation are not current Engine responsibilities.
 
 ## The project map
 
@@ -358,8 +359,9 @@ Use bubble, dew, saturation and flash as mathematical specifications or data
 constructors. Shared solvers must not select physics by an application or paper
 name. All equilibrium specifications use the one driver described above; lower-level
 kernels and search controllers retain their distinct mathematical roles. ADR 0011 admits
-only an optional Gross-Vrabec dipole-dipole residual term; other residual multipoles remain
-retired by ADR 0006, and dipolar relative permittivity is a distinct input and equation.
+an optional Gross-Vrabec dipole-dipole residual term and ADR 0014 an optional Gross
+quadrupole-quadrupole term; the dipole-quadrupole cross term remains retired by ADR 0006,
+and dipolar relative permittivity is a distinct input and equation.
 
 
 `DensityDiagnostics` means a bounded fixed-temperature/composition report of

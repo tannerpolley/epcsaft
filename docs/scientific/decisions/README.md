@@ -11,6 +11,8 @@ Current accepted decisions use one sequence. Read the
 - [0010: GitHub issue roadmap authority](0010-github-issue-roadmap-authority.md)
 - [0011: optional dipole-dipole term](0011-optional-dipole-dipole-term.md)
 - [0012: native tangent-plane testing and phase discovery](0012-native-tangent-plane-phase-discovery.md)
+- [0013: pure stoichiometric solids in the one equilibrium driver](0013-pure-solids-one-driver.md)
+- [0014: optional quadrupole-quadrupole term](0014-optional-quadrupole-quadrupole-term.md)
 
 Record a decision when real alternatives materially affect scientific or
 computational work and the equations/code alone do not explain the choice.

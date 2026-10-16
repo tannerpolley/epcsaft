@@ -1,0 +1,383 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "gross-2005",
+  "document_version": 1,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "gross-2005",
+      "citation": "Gross, J. An Equation-of-State Contribution for Polar Components: Quadrupolar Molecules. AIChE Journal 2005, 51, 2556-2568.",
+      "doi": "10.1002/aic.10502",
+      "use_basis": "Table A1 PCP-SAFT parameters for carbon dioxide and nitrogen (literature-Q sets) and benzene"
+    },
+    {
+      "source_id": "explicit-neutral-model",
+      "citation": "Project declaration that every Table A1 species is neutral (electrolyte: none).",
+      "use_basis": "Structural input, not a fitted coefficient."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "gross2005-triple-to-critical",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "gross2005-formulation",
+      "kind": "unknown"
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "gross-2005",
+        "locator": "PCP-SAFT = PC-SAFT plus the quadrupole term, Implementation with the PC-SAFT EOS (Appendix)",
+        "domain_id": "gross2005-formulation"
+      }
+    },
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-2005",
+        "locator": "Table A1 species are non-associating",
+        "domain_id": "gross2005-formulation"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-2005",
+        "locator": "No ionic species",
+        "domain_id": "gross2005-formulation"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-2005",
+        "locator": "No electrolyte permittivity",
+        "domain_id": "gross2005-formulation"
+      }
+    },
+    {
+      "family_id": "model/polar",
+      "kind": "polar",
+      "choice": "quadrupole-quadrupole",
+      "provenance": {
+        "source_id": "gross-2005",
+        "locator": "Eqs. 8-19 and Table 2",
+        "domain_id": "gross2005-formulation"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "components": [
+    {
+      "component_id": "carbon-dioxide",
+      "aliases": [],
+      "name": "Carbon dioxide",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 44.01,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Carbon dioxide row, first (literature-Q) set, M (g/mol) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        "charge_number": {
+          "identity": "component/carbon-dioxide/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/carbon-dioxide/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.5131,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Carbon dioxide row, first (literature-Q) set, m column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/carbon-dioxide/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.1869,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Carbon dioxide row, first (literature-Q) set, sigma (Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/carbon-dioxide/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 163.33,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Carbon dioxide row, first (literature-Q) set, ε/k (K) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/carbon-dioxide/quadrupole_moment",
+          "family": "quadrupole_moment",
+          "value": {
+            "magnitude": 4.4,
+            "unit": "debye * angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Carbon dioxide row, first (literature-Q) set, |Q| (D Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/carbon-dioxide/quadrupole_count",
+          "family": "quadrupole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Eq. 9 text: n_Q,i = 1 for low-molecular-weight components; Table A1 note: benzene has one axis of charge",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "nitrogen",
+      "aliases": [],
+      "name": "Nitrogen",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 28.01,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Nitrogen row, first (literature-Q) set, M (g/mol) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        "charge_number": {
+          "identity": "component/nitrogen/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/nitrogen/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.1504,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Nitrogen row, first (literature-Q) set, m column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/nitrogen/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3848,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Nitrogen row, first (literature-Q) set, sigma (Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/nitrogen/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 91.4,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Nitrogen row, first (literature-Q) set, ε/k (K) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/nitrogen/quadrupole_moment",
+          "family": "quadrupole_moment",
+          "value": {
+            "magnitude": 1.43,
+            "unit": "debye * angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Nitrogen row, first (literature-Q) set, |Q| (D Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/nitrogen/quadrupole_count",
+          "family": "quadrupole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Eq. 9 text: n_Q,i = 1 for low-molecular-weight components; Table A1 note: benzene has one axis of charge",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "benzene",
+      "aliases": [],
+      "name": "Benzene",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 78.114,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Benzene row (the only set), M (g/mol) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        "charge_number": {
+          "identity": "component/benzene/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/benzene/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.2463,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Benzene row (the only set), m column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/benzene/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7852,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Benzene row (the only set), sigma (Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/benzene/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 296.24,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Benzene row (the only set), ε/k (K) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/benzene/quadrupole_moment",
+          "family": "quadrupole_moment",
+          "value": {
+            "magnitude": 5.5907,
+            "unit": "debye * angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Table A1, Benzene row (the only set), |Q| (D Å) column",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        },
+        {
+          "identity": "component/benzene/quadrupole_count",
+          "family": "quadrupole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-2005",
+            "locator": "Eq. 9 text: n_Q,i = 1 for low-molecular-weight components; Table A1 note: benzene has one axis of charge",
+            "domain_id": "gross2005-triple-to-critical"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  }
+}

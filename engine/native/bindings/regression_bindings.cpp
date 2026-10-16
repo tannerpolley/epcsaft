@@ -48,8 +48,12 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 void register_regression(nb::module_& module) {
     FitHost host;
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
-        host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, importlib.machinery as i, importlib.util as u; "
-            "native = ctypes.CDLL('/proc/self/fd/4', mode=ctypes.RTLD_GLOBAL); "
+        // The native library loads by its installed path, so its $ORIGIN RUNPATH finds bundled libraries; a path that no
+        // longer names the held file (an editable relink replaced it) refuses the worker.
+        host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, os, importlib.machinery as i, importlib.util as u; "
+            "p = os.readlink('/proc/self/fd/4'); s, f = os.stat(p), os.fstat(4); "
+            "(s.st_dev, s.st_ino) == (f.st_dev, f.st_ino) or os._exit(1); "
+            "native = ctypes.CDLL(p, mode=ctypes.RTLD_GLOBAL); "
             "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', '/proc/self/fd/3')); "
             "m = u.module_from_spec(s); s.loader.exec_module(m); m._serve_fit()"};
     host.interrupted = [] {
