@@ -68,8 +68,9 @@ void roundtrips() {
             compare(std::string(h?"PH3":"PS3")+"/S-lever",(total(pure,result,false)/2.5-sl)/(sv-sl),0.35,1,1e-8);
         }
     }
-    // #579: Gross (2001) benzene/toluene with NASA Glenn (2002) NASA9 calorics at 1 bar. The start 1.05 x 370 K lies
-    // above the dew point, so the fixed-T seed has no liquid; it stops at its own budget and is discarded (66 -> 24).
+    // #579: Gross (2001) pure benzene and toluene, k_ij -0.003 from hda-pc-saft/1 (Yu 2026, Table 2), NASA Glenn (2002)
+    // NASA9 calorics at 1 bar. The start 1.05 x 370 K lies above the dew point, so the fixed-T seed has no liquid; it
+    // stops at its own budget and is discarded (66 -> 24).
     auto bt=properties_support::parameters(2);
     bt.segment_count={2.4653,2.8149};bt.sigma_constant={3.6478,3.7169};bt.dispersion_energy_over_k={287.35,285.69};
     bt.molar_mass_kg_per_mol={0.078114,0.092141};bt.k_ij[1]=bt.k_ij[2]=-0.003;
