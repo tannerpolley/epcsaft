@@ -139,3 +139,22 @@ family ran. Its coverage is finite: the sampled temperatures and enumerated liqu
 cannot exclude a narrow negative-distance interval between samples or a missed
 composition minimum, and a refusal means unresolved selection, not an absent dew.
 It is numerical recovery, not a global-stability certificate.
+
+## Addendum: condensed-side admission for density-independent permittivity (#568)
+
+The owner adopted this amendment on 2026-10-16 in
+[#568](https://github.com/tannerpolley/ePC-SAFT/issues/568). It supersedes the form-only refusal of the 2026-10-02
+addendum for `IonSuppression` (all choices) and `ComponentMixing`. Their electrolyte terms remain defined only
+for condensed phases. Charged trials under these forms are now admitted point by point, inside that domain only.
+A charged trial point is admitted when it coincides with a stable density root of its own composition at the
+test T and P, and the density owner's existing side classification (#423 `density_side`) places that root on the
+liquid side of the composition's own mechanical loop. Declared Liquid phases already satisfy the same
+classification. A charged seed or end point that is on the vapor side, has a sole root with no loop sample, or
+lies away from a root is unavailable, with the cause "charged trial outside the condensed domain of
+density-independent permittivity". It is never a witness and never evidence of stability. The condition reads the
+state, not optimizer termination. It adds no density cutoff, tolerance or dielectric substitution. Vacuum-limit
+forms (`DensityTemperature`, `DipolarPerturbation`) and neutral trials are unchanged. The 318.15 K,
+5918.5286 Pa solvent-only descent at 2.3214665 mol/m³ lies on a sole-root isotherm with no loop, so it stays
+refused under this rule, now for this reason. Compositions with no loop at T are deliberately under-admitted.
+Admission establishes condensed density only. It does not establish that the composition lies within the
+permittivity correlation's fitted range.

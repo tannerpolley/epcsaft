@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from epcsaft import Mixture, Parameters, Stop
-from tests.native_inputs import packet_metadata
+from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
 
 # Figiel, Yu & Held 2025 SI S2: retained NaBr candidates require AARD < 10%.
@@ -544,3 +544,33 @@ def test_electrolyte_density_columns_and_debye_density_limit() -> None:
         columns.append(r.differentiate(model, gamma).value[0] / math.sqrt(m))
     assert abs(columns[1] - expected) <= 0.01 * abs(expected)
     assert abs(columns[1] - expected) < abs(columns[0] - expected)
+
+
+def test_henry_constant_matches_clapeyron(evidence: Any) -> None:
+    """#566: fugacity-based H^px = lim f/x of methane in liquid ethane, 200 K and 1 MPa, Gross 2001 /3 parameters.
+
+    Clapeyron 0.6.29 values from the retained #566 comparator henry-reference.json (SHA-256 d4daa4ef...a150):
+    raw L = ln(rho/rho0) + mu_res/RT on the liquid root at each molality, its terminal limit and the exact-zero insertion.
+    """
+    from epcsaft.equilibrium import NeutralReferenceStatus
+
+    model = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane")))
+    clapeyron_rungs = {1e-6: 8.013550838967435, 1e-8: 8.013550854734689, 1e-10: 8.013550854892356,
+                       1e-12: 8.013550854893948, 1e-14: 8.01355085489396}
+    inputs = {"T_K": 200.0, "P_Pa": 1e6, "solvent": "ethane", "solute": "methane", "packet": "gross-2001-methane-ethane/3"}
+    for molality, reference in clapeyron_rungs.items():
+        x = molality / (1.0 / 0.03007 + molality)
+        state = model.state(200.0, P=1e6, x=(x, 1.0 - x), phase="liquid")
+        potential = state.residual_chemical_potential_over_rt[0]
+        assert potential is not None
+        same(evidence, f"henry/rung/{molality}", math.log(state.molar_density) + potential, reference, 1e-10, 0.0,
+             inputs={**inputs, "molality_mol_kg": molality})
+    (henry,) = model.reference(200.0, 1e6, solvent_fractions=(0.0, 1.0)).henry_constants(solutes=["methane"])
+    assert henry.status == NeutralReferenceStatus.Available and henry.component_index == 0, henry.message
+    for name, reference in (("terminal_limit", 5024641.690506341), ("zero_insertion", 5024641.69050634)):
+        same(evidence, f"henry/{name}", henry.henry_constant_px, reference, 0.0, 1e-10, inputs=inputs)
+    # Charge-balanced ion slots pass the reference ratio validation; Henry admits all-neutral models only.
+    figiel = Mixture(Parameters.from_json(parameters_json("figiel-yu-held-2025", 3),
+                                          components=("water", "sodium-cation", "chloride-anion")))
+    (refused,) = figiel.reference(298.15, 1e5, solvent_fractions=(1.0, 0.0, 0.0)).henry_constants(solutes=["sodium-cation"])
+    assert refused.status == NeutralReferenceStatus.NonNeutralDeclaration and refused.henry_constant_px is None
