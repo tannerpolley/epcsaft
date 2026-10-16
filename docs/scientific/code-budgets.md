@@ -82,6 +82,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #567 (lead allowance under the #577 rule: Core +50/65, Contributions +100/150, Properties +30/45, parameter Regression +15/20, Surface +100/135, Bindings +5/10, Python +65/100 net/gross): temperature laws use net +23/+100/+30/0/+95/+2/+57 and gross 23/114/32/9/105/8/73 against `16fccc32`. Core **1,327 → 1,359**, Contributions **1,276 → 1,389**, Surface **577 → 673**, Python **2,143 → 2,200**, each count plus its 1% band; total **27,066 → 27,364**, the layer-ceiling sum, below count 27,220 plus band 273. Properties, parameter Regression and Bindings stay within their bands.
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
