@@ -382,6 +382,18 @@ class Parameters:
             else:
                 raise _core.ParameterError(f"unknown association edge source {kind}")
 
+        # One unordered component pair whose unlike site edges are all inactive (preserved model, not proven absence).
+        declared: set[frozenset[str]] = set()
+        for index, value in enumerate(_array(topology.get("no_cross_association", ()), "no_cross_association")):
+            item = _mapping(value, "no_cross_association")
+            a, b = str(item.get("component_id_a")), str(item.get("component_id_b"))
+            if {a, b} - set(component_records) or a == b or frozenset((a, b)) in declared or "provenance" not in item:
+                raise ParameterError(f"no_cross_association[{index}]: two known components, once, with provenance")
+            declared.add(frozenset((a, b)))
+            if a in positions and b in positions:
+                ab, zero = (positions[a], positions[b]), {"magnitude": 0.0, "unit": "dimensionless"}
+                entries.append(_entry(f"no_cross_association/{a}/{b}", "no_cross_association", ab, zero, a))
+
         native_document = _core.ParameterDocument()
         native_document.component_ids = list(selected_ids)
         native_document.site_component = site_component

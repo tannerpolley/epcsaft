@@ -1,0 +1,124 @@
+{
+ "feos-gross-sadowski-2001": {
+  "file": "gross2001.json",
+  "title": "Gross-Sadowski 2001 PC-SAFT pure parameters (FeOs distribution)",
+  "description": "78 nonassociating pure fluids of Gross and Sadowski 2001 Table 2 as distributed by FeOs; no mixture parameters.",
+  "license_or_use_basis": "FeOs MIT distribution (notice in source feos-distribution); publication values cited, no article content copied.",
+  "attribution": "Gross, J.; Sadowski, G. (2001) PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Ind. Eng. Chem. Res. 40, 1244-1260, DOI 10.1021/ie0003887. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2001.json. Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal.",
+  "sources": [
+   {
+    "source_id": "gross-sadowski-2001",
+    "citation": "Gross, J.; Sadowski, G. Ind. Eng. Chem. Res. 2001, 40, 1244-1260.",
+    "doi": "10.1021/ie0003887",
+    "use_basis": "Table 2 pure-component parameters (cited, not copied)."
+   },
+   {
+    "source_id": "feos-distribution",
+    "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2001.json",
+    "url": "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/gross2001.json",
+    "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+   }
+  ],
+  "transformations": [
+   "molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)",
+   "m, sigma, epsilon_k -> segment_count, segment_diameter, dispersion_energy_over_k"
+  ],
+  "domain": "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range.",
+  "units_basis": "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit.",
+  "tolerance_rationale": "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+ },
+ "feos-gross-sadowski-2002": {
+  "file": "gross2002.json",
+  "title": "Gross-Sadowski 2002 PC-SAFT associating pure parameters (FeOs distribution)",
+  "description": "18 associating pure components of Gross and Sadowski 2002 Table 1 (2B) with explicit Wolbach-Sandler cross rules between every associating pair; no k_ij, so a binary selection refuses until its k_ij is supplied.",
+  "license_or_use_basis": "FeOs MIT distribution (notice in source feos-distribution); publication values cited, no article content copied.",
+  "attribution": "Gross, J.; Sadowski, G. (2002) Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Ind. Eng. Chem. Res. 41, 5510-5515, DOI 10.1021/ie010954d. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2002.json. Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal, Eqs. 2-3 cross rules declared.",
+  "sources": [
+   {
+    "source_id": "gross-sadowski-2002",
+    "citation": "Gross, J.; Sadowski, G. Ind. Eng. Chem. Res. 2002, 41, 5510-5515.",
+    "doi": "10.1021/ie010954d",
+    "use_basis": "Table 1 pure-component parameters and Eqs. 2-3 cross-association rules (cited, not copied)."
+   },
+   {
+    "source_id": "feos-distribution",
+    "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2002.json",
+    "url": "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/gross2002.json",
+    "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+   }
+  ],
+  "transformations": [
+   "molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)",
+   "na, nb -> donor site a, acceptor site b; kappa_ab, epsilon_k_ab -> self edge",
+   "Eqs. 2-3 -> wolbach-sandler rules both directions for every associating pair"
+  ],
+  "domain": "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range.",
+  "units_basis": "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit.",
+  "tolerance_rationale": "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+ },
+ "feos-esper-2023": {
+  "file": "esper2023.json",
+  "title": "Esper 2023 PCP-SAFT pure parameters (FeOs distribution)",
+  "description": "Esper et al. 2023 pure PCP-SAFT parameters for nonpolar, dipolar and associating substances, including acceptor-only site records; no mixture parameters.",
+  "license_or_use_basis": "CC-BY-NC-4.0; https://creativecommons.org/licenses/by-nc/4.0/; non-commercial use; exclude from commercial redistribution or obtain permission",
+  "attribution": "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/esper2023.json (MIT notice in source feos-distribution). Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal, dipole count one per dipolar molecule.",
+  "sources": [
+   {
+    "source_id": "esper-2023",
+    "citation": "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001.",
+    "doi": "10.1021/acs.iecr.3c02255",
+    "use_basis": "Pure PCP-SAFT parameters; Supporting Information 10.1021/acs.iecr.3c02255.s001 is CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/); the article and SI files are linked, not copied."
+   },
+   {
+    "source_id": "feos-distribution",
+    "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/esper2023.json",
+    "url": "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/esper2023.json",
+    "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+   }
+  ],
+  "transformations": [
+   "molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)",
+   "na, nb -> donor site a, acceptor site b; acceptor-only records keep site b alone",
+   "mu -> dipole_moment with dipole_count 1 (Gross-Vrabec 2006 as implemented by FeOs); no mu -> 0, 0"
+  ],
+  "domain": "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range.",
+  "units_basis": "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit.",
+  "tolerance_rationale": "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+ },
+ "feos-rehner-2023": {
+  "file": "rehner2023_binary.json",
+  "title": "Rehner 2023 PCP-SAFT binary parameters with their Esper 2023 pure dependencies (FeOs distribution)",
+  "description": "Rehner et al. 2023 binary k_ij and induced-association records (7848 FeOs rows; the article SI MOESM4 has 7861, a different distribution) with the Esper 2023 pure records they reference.",
+  "license_or_use_basis": "CC-BY-NC-4.0; https://creativecommons.org/licenses/by-nc/4.0/; non-commercial use; exclude from commercial redistribution or obtain permission",
+  "attribution": "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001. Rehner, P.; Bardow, A.; Gross, J. (2023) Modeling Mixtures with PCP-SAFT: Insights from Large-Scale Parametrization and Group-Contribution Method for Binary Interaction Parameters. Int. J. Thermophys. 44, 179, DOI 10.1007/s10765-023-03290-3. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/rehner2023_binary.json and esper2023.json (MIT notice in source feos-distribution). Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal, constant-sigma association-volume basis conversion for fitted cross edges, Eqs. 17-18 rules and zero-strength declarations made explicit.",
+  "sources": [
+   {
+    "source_id": "esper-2023",
+    "citation": "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001.",
+    "doi": "10.1021/acs.iecr.3c02255",
+    "use_basis": "Pure PCP-SAFT parameters; Supporting Information 10.1021/acs.iecr.3c02255.s001 is CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/); the article and SI files are linked, not copied."
+   },
+   {
+    "source_id": "rehner-2023",
+    "citation": "Rehner, P.; Bardow, A.; Gross, J. (2023) Modeling Mixtures with PCP-SAFT: Insights from Large-Scale Parametrization and Group-Contribution Method for Binary Interaction Parameters. Int. J. Thermophys. 44, 179, DOI 10.1007/s10765-023-03290-3.",
+    "doi": "10.1007/s10765-023-03290-3",
+    "use_basis": "Binary parameters and Eqs. 13, 17-18; publication terms CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) with attribution and indication of changes, subject to separately credited third-party exclusions. The Esper dependencies make this packet CC BY-NC 4.0."
+   },
+   {
+    "source_id": "feos-distribution",
+    "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/rehner2023_binary.json",
+    "url": "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/rehner2023_binary.json",
+    "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+   }
+  ],
+  "transformations": [
+   "pure dependencies as feos-esper-2023",
+   "k_ij -> pair k_ij; an induced-association row fits eps^AiBj alone, so k_ij = 0 (Sec. 3)",
+   "fitted cross kappa: kappa_Engine ((sigma_i + sigma_j)/2)^3 = kappa_FeOs (sigma_i sigma_j)^(3/2) (Eq. 17, constant sigma); fitted energy kept",
+   "k_ij-only pairs of two self-associating components: wolbach-sandler rules (Eqs. 17-18); other site-bearing pairs: no_cross_association (Eq. 17 strength zero)"
+  ],
+  "domain": "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range.",
+  "units_basis": "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit.",
+  "tolerance_rationale": "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+ }
+}
