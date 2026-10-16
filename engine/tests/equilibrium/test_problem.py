@@ -16,7 +16,7 @@ from epcsaft.equilibrium import (
 )
 
 from tests.equilibrium.test_declared_starts import _mea_flash
-from tests.equilibrium.test_trace_reliability import _MEA
+from tests.equilibrium.test_trace_reliability import _MEA, _mea_mapping
 from tests.native_inputs import aqueous_electrolyte
 from tests.packets import parameters_json
 
@@ -209,7 +209,7 @@ def test_malformed_explicit_mapping_fields_are_rejected() -> None:
 def test_incidental_ipopt_options_preserve_equilibrium_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("EPCSAFT_IPOPT_OPTIONS_FILE", raising=False)
     monkeypatch.chdir(tmp_path)
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     declaration = _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3]))
     clean = solve_equilibrium(model, declaration)
     (tmp_path / "ipopt.opt").write_text("mu_strategy adaptive\nmax_iter 0\nbogus_option 1\n")
@@ -307,7 +307,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     vapor is refused before the reference calculation that would otherwise fail at 400 K."""
     nacl = ("water", "sodium-cation", "chloride-anion")
     salt = Mixture(Parameters.from_json(parameters_json("held-cameretti-sadowski-2008", 4), components=nacl))
-    mea = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    mea = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
     reactions = _mea_flash(0.).reactions
     cases: list[tuple[Mixture, float, Amounts | Molalities, Sequence[equilibrium.Reaction], float, int]]
     cases = [(salt, 373.15, Molalities({"sodium-cation": 1., "chloride-anion": 1.}, solvent=("water",), solvent_mass_kg=1.),

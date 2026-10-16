@@ -341,6 +341,18 @@ and stay unchanged as immutable records. An omitted unlike-site pair remains ina
 not inferred. String schemes, inferred donor/acceptor pairs, implicit combining,
 and default insertion are forbidden.
 
+Every selected pair of components that both carry sites must therefore declare
+its cross association: at least one unlike-site edge (explicit or a named
+rule), or one `topology.no_cross_association` item naming `component_id_a`,
+`component_id_b` and its `provenance`. The declaration makes every unlike-site
+edge of that pair inactive; it preserves a model, not evidence that the physical
+interaction is absent. `build_parameters` refuses a missing declaration before
+any evaluation, naming both components, and refuses a duplicate, a self or
+unknown pair, a nonzero native marker and a declaration contradicted by a
+resolved active edge. A declaration outside the selection is ignored. The native
+entry is `no_cross_association` on the unordered component pair with a zero
+dimensionless marker, so Python, direct C++ and ASL records share this owner.
+
 The Ascani2022 water--1-butanol selection likewise stores both cross directions
 explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
 `1-k_ij^hb` with the source value `k_ij^hb=0.026`; their volume is evaluated

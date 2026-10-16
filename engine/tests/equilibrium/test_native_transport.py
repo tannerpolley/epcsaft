@@ -38,7 +38,9 @@ def reactive_model() -> Mixture:
     for index in ((0, 1), (2, 3)):
         pairs += [("association_energy_over_k", index, 2500.0), ("association_volume", index, 0.05)]
     species = ((30.0, 2.40, 3.20, 200.0), (31.0, 1.08, 3.00, 400.0), (59.0, 2.80, 3.80, 280.0))
-    return Mixture(parameters(species, pairs, ((0, 0, 1, 1), (1, 1, 1, 1))))
+    # The native ternary has no s0/s1 cross edge; declared explicitly since #569.
+    none = [("no_cross_association", (0, 1), 0.0, "dimensionless")]
+    return Mixture(parameters(species, pairs, ((0, 0, 1, 1), (1, 1, 1, 1)), extra=none))
 
 
 def reactive_problem(temperature: float, **target: Any) -> Problem:

@@ -32,6 +32,11 @@ F1_RAW = gzip.decompress(F1_INPUT.read_bytes())
 if hashlib.sha256(F1_RAW).hexdigest() != F1_IDENTITY['packet_sha256']:
     raise RuntimeError('F1 packet hash differs')
 F1_DATA = json.loads(F1_RAW)
+# The frozen fixture has no CO2/MEA cross edge; declared after the hash check to keep that model (#569). A
+# baseline Engine's reader ignores the topology key, so both wheels evaluate this one mapping.
+F1_DATA['parameters']['topology']['no_cross_association'] = [{
+    'component_id_a': 'carbon-dioxide', 'component_id_b': 'monoethanolamine',
+    'provenance': {'source_id': 'mea-f1', 'locator': 'tools/fixtures/mea-f1.json.gz: no CO2/MEA edge'}}]
 F1_ROWS, F1_WIDTH = len(F1_DATA['observations']), len(F1_DATA['coordinates'])
 CASES = tuple(f'{case}/{mode}' for case in ORDINARY for mode in ('cold', 'accepted')) + (
     'khudaida/sequential-8', 'mea-nominally-unloaded/353.15-K', F1)
@@ -149,6 +154,8 @@ def unloaded_declaration():
                 'pathlib', 'typing', 'epcsaft', 'epcsaft.equilibrium'):
             items.append(node)
         elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id == '_MEA':
+            items.append(node)
+        elif isinstance(node, ast.FunctionDef) and node.name == '_mea_mapping':
             items.append(node)
     function = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
                     and x.name == 'test_nominally_unloaded_mea_resolves_trace_ion_stationarity')
