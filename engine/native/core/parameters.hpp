@@ -67,9 +67,9 @@ struct FixedParameters {
     std::vector<int> temperature_law_term_power;
     std::vector<std::string> temperature_law_coefficient_identity;
     std::vector<std::array<int, 3>> temperature_law_slot;
-    // Combining-rule edges evaluated at each temperature: edge, its two explicit self edges (site-pair
+    // Combining-rule edges evaluated at each temperature: edge and mirror, its two explicit self edges (site-pair
     // slots), and the law of its volume correction c, kappa_ij = sqrt(kappa_ii kappa_jj) (1 - c), or -1.
-    std::vector<std::array<int, 4>> association_thermal_rule;
+    std::vector<std::array<int, 5>> association_thermal_rule;
 
     // Electrolyte
     std::vector<int> charge_number;

@@ -53,8 +53,8 @@ std::vector<Scalar> association_delta_values(
                 if (auto value = temperature_law_value(temperature, parameters, laws, TemperatureLaw::AssociationVolume, slot, sites))
                     law_volume[slot] = law_volume[mirror] = *value;
             }
-        for (const auto& [edge, self_1, self_2, correction] : parameters.association_thermal_rule) {
-            const auto slot = static_cast<std::size_t>(edge), mirror = (slot % sites) * sites + slot / sites;
+        for (const auto& [edge, reverse, self_1, self_2, correction] : parameters.association_thermal_rule) {
+            const auto slot = static_cast<std::size_t>(edge), mirror = static_cast<std::size_t>(reverse);
             const auto first = static_cast<std::size_t>(self_1), second = static_cast<std::size_t>(self_2);
             law_energy[slot] = law_energy[mirror] = Fixed(0.5) * (law_energy[first] + law_energy[second]);
             // EqID: association_volume_correction

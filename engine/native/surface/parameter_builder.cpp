@@ -543,7 +543,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         const auto correction = corrections.find(canonical_slot(rule.index[0], rule.index[1], sites));
         if (correction != corrections.end() || law_slots.count({3, first}) || law_slots.count({4, first})
             || law_slots.count({3, second}) || law_slots.count({4, second})) {
-            result.association_thermal_rule.push_back({static_cast<int>(output), static_cast<int>(first), static_cast<int>(second),
+            result.association_thermal_rule.push_back({static_cast<int>(output), static_cast<int>(reverse), static_cast<int>(first), static_cast<int>(second),
                 correction == corrections.end() ? -1 : static_cast<int>(correction->second)});
             if (correction != corrections.end()) corrections.erase(correction);
             continue;
