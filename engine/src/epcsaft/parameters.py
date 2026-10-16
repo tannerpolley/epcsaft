@@ -48,6 +48,40 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
     return result
 
 
+def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: dict[str, tuple[int, Mapping[str, object]]],
+            entries: list[_core.ParameterEntry]) -> None:
+    """One scalar record: exactly one of value or temperature_law; laws and volume corrections are numbered by identity."""
+    identity = item.get("identity")
+    if not isinstance(identity, str):
+        raise _core.ParameterError(f"{field} record has no identity")
+    if ("value" in item) == ("temperature_law" in item):
+        raise _core.ParameterError(f"{identity} needs exactly one of value or temperature_law")
+    if "value" in item and field != "association_volume_correction":
+        entries.append(_entry(identity, field, index, item["value"], identity))
+        return
+    number, first = laws.setdefault(identity, (len(laws), item))
+    if first != item:
+        raise _core.ParameterError(f"conflicting declarations of {identity}")
+    if "value" in item:
+        entries.append(_entry(identity, field, (number, *index), item["value"], identity))
+        return
+    law = _mapping(item["temperature_law"], f"{identity}.temperature_law")
+    if law.get("form") != "polynomial-plus-reciprocal-temperature":
+        raise _core.ParameterError(f"unknown temperature law form {law.get('form')} for {identity}")
+    entries.append(_entry(identity, f"{field}_temperature_law", (number, *index), law.get("reference_temperature"), identity))
+    if first is not item:
+        return
+    for term_value in _array(law.get("terms", ()), f"{identity} terms"):
+        term = _mapping(term_value, f"{identity} term")
+        power, coefficient = term.get("power"), _mapping(term.get("coefficient"), f"{identity} coefficient")
+        if not isinstance(power, int) or isinstance(power, bool) or not 0 <= power <= 3:
+            raise _core.ParameterError(f"invalid temperature law power {power} for {identity}")
+        entries.append(_entry(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity))
+    if "reciprocal_temperature_slope" in law:
+        slope = _mapping(law["reciprocal_temperature_slope"], f"{identity} reciprocal slope")
+        entries.append(_entry(slope.get("identity"), "temperature_law_reciprocal_slope", (number,), slope.get("value"), identity))
+
+
 def _choice(families: Sequence[object], kind: str, default: str | None = None) -> str:
     """The declared choice of one family kind; build_parameters owns the admissible choices."""
     choices = [record.get("choice") for record in (_mapping(item, "model_families") for item in families) if record.get("kind") == kind]
@@ -117,6 +151,7 @@ class Parameters:
         selected_ids = tuple(selected)
         positions = {item: index for index, item in enumerate(selected_ids)}
         entries: list[_core.ParameterEntry] = []
+        laws: dict[str, tuple[int, Mapping[str, object]]] = {}
         # Document families keep their native field name unless renamed here.
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
         coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",
@@ -212,8 +247,10 @@ class Parameters:
                 identity = item.get("identity")
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"pair/{a}/{b} coefficient has no identity")
-                entries.append(_entry(identity, family, pair_index, item["value"], identity))
-                if family == "k_ij_reciprocal_temperature_slope":
+                if family != "k_ij_reciprocal_temperature_slope":
+                    _scalar(item, family, pair_index, laws, entries)
+                else:
+                    entries.append(_entry(identity, family, pair_index, item["value"], identity))
                     if "reference_temperature" not in item:
                         raise _core.ParameterError(f"missing reference temperature for {item.get('identity')}")
                     reference = _mapping(item["reference_temperature"], "pair reference temperature")
@@ -300,6 +337,8 @@ class Parameters:
             selected_edges.append((edge_index, edge, source))
             if source.get("kind") != "explicit":
                 continue
+            if "volume_correction" in edge:
+                raise _core.ParameterError(f"unconsumed volume_correction on explicit edge {first}/{second}")
             energy = _mapping(edge.get("energy_over_k"), "association energy")
             volume = _mapping(edge.get("volume"), "association volume")
             if not isinstance(energy.get("identity"), str) or not isinstance(volume.get("identity"), str):
@@ -324,8 +363,8 @@ class Parameters:
             if kind == "explicit":
                 energy = _mapping(edge.get("energy_over_k"), "association energy")
                 volume = _mapping(edge.get("volume"), "association volume")
-                entries.append(_entry(energy.get("identity"), "association_energy_over_k", edge_index, energy["value"], "association edge"))
-                entries.append(_entry(volume.get("identity"), "association_volume", edge_index, volume["value"], "association edge"))
+                _scalar(energy, "association_energy_over_k", edge_index, laws, entries)
+                _scalar(volume, "association_volume", edge_index, laws, entries)
             elif kind == "combining-rule":
                 inputs = _mapping(source.get("inputs"), "combining rule inputs")
                 energy_inputs = inputs.get("energy_over_k")
@@ -338,6 +377,8 @@ class Parameters:
                     raise _core.ParameterError(f"association inputs disagree for {source.get('rule_id')}")
                 entries.append(_entry(source.get("rule_id"), "association_combining_rule", [*edge_index, *self_energy[0], *self_energy[1]],
                                       {"magnitude": 0.0, "unit": "dimensionless"}, "association combining rule"))
+                if "volume_correction" in edge:
+                    _scalar(_mapping(edge["volume_correction"], "volume correction"), "association_volume_correction", edge_index, laws, entries)
             else:
                 raise _core.ParameterError(f"unknown association edge source {kind}")
 

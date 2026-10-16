@@ -99,10 +99,10 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, critical, envelope, discovery);
+            entropy_j_per_k, critical, envelope, azeotrope, discovery);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });

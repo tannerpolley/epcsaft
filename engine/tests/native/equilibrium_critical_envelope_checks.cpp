@@ -147,7 +147,7 @@ void curvature() {
         off_solution(m,envelope_cell({0.27,0.73},180,1e5,{kind,0,0.3}),"B/envelope-"+std::to_string(static_cast<int>(kind)));
 }
 // E1: bubble at 0.1 MPa through the passage to dew at 0.1 MPa: closure on the other branch and the candidate
-// against C3.
+// against C3; E4: the predicted-anchor step budget.
 void mixture() {
     const HelmholtzModel m(properties_support::neutral_binary());
     const auto start=envelope_cell({0.5,0.5},120,1e5,{EnvelopeCoordinate::LogPressure,0,std::log(1e5)});
@@ -173,6 +173,25 @@ void mixture() {
                 recording_support::field("seed",t.critical_seeds[0])}),
             "Observation","accepted-state extrema and condition switches","declared envelope branch only","critical-envelope");
     }
+    // E4 (#571, Opus P05): bubble at 180 K through the passage to the dew point at the initial pressure in the
+    // predicted-anchor step budget, with one identity swap and the candidate and closing dew state of the dense trace.
+    const auto p05=envelope_cell({0.5,0.5},180,1.6e6,{EnvelopeCoordinate::LogTemperature,0,std::log(180.)});
+    for(const auto [cap,budget]:std::vector<std::pair<double,std::size_t>>{{0.05,120},{0.2,80}}) {
+        const std::string id="E4/"+std::to_string(cap);
+        ContinuationRequest r{p05,p05,std::nullopt,{0.1,1e-6,3000,8},{}};r.options.envelope_max_log_step=cap;r.options.envelope_straddle=0.01;
+        r.start_problem.solver_options.values[epcsaft::policy::row]=1e-10;
+        const auto t=continue_equilibrium(m,r);
+        if(t.stop!=ContinuationStop::reached_target||t.critical_points.size()!=1)throw std::runtime_error(id+" trace: "+t.message);
+        std::size_t swaps=0;
+        for(std::size_t k=1;k<t.states.size();++k)swaps+=t.states[k].declaration->phases[0].kind!=t.states[k-1].declaration->phases[0].kind;
+        recording_support::observe((id+"/budget").c_str(),"envelope-budget","1",static_cast<double>(t.accepted_steps),std::nullopt,
+            recording_support::fields({recording_support::field("attempts",t.attempts),recording_support::field("retries",t.retries),
+                recording_support::field("swaps",swaps)}),"Observation","accepted steps to closure","declared envelope branch only","critical-envelope");
+        CHECK(swaps==1&&t.accepted_steps<=budget&&(cap>0.1||t.attempts<=150));
+        compare(id+"/critical-T",t.critical_points[0].temperature[0],265.9667440343549,1,1e-8);
+        compare(id+"/critical-P",t.critical_points[0].pressure[0],6842019.677409215,1,0.1);
+        compare(id+"/dew-T",t.states.back().temperature[0],232.31429972874673,1,1e-8);
+    }
 }
 // E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint:
 // last state 2W < g <= 4W and the candidate equal to C1.
@@ -195,6 +214,54 @@ void pure() {
         const auto& last=t.states.back();const double g=std::abs(std::log(last.molar_densities[0]/last.molar_densities[1]));
         compare(id+"/last-gap",g>2*W&&g<=4*W?1:0,1,1,1e-10,recording_support::field("gap",g));
         same_state(id+"/candidate",t.critical_points[0],c1);
+    }
+}
+// Gross & Sadowski (2002) Table 1/2 binaries with 2B self sites and Wolbach-Sandler cross edges, as FeOs combines them.
+inline Parameters azeotropic_binary(std::array<double,2> m_,std::array<double,2> s,std::array<double,2> e,
+                                    std::array<double,2> eab,std::array<double,2> kab,double kij) {
+    auto p=properties_support::parameters(2);p.segment_count={m_[0],m_[1]};p.sigma_constant={s[0],s[1]};
+    p.dispersion_energy_over_k={e[0],e[1]};p.molar_mass_kg_per_mol={0.05,0.05};p.k_ij[1]=p.k_ij[2]=kij;
+    std::vector<int> owner;for(int i=0;i<2;++i)if(kab[i]>0)owner.insert(owner.end(),{i,i});
+    const std::size_t n=owner.size();p.site_component=owner;p.site_multiplicity.assign(n,1);
+    p.association_active.assign(n*n,0);p.association_energy_over_k.assign(n*n,0.);p.association_volume.assign(n*n,0.);
+    for(std::size_t a=0;a<n;a+=2)for(std::size_t b=1;b<n;b+=2) {  // donor a, acceptor b
+        const auto i=static_cast<std::size_t>(owner[a]),j=static_cast<std::size_t>(owner[b]);const double f=std::pow(std::sqrt(s[i]*s[j])/(0.5*(s[i]+s[j])),3);
+        for(const auto [u,v]:{std::pair{a,b},std::pair{b,a}}) {
+            p.association_active[u*n+v]=1;p.association_energy_over_k[u*n+v]=0.5*(eab[i]+eab[j]);
+            p.association_volume[u*n+v]=std::sqrt(kab[i]*kab[j])*f;
+        }
+    }
+    return p;
+}
+inline EquilibriumProblem azeotrope_cell(FreeValue t,FreeValue pressure) {
+    auto p=equilibrium_support::flash(2);p.feed.values={0.5,0.5};p.solver_options.values[epcsaft::policy::row]=1e-12;
+    p.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
+    p.temperature=t;p.pressure=pressure;p.azeotrope=true;
+    return p;
+}
+// A1: azeotrope cells from the z = 0.5 seed against FeOs 0.10.1 binary_azeotrope at identical parameters (#571);
+// methane/ethane, which has none, and its mixture critical point (x = y trivially) are not admitted.
+void azeotrope() {
+    const HelmholtzModel pb(azeotropic_binary({2.9997,2.4653},{3.2522,3.6478},{233.40,287.35},{2276.8,0},{0.015268,0},0.020)),
+        ew(azeotropic_binary({2.3827,1.0656},{3.1771,3.0007},{198.24,366.51},{2653.4,2500.7},{0.032384,0.034868},0.0));
+    struct Case { std::string id; const HelmholtzModel* m; EquilibriumProblem p; double x, value; bool fixed_t; };
+    const std::vector<Case> cases{
+        {"A1/propanol-benzene-313",&pb,azeotrope_cell(FreeValue::fixed(313.15),FreeValue::variable()),0.12076600330935693,26070.101425286382,true},
+        {"A1/ethanol-water-343",&ew,azeotrope_cell(FreeValue::fixed(343.15),FreeValue::variable()),0.7912786135777201,73377.95467480272,true},
+        {"A1/ethanol-water-101325",&ew,azeotrope_cell(FreeValue::variable(),FreeValue::fixed(101325)),0.802916090415992,351.2092202913194,false}};
+    for(const auto& k:cases) {
+        const auto r=solve_equilibrium(*k.m,k.p);if(!r.success)throw std::runtime_error(k.id+": "+r.message);
+        compare(k.id+"/x",r.mole_fractions[0],k.x,1,1e-9);compare(k.id+"/y",r.mole_fractions[2],k.x,1,1e-9);
+        if(k.fixed_t)compare(k.id+"/P",r.pressure[0],k.value,k.value,1e-8);else compare(k.id+"/T",r.temperature[0],k.value,1,1e-6);
+    }
+    const HelmholtzModel me(properties_support::neutral_binary());
+    for(const auto& [id,p]:std::vector<std::pair<std::string,EquilibriumProblem>>{
+            {"A1/methane-ethane-200",azeotrope_cell(FreeValue::fixed(200),FreeValue::variable())},
+            {"A1/methane-ethane-critical",azeotrope_cell(FreeValue::fixed(265.96674403),FreeValue::variable(6.84e6))}}) {
+        const auto r=solve_equilibrium(me,p);
+        recording_support::observe((id+"/refusal").c_str(),"azeotrope-refusal","1",r.has_state()?1.0:0.0,std::nullopt,
+            recording_support::field("message",r.message),"Observation","typed driver refusal","no certificate that none exists","critical-envelope");
+        CHECK(!r.success&&!r.has_state());
     }
 }
 }  // namespace critical_envelope_checks
