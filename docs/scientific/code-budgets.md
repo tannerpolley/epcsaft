@@ -82,6 +82,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #570 (lead allowance under the #577 rule: Surface +55, Bindings +35, Python +8 net, other layers 0; Surface includes +1 for delivered review r2's law-term field guard): fitted-parameter write-back and form-tagged ASL thermochemistry records use net +55/+34/+6 against `16fccc32`, re-measured after merging main `35cbe62a`. Surface **673 → 729** and Bindings **2,205 → 2,240**, the counts 721 and 2,217 plus their 1% bands; Python 2,198 stays within its ceiling. The total ceiling stays main's **27,681**, above the count 27,626 by less than its band. One native inverse beside `build_parameters` writes fitted slots, temperature-law coefficients included, back into the start document, and one form-tagged interval writer and reader replace the NASA9-only record.
 - 2026-10-16, #572 (lead allowance under the #577 delegation: parameter
   Regression +180 net / 200 gross formatted runtime lines, every other runtime
   layer zero, against `517a3450`): measured growth is 103 added, 20 removed,
