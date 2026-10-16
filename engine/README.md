@@ -170,6 +170,13 @@ ln_k = ReactionLogPolynomial(2.0, -1000.0, 0.0, 0.0, 298.15, 273.15, 373.15, EOS
 reaction = Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)  # exactly one of K, affinity or ln K(T)
 ```
 
+A NASA9 record file (`nasa-glenn-nasa9-records` version 1, coefficient order a1..a7, b1, b2) loads once:
+`packet = ThermochemistryPacket(path)` rescales all nine coefficients of every interval by
+R_source/R_Engine in native code, so cp, h and s keep their source values, and refuses a malformed form or
+version, duplicate species and an invalid gas constant, pressure, coefficient or interval chain. Intervals are
+[lower, upper), the last closed. `packet.select(component_ids)` returns a `ThermochemistryRecord` in the
+selection's order; it copies the prepared intervals and never rescales again.
+
 Reaction sets come from the caller. `ReactionLogPolynomial` is
 ln K(T) = a + b/T + c ln(T/T_ref) + d T on the Engine standard state
 (`EOS_STANDARD_STATE_ID`); a K or correlation on a source basis (molality or

@@ -82,6 +82,13 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-16, #569 (lead allowance under the #577 rule after Ready: Surface +40, Bindings +10, Python +50,
+  other runtime layers 0): measured growth against merge base `16fccc32` is Surface +38, Bindings +2,
+  Python +50 formatted runtime lines. Surface **577 → 616** and Python **2,143 → 2,193**, each the count
+  plus its 1% band; Bindings 2,172 and total 27,003 stay within their existing ceilings (2,178, 27,066).
+  One native cross-association admission owner and one native NASA9 gas-constant rescale replace no
+  existing runtime code.
+
 - 2026-10-15, #556 (lead allowance Properties +181 net / 240 gross, Bindings
   +35 / 45, Python +65 / 90 against `5d69b1d9`): measured growth is
   +181 / +13 / +32 formatted runtime lines. Properties **5,810 → 6,004**,
