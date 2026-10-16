@@ -57,10 +57,13 @@ mkdir -p "$wheel_dir"
 gh release download "$tag" --repo tannerpolley/ePC-SAFT --dir "$wheel_dir" \
     --pattern 'epcsaft-*.whl' --pattern '*.sha256' --pattern release.json
 (cd "$wheel_dir" && sha256sum --check --strict ./*.sha256)
+gh api "repos/tannerpolley/ePC-SAFT/releases/tags/$tag" \
+    --jq '.assets[] | select(.name | endswith(".whl")) | .digest'
 gh api "repos/tannerpolley/ePC-SAFT/git/ref/tags/$tag" --jq .object.sha
 ```
 
-The returned tag target must equal the selected full commit. Check that
+The asset `digest` GitHub reports must equal `sha256:` plus the checksum just
+checked, and the returned tag target must equal the selected full commit. Check that
 `release.json` records that commit, the downloaded wheel name and its SHA-256.
 It also records the Python/platform tags, toolchain identity and paths to existing
 numerical evidence; the record itself makes no physical-validation claim. A
@@ -75,8 +78,13 @@ Pin the exact saved filename in the application's `pyproject.toml`, for example:
 dependencies = ["epcsaft"]
 
 [tool.uv.sources]
-epcsaft = { path = "build/engine-wheels/main-<full-commit>/epcsaft-<version>-<python>-<abi>-<platform>.whl" }
+epcsaft = { path = "build/engine-wheels/main-<full-commit>/epcsaft-<version>-cp313-cp313-manylinux_2_39_x86_64.whl" }
 ```
+
+Wheels from #576 on carry their Ipopt, MUMPS and Ceres libraries (`epcsaft.libs/`)
+and need glibc 2.39 or newer; HSL is never in the wheel. They are for the owner's
+own use only: sharing one needs a licence review first. Earlier `linux_x86_64`
+wheels need those libraries installed on the host.
 
 Each application's own thread edits its dependency declaration, regenerates its
 lock with `uv lock`, and runs its existing acceptance checks. Subsequent setup

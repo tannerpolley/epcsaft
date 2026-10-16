@@ -81,6 +81,7 @@ else:
         conflict(dict(commit=commit), identity)
     with tempfile.TemporaryDirectory(prefix='.staging-', dir=folder) as staging:
         built = Path(command('bash', 'tools/build-engine.sh', '--wheel', staging))
+        subprocess.run(['bash', 'tools/check-wheel-container.sh', str(built)], check=True)
         wheel = folder / built.name
         shutil.move(str(built), wheel)
     with ZipFile(wheel) as archive:

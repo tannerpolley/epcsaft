@@ -27,5 +27,6 @@ members = ["engine"]
 
 [dependency-groups]
 dev = [
+    "auditwheel==6.8.2",
     "chemicals==1.5.2",
 ]
