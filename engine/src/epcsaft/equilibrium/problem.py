@@ -133,6 +133,30 @@ class Reaction:
         self.name = "" if self.name is None else self.name
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
+class Solid:
+    """Pure stoichiometric solid S -> sum formula; one source constant, its reference at the source pressure."""
+    name: str
+    _: KW_ONLY
+    formula: Mapping[str, float]
+    reference: _core.ReactionReference
+    molar_volume_m3_per_mol: float
+    equilibrium_constant: float | None = None
+    correlation: _core.ReactionLogPolynomial | None = None
+    amount: Free | Pinned = field(default_factory=Free)
+
+    def _native(self, model: _Species) -> _core.SolidSpec:
+        item = _core.SolidSpec()
+        item.name = self.name
+        item.stoichiometry = _vector(self.formula, model.component_ids)
+        item.equilibrium_constant = self.equilibrium_constant
+        item.correlation = self.correlation
+        item.reference = self.reference
+        item.molar_volume_m3_per_mol = self.molar_volume_m3_per_mol
+        item.amount = _amount_spec(self.amount)
+        return item
+
+
 def _index(component_ids: tuple[str, ...], name: str) -> int:
     try:
         return component_ids.index(name)
@@ -163,12 +187,14 @@ class Problem:
     critical: _core.CriticalDeclaration | None = None
     envelope: _core.EnvelopeCondition | None = None
     azeotrope: bool = False
+    solids: Sequence[Solid] = ()
 
     def __post_init__(self) -> None:  # None selects each default
         discover = isinstance(self.phases, Discover)
         if not isinstance(self.phases, Discover):
             self.phases = tuple(() if self.phases is None else self.phases)
         self.reactions = tuple(() if self.reactions is None else self.reactions)
+        self.solids = tuple(() if self.solids is None else self.solids)
         self.standard_gibbs_j_per_mol = tuple(() if self.standard_gibbs_j_per_mol is None else self.standard_gibbs_j_per_mol)
         self.topology_declared = (True if self.topology_declared is None else self.topology_declared) and not discover
 
@@ -227,6 +253,7 @@ class Problem:
             reaction_item.reference = reaction.reference
             native_reactions.append(reaction_item)
         native.reactions = native_reactions
+        native.solids = [solid._native(model) for solid in self.solids]
         return native
 
 
