@@ -507,6 +507,7 @@ Parameters build_parameters(const ParameterDocument& document) {
 
 // NASA9 coefficients in units of the source gas constant, rescaled once to the Engine's.
 ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant) {
+    core::Scope scope("prepare_thermochemistry");
     if (!std::isfinite(source_gas_constant) || source_gas_constant <= 0.0) reject("invalid source gas constant");
     const double scale = source_gas_constant / GAS_CONSTANT_J_PER_MOL_K;
     for (auto& intervals : record.component_intervals) {
