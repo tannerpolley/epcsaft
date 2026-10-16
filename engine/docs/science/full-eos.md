@@ -699,6 +699,18 @@ Explicit-density evaluation does not reject an otherwise finite state solely
 because the slope is negative; it reports the other mathematical EOS results
 without certifying stability and leaves `c_p^r` unavailable.
 
+On a `derived_properties` request, State also assembles fixed-composition
+response and partial molar properties from the same T/V Hessian columns,
+with no further derivative evaluation:
+
+Defining relation: [EqID: `isothermal_compressibility`](../equations.md#isothermal_compressibility), [EqID: `isobaric_expansivity`](../equations.md#isobaric_expansivity), [EqID: `heat_capacity_ratio`](../equations.md#heat_capacity_ratio), [EqID: `isentropic_compressibility`](../equations.md#isentropic_compressibility), [EqID: `speed_of_sound`](../equations.md#speed_of_sound), [EqID: `joule_thomson_coefficient`](../equations.md#joule_thomson_coefficient), [EqID: `partial_molar_volume`](../equations.md#partial_molar_volume), [EqID: `partial_molar_enthalpy`](../equations.md#partial_molar_enthalpy), [EqID: `partial_molar_entropy`](../equations.md#partial_molar_entropy).
+
+The same positive-`D` rule admits every one of them. Values that need total
+`c_p` or `c_v`, and the partial enthalpy and entropy, follow the
+thermochemistry availability of Section 9. Unavailable values stay unavailable;
+no floor or residual-only substitute is returned. The six named residual
+contributions, dipolar included, sum to `residual_helmholtz`.
+
 ## 9. General phase energy and caloric basis
 
 The [phase formulation](../equilibrium/formulation.md) defines amount-volume
@@ -761,6 +773,13 @@ This finite sequence estimates a limit within its accepted case and tolerance;
 it is not a theorem of convergence for every model. Return the observed change,
 terminal molality, source applicability and failure reason. Do not silently
 replace a failed limit by the last finite iterate or assign it zero error.
+
+A neutral solute in one pure solvent of an all-neutral model has the
+fugacity-based Henry constant of EqID: `henry_constant_px`, read from one unit
+reaction row of the same reference owner and terminal pair. It is
+`lim f/x`, not the partial-pressure volatility `p/x`. Normalized
+infinite-dilution activity coefficients tend to one and carry no absolute
+fugacity scale.
 
 Thermochemical standard states and reaction correlations belong to the common
 Engine property/formulation owners; they do not modify the residual EOS.

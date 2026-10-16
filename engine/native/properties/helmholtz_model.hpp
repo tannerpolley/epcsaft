@@ -159,6 +159,7 @@ struct State final {
     double association = 0.0;
     double debye_huckel = 0.0;
     double born = 0.0;
+    double dipolar = 0.0;
     double bulk_relative_permittivity = 0.0;
     double residual_helmholtz = 0.0;
     double compressibility_factor = 0.0;
@@ -191,6 +192,11 @@ struct State final {
     DensityBranch density_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<double> negative_slope_density;  // mol/m3, sampled cold mechanical-loop witness
+    // Set only by state(..., derived_properties = true); fixed composition, SI molar units.
+    std::optional<double> isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
+        isentropic_compressibility, speed_of_sound, joule_thomson_coefficient;
+    std::optional<std::vector<std::optional<double>>> partial_molar_volume, partial_molar_enthalpy,
+        partial_molar_entropy;  // component order
 };
 
 struct DensityRoot final {
@@ -368,14 +374,16 @@ public:
     State state(
         double temperature,
         double molar_density,
-        const std::vector<double>& mole_fractions
+        const std::vector<double>& mole_fractions,
+        bool derived_properties = false
     ) const;
     State state_at_pressure(
         double temperature,
         double pressure,
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
-        std::optional<double> anchor_density = std::nullopt
+        std::optional<double> anchor_density = std::nullopt,
+        bool derived_properties = false
     ) const;
     PropertyActionBatch density_actions(
         double, double, const std::vector<double>&,
@@ -500,6 +508,19 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool parameter_jets = false,  // dC/dtheta for every active parameter
     std::size_t reference_order = 0  // consumed C3/C4 and one-theta columns; 0 preserves lower work
 );
+
+// Fugacity-based Henry constant H_i^px = lim f_i/x_i = RT rho0 exp(L_i) of a neutral solute in one
+// pure solvent of an all-neutral model (EqID: henry_constant_px), from one unit reaction_references row.
+struct HenryConstant final {
+    std::size_t component_index = 0;
+    std::optional<double> raw_log_reference;  // admitted limit of ln(rho/rho0) + mu_i^res/RT, rho0 = 1 mol/m3
+    std::optional<double> henry_constant_px;  // Pa
+    std::optional<double> observed_terminal_change;
+    NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
+    std::string message;
+};
+std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices);
 
 struct InfiniteDilutionReference final {
     policy::SolverOptions solver_options;
