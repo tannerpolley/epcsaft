@@ -99,6 +99,18 @@ def test_write_back_across_families() -> None:
         assert entries(_core.fitted_document(target, _core.build_parameters(written))) == entries(target)
         assert [e for e in entries(written) if e[1] != "dielectric_volume"] == [e for e in entries(target) if e[1] != "dielectric_volume"]
 
+    # A coefficient may carry its law's identity; only the coefficient entry is written back, never the law declaration.
+    def collided(a1: float) -> _core.ParameterDocument:
+        document = load("law")
+        items = document.entries
+        for item in items:
+            if item.identity == "manufactured/k01/a1":
+                item.identity, item.magnitude = "manufactured/k01", a1
+        document.entries = items
+        return document
+    target = collided(1.7e-4)
+    assert entries(_core.fitted_document(collided(1e-4), _core.build_parameters(target))) == entries(target)
+
     target = changed(load("ion-fraction-suppression"), suppression)
     lij = _core.ParameterEntry()
     lij.identity, lij.field, lij.index, lij.magnitude, lij.unit = "pair/sodium-cation/water/l_ij", "l_ij", [1, 0], 0.01, "dimensionless"

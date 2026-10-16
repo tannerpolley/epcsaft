@@ -592,7 +592,8 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
             k = static_cast<std::size_t>(charged - base.charge_number.begin());
         }
         auto f = static_cast<std::size_t>(std::find(fields.begin(), fields.end(), entry.field) - fields.begin());
-        const auto law = std::find(laws.begin(), laws.end(), entry.identity);
+        const bool term = entry.field.find("temperature_law_") == 0 || entry.field == "association_volume_correction";
+        const auto law = term ? std::find(laws.begin(), laws.end(), entry.identity) : laws.end();
         if (law != laws.end()) f = fields.size() - 1, k = static_cast<std::size_t>(law - laws.begin());
         if (f == fields.size()) continue;
         const auto family = static_cast<detail::ParameterFamily>(f);
