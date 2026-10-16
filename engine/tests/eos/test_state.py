@@ -147,6 +147,16 @@ def test_neutral_selection_is_the_ion_free_electrolyte_limit() -> None:
     close(liquid.molar_density, salt.state(298.15, P=1e5, x=(1.0, 0.0, 0.0), phase="liquid").molar_density, 1e-12)
 
 
+def test_physical_state_refuses_a_charged_feed() -> None:
+    # full-eos.md section 12: an ordinary physical ionic state must be electroneutral (#563).
+    packet = parameters_json("figiel-yu-held-2025", 3)
+    salt = Mixture(Parameters.from_json(packet, components=("water", "sodium-cation", "chloride-anion")))
+    with pytest.raises(ParameterError, match="charge sum 0.004"):
+        salt.state(298.15, P=1e5, x=(0.98, 0.012, 0.008), phase="liquid")
+    with pytest.raises(ParameterError, match="charge sum 0.004"):
+        salt.state(298.15, rho=55000.0, x=(0.98, 0.012, 0.008))
+
+
 @pytest.mark.parametrize(
     ("temperature", "pressure", "phase", "reference_density"),
     [(308.8, 5147500.0, "vapor", 5930.399614704038),
