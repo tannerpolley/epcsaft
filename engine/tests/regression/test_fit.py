@@ -203,12 +203,12 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     assert unfinished.status == "limit_reached" and unfinished.usable and unfinished.covariance.status == "not_converged"
 
 
-def test_asl_record_rejects_fitted_parameters_early() -> None:
-    """A fitted model has no parameter document to export (#29): a precise error, not a pybind cast failure."""
+def test_asl_record_rejects_document_less_parameters_early() -> None:
+    """Parameters built without a parameter document have nothing to export: a precise error, not a cast failure."""
     start = neutral_binary()
-    fitted = Mixture(Parameters(start._native, start.component_ids, start.site_ids))  # as regression.fitted_parameters builds it
-    with pytest.raises(ValueError, match="parameters loaded from a parameter document; fitted parameters have none"):
-        asl_record(fitted, bubble(180.0), Continuation(initial_step=0.1, minimum_step=0.1, max_steps=1, max_retries_per_step=0), [], [], [], 0, 0.0)
+    built = Mixture(Parameters(start._native, start.component_ids, start.site_ids))
+    with pytest.raises(ValueError, match="ASL record: parameters built without a parameter document"):
+        asl_record(built, bubble(180.0), Continuation(initial_step=0.1, minimum_step=0.1, max_steps=1, max_retries_per_step=0), [], [], [], 0, 0.0)
 
 
 def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
