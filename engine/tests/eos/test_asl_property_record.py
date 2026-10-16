@@ -16,6 +16,7 @@ from epcsaft.eos import PressureActionDirection, PropertyObservable, property_as
 from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem
 from tests.native_inputs import p3_forms, record
 from tests.packets import PACKETS, parameters_json
+from tests.regression.test_temperature_laws import _document
 
 SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alternatives/inputs/selections"
 BRINE = ("water", "sodium-cation", "chloride-anion")
@@ -76,9 +77,11 @@ def test_fitted_propane_exports() -> None:
 
 
 def test_write_back_across_families() -> None:
-    """F1b: water-first Born selections round-trip, changed values rebuild bitwise, and a slot with no entry is refused."""
+    """F1b: water-first Born selections and a temperature-law document round-trip, changed values rebuild bitwise, and
+    a slot with no entry is refused."""
     def load(name: str) -> _core.ParameterDocument:
-        return cast(_core.ParameterDocument, Parameters.from_json(SELECTIONS / f"{name}.json", components=BRINE)._document)
+        parameters = Parameters.from_mapping(_document()) if name == "law" else Parameters.from_json(SELECTIONS / f"{name}.json", components=BRINE)
+        return cast(_core.ParameterDocument, parameters._document)
 
     suppression = {"pair/sodium-cation/water/k_ij": -0.25, "association/water/a/water/b/energy_over_k": 2400.3,
                    "model/relative_permittivity/ionic_region_relative_permittivity": 9.5,
@@ -86,7 +89,10 @@ def test_write_back_across_families() -> None:
     # 0.4884 L/mol does not survive a unit round trip, so an unfitted entry must not be rewritten; a fitted 0.302 L/mol
     # rebuilds only through value / 1e-3, not value * 1e3.
     volume = "component/water/dielectric_volume"
-    for name, base, values in (("ion-fraction-suppression", {}, suppression), ("density-temperature", {volume: 0.4884}, {volume: 0.302})):
+    # A law term's index is its law and power, not a slot; its fitted a0 and a1 must reach their own entries.
+    law = {"manufactured/k01/a0": -0.061, "manufactured/k01/a1": 1.7e-4, "manufactured/k01/s": 12.5}
+    for name, base, values in (("ion-fraction-suppression", {}, suppression), ("density-temperature", {volume: 0.4884}, {volume: 0.302}),
+                               ("law", {}, law)):
         document, target = changed(load(name), base), changed(load(name), values)
         assert entries(_core.fitted_document(document, _core.build_parameters(document))) == entries(document)
         written = _core.fitted_document(document, _core.build_parameters(target))
