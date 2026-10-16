@@ -209,8 +209,12 @@ void register_eos(nb::module_& module) {
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
-        .def("state", &epcsaft::HelmholtzModel::state, nb::arg("temperature"), nb::arg("molar_density"),
-             nb::arg("mole_fractions"), nb::arg("derived_properties") = false)
+        .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
+                         const std::vector<double>& composition, bool derived_properties) {
+            model.validate_electroneutrality(composition);
+            return model.state(temperature, molar_density, composition, derived_properties);
+        }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"),
+             nb::arg("derived_properties") = false)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
                                     double temperature, double molar_density,
@@ -218,6 +222,7 @@ void register_eos(nb::module_& module) {
                                     const std::vector<epcsaft::PropertyObservable>& observables,
                                     const std::vector<epcsaft::DensityActionDirection>& directions) {
             epcsaft::core::Scope scope("density_actions");
+            model.validate_electroneutrality(composition);
             return model.density_actions(
                 temperature, molar_density, composition, observables, directions);
         })
@@ -229,6 +234,7 @@ void register_eos(nb::module_& module) {
                                      const std::vector<epcsaft::PressureActionDirection>& directions,
                                      std::optional<double> anchor_density) {
             epcsaft::core::Scope scope("pressure_actions");
+            model.validate_electroneutrality(composition);
             return model.pressure_actions(temperature, pressure, composition, branch,
                 observables, directions, anchor_density);
         },
@@ -240,7 +246,13 @@ void register_eos(nb::module_& module) {
             epcsaft::core::Scope scope("packing_fraction_coefficient");
             return model.packing_fraction_coefficient(temperature, composition);
         })
-        .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
+        .def("state_at_pressure", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+                                     const std::vector<double>& composition, epcsaft::DensityBranch branch,
+                                     std::optional<double> anchor_density, bool derived_properties) {
+            model.validate_electroneutrality(composition);
+            return model.state_at_pressure(temperature, pressure, composition, branch, anchor_density,
+                derived_properties);
+        },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("anchor_density") = std::nullopt, nb::arg("derived_properties") = false)
         .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound)
