@@ -562,6 +562,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
 
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
     core::Scope scope("stability_test");
+    if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
     core::Capture capture;
     return test_snapshot(c, result, options, {}, capture.trace());
 }
@@ -735,6 +736,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         || !request.temperature.is_positive() || !request.pressure.is_positive()
         || request.temperature.free || request.pressure.free)
         throw std::invalid_argument("discovery requires explicit unknown topology at fixed positive T/P");
+    if (!request.solids.empty()) throw std::invalid_argument("Discover() is not admitted with solids");
     core::Capture capture;
     const double row_tolerance = request.solver_options.resolved(model.solver_options()).value(policy::row);
     const auto& options = *request.discovery;

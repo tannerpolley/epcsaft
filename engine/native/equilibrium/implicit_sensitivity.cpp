@@ -183,10 +183,14 @@ Series logarithm(const Series& value) {
     return result;
 }
 
+bool is_solid_kind(SolvedStateObservableKind kind) {
+    return kind == SolvedStateObservableKind::SolidAmount || kind == SolvedStateObservableKind::SolidSaturationIndex;
+}
+
 bool is_phase_kind(SolvedStateObservableKind kind) {
     return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure
         && kind != SolvedStateObservableKind::SystemEnthalpy
-        && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
+        && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity && !is_solid_kind(kind);
 }
 
 bool has_component(SolvedStateObservableKind kind) {
@@ -198,7 +202,7 @@ bool has_component(SolvedStateObservableKind kind) {
 
 bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable& b) {
     if (a.kind != b.kind) return false;
-    if (is_phase_kind(a.kind) && a.phase != b.phase) return false;
+    if ((is_phase_kind(a.kind) || is_solid_kind(a.kind)) && a.phase != b.phase) return false;
     if (has_component(a.kind) && a.component != b.component) return false;
     return a.kind != SolvedStateObservableKind::PhaseProperty || a.property == b.property;
 }
@@ -209,7 +213,8 @@ const char* observable_unit(const SolvedStateObservable& observable) {
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "J/(mol-feed K)";
     case SolvedStateObservableKind::Temperature: return "K";
     case SolvedStateObservableKind::Pressure: case SolvedStateObservableKind::PhasePressure: return "Pa";
-    case SolvedStateObservableKind::PhaseAmount: case SolvedStateObservableKind::PhaseComponentAmount: return "mol";
+    case SolvedStateObservableKind::PhaseAmount: case SolvedStateObservableKind::PhaseComponentAmount:
+    case SolvedStateObservableKind::SolidAmount: return "mol";
     case SolvedStateObservableKind::PhaseVolume: return "m^3";
     case SolvedStateObservableKind::PhaseGibbsMolarVolume:
         return "m^3/mol";
@@ -247,6 +252,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         const auto& item = request.observables[i];
         if (is_phase_kind(item.kind) && item.phase >= problem.phases.size())
             throw std::invalid_argument("solved-state observable phase ordinal");
+        if (is_solid_kind(item.kind) && item.phase >= problem.solids.size())
+            throw std::invalid_argument("solved-state observable solid ordinal");
         if (has_component(item.kind) && item.component >= components)
             throw std::invalid_argument("solved-state observable component ordinal");
         if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= CALORIC_PROPERTY_COUNT)
@@ -290,6 +297,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("free temperature is a solved output, not an external control");
         if (problem.pressure.free && direction.pressure_pa != 0.0)
             throw std::invalid_argument("free pressure is a solved output, not an external control");
+        if (!problem.solids.empty() && request.directions.size() > 1 && (direction.temperature_k != 0.0 || direction.pressure_pa != 0.0))
+            throw std::invalid_argument("solids admit T and P actions through order one");
     }
     // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
     const bool referenced = !compiled.reference_diagnostics.empty();
@@ -486,6 +495,12 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
         return combine(logarithm(product(maps[observable.phase].mole_fraction[observable.component],
                                          maps[observable.phase].density)),
                        maps[observable.phase].potential[observable.component], 1.0);
+    case SolvedStateObservableKind::SolidAmount: return series.solid_amount[observable.phase];
+    case SolvedStateObservableKind::SolidSaturationIndex: {  // EqID solid_saturation_index
+        auto index = series.solid_affinity[observable.phase];
+        for (double& value : index) value /= std::log(10.0);
+        return index;
+    }
     default: return {};
     }
 }
@@ -827,6 +842,8 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
         return phase + ".residual_chemical_potential_over_rt" + component;
     case SolvedStateObservableKind::PhaseLogActivity: return phase + ".log_activity" + component;
     case SolvedStateObservableKind::PhaseProperty: return phase + ".property/" + property_name(observable.property);
+    case SolvedStateObservableKind::SolidAmount: return "solid[" + std::to_string(observable.phase) + "].amount";
+    case SolvedStateObservableKind::SolidSaturationIndex: return "solid[" + std::to_string(observable.phase) + "].saturation_index";
     }
     return "unknown";
 }
@@ -1219,7 +1236,8 @@ SolvedStateActionBatch solved_state_actions(
     core::Scope scope("solved_state_actions");
     validate_request(compiled, central, request);
     std::optional<ActionCenter> shared;
-    return evaluate_action(compiled, central, request, shared, scope);
+    if (compiled.solids.empty()) return evaluate_action(compiled, central, request, shared, scope);
+    return evaluate_action(classify_solids(compiled, central.coordinates), central, request, shared, scope);
 }
 
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
@@ -1238,8 +1256,9 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     std::optional<ActionCenter> shared;
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
+    const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
     for (const auto& request : requests)
-        batches.push_back(evaluate_action(compiled, central, request, shared, scope));
+        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope));
     return batches;
 }
 

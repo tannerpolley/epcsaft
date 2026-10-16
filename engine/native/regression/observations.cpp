@@ -137,6 +137,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared) {
     const auto components = model.parameters().component_count();
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
+    require(observation.problem.solids.empty() && observation.final_problem.solids.empty(), "without solids");
     require(std::isfinite(observation.observed), "observed value");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");

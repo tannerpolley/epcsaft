@@ -2789,3 +2789,51 @@ $$
 $$
 \ln x_k^{inc}-\ln x_k^{feed}=0,\quad k=\text{support}[0..C-2],\qquad \sum_p N_p\sum_i x_{p,i}-N_{feed}=0.
 $$
+
+## `solid_standard_gibbs`
+
+- Section: Equilibrium pure stoichiometric solids
+- Status: Exact derivation
+- Source: dissolution S(s) = Σ_i ν_{s,i} A_i with Σ_i ν_{s,i} μ_i° − μ_s° = −RT ln K_s; the density-basis constant from `neutral_reaction_reference_transfer` at the source standard pressure P°; issue #573, ADR 0013
+- Description: Standard Gibbs energy of a pure stoichiometric solid at unit activity on its pure-solid standard state, with g_i the compiled fluid standard vector, ln K_s^ρ the sourced dissolution constant converted on the charge-neutral fluid-side stoichiometry at the declared reference pressure P°, and V_s the declared solid molar volume.
+- Change note: P° is required, so ∂g_s/∂P = V_s exactly at fixed T; a transfer at system pressure would add the dissolved ions' infinite-dilution partial molar volume. Only ln K_s is physical: a shift of g_i along the balance row space moves the objective by a constant. ln K_s^ρ is linear in T about the solved temperature (first-order T actions).
+
+$$
+g_s(T,P)=\sum_i\nu_{s,i}\,g_i(T)+RT\ln K_s^{\rho}(T,P^\circ)+V_s\,(P-P^\circ).
+$$
+
+## `solid_saturation_index`
+
+- Section: Equilibrium pure stoichiometric solids
+- Status: Exact derivation
+- Source: affinity of dissolution at the solved fluid state; with `chemical_potential_stationarity`, Σ_i ν_{s,i} μ_i = RT λ·(Bν_s) because Σ_i ν_{s,i} z_i = 0; issue #573
+- Description: Saturation index of solid s in decades; at the optimizer endpoint its scaled affinity is the bound multiplier, z_s = −A_s/RT, and the row g_s/RT − λ·Bν_s = 0 holds for a present solid.
+- Change note: A Pinned(0) solid reports SI_s at the solved fluid state without a coordinate or row.
+
+$$
+\mathrm{SI}_s=\frac{A_s}{RT\ln 10},\qquad \frac{A_s}{RT}=\frac{\sum_i\nu_{s,i}\mu_i-g_s}{RT}=\boldsymbol\lambda\cdot(\mathbf B\boldsymbol\nu_s)-\frac{g_s}{RT}.
+$$
+
+## `solid_amount_complementarity`
+
+- Section: Equilibrium pure stoichiometric solids
+- Status: Exact derivation
+- Source: KKT conditions of the Gibbs minimum with the bound n_s ≥ 0 and no stationarity row for n_s; issue #573
+- Description: Complementarity between the solid amount n_s (mol) and its saturation index; Ipopt's returned bound multiplier of n_s on the extensive objective G/RT is z_s = −A_s/RT, so (n_s/N_feed) z_s is the barrier parameter at an interior-point endpoint.
+- Change note: One endpoint classification makes the declaration square: present (n_s/N_feed > z_s, saturation row) or absent (n_s = 0). The rule replaced A_s/RT ≥ −ε after the barrier left a stable solid at −A_s/RT above ε for small excess feeds.
+
+$$
+n_s\ge 0,\qquad \mathrm{SI}_s\le 0,\qquad n_s\,\mathrm{SI}_s=0.
+$$
+
+## `solid_material_balance`
+
+- Section: Equilibrium pure stoichiometric solids
+- Status: Exact derivation
+- Source: `material_balance` with the solids' moiety columns; issue #573
+- Description: Conserved-moiety balance over the fluid phases and the free solid amounts; the solid term adds n_s g_s/RT to the objective and is linear in n_s, so it adds no curvature.
+- Change note: No upper bound on n_s: the balance bounds it.
+
+$$
+\sum_p N_p\,\mathbf{B}\,\mathbf{x}_p+\sum_s n_s\,\mathbf{B}\boldsymbol\nu_s=\mathbf{B}\,\mathbf{n}_{\mathrm{feed}}.
+$$
