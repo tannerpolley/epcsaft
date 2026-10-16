@@ -314,7 +314,9 @@ std::vector<Fixed> temperature_law_values(const Fixed& temperature, const Parame
     return values;
 }
 
+// A declared law has at least one slot, so `size` is at least 1.
 inline std::string law_domain_failure(const char* quantity, std::size_t slot, std::size_t size, double temperature) {
+    size = std::max<std::size_t>(size, 1);
     return std::string("invalid evaluated ") + quantity + " for pair " + std::to_string(slot / size) + "/"
         + std::to_string(slot % size) + " at T = " + std::to_string(temperature) + " K";
 }
