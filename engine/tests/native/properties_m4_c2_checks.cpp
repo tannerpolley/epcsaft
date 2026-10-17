@@ -642,27 +642,26 @@ void density_and_reference() {
     const auto activity_scale_inputs = recording_support::fields({
         reference_inputs, recording_support::field("ionic_strength", 1e-8)
     });
+    // The raw 1e-10 -> 1e-12 rung change keeps the Debye tail; the returned reference is its limit.
+    const double rung_change = std::max(std::abs(reference.value_difference[0]), std::abs(reference.value_difference[1]));
     recording_support::compare(
-        "reference-error", "reference_convergence_error", "1", reference.convergence_error,
+        "reference-error", "reference_rung_change", "1", rung_change,
         gamma_coefficient * (std::sqrt(1e-10) - std::sqrt(1e-12)),
         reference_error_inputs,
-        "Relationship", "infinite-dilution", "reference convergence error matches Debye limit",
+        "Relationship", "infinite-dilution", "raw reference rung change matches Debye limit",
         "reference_or_one", 0.0, 1e-3,
-        close(reference.convergence_error,
-              gamma_coefficient * (std::sqrt(1e-10) - std::sqrt(1e-12)), 1e-3),
+        close(rung_change, gamma_coefficient * (std::sqrt(1e-10) - std::sqrt(1e-12)), 1e-3),
         "m8-reference-error", "ionic-strength", "\\epsilon", "T,P,\\mathbf{x},I",
         "\\epsilon=\\Gamma(\\sqrt I-\\sqrt{I_0})", "I");
     recording_support::compare(
         "activity-scale", "mean_ionic_log_molality_scale", "1",
-        activity.mean_ionic_log_molality_scale,
-        -gamma_coefficient * (std::sqrt(1e-8) - std::sqrt(1e-12)),
+        activity.mean_ionic_log_molality_scale, -gamma_coefficient * std::sqrt(1e-8),
         activity_scale_inputs,
         "Relationship", "infinite-dilution", "activity scale matches Debye limit",
-        "reference_or_one", 0.0, 1e-2,
-        close(activity.mean_ionic_log_molality_scale,
-              -gamma_coefficient * (std::sqrt(1e-8) - std::sqrt(1e-12)), 1e-2),
+        "reference_or_one", 0.0, 1e-3,
+        close(activity.mean_ionic_log_molality_scale, -gamma_coefficient * std::sqrt(1e-8), 1e-3),
         "m8-activity-scale", "ionic-strength", "\\log\\gamma", "T,P,\\mathbf{x},I",
-        "\\log\\gamma= -\\Gamma(\\sqrt I-\\sqrt{I_0})", "I");
+        "\\log\\gamma= -\\Gamma\\sqrt I", "I");
 }
 
 void cache_invariance() {
@@ -988,7 +987,8 @@ void liquid_reference_branch_evidence() {
     const auto activity = epcsaft::electrolyte_activity(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, reference);
     CHECK(close(reference.first_rung_state.molar_density, 34616.634815530364, 1e-10));
     CHECK(close(reference.pure_solvent_state->molar_density, 34616.636583442916, 1e-10));
-    CHECK(close(activity.mean_ionic_molality_scale, 0.9996968293218973, 1e-10));
+    // gamma before #594 0.9996968293218973 times exp(-(10/9) mean 1e-12 -> 1e-14 rung change) = exp(-3.0408e-7).
+    CHECK(close(activity.mean_ionic_molality_scale, 0.9996965253318902, 1e-10));
 }
 
 }  // namespace properties_checks

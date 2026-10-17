@@ -52,9 +52,13 @@ absolute floor for near-zero entries such as trace mole fractions. The worst
 row is printed as `WORST STATE ROW`; `--expect-change` does not waive it.
 Array-length or point-order differences stop the comparison. Paired wall times,
 the median change and `zero_within_spread` (the absolute median within the
-largest deviation from it) are information only. `summary.json` records
-`gate_failures`; `tools/refresh-main-wheel` records a merged change in its
-README instead of stopping.
+largest deviation from it) are information only. When an environment's Engine
+lacks a type, enum member or field that a frozen fixture sets, that case is
+printed as `NOT COMPARABLE <case>: <A|B> lacks …`, recorded under
+`not_comparable` with no rows from either environment, and is a gate failure
+(with its `MISSING STATE` line); the other cases still run. `summary.json` records
+`gate_failures`; `tools/refresh-main-wheel` records a merged change, including a
+`NOT COMPARABLE` line, in its README instead of stopping.
 
 The harness self-check (an A=A run on the then-current main wheel) was retained
 in `analyses/2026-key-solve-timing/` until #341 moved this manual here; it

@@ -801,7 +801,7 @@ C_Ttheta and C_TP and the bounded higher-order reference columns in EqID:
 qualifies the stated finite-terminal derivatives and observed dilution changes.
 It does not extend reacting caloric/action consumers by implication.
 
-The retained four-molality method and its terminal comparison are EqID:
+The five-molality method and its terminal-pair limit are EqID:
 `reference_molality_sequence` and EqID: `reference_limit_terminal_pair`.
 This finite sequence estimates a limit within its accepted case and tolerance;
 it is not a theorem of convergence for every model. Return the observed change,

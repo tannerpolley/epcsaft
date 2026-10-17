@@ -477,6 +477,38 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
         assert abs(fine - coarse) <= 0.01 * abs(coarse)
 
 
+def test_reference_column_is_the_derivative_of_its_limit(evidence: Any) -> None:
+    """#594 F6: the ion reference's water epsilon/k column equals a Richardson (h, h/2) central difference of its
+    rebuilt-model log fugacities, h = 1e-3 epsilon; a column left on the 1e-12 rung misses by 4.1e-7 (Na+)."""
+    import json
+    from epcsaft import ActiveParameter, ParameterFamily
+
+    components = ("water", "sodium-cation", "chloride-anion")
+    path = parameters_json("held-2014-strategy2", 1)
+    document = json.loads(path.read_text())
+    water = next(c for c in document["components"] if c["component_id"] == "water")["coefficients"]
+    energy = next(c for c in water if c["family"] == "dispersion_energy_over_k")["value"]
+    epsilon = energy["magnitude"]
+
+    def reference(value: float) -> Any:
+        energy["magnitude"] = value
+        model = Mixture(Parameters.from_mapping(document, components=components),
+                        active_parameters=[ActiveParameter(ParameterFamily.DispersionEnergyOverK, [0])])
+        return model.reference(298.15, 101325.0, solvent_fractions=(1, 0, 0), ions=components[1:],
+                               stoichiometry=(1, 1))._native
+
+    def central(h: float) -> list[float]:
+        high, low = reference(epsilon + h).log_fugacity, reference(epsilon - h).log_fugacity
+        return [(a - b) / (2 * h) for a, b in zip(high, low)]
+
+    h = 1e-3 * epsilon
+    coarse, fine = central(h), central(h / 2)
+    column = reference(epsilon).parameter_derivative[0]
+    for ion, exact, d1, d2 in zip(components[1:], column, coarse, fine):
+        same(evidence, f"reference-column/{ion}", exact, (4 * d2 - d1) / 3, atol=0.0, rtol=1e-8,
+             **packet_metadata(path, components), T=298.15, P=101325.0, step=h)
+
+
 def test_electrolyte_density_columns_and_debye_density_limit() -> None:
     """#219 F1a density topology and F4(b), from the pressure-closed density owner."""
     from epcsaft import _core, regression as r

@@ -468,7 +468,10 @@ void select_feed(EquilibriumContext& context, const std::vector<double>& feed,
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
     if (feed == context.map.anchor) context.central = context.anchor_result;
-    else {
+    else try {
+        context.central = eq::solve_equilibrium(*context.model, target);
+        require_central(context, context.central, observable);
+    } catch (const std::exception&) {
         const eq::ContinuationRequest request{context.anchor, target, context.anchor_result, context.options};
         const auto result = eq::continue_equilibrium(*context.model, request);
         if (!result.success || result.stop != eq::ContinuationStop::reached_target || result.states.empty()) {

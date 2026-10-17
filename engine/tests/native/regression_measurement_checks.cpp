@@ -462,11 +462,13 @@ void check_measurement_reuse() {
     const auto action = [&](double sigma) { return electrolyte_input_action(model, 298.15, 1e5, {1,0,0}, {1,2}, {1,1}, 0.5,
         *prediction.reference, *prediction.activity, {1,0,0}, sigma); };
     const auto raw = action(0);
-    const double delta = std::max(std::abs(raw.reference_difference[0]), std::abs(raw.reference_difference[1])); CHECK(delta > 0);
+    // The admitted quantity is the change of the terminal-pair limit (EqID reference_limit_terminal_pair).
+    const auto change = [&](std::size_t i) { return std::abs(10*raw.witness_difference[i] - raw.reference_difference[i])/9; };
+    const double delta = std::max(change(0), change(1)); CHECK(delta > 0);
     const auto low = action(0.5*5e-5/delta), high = action(2*5e-5/delta);
-    CHECK(low.status == PropertyActionStatus::Available && !low.witness_evaluated && high.witness_evaluated);
+    CHECK(low.status == PropertyActionStatus::Available && high.message == "reference input action did not converge");
     CHECK(low.reference_column == raw.reference_column && high.reference_column == raw.reference_column);
-    std::cout << std::setprecision(17) << "REFERENCE_INPUT_ADMISSION raw_difference=" << delta
+    std::cout << std::setprecision(17) << "REFERENCE_INPUT_ADMISSION limit_change=" << delta
         << " sigma_low=" << 0.5*5e-5/delta << " sigma_high=" << 2*5e-5/delta
         << " high_available=" << (high.status == PropertyActionStatus::Available) << " cause=" << high.message << '\n';
 }
