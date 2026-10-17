@@ -411,7 +411,7 @@ public:
         std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
     ) const;
     // Physical-state admission (full-eos.md §12): |sum z_i x_i| <= COMPOSITION_SUM_TOLERANCE (absolute).
-    // Public state requests only; internal iterates use the unconstrained extension.
+    // Public state requests and equilibrium feeds only; internal iterates use the unconstrained extension.
     void validate_electroneutrality(const std::vector<double>& mole_fractions) const;
     SweepCounters counters() const;
     // reaction_references results of this immutable model by exact inputs: a short FIFO (#380).
