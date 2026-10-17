@@ -85,9 +85,11 @@ exactly −Q and the amounts by Σ|Δn_i| ≤ |Q| ≤ 10⁻¹² N (every ion has
 |z_i| ≥ 1); each balance row against the declared feed moves by at most
 max|B|·10⁻¹². Ions of a single sign at that charge are scaled to zero. The
 charge left in a returned phase is the solver's own: the charge component of
-the balance-row residual in p₀ and each charge row's residual elsewhere. Both
-are bounded by the row criterion, not by the state rule; the largest measured
-is 3.2×10⁻¹⁴, 31 times under it.
+the balance-row residual in p₀ and each charge row's residual elsewhere. A
+charge row bounds its phase's charge by the row criterion. In p₀ the balance
+residual is normalized by N, so its charge is that criterion amplified by
+N/n₀, like the feed charge. Neither is bounded by the state rule; the largest
+measured is 3.2×10⁻¹⁴, 31 times under the state rule.
 
 For k pinned phase amounts, f free intensives and e independent caloric rows,
 rows minus unknowns = k + e − f; a square system requires f = k + e.
