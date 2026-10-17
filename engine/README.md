@@ -306,7 +306,11 @@ thermochemistry records are rejected rather than silently omitted.
 For an observable `y(n)`, the callback returns `J_y B` and `B.T H_y B`, where
 `B = feed_matrix`; E5 owns these implicit actions, not a finite-difference
 callback. Pyomo owns any additional control products, ratios and process units.
-Each new feed continues from the immutable anchor. Each distinct record, by
+Each new feed is first solved directly from the record's declared guesses and
+kept only if the record's two-phase, tolerance and identity-gap checks admit it;
+otherwise it continues from the immutable anchor, whose stop is the reported
+failure. An admitted state need not be reachable by a straight path from the
+anchor. Each distinct record, by
 exact content, is prepared once per process and keeps its own model, anchor
 and exact-iterate cache; each preparation prints
 `epcsaft_equilibrium prepared record <k> of at most 16` on stderr. At most 16
