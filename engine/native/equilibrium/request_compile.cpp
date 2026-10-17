@@ -1129,14 +1129,25 @@ static CompiledSystem compile_with_basis(
     compiled.problem = request;
     compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
     compiled.n_feed = resolve_feed(model, request.feed);
-    compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
     const auto& z = model.parameters().charge_number;
-    const double net_z = std::inner_product(compiled.n_feed.begin(), compiled.n_feed.end(), z.begin(), 0.0);
-    if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
-        * std::max(1.0, compiled.feed_total)) {
-        throw std::invalid_argument("feed carries net z");
+    // A neutral feed meets the state rule on its mole fractions; the ions of the excess sign are
+    // then scaled so the solved feed carries no charge (formulation.md "Constraints and specification").
+    std::vector<double> x_feed = compiled.n_feed;
+    const double declared_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
+    for (double& value : x_feed) value /= declared_total;
+    try {
+        model.validate_electroneutrality(x_feed);
+    } catch (const std::invalid_argument& error) {
+        throw std::invalid_argument(std::string("feed carries net z: ") + error.what());
     }
+    double cation = 0.0, anion = 0.0;
+    for (std::size_t i = 0; i < components; ++i) (z[i] > 0.0 ? cation : anion) += std::abs(z[i]) * compiled.n_feed[i];
+    if (cation != anion)  // C = A, including an ion-free feed, is left untouched
+        for (std::size_t i = 0; i < components; ++i)
+            if (z[i] != 0.0 && (z[i] > 0.0) == (cation > anion))
+                compiled.n_feed[i] *= std::min(cation, anion) / std::max(cation, anion);
+    compiled.feed_total = sum(compiled.n_feed);
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");

@@ -74,6 +74,23 @@ phases must satisfy electroneutrality. Support removes coordinates; explicitly
 empty support must not silently mean all species. A support unable to form a
 neutral ionic phase is inadmissible.
 
+A neutral feed is one whose mole fractions x_feed = n_feed / N meet the state
+rule of full-eos.md §12, |Σ z_i x_i| ≤ 10⁻¹² (absolute); any other feed is
+refused as charged. The row-free phase p₀ carries the feed charge Q amplified by
+N/n₀, which is unbounded, so an admitted feed is solved with its ions of the
+excess sign scaled by min(C, A)/max(C, A), where C = Σ_{z_i>0} z_i n_i and
+A = Σ_{z_i<0} |z_i| n_i. A feed with C = A, including one with no ions, is left
+unchanged. The scaling preserves signs and zero amounts, changes the charge by
+exactly −Q and the amounts by Σ|Δn_i| ≤ |Q| ≤ 10⁻¹² N (every ion has
+|z_i| ≥ 1); each balance row against the declared feed moves by at most
+max|B|·10⁻¹². Ions of a single sign at that charge are scaled to zero. The
+charge left in a returned phase is the solver's own: the charge component of
+the balance-row residual in p₀ and each charge row's residual elsewhere. A
+charge row bounds its phase's charge by the row criterion. In p₀ the balance
+residual is normalized by N, so its charge is that criterion amplified by
+N/n₀, like the feed charge. Neither is bounded by the state rule; the largest
+measured is 3.2×10⁻¹⁴, 31 times under the state rule.
+
 For k pinned phase amounts, f free intensives and e independent caloric rows,
 rows minus unknowns = k + e − f; a square system requires f = k + e.
 Ordinary specifications retain Π − k ≤ rank B. PH/PS adds one independent
