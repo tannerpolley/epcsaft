@@ -2154,7 +2154,7 @@ owns the tested cases, tolerances, errors and interpretation limits.
 Native fitting may supply separate optional first-rung, pure-solvent and finite
 activity densities. Each external anchor is admitted for regularity before its
 State is consumed. A caught anchor failure is recorded and retried once cold at
-that closure. Later ladder and limiting-witness anchors keep their existing
+that closure. Later ladder anchors keep their existing
 failure behavior; no entire reference calculation is retried.
 
 
@@ -2194,11 +2194,10 @@ Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
 density; the returned EOS pressure still records the density-root residual.
 This avoids amplifying the closure residual in parameter differences of nearly
 invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
-Each terminal reference column is admitted independently by the maximum scaled
-two-ion change, s_theta (`standard_state_transfer_parameter_derivative`) times
-the column difference, at the existing
-reference tolerance. The terminal pair is compared first; a witness checks a
-failed pair without changing the returned terminal column. An unavailable
+Each reference column is the terminal-pair limit of EqID:
+`reference_limit_terminal_pair`, admitted independently when s_theta
+(`standard_state_transfer_parameter_derivative`) times its maximum two-ion
+limit change is at most the existing reference tolerance. An unavailable
 column preserves the value, molality and terminal value error. Activity and
 single-ion energy actions combine these columns through EqID:
 `electrolyte_activity_parameter_derivative`.
