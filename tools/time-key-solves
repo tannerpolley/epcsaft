@@ -76,6 +76,10 @@ def equilibrium_iterations(trace):
     return total
 
 
+class NotComparable(Exception):
+    """The arm's Engine lacks a type, enum member or field that a frozen fixture sets (#602)."""
+
+
 def frozen_result(case, operation):
     import epcsaft
     from epcsaft import _core
@@ -87,9 +91,18 @@ def frozen_result(case, operation):
             return [decode(v) for v in value]
         if not isinstance(value, dict):
             return value
+        name = value.get('enum', value.get('type'))
+        if not hasattr(_core, name):
+            raise NotComparable(f'lacks type {name}')
         if 'enum' in value:
-            return getattr(getattr(_core, value['enum']), value['name'])
-        cls = getattr(_core, value['type'])
+            if not hasattr(getattr(_core, name), value['name']):
+                raise NotComparable(f"lacks enum member {name}.{value['name']}")
+            return getattr(getattr(_core, name), value['name'])
+        cls = getattr(_core, name)
+        # Bound properties are class attributes, so this covers both construction paths below.
+        lacking = [key for key in value['fields'] if not hasattr(cls, key)]
+        if lacking:
+            raise NotComparable(f'lacks field {name}.{lacking[0]}')
         fields = {k: decode(v) for k, v in value['fields'].items()}
         try:
             obj = cls()
@@ -205,8 +218,11 @@ def worker():
         if request['case'] == '__identity__':
             reply = loaded_identity()
         elif request['case'] in FROZEN:
-            reply = frozen_result(request['case'], request.get('operation', 'evaluation'))
-            reply.update(nice=os.getpriority(os.PRIO_PROCESS, 0), affinity=sorted(os.sched_getaffinity(0)))
+            try:
+                reply = frozen_result(request['case'], request.get('operation', 'evaluation'))
+                reply.update(nice=os.getpriority(os.PRIO_PROCESS, 0), affinity=sorted(os.sched_getaffinity(0)))
+            except NotComparable as error:
+                reply = {'not_comparable': str(error)}
         elif request['case'] == 'starts':
             reply = {}
             for name, (model, problem) in declarations.items():
@@ -521,11 +537,14 @@ def main():
         starts = call('A', 'starts')
         start_rows = [dict(case=case, coordinate=i, value=value) for case, values in starts.items() for i, value in enumerate(values)]
         baseline = {}
-        comparisons = {}
+        comparisons, not_comparable = {}, []
         print('WORK COUNTS FIRST: iterations / evaluations / Hessian calls (A versus B)', flush=True)
         for case in CASES:
             for attempt in range(1, 4 if case in FROZEN else 2):
                 baseline[case] = {label: call(label, case, starts) for label in ('A', 'B')}
+                causes = {label: reply['not_comparable'] for label, reply in baseline[case].items() if 'not_comparable' in reply}
+                if causes:
+                    break
                 for label in ('A', 'B'):
                     retain(label, case, 'warmup' if attempt == 1 else f'serial-{attempt}', baseline[case][label])
                 if case not in FROZEN:
@@ -539,6 +558,13 @@ def main():
                     if attempt == 3:
                         raise
                     print(f'{case} serial pair {attempt}: invalid host measurement; retrying pair', flush=True)
+            if causes:
+                # Neither arm's rows are retained or compared; the case is a named gate failure (#602).
+                summary.setdefault('not_comparable', {})[case] = causes
+                for label, cause in causes.items():
+                    not_comparable.append(f'NOT COMPARABLE {case}: {label} {cause}')
+                    print(not_comparable[-1], flush=True)
+                continue
             a, b = baseline[case]['A'], baseline[case]['B']
             equal = all(tuple(left[k] for k in count_keys(case)) == tuple(right[k] for k in count_keys(case))
                         for left, right in zip(a['rows'], b['rows'], strict=True))
@@ -594,14 +620,16 @@ def main():
         same_prepared = identities['A'] == identities['B']
         summary['same_prepared_environment'] = same_prepared
         summary.update(cases=comparisons, identical_engine_images=same_image, expect_change=args.expect_change,
-                       gate_failures=gate(work_rows, state_rows, args.expect_change))
+                       gate_failures=gate(work_rows, state_rows, args.expect_change) + not_comparable)
         for case in FROZEN:
+            if case in summary.get('not_comparable', {}):
+                continue
             comparisons[case].update(median_A_seconds=baseline[case]['A']['seconds'],
                                      median_B_seconds=baseline[case]['B']['seconds'],
                                      evaluations={label: evaluation(result) for label, result in baseline[case].items()})
             summary['gate_failures'].extend(ceilings(case, comparisons[case]['evaluations'], control=same_prepared))
-        f1 = comparisons[F1]
-        if args.fit:
+        if args.fit and F1 not in summary.get('not_comparable', {}):
+            f1 = comparisons[F1]
             control = json.loads(args.control.read_text()) if args.control else None
             if (args.control or not same_prepared) and (not control or control.get('gate_failures') != [] or control.get('error')
                     or not control.get('identical_engine_images') or control.get('host') != summary['host']
