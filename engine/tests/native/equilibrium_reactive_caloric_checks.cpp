@@ -206,7 +206,7 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
                      const std::vector<Quantity>& q) {
     CHECK(solved.has_state());
     const std::size_t components=model.parameters().component_count();
-    const double T=solved.temperature[0],P=solved.pressure[0];
+    const double T=*solved.temperature,P=*solved.pressure;
     Sample sample;sample.solved=solved;
     std::vector<Local> phases;
     std::vector<State> states;
@@ -261,14 +261,14 @@ inline std::string context(const Case& c,const EquilibriumResult& solved,const L
             recording_support::field("source_b_K",polynomial.b),recording_support::field("source_c",polynomial.c),
             recording_support::field("source_d_per_K",polynomial.d),recording_support::field("source_Tref_K",polynomial.reference_temperature),
             recording_support::field("source_Tmin_K",polynomial.temperature_min),recording_support::field("source_Tmax_K",polynomial.temperature_max),
-            recording_support::field("source_P_Pa",c.problem.reactions[0].reference->reference_pressure_pa.value_or(solved.pressure[0]))});
+            recording_support::field("source_P_Pa",c.problem.reactions[0].reference->reference_pressure_pa.value_or(*solved.pressure))});
     }
     return recording_support::fields({recording_support::field("case",c.name),law,
         recording_support::field("record_cp_J_per_mol_K",c.ionic?std::vector<double>{33.59}:std::vector<double>{52.0,0.12}),
         recording_support::field("record_Tref_K",c.ionic?298.15:300.0),
         recording_support::field("record_h_J_per_mol",c.ionic?-241826.0:0.0),
         recording_support::field("record_s_J_per_mol_K",c.ionic?188.83:0.0),
-        recording_support::field("T_K",solved.temperature[0]),recording_support::field("P_Pa",solved.pressure[0]),
+        recording_support::field("T_K",*solved.temperature),recording_support::field("P_Pa",*solved.pressure),
         recording_support::field("feed_mol",c.problem.feed.values),recording_support::field("x",solved.mole_fractions),
         recording_support::field("n_mol",solved.amounts[0]),recording_support::field("rho",l.rho),
         recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_residual",solved.residual_norm()),
@@ -276,7 +276,7 @@ inline std::string context(const Case& c,const EquilibriumResult& solved,const L
         recording_support::field("v_G",l.v),recording_support::field("v_G_T_raw",l.vt),recording_support::field("v_G_P_raw",l.vp),
         recording_support::field("v_G_positive",l.v>0),recording_support::field("v_G_P_negative",l.vp<0),
         recording_support::field("quotient_J_per_mol_K",l.quotient),
-        recording_support::field("quotient_sensitivity_vT_Pa",std::abs(2*solved.temperature[0]*l.vt/l.vp)),
+        recording_support::field("quotient_sensitivity_vT_Pa",std::abs(2 * *solved.temperature*l.vt/l.vp)),
         recording_support::field("quotient_sensitivity_vP_Pa2_per_K",std::abs(l.quotient/l.vp)),
         recording_support::field("pressure_density_derivative",l.diagnostics.pressure_density_derivative),
         recording_support::field("pressure_residual",l.diagnostics.pressure_residual),
@@ -526,7 +526,7 @@ class Frozen {
 public:
     // h,s,cp,v,u,cv,vT,vP, all at fixed x; increment actions retain the unit.
     Frozen(const Case& source,const CompiledSystem& compiled,const Sample& center):
-        c(source),T(center.solved.temperature[0]),P(center.solved.pressure[0]),x(center.solved.mole_fractions),
+        c(source),T(*center.solved.temperature),P(*center.solved.pressure),x(center.solved.mole_fractions),
         baseline(c.parameters,c.active,complete(c)),ref(reference_calorics(compiled,T,P,true,true,true,4)) {
         CHECK(ref.status==SolvedStateActionStatus::Available);
         using AD=CppAD::AD<double>;std::vector<AD> independent{T};CppAD::Independent(independent);
@@ -572,7 +572,7 @@ public:
 inline void identities(const Case& c,const HelmholtzModel& model,const CompiledSystem& compiled,
                        Actions& actions,const std::vector<Quantity>& q,const Sample& center,const std::string& inputs) {
     const auto& value=actions.get({});
-    const double T=center.solved.temperature[0],P=center.solved.pressure[0],n=center.solved.amounts[0];
+    const double T=*center.solved.temperature,P=*center.solved.pressure,n=center.solved.amounts[0];
     auto check=[&](std::string id,std::string quantity,double a,double b,double relative) {
         compare("reference-calorics/"+id+"/"+c.name,q[index(q,quantity)],a,b,inputs,relative);
     };
@@ -639,7 +639,7 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
 
 inline bool inversion(const Case& c,const HelmholtzModel& model,const CompiledSystem& compiled,const Sample& center,
                       const std::vector<Quantity>& q,const std::string& inputs,double exact_cv) {
-    const double T=center.solved.temperature[0],P=center.solved.pressure[0],targetVolume=center.phase.v;
+    const double T=*center.solved.temperature,P=*center.solved.pressure,targetVolume=center.phase.v;
     bool good=true;
     const auto u_at=[&](double delta) {
         double pressure=P;Local value;double residual=0;std::size_t iterations=0;
@@ -1009,7 +1009,7 @@ inline Case boundary_input(bool nonidentical,bool free_temperature,bool fixed) {
 inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,const std::vector<Quantity>& q,
                           const std::vector<NamedDirection>& basis,const std::string& inputs) {
     const HelmholtzModel pure(properties_support::ethane());
-    const double P=center.solved.pressure[0];
+    const double P=*center.solved.pressure;
     const auto states=[&](double T) {
         return std::array<State,2>{pure.state_at_pressure(T,P,{1},DensityBranch::Liquid),
                                    pure.state_at_pressure(T,P,{1},DensityBranch::Vapor)};
@@ -1027,7 +1027,7 @@ inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,co
         if(f*flo>0) {lo=mid;flo=f;} else hi=mid;
     }
     const double T=(lo+hi)/2;const auto s=states(T);
-    compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],center.solved.temperature[0],T,
+    compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],*center.solved.temperature,T,
   recording_support::fields({inputs,recording_support::field("pure_fugacity_residual",fugacity(T)),
       recording_support::field("pure_T_bracket",std::vector<double>{lo,hi})}),1e-8,"native-pure-fugacity-bisection");
     if(c.problem.temperature.free) {
@@ -1064,8 +1064,8 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
             recording_support::fields({recording_support::field("iterations",solved.iterations),
                 recording_support::field("evaluations",solved.evaluations),recording_support::field("reference_evaluations",references),
                 recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_message",solved.message),
-                recording_support::field("residual",solved.residual_norm()),recording_support::field("T",solved.temperature),
-                recording_support::field("P",solved.pressure),recording_support::field("roots",solved.molar_densities),
+                recording_support::field("residual",solved.residual_norm()),recording_support::field("T",solved.temperature.value_or(NAN)),
+                recording_support::field("P",solved.pressure.value_or(NAN)),recording_support::field("roots",solved.molar_densities),
                 recording_support::field("seed_T",problem.temperature.value),
                 recording_support::field("seed_P",problem.pressure.value)}),
             "Observation","native-one-driver","Equivalent work; no performance ceiling","reactive-caloric");
@@ -1117,8 +1117,8 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
                 std::isfinite(response)&&response!=0,"reactive-caloric");
         }
     } else pure_boundary(c,actions,center,q,basis,inputs);
-    auto driven=c.problem;driven.temperature=FreeValue::fixed(solved.temperature[0]);
-    driven.pressure=FreeValue::fixed(solved.pressure[0]);driven.phases.resize(1);
+    auto driven=c.problem;driven.temperature=FreeValue::fixed(*solved.temperature);
+    driven.pressure=FreeValue::fixed(*solved.pressure);driven.phases.resize(1);
     const auto fixed_center=solve(driven,"fixed-intensive");
     const auto fixed_compiled=compile_problem(model,driven);
     const auto liquid_quantities=quantities(c.parameters.component_count());

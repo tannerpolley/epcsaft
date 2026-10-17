@@ -288,7 +288,7 @@ void check_j2() {
                                                                         state.mole_fractions.begin() + (q + 1) * 2);
                 observation.problem.phases[q].packing_guess = state.packing_fractions[q];
             }
-            observation.problem.pressure = FreeValue::variable(state.pressure.front());
+            observation.problem.pressure = FreeValue::variable(*state.pressure);
         }
     }
     auto inward = recovery_request(interior_truth, 151.0, 0.1, 151.0);
@@ -686,7 +686,7 @@ void check_propane_inventory_boundary() {
         truth(id + "/absent-pair", "both manufactured carriers have literal zero composition in both phases",
             result.mole_fractions[1] == 0 && result.mole_fractions[2] == 0 && result.mole_fractions[4] == 0 && result.mole_fractions[5] == 0,
             fields({field("fractions", result.mole_fractions)}), "issue-269");
-        agree(id + "/pressure", "boundary_pressure", "Pa", result.pressure[0], 998660.8957398997, .01, 0, "teqp same-model reference", "independent propane coexistence pressure", "issue-269");
+        agree(id + "/pressure", "boundary_pressure", "Pa", *result.pressure, 998660.8957398997, .01, 0, "teqp same-model reference", "independent propane coexistence pressure", "issue-269");
         for (std::size_t p = 0; p < 2; ++p)
             agree(id + "/density/" + std::to_string(p), "molar_density", "mol/m^3", result.molar_densities[p], p == 0 ? 11100.25123320962 : 482.5121268150332, 0, 1e-7, "teqp same-model reference", "independent mechanical branches", "issue-269");
         auto control = problem;
@@ -699,7 +699,7 @@ void check_propane_inventory_boundary() {
             const auto* other = comparison.second;
             const std::string prefix = id + "/" + comparison.first;
             check_inventory_boundary(model, problem, *other, prefix, 1e-10);
-            reference_scale_agrees(prefix + "/pressure", "boundary_pressure", "Pa", other->pressure[0], result.pressure[0], 1e-4, 1e-8, "same wheel", "full-width guesses and explicit face agree", "issue-269");
+            reference_scale_agrees(prefix + "/pressure", "boundary_pressure", "Pa", *other->pressure, *result.pressure, 1e-4, 1e-8, "same wheel", "full-width guesses and explicit face agree", "issue-269");
             for (std::size_t i = 0; i < result.mole_fractions.size(); ++i)
                 reference_scale_agrees(prefix + "/fraction/" + std::to_string(i), "mole_fraction", "1", other->mole_fractions[i], result.mole_fractions[i], 1e-12, 1e-8, "same wheel", "supported fractions and literal zeros agree", "issue-269");
             for (std::size_t p = 0; p < 2; ++p)

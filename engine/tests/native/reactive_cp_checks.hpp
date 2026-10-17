@@ -95,7 +95,7 @@ void cp_f2() {
                 integral[level][1]+=(right-left)*weight/2 * *batch.results[0].action;
                 const auto id="F2/"+c.name+"/nodes-"+std::to_string(level?10:8)+"/node-"+std::to_string(node++);
                 recording_support::observe(id.c_str(),"Cp","J/(mol-feed K)",*batch.results[0].value,*batch.results[0].action,
-                    recording_support::fields({recording_support::field("T_K",solved.temperature[0]),recording_support::field("z",z),recording_support::field("weight",weight),
+                    recording_support::fields({recording_support::field("T_K",*solved.temperature),recording_support::field("z",z),recording_support::field("weight",weight),
                         recording_support::field("N_f_mol",cp_feed(c)),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),
                         recording_support::field("linear_residual",batch.diagnostics.maximum_linear_residual.value_or(0))}),
                     "Observation","native-Gauss-Legendre","Quadrature node Cp and thermal action","reactive-cp",id.c_str());

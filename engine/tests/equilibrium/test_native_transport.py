@@ -61,7 +61,7 @@ def quotients(model: Mixture, result: Any) -> list[float]:
     values = []
     for phase in range(2):
         x = result.mole_fractions[3 * phase:3 * phase + 3]
-        state = model.state(result.temperature[0], rho=result.molar_densities[phase], x=x)
+        state = model.state(result.temperature, rho=result.molar_densities[phase], x=x)
         terms = []
         for i, nu in enumerate(NU):
             if nu == 0:
@@ -210,13 +210,13 @@ def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
     assert implemented == [_core.RowKind.Moiety] * 2 + [_core.RowKind.Normalization] * 2
     assert len(split.multipliers) == 2 and len(split.constraint_multipliers) == len(implemented)
     assert all(abs(a - b) > 1.0 for a, b in zip(split.multipliers, split.constraint_multipliers))
-    same(evidence, "bubble/pressure", solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0))).pressure[0])
+    same(evidence, "bubble/pressure", solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0))).pressure)
     # An unattainable row tolerance: no success, the achieved finite residuals and the owner's stop stay inspectable.
     floor = solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0), row_tolerance=1.0e-18))
     same(evidence, "floor/residual", floor.convergence.residual)
     assert not floor.success and floor.requested_tolerance_met is False and floor.convergence.stop == Stop.converged_to_floor
     assert floor.solver_status == "STOP_AT_TINY_STEP"
-    assert floor.residuals and all(math.isfinite(value) for value in floor.residuals) and floor.pressure == []
+    assert floor.residuals and all(math.isfinite(value) for value in floor.residuals) and floor.temperature is None and floor.pressure is None
 
 
 def test_active_parameter_and_thermal_actions_match_native(evidence: Any) -> None:

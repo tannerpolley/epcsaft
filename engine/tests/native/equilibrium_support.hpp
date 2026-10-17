@@ -120,7 +120,7 @@ inline Interior interior(const epcsaft::HelmholtzModel& model) {
     Interior result;
     const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, bubble_at(180.0));
     recording_support::check(bubble.success, __FILE__, __LINE__, "bubble.success");
-    result.bubble_pressure = bubble.pressure.front();
+    result.bubble_pressure = *bubble.pressure;
     result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
                    0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
     result.problem = bubble_at(180.0);

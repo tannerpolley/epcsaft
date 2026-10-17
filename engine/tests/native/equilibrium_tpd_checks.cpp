@@ -614,7 +614,7 @@ void check_gross_2002_bubble() {
     problem.feed.values = {0.42, 0.58}; problem.solver_options.values[epcsaft::policy::row] = 1e-8;
     const auto result = solve_equilibrium(model, problem);
     CHECK(result.success); CHECK(result.convergence.residual <= 1e-8);
-    tpd_compare("gross-2002-bubble/P", result.pressure.at(0), 3842628.8934729425, 1e-10 * 3842628.8934729425, {}, "Pa");
+    tpd_compare("gross-2002-bubble/P", *result.pressure, 3842628.8934729425, 1e-10 * 3842628.8934729425, {}, "Pa");
     tpd_compare("gross-2002-bubble/rho-L", result.molar_densities.at(0), 7161.966436021788, 1e-10 * 7161.966436021788, {}, "mol/m3");
     tpd_compare("gross-2002-bubble/rho-V", result.molar_densities.at(1), 1639.905384348973, 1e-10 * 1639.905384348973, {}, "mol/m3");
     tpd_compare("gross-2002-bubble/y-butane", result.mole_fractions.at(2), 0.7115607362253475, 1e-10, {}, "1");
@@ -687,14 +687,14 @@ void check_gross_2002_cooling_onset() {
         return onset;
     };
     const auto [result, reports] = onset(0.87, 375.0);
-    tpd_compare("gross-2002-cooling-onset/T", result.temperature.at(0), 369.6782514610692, 1e-10 * 369.6782514610692, {}, "K");
+    tpd_compare("gross-2002-cooling-onset/T", *result.temperature, 369.6782514610692, 1e-10 * 369.6782514610692, {}, "K");
     tpd_compare("gross-2002-cooling-onset/x-water", result.mole_fractions.at(0), 0.46929206305581567, 1e-10, {}, "1");
     tpd_compare("gross-2002-cooling-onset/rho-L", result.molar_densities.at(0), 13988.729693124995, 1e-10 * 13988.729693124995, {}, "mol/m3");
     const auto [metastable, checks] = onset(0.8875, 475.0);
     CHECK(std::count_if(checks.front().trials.begin(), checks.front().trials.end(), [](const auto& t) { return t.resolved_descent; }) == 1);
-    tpd_compare("gross-2002-cooling-onset/T-475", metastable.temperature.at(0), 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
+    tpd_compare("gross-2002-cooling-onset/T-475", *metastable.temperature, 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
-    CHECK(!refused.success); CHECK(refused.temperature.empty() && refused.molar_densities.empty());
+    CHECK(!refused.success); CHECK(!refused.temperature && refused.molar_densities.empty());
     CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root 10325.2153") != std::string::npos);
 }
 

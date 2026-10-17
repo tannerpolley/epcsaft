@@ -9,7 +9,7 @@ inline double total(const HelmholtzModel& m, const EquilibriumResult& r, bool h)
     double value=0; const std::size_t c=m.parameters().component_count();
     for(std::size_t p=0;p<r.phase_count;++p) {
         std::vector<double> x(r.mole_fractions.begin()+p*c,r.mole_fractions.begin()+(p+1)*c);
-        const auto s=m.state(r.temperature[0],r.molar_densities[p],x);
+        const auto s=m.state(*r.temperature,r.molar_densities[p],x);
         value+=r.amounts[p]*(h?*s.total_enthalpy:*s.total_entropy);
     }
     return value;
@@ -24,8 +24,8 @@ inline EquilibriumResult recovered(const HelmholtzModel& m,const EquilibriumProb
     const double target=total(m,ref,h), feed=std::accumulate(p.feed.values.begin(),p.feed.values.end(),0.0);
     const auto request=condition(p,h,target,seed); const auto result=solve_equilibrium(m,request);
     if(!result.has_state()) throw std::runtime_error(id+": "+result.message);
-    compare(id+"/T",result.temperature[0],ref.temperature[0],ref.temperature[0],1e-8);
-    compare(id+"/closure",total(m,result,h),target,feed*GAS_CONSTANT_J_PER_MOL_K*(h?result.temperature[0]:1),1e-10);
+    compare(id+"/T",*result.temperature,*ref.temperature,*ref.temperature,1e-8);
+    compare(id+"/closure",total(m,result,h),target,feed*GAS_CONSTANT_J_PER_MOL_K*(h?*result.temperature:1),1e-10);
     for(std::size_t i=0;i<result.amounts.size();++i) compare(id+"/split-"+std::to_string(i),result.amounts[i],ref.amounts[i],feed,1e-9);
     for(std::size_t i=0;i<result.mole_fractions.size();++i) compare(id+"/x-"+std::to_string(i),result.mole_fractions[i],ref.mole_fractions[i],1,1e-8);
     return result;
@@ -59,10 +59,10 @@ void roundtrips() {
         recovered(pure,q,ref,h,300,h?"PH3":"PS3");
         const auto result=solve_equilibrium(pure,condition(q,h,total(pure,ref,h),300));
         for(std::size_t i=0;i<2;++i) {
-            const auto state=pure.state(result.temperature[0],result.molar_densities[i],{1});
+            const auto state=pure.state(*result.temperature,result.molar_densities[i],{1});
             CHECK(state.pressure_density_derivative>0);
-            const auto liquid=pure.state(ref.temperature[0],ref.molar_densities[0],{1});
-            const auto vapor=pure.state(ref.temperature[0],ref.molar_densities[1],{1});
+            const auto liquid=pure.state(*ref.temperature,ref.molar_densities[0],{1});
+            const auto vapor=pure.state(*ref.temperature,ref.molar_densities[1],{1});
             const double hl=*liquid.total_enthalpy,hv=*vapor.total_enthalpy,sl=*liquid.total_entropy,sv=*vapor.total_entropy;
             compare(std::string(h?"PH3":"PS3")+"/H-lever",(total(pure,result,true)/2.5-hl)/(hv-hl),0.35,1,1e-8);
             compare(std::string(h?"PH3":"PS3")+"/S-lever",(total(pure,result,false)/2.5-sl)/(sv-sl),0.35,1,1e-8);
@@ -125,8 +125,8 @@ inline double action(const CompiledSystem& c,const EquilibriumResult& r,const st
     static const char* numbered_case=nullptr;static std::size_t call=0;
     if(numbered_case!=recording_support::active_test_id()) {numbered_case=recording_support::active_test_id();call=0;}
     recording_support::observe(("PH4/action-call-"+std::to_string(++call)).c_str(),kind==SolvedStateObservableKind::SystemEnthalpy?"system-enthalpy-action":"solved-temperature-action",value.unit.c_str(),*value.action,std::nullopt,
-        recording_support::fields({recording_support::field("order",d.size()),recording_support::field("T_K",r.temperature[0]),
-            recording_support::field("P_Pa",r.pressure[0]),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),
+        recording_support::fields({recording_support::field("order",d.size()),recording_support::field("T_K",*r.temperature),
+            recording_support::field("P_Pa",*r.pressure),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),
             recording_support::field("backward_error",batch.diagnostics.maximum_linear_residual.value_or(0)),
             recording_support::field("energy_order",batch.diagnostics.maximum_energy_order)}),
         "Observation","implicit-exact-action","conditioning and recurrence diagnostics","caloric-specification");
@@ -186,7 +186,7 @@ void actions() {
         const auto traced=continue_equilibrium(m,path);
         if(!traced.success || traced.states.empty())throw std::runtime_error("PH/PS target continuation: "+traced.message);
         const auto& last=traced.states.back();
-        compare(h?"PH4/continuation-T":"PS4/continuation-T",last.temperature[0],185,185,1e-8);
+        compare(h?"PH4/continuation-T":"PS4/continuation-T",*last.temperature,185,185,1e-8);
         compare(h?"PH4/continuation-split":"PS4/continuation-split",last.amounts[1],end_tp.amounts[1],1,1e-8);
         compare(h?"PH4/continuation-closure":"PS4/continuation-closure",total(m,last,h),total(m,end_tp,h),GAS_CONSTANT_J_PER_MOL_K*(h?185:1),1e-10);
     }

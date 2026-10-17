@@ -171,7 +171,7 @@ void check_f5_f6() {
     const auto direct = equilibrium::solve_equilibrium(model, bubble);
     const auto pressure = predict(model, solved(ObservationKind::EquilibriumPressure, bubble));
     CHECK(pressure.status == ObservationStatus::Available && direct.success);
-    agree("r1-f5/bubble_pressure", "pressure", "Pa", *pressure.value, direct.pressure.front(), 0.0, 0.0,
+    agree("r1-f5/bubble_pressure", "pressure", "Pa", *pressure.value, *direct.pressure, 0.0, 0.0,
           field("T_K", 180.0), "the O2 value is the driver's pressure bit for bit", "r1-f5");
     // The pinned-zero free-T solve is solved cold from a guess above the answer (a fit's first trial
     // is always cold); a warm start from the O2 result would return the seed bit for bit and prove nothing.
@@ -638,7 +638,7 @@ void check_d86() {
     agree("d86/pressure", "drho_dP", "mol/(m^3 Pa)", thermal.density_action[1], 1.0 / central.pressure_density_derivative, 0.0, 1.0e-12,
           field("dP_drho", central.pressure_density_derivative), "drho/dP is the reciprocal pressure slope", "d86");
     const HelmholtzModel binary(properties_support::neutral_binary());
-    const double Tb = 180.0, Pb = 2.0 * equilibrium::solve_equilibrium(binary, equilibrium_support::bubble_at(180.0)).pressure.front();
+    const double Tb = 180.0, Pb = 2.0 * *equilibrium::solve_equilibrium(binary, equilibrium_support::bubble_at(180.0)).pressure;
     const auto mixed = binary.pressure_actions(Tb, Pb, {0.5, 0.5}, DensityBranch::Liquid, {}, {{0.0, 0.0, {0.01, -0.01}, {}}});
     CHECK(mixed.density_status == PropertyActionStatus::Available);
     const auto over_x = [&](double shift) {
@@ -716,7 +716,7 @@ void check_j1() {
     const auto tie = equilibrium_support::interior(model);
     const auto bubble = equilibrium_support::bubble_at(180.0);
     const auto bubble_solve = equilibrium::solve_equilibrium(model, bubble);
-    const double P_bubble = bubble_solve.pressure.front();
+    const double P_bubble = *bubble_solve.pressure;
     auto free_t = bubble;
     free_t.temperature = FreeValue::variable(180.0);
     free_t.pressure = FreeValue::fixed(P_bubble);

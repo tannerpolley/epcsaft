@@ -77,11 +77,11 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
                         phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))],
                         row_tolerance=1e-10)
     reference = eq.solve_equilibrium(pure, bubble)
-    assert reference.success
+    assert reference.success and reference.pressure is not None
     pinned_seed = eq.EquilibriumStart()
     pinned_seed.compositions = [[1.], [1.]]
     pinned_seed.packing_fractions = [*reference.packing_fractions]
-    pinned_seed.pressure = reference.pressure[0]
+    pinned_seed.pressure = reference.pressure
     for amount in (float("nan"), 1.):
         pinned_seed.amounts = [1., amount]
         refused = eq.solve_equilibrium_starts(pure, bubble, [pinned_seed], eq.EquilibriumWorkLimits())
@@ -89,13 +89,13 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         assert "amount for phase V" in refused.causes[0]
     pinned_seed.amounts = [1., 0.]
     admitted = eq.solve_equilibrium_starts(pure, bubble, [pinned_seed], eq.EquilibriumWorkLimits())
-    assert admitted.selected == 0 and admitted.results[0] is not None
-    assert abs(admitted.results[0].pressure[0]/reference.pressure[0]-1) <= 1e-9
+    assert admitted.selected == 0 and admitted.results[0] is not None and admitted.results[0].pressure is not None
+    assert abs(admitted.results[0].pressure/reference.pressure-1) <= 1e-9
     previous.previous = reference
     bubble.P = eq.Free(2e5)
     reused = eq.solve_equilibrium_starts(pure, bubble, [previous], eq.EquilibriumWorkLimits())
-    assert reused.selected == 0 and reused.results[0] is not None
-    assert abs(reused.results[0].pressure[0]/reference.pressure[0]-1) <= 1e-9
+    assert reused.selected == 0 and reused.results[0] is not None and reused.results[0].pressure is not None
+    assert abs(reused.results[0].pressure/reference.pressure-1) <= 1e-9
     only = eq.solve_equilibrium_starts(model, problem, [invalid], eq.EquilibriumWorkLimits())
     assert only.selected is None and only.iterations == 0
     for name in ("iterations", "seconds"):
@@ -189,7 +189,9 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
         assert plain.success and started.selected == 0 and result is not None, started.causes
         assert [getattr(result, k) for k in work] == [getattr(plain, k) for k in work]
         assert started.iterations == plain.iterations
-        for key in ("pressure", "amounts", "mole_fractions", "molar_densities"):
+        assert plain.pressure is not None and result.pressure is not None
+        assert abs(plain.pressure - result.pressure) <= 1e-10 * plain.pressure
+        for key in ("amounts", "mole_fractions", "molar_densities"):
             for x, y in zip(getattr(plain, key), getattr(result, key), strict=True):
                 assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
     presolve = eq.solve_equilibrium(model, _mea_flash(7398.16))
@@ -287,7 +289,7 @@ def test_pure_saturation_default_start_takes_the_loop_pressure(species: Any, ass
         T=T, P=eq.Free(1e5), feed=eq.Amounts({"s0": 1.}), row_tolerance=1e-8,
         phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))]))
     assert result.success and result.requested_tolerance_met, result.message
-    for x, y in zip([*result.pressure, *result.molar_densities], reference, strict=True):
+    for x, y in zip([result.pressure, *result.molar_densities], reference, strict=True):
         assert abs(x - y) <= 1e-10 * y
     assert result.molar_densities[0] > 2 * result.molar_densities[1]
     assert all(model.state(T, rho=rho, x=[1.]).pressure_density_derivative > 0 for rho in result.molar_densities)

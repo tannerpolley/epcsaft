@@ -101,11 +101,11 @@ std::optional<double> mapped(const SolvedStateObservable& item, const epcsaft::H
                                    result.mole_fractions.begin() + static_cast<std::ptrdiff_t>((phase + 1) * components));
     };
     const auto state = [&](std::size_t phase) {
-        return model.state(result.temperature.front(), result.molar_densities[phase], x(phase));
+        return model.state(*result.temperature, result.molar_densities[phase], x(phase));
     };
     switch (item.kind) {
-    case Kind::Temperature: return result.temperature.front();
-    case Kind::Pressure: return result.pressure.front();
+    case Kind::Temperature: return *result.temperature;
+    case Kind::Pressure: return *result.pressure;
     case Kind::PhaseAmount: return result.amounts[item.phase];
     case Kind::PhaseComponentAmount: return result.amounts[item.phase] * x(item.phase)[item.component];
     case Kind::PhaseMoleFraction: return x(item.phase)[item.component];
@@ -932,7 +932,7 @@ void check_e5_reactive() {
         const auto traced = epcsaft::equilibrium::continue_equilibrium(model, path);
         double worst = traced.success ? 0.0 : std::numeric_limits<double>::quiet_NaN();
         for (const auto& state : traced.states) {
-            const double kt = 1.0e-16 * std::exp(-40000.0 * (1.0 / state.temperature.front() - 1.0 / 450.0));
+            const double kt = 1.0e-16 * std::exp(-40000.0 * (1.0 / *state.temperature - 1.0 / 450.0));
             worst = std::max(worst, std::abs(state.mole_fractions[1] / (kt / (1.0 + kt)) - 1.0));
         }
         row("e5-3/sub-cutoff/continuation", 1.0 + worst, 1.0, "every continuation state through the cutoff is the analytic root",
