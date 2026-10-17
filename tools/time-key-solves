@@ -254,7 +254,7 @@ def worker():
                 elapsed += (time.perf_counter_ns() - begun) / 1e9
                 if result is None:
                     raise RuntimeError(f'{point}: no state returned: {attempts.causes}')
-                row = {key: getattr(result, key) for key in (*COUNTS, *PHYSICAL)} | {key: [getattr(result, key)] for key in ('temperature', 'pressure')}
+                row = {key: getattr(result, key) for key in (*COUNTS, *PHYSICAL)} | {key: v if isinstance(v := getattr(result, key), list) else [v] for key in ('temperature', 'pressure')}
                 row.update(point=point, success=result.success, criterion_met=result.requested_tolerance_met,
                            raw_rows=max(map(abs, result.residuals)), classified_rows=max(map(abs, result.classified_residuals)),
                            message=result.message)
