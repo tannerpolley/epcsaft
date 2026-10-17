@@ -108,8 +108,8 @@ void check_c1_multiplier_scale() {
         recording_support::compare(
             (std::string("amount-scale/") + std::to_string(i)).c_str(), "phase_amount_ratio", "1",
             ratio, 10.0,
-            recording_support::fields({recording_support::field("T", small_result.temperature.front()),
-                                       recording_support::field("P", small_result.pressure.front()),
+            recording_support::fields({recording_support::field("T", *small_result.temperature),
+                                       recording_support::field("P", *small_result.pressure),
                                        recording_support::field("feed_small", small.feed.values),
                                        recording_support::field("feed_large", large.feed.values),
                                        recording_support::field("phase", i)}),
@@ -215,12 +215,12 @@ void check_c1_multiplier_scale() {
     double intensive_difference = 0.0;
     intensive_difference = std::max(
         intensive_difference,
-        std::abs(small_result.temperature.front() - large_result.temperature.front())
-            / std::max(1.0, std::abs(small_result.temperature.front())));
+        std::abs(*small_result.temperature - *large_result.temperature)
+            / std::max(1.0, std::abs(*small_result.temperature)));
     intensive_difference = std::max(
         intensive_difference,
-        std::abs(small_result.pressure.front() - large_result.pressure.front())
-            / std::max(1.0, std::abs(small_result.pressure.front())));
+        std::abs(*small_result.pressure - *large_result.pressure)
+            / std::max(1.0, std::abs(*small_result.pressure)));
     for (std::size_t i = 0; i < small_result.mole_fractions.size(); ++i) {
         intensive_difference = std::max(
             intensive_difference,
@@ -341,12 +341,12 @@ void check_c1_multiplier_scale() {
     double tiny_intensive_difference = 0.0;
     tiny_intensive_difference = std::max(
         tiny_intensive_difference,
-        std::abs(tiny_result.temperature.front() - small_result.temperature.front())
-            / std::max(1.0, std::abs(small_result.temperature.front())));
+        std::abs(*tiny_result.temperature - *small_result.temperature)
+            / std::max(1.0, std::abs(*small_result.temperature)));
     tiny_intensive_difference = std::max(
         tiny_intensive_difference,
-        std::abs(tiny_result.pressure.front() - small_result.pressure.front())
-            / std::max(1.0, std::abs(small_result.pressure.front())));
+        std::abs(*tiny_result.pressure - *small_result.pressure)
+            / std::max(1.0, std::abs(*small_result.pressure)));
     for (std::size_t i = 0; i < small_result.mole_fractions.size(); ++i) {
         tiny_intensive_difference = std::max(
             tiny_intensive_difference,
@@ -615,12 +615,12 @@ void check_s11() {
             return;
         }
         const double gap = std::abs(std::log(result.mole_fractions[1] / result.mole_fractions[0])
-            + affinity.front() / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * result.temperature.front()));
+            + affinity.front() / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * *result.temperature));
         const auto pressure_id = recording_support::number(pressure);
         const auto previous_gap = std::isfinite(previous)
             ? recording_support::number(previous) : std::string("none");
         const auto gap_inputs = recording_support::fields({
-            recording_support::field("T", result.temperature.front()),
+            recording_support::field("T", *result.temperature),
             recording_support::field("P", pressure),
             recording_support::field("x", result.mole_fractions),
             recording_support::field("affinity", affinity.front()),
@@ -651,7 +651,7 @@ void check_s11() {
         if (pressure == 1.0e2) {
             recording_support::compare(
                 "final-gap", "reaction_equilibrium_gap", "1", gap, 0.0,
-                recording_support::fields({recording_support::field("T", result.temperature.front()),
+                recording_support::fields({recording_support::field("T", *result.temperature),
                                            recording_support::field("P", pressure),
                                            recording_support::field("x", result.mole_fractions),
                                            recording_support::field("affinity", affinity.front())}),
@@ -742,7 +742,7 @@ void check_c3_availability() {
                        [](double value) { return std::isfinite(value); })
         && !failure.message.empty();
     const bool cleared = !failure.success && !failure.has_state()
-        && failure.temperature.empty() && failure.pressure.empty()
+        && !failure.temperature && !failure.pressure
         && failure.amounts.empty() && failure.mole_fractions.empty()
         && failure.molar_densities.empty() && failure.coordinates.empty();
     const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
@@ -1167,8 +1167,8 @@ void check_e2_solve() {
         auto pinned = bubble;
         pinned.phases[1].amount = AmountSpec::pinned(0.01);
         pinned.temperature = free_pressure ? FreeValue::fixed(180.0) : FreeValue::variable(180.0);
-        pinned.pressure = free_pressure ? FreeValue::variable(bubble_result.pressure.front())
-                                        : FreeValue::fixed(bubble_result.pressure.front());
+        pinned.pressure = free_pressure ? FreeValue::variable(*bubble_result.pressure)
+                                        : FreeValue::fixed(*bubble_result.pressure);
         const auto compiled = epcsaft::equilibrium::compile_problem(ternary, pinned);
         const auto result = epcsaft::equilibrium::solve_equilibrium(ternary, pinned, bubble_result);
         const auto id = std::string("e2-6/positive-pin/") + (free_pressure ? "free-P" : "free-T");
@@ -1183,7 +1183,7 @@ void check_e2_solve() {
     }
     auto overdetermined = bubble;
     overdetermined.phases[1].amount = AmountSpec::pinned(0.01);
-    overdetermined.pressure = FreeValue::fixed(bubble_result.pressure.front());
+    overdetermined.pressure = FreeValue::fixed(*bubble_result.pressure);
     std::string message;
     try { (void)epcsaft::equilibrium::compile_problem(ternary, overdetermined); }
     catch (const std::invalid_argument& error) { message = error.what(); }

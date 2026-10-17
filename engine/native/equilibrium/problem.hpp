@@ -445,8 +445,8 @@ struct EquilibriumResult final {
     bool success = false;
     std::string message;
     std::string solver_status;
-    std::vector<double> temperature;
-    std::vector<double> pressure;
+    std::optional<double> temperature;
+    std::optional<double> pressure;
     std::vector<double> amounts;
     std::vector<double> mole_fractions;
     std::vector<double> molar_densities;
@@ -478,7 +478,7 @@ struct EquilibriumResult final {
     std::vector<double> solid_amounts, solid_affinity_decades;  // per declared solid: mol, and SI_s in decades
 
     bool has_state() const noexcept {
-        return success && !temperature.empty() && !pressure.empty()
+        return success && temperature && pressure
             && !amounts.empty() && !mole_fractions.empty();
     }
 

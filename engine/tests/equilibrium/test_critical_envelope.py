@@ -15,7 +15,7 @@ def test_critical_candidate_matches_teqp() -> None:
                       row_tolerance=1e-11, critical=declaration)
     result = solve_equilibrium(model, problem)
     # teqp v0.23.2 solve_pure_critical on the same packet (analysis issue-224-sliceB critical-pure.csv).
-    assert result.temperature[0] == pytest.approx(375.14002748147936, rel=1e-8), result.message
+    assert result.temperature == pytest.approx(375.14002748147936, rel=1e-8), result.message
     assert result.critical is not None and abs(result.critical.eigenvalues[0]) <= result.critical.zero_band
 
 
@@ -27,7 +27,7 @@ def test_envelope_condition_matches_feos_bubble() -> None:
                       phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))], envelope=condition)
     result = solve_equilibrium(model, problem)
     # FeOs v0.10.1 bubble_point at 180 K (analysis issue-224-sliceB envelope-points.csv).
-    assert result.pressure[0] == pytest.approx(1596859.111206796, rel=1e-7), result.message
+    assert result.pressure == pytest.approx(1596859.111206796, rel=1e-7), result.message
 
 
 def test_azeotrope_declaration_reaches_the_native_rows() -> None:

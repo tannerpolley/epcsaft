@@ -741,7 +741,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     }
     CompiledSystem current = start;
     std::vector<double> y = admitted.result->coordinates, motion;
-    const double closing_pressure = std::log(admitted.result->pressure[0]);
+    const double closing_pressure = std::log(*admitted.result->pressure);
     result.states.push_back(std::move(*admitted.result));
     result.path_values.push_back(base.envelope->target);
     result.conditions.push_back(*base.envelope);
@@ -843,7 +843,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         if (attempt.accepted) {
             const bool closed = closing;
             // The mixture closes when an accepted step after the passage brackets the initial pressure.
-            closing = passed && (c[1][0] - closing_pressure) * (std::log(attempt.result->pressure[0]) - closing_pressure) <= 0.0;
+            closing = passed && (c[1][0] - closing_pressure) * (std::log(*attempt.result->pressure) - closing_pressure) <= 0.0;
             ++result.accepted_steps;
             local_retries = 0;
             transfer = true;
@@ -948,7 +948,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         } catch (const std::exception&) {}
         if (seed.has_state() || cooled) {
             const auto coordinates = cooled ? boundary_start(*cooled, true, limits, stages) : seed.coordinates;
-            double T = cooled ? cooled->seed_temperature() : seed.temperature[0];
+            double T = cooled ? cooled->seed_temperature() : *seed.temperature;
             const auto prepared = (cooled ? *cooled : source).prepare(coordinates);
             point[compiled.primal_size - 1] = T;  // admits the records at the seed T, or names the refusal
             const auto destination = compiled.prepare(point);
@@ -1394,11 +1394,11 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         ContinuationRequest request{source, declared, found, {0.05, 1.0e-6, work, 10}, {}};
         if (free_temperature) {
             request.start_problem = declared;
-            request.start_problem.pressure = FreeValue::fixed(found.pressure[0]);
+            request.start_problem.pressure = FreeValue::fixed(*found.pressure);
             auto chart = found.coordinates;
-            chart[target.primal_size - 1] = found.temperature[0];
+            chart[target.primal_size - 1] = *found.temperature;
             auto corrected = solve_equilibrium_from_coordinates(model, request.start_problem, chart, nullptr, &limits);
-            double drift = corrected.success ? std::max(std::abs(corrected.temperature[0] / found.temperature[0] - 1.0),
+            double drift = corrected.success ? std::max(std::abs(*corrected.temperature / *found.temperature - 1.0),
                 largest_difference(corrected.mole_fractions, found.mole_fractions)) : INFINITY;
             for (std::size_t p = 0; corrected.success && p < found.amounts.size(); ++p)
                 drift = std::max({drift, std::abs(corrected.amounts[p] - found.amounts[p]) / target.feed_total,
@@ -1411,7 +1411,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         }
         auto path = [&] { core::Scope span("continue_equilibrium"); return continue_path(model, request, &limits, found.molar_densities); }();
         if (!path.success) {
-            refused.message = "from source at " + core::optional_number(found.temperature[0]) + " K: " + path.message;
+            refused.message = "from source at " + core::optional_number(*found.temperature) + " K: " + path.message;
             return refused;
         }
         auto reached = std::move(path.states.back());

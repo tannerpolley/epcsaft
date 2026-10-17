@@ -12,8 +12,8 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
     CHECK(result.residuals.size() == result.rows.size());
     for (std::size_t row = 0; row < result.residuals.size(); ++row) {
         const auto inputs = recording_support::fields({
-            recording_support::field("T", result.temperature.front()),
-            recording_support::field("P", result.pressure.front()),
+            recording_support::field("T", *result.temperature),
+            recording_support::field("P", *result.pressure),
             recording_support::field("coordinates", result.coordinates),
             recording_support::field("row", row), recording_support::field("limit", limit),
         });
@@ -29,7 +29,7 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     CHECK(result.convergence.residual == compiled.classified_residual_norm(result.coordinates));
     const std::size_t components = model.parameters().component_count();
-    const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * result.temperature.front();
+    const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * *result.temperature;
     const auto& charges = model.parameters().charge_number;
     for (std::size_t phase = 0; phase < result.phase_count; ++phase) {
         const auto first = result.mole_fractions.begin()
@@ -37,8 +37,8 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
         const std::vector<double> x(first, first + static_cast<std::ptrdiff_t>(components));
         const double volume = 1.0 / result.molar_densities[phase];
         const auto derivative = model.evaluate(
-            result.temperature.front(), volume, x, epcsaft::DerivativeOrder::Gradient);
-        double gibbs = derivative.value + result.pressure.front() * volume / rt;
+            *result.temperature, volume, x, epcsaft::DerivativeOrder::Gradient);
+        double gibbs = derivative.value + *result.pressure * volume / rt;
         double lambda_Bx = 0.0;
         double charge = 0.0;
         std::vector<double> chemical(components);
@@ -55,8 +55,8 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
                 lambda_Bx += result.multipliers[row] * compiled.B[row][species] * x[species];
         }
         const auto phase_inputs = recording_support::fields({
-            recording_support::field("T", result.temperature.front()),
-            recording_support::field("P", result.pressure.front()),
+            recording_support::field("T", *result.temperature),
+            recording_support::field("P", *result.pressure),
             recording_support::field("x", x), recording_support::field("phase", phase),
             recording_support::field("limit", limit),
         });
@@ -102,8 +102,8 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
         feed_dual += result.multipliers[row] * compiled.balance[row];
     recording_support::compare(
         (std::string("feed-dual/") + case_id).c_str(), "objective", "1", result.objective, feed_dual,
-        recording_support::fields({recording_support::field("T", result.temperature.front()),
-                                   recording_support::field("P", result.pressure.front()),
+        recording_support::fields({recording_support::field("T", *result.temperature),
+                                   recording_support::field("P", *result.pressure),
                                    recording_support::field("coordinates", result.coordinates),
                                    recording_support::field("limit", limit)}),
         "Relationship", "KKT", "objective equals feed balance dual",
@@ -1134,7 +1134,7 @@ void check_s2() {
     const std::vector<double> central_x(
         referenced_result.mole_fractions.begin(), referenced_result.mole_fractions.begin() + 3);
     const auto central_state = thermal_reference_model.state(
-        referenced_result.temperature.front(), referenced_result.molar_densities[0], central_x);
+        *referenced_result.temperature, referenced_result.molar_densities[0], central_x);
     CHECK(central_state.ideal_enthalpy.has_value() && central_state.total_enthalpy.has_value()
           && std::isfinite(central_state.residual_enthalpy));
     CHECK(caloric.results.size() == 3

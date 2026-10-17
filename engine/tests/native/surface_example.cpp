@@ -147,10 +147,10 @@ int main() {
     flash.pressure = FreeValue::fixed(1.8e4);
     const EquilibriumResult split = solve_equilibrium(model, flash);
     expect(boiling.success && split.success && *split.requested_tolerance_met, "both solves meet the caller row tolerance");
-    std::printf("  bubble P = %.2f Pa; flash: N_L = %.6f mol, N_V = %.6f mol, x_L = (%.6f, %.6f), y_V = (%.6f, %.6f), |r| = %.2e\n", boiling.pressure[0],
+    std::printf("  bubble P = %.2f Pa; flash: N_L = %.6f mol, N_V = %.6f mol, x_L = (%.6f, %.6f), y_V = (%.6f, %.6f), |r| = %.2e\n", *boiling.pressure,
                 split.amounts[0], split.amounts[1], split.mole_fractions[0], split.mole_fractions[1], split.mole_fractions[2], split.mole_fractions[3], split.residual_norm());
     std::printf("  rho_L = %.4f mol/m^3, rho_V = %.6f mol/m^3\n", split.molar_densities[0], split.molar_densities[1]);
-    row("bubble/pressure", "Pa", boiling.pressure[0]);
+    row("bubble/pressure", "Pa", *boiling.pressure);
     rows("flash/amounts", "mol", split.amounts);
     rows("flash/mole_fractions", "1", split.mole_fractions);
     rows("flash/multipliers", "1", split.multipliers);  // reduced-energy balance coordinates
@@ -186,8 +186,8 @@ int main() {
     expect(same(*radial.results[0].action, *radial.results[0].value, 5.0e-6), "Euler: D n_i[n_feed] = n_i");
     expect(std::abs(*radial.results[1].action) <= 1.0e-12 * std::max(1.0, std::abs(*radial.results[1].value)), "Euler: D ln a_i[n_feed] = 0");
     const std::vector<double> x_liquid = {split.mole_fractions[0], split.mole_fractions[1]};
-    const State solved = model.state(split.temperature[0], split.molar_densities[0], x_liquid);
-    const double fugacity = std::exp(*radial.results[1].value) * R * split.temperature[0] * 1.0;  // a_i R T (1 mol/m^3)
+    const State solved = model.state(*split.temperature, split.molar_densities[0], x_liquid);
+    const double fugacity = std::exp(*radial.results[1].value) * R * *split.temperature * 1.0;  // a_i R T (1 mol/m^3)
     const double from_state = x_liquid[1] * std::exp((*solved.log_fugacity_coefficient)[1].value()) * solved.pressure;
     std::printf("  f_b = %.6f Pa (from ln a), %.6f Pa (x phi P of the state), sum x - 1 = %.1e\n", fugacity, from_state, x_liquid[0] + x_liquid[1] - 1.0);
     expect(same(fugacity, from_state), "f_i = a_i R T rho0 equals x_i phi_i P");

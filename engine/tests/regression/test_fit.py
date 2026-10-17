@@ -28,7 +28,8 @@ def manufactured() -> tuple[Any, list[Any]]:
     observations = [regression.observation(truth, "pressure", bubble(T), observed=1.0, form="log_ratio", mass_basis=False) for T in (170.0, 180.0, 190.0)]
     observations.append(regression.observation(truth, "mole_fraction", bubble(180.0), observed=1.0, phase="V", species=("s0",),
                                                form="difference", scale=0.01, mass_basis=False))
-    P_bubble = solve_equilibrium(model, bubble(180.0)).pressure[0]
+    P_bubble = solve_equilibrium(model, bubble(180.0)).pressure
+    assert P_bubble is not None
     observations.append(regression.density(truth, 180.0, 2.0 * P_bubble, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0,
                                            form="log_ratio", mass_basis=True))
     for item in observations:

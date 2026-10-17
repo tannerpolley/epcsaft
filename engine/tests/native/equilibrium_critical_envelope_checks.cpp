@@ -16,8 +16,8 @@ inline EquilibriumResult solved(const HelmholtzModel& m,const EquilibriumProblem
     const auto r=solve_equilibrium(m,p);
     if(!r.has_state()||!r.critical) throw std::runtime_error(id+": "+r.message);
     const auto& k=*r.critical;
-    recording_support::observe((id+"/candidate").c_str(),"critical-equation-candidate","K",r.temperature[0],std::nullopt,
-        recording_support::fields({recording_support::field("P_Pa",r.pressure[0]),recording_support::field("rho_mol_m3",r.molar_densities[0]),
+    recording_support::observe((id+"/candidate").c_str(),"critical-equation-candidate","K",*r.temperature,std::nullopt,
+        recording_support::fields({recording_support::field("P_Pa",*r.pressure),recording_support::field("rho_mol_m3",r.molar_densities[0]),
             recording_support::field("eigenvalues",k.eigenvalues),recording_support::field("zero_band",k.zero_band),recording_support::field("cubic",k.cubic),
             recording_support::field("condition",k.condition_estimate),recording_support::field("backward_error",k.backward_error)}),
         "Observation","root identity and spectrum of M","candidate only, no stability certificate","critical-envelope");
@@ -34,8 +34,8 @@ inline ContinuationResult trace(const HelmholtzModel& m,const EquilibriumProblem
     return continue_equilibrium(m,r);
 }
 inline void same_state(const std::string& id,const EquilibriumResult& a,const EquilibriumResult& b) {
-    compare(id+"/T",a.temperature[0],b.temperature[0],b.temperature[0],1e-8);
-    compare(id+"/P",a.pressure[0],b.pressure[0],b.pressure[0],1e-8);
+    compare(id+"/T",*a.temperature,*b.temperature,*b.temperature,1e-8);
+    compare(id+"/P",*a.pressure,*b.pressure,*b.pressure,1e-8);
     for(std::size_t i=0;i<a.molar_densities.size();++i)compare(id+"/rho-"+std::to_string(i),a.molar_densities[i],b.molar_densities[i],b.molar_densities[i],1e-8);
     for(std::size_t i=0;i<a.mole_fractions.size();++i)compare(id+"/x-"+std::to_string(i),a.mole_fractions[i],b.mole_fractions[i],1,1e-8);
 }
@@ -92,7 +92,7 @@ void binary_critical() {
                 for(int s:{0,1}) {
                     auto q=p;q.feed.values={z0+(2*s-1)*h*0.1,1-z0-(2*s-1)*h*0.1};
                     const auto rr=solve_equilibrium_from_coordinates(m,q,r.coordinates);if(!rr.has_state())throw std::runtime_error(id+": "+rr.message);
-                    side[s]=kind==SolvedStateObservableKind::Temperature?rr.temperature[0]:kind==SolvedStateObservableKind::Pressure?rr.pressure[0]:rr.molar_densities[0];
+                    side[s]=kind==SolvedStateObservableKind::Temperature?*rr.temperature:kind==SolvedStateObservableKind::Pressure?*rr.pressure:rr.molar_densities[0];
                 }
                 const double reference=(side[1]-side[0])/(2*h);
                 if(rung)best=std::min(best,std::abs(exact-(4*reference-previous)/3)/scale);
@@ -122,9 +122,9 @@ void binary_critical() {
         }
         const auto cp=solved_state_actions(c,r,{{{SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::ResidualIsobaricHeatCapacity},
             {SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::TotalIsobaricHeatCapacity}},{d}}).results;
-        const auto state=m.state(r.temperature[0],r.molar_densities[0],{r.mole_fractions[0],r.mole_fractions[1]});
+        const auto state=m.state(*r.temperature,r.molar_densities[0],{r.mole_fractions[0],r.mole_fractions[1]});
         compare(id+"/cp-residual",cp[0].value.value_or(NAN),*state.residual_isobaric_heat_capacity,std::abs(*state.residual_isobaric_heat_capacity),1e-10,
-            recording_support::field("P_rho_over_RT",state.pressure_density_derivative/(GAS_CONSTANT_J_PER_MOL_K*r.temperature[0])));
+            recording_support::field("P_rho_over_RT",state.pressure_density_derivative/(GAS_CONSTANT_J_PER_MOL_K * *r.temperature)));
         compare(id+"/cp-total",cp[1].value.value_or(NAN),*state.total_isobaric_heat_capacity,std::abs(*state.total_isobaric_heat_capacity),1e-10);
     }
 }
@@ -163,7 +163,7 @@ void mixture() {
         same_state(id+"/candidate",t.critical_points[0],c3);
         double tmax=0,pmax=0;std::size_t switches=0,straddle=0;
         for(std::size_t k=0;k<t.states.size();++k) {
-            tmax=std::max(tmax,t.states[k].temperature[0]);pmax=std::max(pmax,t.states[k].pressure[0]);
+            tmax=std::max(tmax,*t.states[k].temperature);pmax=std::max(pmax,*t.states[k].pressure);
             switches+=k&&(t.conditions[k].kind!=t.conditions[k-1].kind||t.conditions[k].component!=t.conditions[k-1].component);
             if(k&&t.states[k].declaration->phases[0].kind!=t.states[k-1].declaration->phases[0].kind)straddle=t.conditions[k].component;
         }
@@ -188,9 +188,9 @@ void mixture() {
             recording_support::fields({recording_support::field("attempts",t.attempts),recording_support::field("retries",t.retries),
                 recording_support::field("swaps",swaps)}),"Observation","accepted steps to closure","declared envelope branch only","critical-envelope");
         CHECK(swaps==1&&t.accepted_steps<=budget&&(cap>0.1||t.attempts<=150));
-        compare(id+"/critical-T",t.critical_points[0].temperature[0],265.9667440343549,1,1e-8);
-        compare(id+"/critical-P",t.critical_points[0].pressure[0],6842019.677409215,1,0.1);
-        compare(id+"/dew-T",t.states.back().temperature[0],232.31429972874673,1,1e-8);
+        compare(id+"/critical-T",*t.critical_points[0].temperature,265.9667440343549,1,1e-8);
+        compare(id+"/critical-P",*t.critical_points[0].pressure,6842019.677409215,1,0.1);
+        compare(id+"/dew-T",*t.states.back().temperature,232.31429972874673,1,1e-8);
     }
 }
 // E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint:
@@ -252,7 +252,7 @@ void azeotrope() {
     for(const auto& k:cases) {
         const auto r=solve_equilibrium(*k.m,k.p);if(!r.success)throw std::runtime_error(k.id+": "+r.message);
         compare(k.id+"/x",r.mole_fractions[0],k.x,1,1e-9);compare(k.id+"/y",r.mole_fractions[2],k.x,1,1e-9);
-        if(k.fixed_t)compare(k.id+"/P",r.pressure[0],k.value,k.value,1e-8);else compare(k.id+"/T",r.temperature[0],k.value,1,1e-6);
+        if(k.fixed_t)compare(k.id+"/P",*r.pressure,k.value,k.value,1e-8);else compare(k.id+"/T",*r.temperature,k.value,1,1e-6);
     }
     const HelmholtzModel me(properties_support::neutral_binary());
     for(const auto& [id,p]:std::vector<std::pair<std::string,EquilibriumProblem>>{

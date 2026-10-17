@@ -514,17 +514,17 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     }
     case ObservationKind::EquilibriumPressure:
         result.unit = "Pa";
-        value = solved.pressure.front();
+        value = *solved.pressure;
         break;
     case ObservationKind::EquilibriumTemperature:
         result.unit = "K";
-        value = solved.temperature.front();
+        value = *solved.temperature;
         break;
     case ObservationKind::PhaseMoleFraction:
     case ObservationKind::PartialPressure:
         for (const auto species : observation.species) value += fractions[species];
         result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
-        if (observation.kind == ObservationKind::PartialPressure) value *= solved.pressure.front();
+        if (observation.kind == ObservationKind::PartialPressure) value *= *solved.pressure;
         break;
     case ObservationKind::PhaseAmountRatio:
         result.unit = "1";
@@ -854,7 +854,7 @@ std::vector<PredictionGradient> differentiate_group(
                 break;
             case ObservationKind::PartialPressure:  // d(P sum y) = dP sum y + P sum dy
                 for (const auto species : observation.species) value += fractions[species] * action.back();
-                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += solved->pressure.front() * action[i];
+                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += *solved->pressure * action[i];
                 break;
             default:
                 for (const auto item : action) value += item;
