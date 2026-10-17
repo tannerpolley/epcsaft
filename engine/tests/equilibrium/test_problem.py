@@ -316,9 +316,9 @@ def test_feed_charge_follows_the_state_rule(delta: float) -> None:
             solve_equilibrium(model, problem)
         return
     result = solve_equilibrium(model, problem)
-    assert result.success and result.requested_tolerance_met and result.phase_count == 2
+    assert result.success and result.requested_tolerance_met and result.phase_count == 2 and result.temperature is not None
     for phase in range(2):
-        model.state(result.temperature[0], rho=result.molar_densities[phase], x=result.phase_mole_fractions(phase))
+        model.state(result.temperature, rho=result.molar_densities[phase], x=result.phase_mole_fractions(phase))
 
 
 def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
@@ -346,8 +346,9 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
         assert [r.index for r in compiled.rows if r.kind == _core.RowKind.Chemical and r.phase == 1] == list(range(neutral))
         result, reference = solve_equilibrium(model, default), solve_equilibrium(model, explicit)
         assert result.success and reference.success, result.message
-        assert abs(result.pressure[0] - pressure) <= 1e-10 * pressure
-        for key in ("pressure", "amounts", "mole_fractions", "molar_densities"):
+        assert type(result.temperature) is float and type(result.pressure) is float and reference.pressure is not None
+        assert abs(result.pressure - pressure) <= 1e-10 * pressure and abs(result.pressure - reference.pressure) <= 1e-10 * pressure
+        for key in ("amounts", "mole_fractions", "molar_densities"):
             for x, y in zip(getattr(result, key), getattr(reference, key), strict=True):
                 assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
         assert result.amounts[1] == 0. and result.mole_fractions[n + neutral:] == [0.] * (n - neutral)
@@ -370,8 +371,9 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
                for problem, seed in ((default, start), (explicit, narrow))))
     for full, reduced in (pairs[0], (pairs[1][0], pairs[2][0])):
         assert full is not None and reduced is not None and full.success
+        assert full.pressure is not None and reduced.pressure is not None
         assert [full.iterations, full.evaluations] == [reduced.iterations, reduced.evaluations]
-        for x, y in zip([*full.pressure, *full.amounts], [*reduced.pressure, *reduced.amounts], strict=True):
+        for x, y in zip([full.pressure, *full.amounts], [reduced.pressure, *reduced.amounts], strict=True):
             assert abs(x - y) <= 1e-10 * max(abs(x), abs(y))
     options = equilibrium.StabilityOptions()
     options.trials = [_core.PhaseSpec()]

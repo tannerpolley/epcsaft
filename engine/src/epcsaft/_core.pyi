@@ -737,14 +737,14 @@ class EquilibriumResult:
     solver_options: list[dict[str, Any]]
     """Solved phases in declared order (with Discover(): discovery.declaration.phases). Units: K, Pa, mol, mol/m^3.
     Per-phase-per-component lists are phase-major: entry p*n + i is phase p, component i of component_ids
-    (n components). State lists are empty when success is False."""
+    (n components). State lists are empty and temperature and pressure are None when success is False."""
     discovery: Optional[DiscoveryRecord]
     neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
     success: bool
     message: str
     solver_status: str
-    temperature: list[float]  # [T] in K
-    pressure: list[float]  # [P] in Pa
+    temperature: Optional[float]  # K; None without a state
+    pressure: Optional[float]  # Pa; None without a state
     amounts: list[float]  # phase amounts in mol on the feed's basis (1 mol total for MoleFractions), per phase
     mole_fractions: list[float]  # phase-major, n per phase
     molar_densities: list[float]  # mol/m^3, per phase

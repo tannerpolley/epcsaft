@@ -28,8 +28,8 @@ def test_cold_free_temperature_vapor_recovers_j1(evidence: Any) -> None:
     assert result.success, result.message
     assert result.requested_tolerance_met
     # Existing J1 comparisons: 1e-10 absolute for x, relative for T/P/eta.
-    for quantity, values, expected in (("T_K", result.temperature, reference["T_K"]),
-                                     ("P_Pa", result.pressure, reference["P_Pa"]),
+    for quantity, values, expected in (("T_K", [result.temperature], reference["T_K"]),
+                                     ("P_Pa", [result.pressure], reference["P_Pa"]),
                                      ("x", result.mole_fractions, reference["x"]),
                                      ("packing", result.packing_fractions, reference["packing"])):
         for index, (value, target) in enumerate(zip(values, expected, strict=True)):

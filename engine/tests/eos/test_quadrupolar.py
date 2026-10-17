@@ -111,8 +111,8 @@ def _saturation_pressure(model: Mixture | Pure, component: str, temperature: flo
                               Phase("V", kind="vapor", amount=Pinned(0.0), composition_guess=[1.0])],
                       T=temperature, P=Free(guess), feed=Amounts({component: 1.0}), row_tolerance=1.0e-12)
     result = solve_equilibrium(model, problem)
-    assert result.success, (component, temperature, result.message)
-    return result.pressure[0]
+    assert result.success and result.pressure is not None, (component, temperature, result.message)
+    return result.pressure
 
 
 def test_saturation_pressure_reproduces_gross_2005() -> None:
@@ -144,8 +144,8 @@ def test_co2_nitrogen_bubble_point_matches_clapeyron() -> None:
                           T=float(row["T_K"]), P=Free(float(row["p_bubble_clapeyron_Pa"])),
                           feed=Amounts({"carbon-dioxide": 1.0 - x, "nitrogen": x}), row_tolerance=1.0e-12)
         result = solve_equilibrium(model, problem)
-        assert result.success, result.message
-        assert abs(result.pressure[0] / float(row["p_bubble_clapeyron_Pa"]) - 1.0) <= 1e-9, row
+        assert result.success and result.pressure is not None, result.message
+        assert abs(result.pressure / float(row["p_bubble_clapeyron_Pa"]) - 1.0) <= 1e-9, row
         assert abs(result.phase_mole_fractions(1)[1] / float(row["y_nitrogen_clapeyron"]) - 1.0) <= 1e-9, row
 
 

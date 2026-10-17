@@ -88,12 +88,12 @@ pk = "data/packets/{}/parameters/parameters.json".format
 water = epcsaft.Pure(epcsaft.Parameters.from_json(pk("held-cameretti-sadowski-2008/4"), components=["water"]))
 print(water.state(298.15, P=1.0e5, phase="liquid").molar_density * water.parameters.molar_masses[0])  # kg/m^3
 sat = eq.solve_equilibrium(water, water.saturation(373.15))        # phases (L, V) at fixed T, free P
-print(sat.pressure[0], sat.molar_densities)                        # Pa; mol/m^3 per phase
+print(sat.pressure, sat.molar_densities)                        # Pa; mol/m^3 per phase
 
 gs = epcsaft.Parameters.from_json(pk("gross-2001-methane-ethane/3"), components=["methane", "ethane"])
 mix, feed = epcsaft.Mixture(gs), eq.MoleFractions({"methane": 0.3, "ethane": 0.7})
 bub = eq.solve_equilibrium(mix, eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=200.0, feed=feed))
-print(bub.pressure[0], bub.phase_mole_fractions(1))                # Pa; [y_CH4, y_C2H6]
+print(bub.pressure, bub.phase_mole_fractions(1))                # Pa; [y_CH4, y_C2H6]
 
 brine = epcsaft.Mixture(epcsaft.Parameters.from_json(pk("held-cameretti-sadowski-2008/4"),
                                                      components=["water", "sodium-cation", "chloride-anion"]))
@@ -115,7 +115,7 @@ what_if = epcsaft.Parameters.from_packets("data/packets", [("gross-2001-methane-
 truth, obs = epcsaft.Mixture(what_if), []
 for T, x in [(190.0, 0.2), (200.0, 0.4), (220.0, 0.3)]:            # K, liquid methane mole fraction
     bubble = eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=T, feed=eq.MoleFractions({"methane": x, "ethane": 1 - x}))
-    measured = eq.solve_equilibrium(truth, bubble).pressure[0]      # put a measured bubble pressure (Pa) here
+    measured = eq.solve_equilibrium(truth, bubble).pressure      # put a measured bubble pressure (Pa) here
     obs.append(rg.observation(gs, "pressure", bubble, observed=measured, form="log_ratio"))
 kij = rg.coordinate(gs, [("k_ij", ("methane", "ethane"), 1.0)], origin=0.0, scale=0.01)
 fit = rg.fit(gs, [kij], obs, controls=rg.FitControls(maximum_iterations=50, maximum_elapsed_time_seconds=60.0))
@@ -128,7 +128,7 @@ def envelope_at(ln_p):                                             # bubble-side
 steps = eq.Continuation(initial_step=0.05, minimum_step=1e-4, max_steps=2000, max_retries_per_step=5,
                         envelope_max_log_step=0.1, envelope_straddle=0.02)
 trace = eq.continue_equilibrium(mix, envelope_at(math.log(1e6)), envelope_at(math.log(8e6)), steps)
-print(trace.stop, len(trace.states), [(c.temperature[0], c.pressure[0]) for c in trace.critical_points])
+print(trace.stop, len(trace.states), [(c.temperature, c.pressure) for c in trace.critical_points])
 ```
 
 - LLE: `Discover()` finds neutral splits without guesses. With ions, declare
@@ -235,7 +235,7 @@ row = solved_state_actions(compiled, central, request).results[0]
 print(central.mole_fractions, row.value, row.action)         # ln a of isobutanol in L1; d ln a/dT in 1/K
 # Caller-side conversion of the native activity, not an Engine calculation: ln a_i is on the EOS density
 # basis, ln(x_i rho / (1 mol/m^3)) + mu_i^res/RT, so f_i = a_i R T (1 mol/m^3) in Pa.
-fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]
+fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature
 print(fugacity)
 ```
 

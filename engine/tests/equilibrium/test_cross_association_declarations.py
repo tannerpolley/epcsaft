@@ -76,7 +76,7 @@ def test_p11_declared_cross_association_preserves_retained_bubble_points(rule: b
         if expected is None:
             assert not result.success and result.message.startswith("local phase instability"), (x, result.message)
         else:
-            assert result.success and close(result.pressure[0], expected[0]), (x, result.pressure)
+            assert result.success and result.pressure is not None and close(result.pressure, expected[0]), (x, result.pressure)
             assert close(result.mole_fractions[2], expected[1]), (x, result.mole_fractions)
 
 

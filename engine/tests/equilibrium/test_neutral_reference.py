@@ -65,7 +65,7 @@ def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) ->
     pure = Pure(parameters((ETHANE,)))
     saturation = solve_equilibrium(pure, pure.saturation(temperature))
     assert saturation.success, saturation.message
-    pressure = saturation.pressure[0]
+    pressure = saturation.pressure
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
     problem = Problem(T=temperature, P=Free(pressure), feed=Amounts({"s0": 2.0, "s1": 0.2}),
                       phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
@@ -79,8 +79,8 @@ def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) ->
     assert result.success, result.message
     slope = result.neutral_reference_diagnostics[0].terminal_contraction_pressure_derivative
     assert slope is not None
-    vapor = pure.state(temperature, P=result.pressure[0], phase="vapor")
-    liquid = pure.state(temperature, P=result.pressure[0], phase="liquid")
+    vapor = pure.state(temperature, P=result.pressure, phase="vapor")
+    liquid = pure.state(temperature, P=result.pressure, phase="liquid")
     # Remove the solvent's -2 v_liquid/(RT) contribution from the reaction contraction.
     gas_slope = slope + 2.0 / (liquid.molar_density * R * temperature)
     expected = 1.0 / (vapor.molar_density * R * temperature)
@@ -168,7 +168,7 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     pure_result = solve_equilibrium(pure, pure.saturation(temperature))
     assert pure_result.success, pure_result.message
     assert max(abs(value) for value in pure_result.residuals) < 1e-10
-    saturation = pure_result.pressure[0]
+    saturation = pure_result.pressure
     liquid = pure.state(temperature, P=saturation, phase="liquid")
     vapor = pure.state(temperature, P=saturation, phase="vapor")
     assert liquid.log_fugacity_coefficient is not None
@@ -192,7 +192,7 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
     assert max(abs(value) for value in result.residuals) < 1e-10
-    same(evidence, name + "/pressure", result.pressure[0], saturation, rtol=1e-7,
+    same(evidence, name + "/pressure", result.pressure, saturation, rtol=1e-7,
          method="native-pure-saturation", claim="identical-species reactive bubble has pure-EOS pressure")
     same(evidence, name + "/liquid-composition", result.mole_fractions[1], expected,
          rtol=1e-8, atol=0.0, method="2A-to-B-analytic", claim="source mole-fraction law at solved pressure")
@@ -237,8 +237,8 @@ def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any)
         ],
     )
     result = solve_equilibrium(model, problem)
-    assert result.success, result.message
-    saturation = result.pressure[0]
+    assert result.success and result.pressure is not None, result.message
+    saturation = result.pressure
 
     def contraction(pressure: float) -> float:
         coefficient = pure.state(temperature, P=pressure, phase="liquid").log_fugacity_coefficient

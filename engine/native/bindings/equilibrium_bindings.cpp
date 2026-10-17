@@ -137,14 +137,11 @@ void register_equilibrium(nb::module_& module) {
                            const std::vector<double>& multipliers) {
             return system.hessian(point, multipliers); },
             nb::arg("point"), nb::arg("constraint_multipliers") = std::vector<double>{});
-    const auto one_entry = [](std::optional<double> x) { return std::vector<double>(bool(x), x.value_or(0)); };  // #609 leg 1
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
-        .def_prop_ro("temperature", [=](const EquilibriumResult& v) { return one_entry(v.temperature); })
-        .def_prop_ro("pressure", [=](const EquilibriumResult& v) { return one_entry(v.pressure); })
-        EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, amounts,
+        EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
             // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
             multipliers,

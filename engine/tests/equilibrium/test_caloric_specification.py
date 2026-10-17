@@ -13,7 +13,7 @@ def test_caloric_transport(field: str, quantity: str) -> None:
     target = getattr(state, quantity)
     problem = Problem(T=Free(280.0), P=1.0e6, feed=Amounts({"s0": 1.0, "s1": 0.0}), phases=[Phase("V", kind="vapor")], row_tolerance=1e-11, **{field: target})
     result = solve_equilibrium(model, problem)
-    assert result.temperature[0] == pytest.approx(300.0, rel=1e-8), result.message
+    assert result.temperature == pytest.approx(300.0, rel=1e-8), result.message
     controls: dict[str, Any] = {field: 1.0}
     direction = SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], [], **controls)
     batch = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest([SolvedStateObservable(SolvedStateObservableKind.Temperature)], [direction]))

@@ -46,8 +46,8 @@ def test_bubble_branch_follows_the_cold_solve() -> None:
     assert result.success and result.stop == ContinuationStop.reached_target and result.path_values[-1] == 1.0
     for q, state in zip(result.path_values, result.states):
         cold = solve_equilibrium(model, bubble(180.0 + q))
-        assert cold.success and state.requested_tolerance_met is True
-        assert abs(state.pressure[0] / cold.pressure[0] - 1.0) <= 1.0e-8
+        assert cold.success and state.requested_tolerance_met is True and state.pressure is not None and cold.pressure is not None
+        assert abs(state.pressure / cold.pressure - 1.0) <= 1.0e-8
         assert max(abs(a - b) for a, b in zip(state.mole_fractions, cold.mole_fractions)) <= 1.0e-8
 
 
@@ -68,8 +68,8 @@ def test_changed_declaration_is_an_invalid_path() -> None:
 def test_branch_rejection_discards_the_optimizer_start() -> None:
     model = mixture()
     point = solve_equilibrium(model, bubble(180.0))
-    assert point.success
-    pressure = point.pressure[0]
+    assert point.success and point.pressure is not None
+    pressure = point.pressure
     feed = {
         "methane": 0.5 * (point.mole_fractions[0] + point.mole_fractions[2]),
         "ethane": 0.5 * (point.mole_fractions[1] + point.mole_fractions[3]),
