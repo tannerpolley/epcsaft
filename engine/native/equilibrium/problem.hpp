@@ -332,9 +332,13 @@ struct CompiledSystem final {
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
     // conditions of the constrained Gibbs minimum in the solved chart; a pinned
-    // (feasibility) cell classifies its rows unscaled. Balance, charge and normalization
-    // rows are unchanged in both routes.
+    // (feasibility) cell classifies its rows unscaled. Trace moiety rows are relative to their
+    // size in both routes (trace_moiety_relative); charge and normalization rows are unchanged.
     std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
+    // Moiety rows (Jacobian rows for width n) divided by their size, the larger of the feed inventory and the
+    // row's term magnitude per mol of feed, when it is at most EQUILIBRIUM_TRACE_MOIETY_FRACTION (#633).
+    std::vector<double> trace_moiety_relative(const PhasePoint& prepared, std::vector<double> values,
+                                              std::size_t width = 1) const;
     double classified_residual_norm(const std::vector<double>& point) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;

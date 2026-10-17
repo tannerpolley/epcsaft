@@ -942,7 +942,7 @@ static EquilibriumResult run_driver_once(
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
         // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
-        double best_raw = scope.diagnostics_on() ? maximum_abs(rows_before) : 0.0;
+        double best_raw = scope.diagnostics_on() ? maximum_abs(compiled.trace_moiety_relative(at, rows_before)) : 0.0;
         double ratio = 1.0;
         const bool detailed = scope.diagnostics_on();
         std::size_t final_step = 0;
@@ -951,19 +951,21 @@ static EquilibriumResult run_driver_once(
             if (stopped) return;
             stopped = true;
             if (detailed) scope.observe([&] { scope.probe("polish_stop",
-                {maximum_abs(rows_before), maximum_abs(compiled.classified_residuals(at, rows_before)),
+                {maximum_abs(compiled.trace_moiety_relative(at, rows_before)),
+                 maximum_abs(compiled.classified_residuals(at, rows_before)),
                  static_cast<double>(final_step)}, static_cast<std::uint32_t>(final_step), reason); });
         };
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             final_step = step;
             if (expired()) { stop("elapsed budget"); break; }
-            const double defect = maximum_abs(rows_before);
+            const auto rows_scaled = compiled.trace_moiety_relative(at, rows_before);
+            const double defect = maximum_abs(rows_scaled);
             const bool extension = step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value);
             const bool final_correction = newton && defect <= row_tolerance;
             if (extension && defect <= row_tolerance && !final_correction) { stop("raw criterion"); break; }
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
             if ((!final_correction && !(defect > 0.0)) || !std::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
-            const auto jacobian = compiled.jacobian_at(at);
+            const auto jacobian = compiled.trace_moiety_relative(at, compiled.jacobian_at(at), full.size());
             if (expired()) { stop("elapsed budget"); return limited_result(); }
             const auto n = static_cast<Eigen::Index>(full.size());
             if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) { stop("Jacobian shape"); break; }
@@ -972,7 +974,7 @@ static EquilibriumResult run_driver_once(
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
             if (free_amount_newton && lu.rank() != n) { stop("Jacobian rank"); break; }
-            const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
             if (free_amount_newton && !delta.allFinite()) { stop("nonfinite direction"); break; }
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
             bool positive = true;
@@ -991,7 +993,7 @@ static EquilibriumResult run_driver_once(
             const bool size_admitted = positive && full == best && classified_before <= row_tolerance
                 && scaled_correction <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
             if (size_admitted && lu.rank() == n && !final_correction)
-                bound = polish_forward_bound(jacobian, rows_before, {delta.data(), delta.data() + n},
+                bound = polish_forward_bound(jacobian, rows_scaled, {delta.data(), delta.data() + n},
                     {scale.data(), scale.data() + n});
             const bool correction_stop = size_admitted && bound <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
             if (detailed) scope.observe([&] {
@@ -1058,7 +1060,7 @@ static EquilibriumResult run_driver_once(
                         static_cast<double>(trial_index)}, step, error.what());
                     continue;
                 }
-                const double after = maximum_abs(rows_after);
+                const double after = maximum_abs(compiled.trace_moiety_relative(at_candidate, rows_after));
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
                     || after < (extension ? ratio : 1.0) * defect;
