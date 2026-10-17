@@ -51,7 +51,7 @@ _KINDS = {
 }
 __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
-           "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
+           "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
@@ -93,6 +93,8 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
+    if family not in _FAMILIES:
+        raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
     if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
         if target is not None:
             raise ParameterError(f"{family} is global and takes no component target")
@@ -110,16 +112,20 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     return [i * len(ids) + i] if i == j else [i * len(ids) + j, j * len(ids) + i]
 
 
+def active_parameter(parameters: Parameters, family: str, target: object) -> _core.ActiveParameter:
+    """Active parameter named like one coordinate target, e.g. ("k_ij", ("methane", "ethane"))."""
+    slots = _slot(parameters, family, target)
+    return _core.ActiveParameter(_FAMILIES[family], slots)
+
+
 def coordinate(parameters: Parameters, targets: Sequence[tuple[str, object, float]], *, origin: float, scale: float,
                bounds: tuple[float, float] | None = None) -> Coordinate:
     """Declare (family, component/pair or None for a global scalar, coefficient) targets of q."""
     result = Coordinate()
     rows = []
     for family, name, coefficient in targets:
-        if family not in _FAMILIES:
-            raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
         target = CoordinateTarget()
-        target.family, target.indices, target.coefficient = _FAMILIES[family], _slot(parameters, family, name), coefficient
+        target.indices, target.family, target.coefficient = _slot(parameters, family, name), _FAMILIES[family], coefficient
         rows.append(target)
     result.targets = rows
     result.origin, result.scale = origin, scale

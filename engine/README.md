@@ -198,18 +198,25 @@ observable's unit. A state direction holds K, mol/m^3 or Pa, a zero-sum
 composition increment and native family/slot parameter increments; a solved-state
 direction holds K, Pa, absolute feed mol (component width) and one increment per
 active parameter (active width). A free T or P is an output: its entry is zero.
+`regression.active_parameter(parameters, family, target)` names an active parameter
+with the spelling of one `regression.coordinate` target; `ActiveParameter(family, indices)`
+takes native flat slots. In `solved_state_actions`, k directions (k ≤ 3) give one mixed
+derivative of order k, D^k y[d1, …, dk]: two directions give ∂²y/∂a∂b, not a gradient.
+`solved_state_first_actions` returns one first-order batch per direction, sharing one
+center and one factorization; that is the gradient.
 
 ```python
 import math
-from epcsaft import (GAS_CONSTANT_J_PER_MOL_K, ActiveParameter, DensityActionDirection, Mixture, ParameterActionDirection,
-                     ParameterFamily, Parameters, PropertyObservable)
+from epcsaft import (GAS_CONSTANT_J_PER_MOL_K, DensityActionDirection, Mixture, ParameterActionDirection, Parameters,
+                     PropertyObservable)
 from epcsaft.equilibrium import (MoleFractions, Phase, Problem, SolvedStateActionDirection, SolvedStateActionRequest,
                                  SolvedStateObservable, SolvedStateObservableKind as Kind, compile_problem,
-                                 solve_equilibrium, solved_state_actions)
+                                 solve_equilibrium, solved_state_actions, solved_state_first_actions)
+from epcsaft.regression import active_parameter
 
 parameters = Parameters.from_json("data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
                                   components=["water", "isobutanol"])  # sites: isobutanol a, b, water a, b
-pair = ActiveParameter(ParameterFamily.AssociationEnergyOverK, (1, 4))  # both slots of site pair (0, 1)
+pair = active_parameter(parameters, "association_energy_over_k", (("isobutanol", "a"), ("isobutanol", "b")))  # slots (1, 4)
 model = Mixture(parameters, active_parameters=[pair])
 T, rho, x = 298.15, 12000.0, (0.3, 0.7)                        # K, mol/m^3, mole fractions
 move = DensityActionDirection(1.0, 0.0, (0.0, 0.0), [ParameterActionDirection(pair.family, pair.indices, 0.03)])
@@ -223,13 +230,17 @@ problem = Problem(phases=[Phase("L1", kind="liquid", composition_guess=(0.46, 0.
 central = solve_equilibrium(model, problem)
 compiled = compile_problem(model, problem)                    # one compile; no solve is repeated
 warm = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [0.0])  # +1 K; T, P, feed mol, active parameters
-request = SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseLogActivity, 0, 1)], [warm])
+activity = [SolvedStateObservable(Kind.PhaseLogActivity, 0, 1)]
+request = SolvedStateActionRequest(activity, [warm])
 row = solved_state_actions(compiled, central, request).results[0]
 print(central.mole_fractions, row.value, row.action)         # ln a of isobutanol in L1; d ln a/dT in 1/K
 # Caller-side conversion of the native activity, not an Engine calculation: ln a_i is on the EOS density
 # basis, ln(x_i rho / (1 mol/m^3)) + mu_i^res/RT, so f_i = a_i R T (1 mol/m^3) in Pa.
 fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]
 print(fugacity)
+bond = SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], [1.0])  # +1 K in the active epsilon_AB/k
+gradient = solved_state_first_actions(compiled, central, activity, [warm, bond])  # one batch per direction
+print([batch.results[0].action for batch in gradient])        # d ln a/dT, d ln a/d(epsilon_AB/k), both 1/K
 ```
 
 `solve_equilibrium` has no time limit; `solve_equilibrium_starts` tries declared
