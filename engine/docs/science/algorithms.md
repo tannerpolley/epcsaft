@@ -803,7 +803,7 @@ solve recover; regression observations, the speciation seed, ordered starts and 
 do not. The triggers are a non-fatal Ipopt return at `LOCAL_INFEASIBILITY` or `MAXITER_EXCEEDED`,
 coalesced phases, or a resolved negative lowest local-stability eigenvalue; a vanished phase, a
 density-branch refusal and every other stop stand. Sources are ordinary solves at
-$T_j=0.95^j\,T_\mathrm{seed}$, $j=1,\dots,8$ (`EQUILIBRIUM_RECOVERY_SOURCES`), with guesses removed and an
+$T_j=0.95^j\,T_\mathrm{seed}$ (`COOLING_RATIO`), $j=1,\dots,8$ (`EQUILIBRIUM_RECOVERY_SOURCES`), with guesses removed and an
 absent free-pressure seed; the first admitted one is continued at fixed $T$ to the target, or, for a
 free-$T$ boundary, first corrected at its own pressure in the free-$T$ chart (agreeing with the source
 within the row tolerance) and continued at fixed $P$. Continuation steps are 0.05 to $10^{-6}$ with ten
@@ -1309,6 +1309,13 @@ rule; an exterior target requires a caller-declared single phase. An auxiliary
 failure retains its cause and the caller start; there is no outer retry. The seed
 alone stops after `EQUILIBRIUM_CALORIC_SEED_ITERATIONS` (20) Ipopt iterations, within
 any caller limits; one without a state by then is discarded like any failed seed.
+A discarded mixture seed whose feed at $(T_\mathrm{seed}, P)$ has no liquid-side density root (two stable roots,
+or a sole root denser than its negative-slope density) would start both phases near the feed at vapor
+density, and the caloric row is then met by sensible cooling onto the trivial solution (#592). The start
+instead is the fixed-$T$ generic start at the first $T_j=0.95^j\,T_\mathrm{seed}$ (`COOLING_RATIO`) whose
+feed has a liquid side and which every caloric record admits, with no second seed (#610). No such $T_j$,
+or a feed density solve that fails during the scan, keeps the start at $T_\mathrm{seed}$. Pure fluids keep
+their saturation seed.
 A start outside the declared phases' coexistence region otherwise spends 48–200
 iterations on a seed that cannot succeed; converged seeds took 4–14 (#579).
 
