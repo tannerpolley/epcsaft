@@ -108,13 +108,14 @@ public:
         const Wide mass=c.parameters.molar_mass_kg_per_mol[0],s=2*mass*Wide(molality);
         const Wide epsilon=c.parameters.dispersion_energy_over_k[0];
         const auto finite=state(fluid,T,P,epsilon,s/(2*(1+s)),Wide(anchor),false);
-        const Wide mr=policy::REFERENCE_MOLALITY_FOUR.value,yr=mass*mr/(1+2*mass*mr);
-        auto terminal_tape=record(double(yr)),pure_tape=record(0);
-        const auto terminal=state(terminal_tape,T,P,epsilon,yr,Wide(anchor),false);
+        auto pure_tape=record(0);
         const auto pure=state(pure_tape,T,P,epsilon,Wide(0),Wide(anchor),false);
         const auto log_z=[&](const State& state){return CppAD::log(P*state.v/(Wide(R)*T));};
-        const Wide mean=(finite.mu[1]+finite.mu[2]-terminal.mu[1]-terminal.mu[2])/2
-            -log_z(finite)+log_z(terminal)-CppAD::log(1+s);
+        // EqID reference_limit_terminal_pair: the ion reference is the limit of the 1e-12 and 1e-14 mol/kg rungs, as in values().
+        const auto ion_sum=[&](CppAD::ADFun<Wide>& tape,Wide m){const Wide y=mass*m/(1+2*mass*m);
+            const auto trace=state(tape,T,P,epsilon,y,Wide(anchor),false);return trace.mu[1]+trace.mu[2]-2*log_z(trace);};
+        const Wide limit=(10*ion_sum(reference,Wide(1e-14))-ion_sum(reference_coarse,Wide(1e-12)))/9;
+        const Wide mean=(finite.mu[1]+finite.mu[2]-limit)/2-log_z(finite)-CppAD::log(1+s);
         const Wide solvent=-CppAD::log(1+s)+finite.mu[0]-pure.mu[0]-log_z(finite)+log_z(pure);
         return {CppAD::exp(mean),-solvent/s};
     }
