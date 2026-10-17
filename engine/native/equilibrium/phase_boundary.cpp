@@ -105,6 +105,11 @@ std::optional<PhaseStart> rachford_rice(const CompiledSystem& compiled, const st
     return start;
 }
 
+// The feed root resolves its liquid side: two stable roots, or a sole root denser than its negative-slope density.
+bool liquid_feed(const DensityRoot& r) {
+    return r.stable_root_count.value_or(0) > 1 || (r.negative_slope_density && r.molar_density > *r.negative_slope_density);
+}
+
 PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
@@ -178,13 +183,10 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
         if (auto split = rachford_rice(compiled, compiled.feed_composition, k_values, compiled.feed_total, scope))
             return std::move(*split);
     // Use the conserved finite liquid only when the feed root resolves its liquid side.
-    const bool liquid_feed = liquid_root.stable_root_count.value_or(0) > 1
-        || (liquid_root.negative_slope_density
-            && liquid_root.molar_density > *liquid_root.negative_slope_density);
     for (std::size_t phase = 0; phase < phases; ++phase) {
         const auto& own = compiled.problem.phases[phase].amount, & other = compiled.problem.phases[1 - phase].amount;
         result[phase] = !compiled.has_reaction && own.kind == AmountKind::Free && other.kind == AmountKind::Pinned
-            && other.fraction == 0.0 && ((compiled.problem.phases[phase].kind == PhaseKind::Liquid && liquid_feed) || [&] {
+            && other.fraction == 0.0 && ((compiled.problem.phases[phase].kind == PhaseKind::Liquid && liquid_feed(liquid_root)) || [&] {
                 const auto& support = compiled.problem.phases[1 - phase].support;
                 for (std::size_t i = 0; i < components; ++i)
                     if (compiled.feed_composition[i] > 0.0 && std::find(support.begin(), support.end(), i) == support.end()) return true;
@@ -923,43 +925,58 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (limits) limits->consumed = budget.consumed;
         if (stages) stages->add(seed);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
-        if (seed.has_state()) {
-            const auto prepared = source.prepare(seed.coordinates);
-            point[compiled.primal_size - 1] = *seed.temperature;  // admits the records at the seed T, or names the refusal
+        const auto inside = [&](double t) {  // every declared species' caloric record admits t
+            for (const auto& phase : compiled.problem.phases)
+                for (auto i : phase.support) {
+                    const auto& intervals = compiled.model->thermochemistry()->component_intervals[i];
+                    if (std::none_of(intervals.begin(), intervals.end(), [&](const auto& v) { return ideal_interval_contains(v, t); })) return false;
+                }
+            return true;
+        };
+        // #610: a mixture seed without a state starts at the first liquid-sided T_s r^j in the records, else at T_s.
+        std::optional<CompiledSystem> cooled;
+        try {
+            const auto liquid_sided = [&](double t) {
+                DensityRoot root;
+                solve_density(*compiled.model, t, compiled.seed_pressure(), compiled.feed_composition, DensityBranch::Vapor, std::nullopt, &root);
+                return liquid_feed(root);
+            };
+            double t = compiled.seed_temperature();
+            while (!seed.has_state() && !pure && !liquid_sided(t) && inside(t)) t *= policy::COOLING_RATIO.value;
+            seed_problem.temperature = FreeValue::fixed(t);
+            if (t != compiled.seed_temperature() && inside(t)) cooled = compile_problem(*compiled.model, seed_problem);
+        } catch (const std::exception&) {}
+        if (seed.has_state() || cooled) {
+            const auto coordinates = cooled ? boundary_start(*cooled, true, limits, stages) : seed.coordinates;
+            double T = cooled ? cooled->seed_temperature() : *seed.temperature;
+            const auto prepared = (cooled ? *cooled : source).prepare(coordinates);
+            point[compiled.primal_size - 1] = T;  // admits the records at the seed T, or names the refusal
             const auto destination = compiled.prepare(point);
             std::vector<double> values, capacities;
             for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
-                const auto state = compiled.model->state(*seed.temperature, seed.molar_densities[p], prepared.composition[p]);
+                const auto& a = prepared.shape[p];
+                const auto& b = destination.shape[p];
+                for (std::size_t i = 0; i < a.x.size(); ++i) point[b.x[i]] = coordinates[a.x[i]];
+                point[b.volume] = coordinates[a.volume];
+                point[*b.amount] = prepared.amount[p];
+                if (cooled) continue;
+                const auto state = compiled.model->state(T, seed.molar_densities[p], prepared.composition[p]);
                 const auto& value = compiled.problem.enthalpy_j ? state.total_enthalpy : state.total_entropy;
                 if (!value) throw std::invalid_argument("caloric seed state has no finite total caloric value");
                 values.push_back(*value);
                 capacities.push_back(state.total_isobaric_heat_capacity.value_or(std::numeric_limits<double>::quiet_NaN()));
-                const auto& a = prepared.shape[p];
-                const auto& b = destination.shape[p];
-                for (std::size_t i = 0; i < a.x.size(); ++i) point[b.x[i]] = seed.coordinates[a.x[i]];
-                point[b.volume] = seed.coordinates[a.volume];
-                point[*b.amount] = prepared.amount[p];
             }
             const double target = compiled.problem.enthalpy_j ? *compiled.problem.enthalpy_j : *compiled.problem.entropy_j_per_k;
-            double T = *seed.temperature;
             if (pure) {
                 const double split = (target / compiled.feed_total - values[0]) / (values[1] - values[0]);
                 if (!(split > 0.0 && split < 1.0)) throw std::domain_error("caloric target outside declared coexistence interval");
                 point[*destination.shape[0].amount] = compiled.feed_total * (1.0 - split);
                 point[*destination.shape[1].amount] = compiled.feed_total * split;
-            } else {
+            } else if (!cooled) {
                 const double value = std::inner_product(values.begin(), values.end(), prepared.amount.begin(), 0.0);
                 const double cp = std::inner_product(capacities.begin(), capacities.end(), prepared.amount.begin(), 0.0);
                 const double next = compiled.problem.enthalpy_j ? T + (target - value) / cp : T * std::exp((target - value) / cp);
-                if (cp > 0.0 && std::isfinite(next) && next > 0.0) {
-                    bool inside = true;
-                    for (const auto& phase : compiled.problem.phases)
-                        for (auto i : phase.support) {
-                            const auto& intervals = compiled.model->thermochemistry()->component_intervals[i];
-                            inside &= std::any_of(intervals.begin(), intervals.end(), [&](const auto& v) { return ideal_interval_contains(v, next); });
-                        }
-                    if (inside) T = next;
-                }
+                if (cp > 0.0 && std::isfinite(next) && next > 0.0 && inside(next)) T = next;
             }
             point[compiled.primal_size - 1] = T;
             return point;
@@ -1351,7 +1368,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     return continue_path(model, request, nullptr, {});
 }
 
-// ALG-EQUILIBRIUM neutral recovery: the first admitted source at T_seed 0.95^j, then fixed-T continuation, or for a
+// ALG-EQUILIBRIUM neutral recovery: the first admitted source at T_seed r^j, then fixed-T continuation, or for a
 // free-T boundary a same-source chart correction at the source pressure and fixed-P continuation. Internal
 // declarations carry no guesses; boundary endpoints share one free-intensive seed. No second source after a path stop.
 EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits) {
@@ -1368,7 +1385,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     try {
         for (int j = 1; j <= static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value) && !found.success; ++j) {
             limits.check();  // the slot is spent before compilation
-            source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(0.95, j));
+            source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, j));
             found = solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits);
             scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), found.message.c_str());
         }

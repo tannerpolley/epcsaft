@@ -43,6 +43,8 @@ void roundtrips() {
         recovered(m,q,ref,h,165,(h?"PH1/":"PS1/")+std::to_string(n));
         for(std::size_t i=0;i<ref.amounts.size();++i) compare((h?"PH1/":"PS1/")+std::to_string(n)+"/amount-"+std::to_string(i),ref.amounts[i],n*base.amounts[i],n,1e-9);
     }
+    // #610: the fixed-T seed at 240 K fails and the feed has only a vapor root there (phases_coincide before).
+    recovered(m,p,base,true,240,"PH1/240");
     const HelmholtzModel pure(propane_parameters(),{},records(true));
     for(bool vapor:{false,true}) {
         auto q=equilibrium_support::flash(1);q.phases[0].kind=vapor?PhaseKind::Vapor:PhaseKind::Liquid;
