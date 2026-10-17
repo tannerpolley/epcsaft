@@ -408,9 +408,9 @@ on parameter and input columns. Equilibrium actions share one defining-Jacobian
 factorization. Pressure density actions include the molar-mass composition
 derivative for kg/m³. Ionic T/P actions differentiate finite, terminal and pure
 states; m differentiates only the finite state and molality conversion. Raw
-reference actions are admitted separately for each consuming sigma:
-$\sigma_q\max_i|\Delta(d\ln\phi_i/dq)|\le5\times10^{-5}$, with the existing
-finer witness when needed. Failed actions retain their cause.
+reference actions are the terminal-pair limit, admitted separately for each
+consuming sigma when $\sigma_q$ times the limit change $e_f$ of EqID:
+`reference_limit_terminal_pair` is at most $5\times10^{-5}$. Failed actions retain their cause.
 
 `InputReconciliation` returns computed inputs, standardized corrections,
 penalties, separate output/input costs and the complete standardized Jacobian.

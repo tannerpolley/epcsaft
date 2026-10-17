@@ -192,9 +192,9 @@ inline constexpr Tolerance OSMOTIC_MOLALITY_FLOOR{"OSMOTIC_MOLALITY_FLOOR",
 };
 
 // Trace molalities (mol/kg) of the infinite-dilution reference ladder. Single-ion ln(phi)
-// approaches its limit as -A z^2 sqrt(I) (Debye-Hueckel), so the terminal pair changes by
-// A (1e-5 - 1e-6): measured 1.063e-5 for NaCl in water at 298.15 K against the predicted
-// 1.176 * 9e-6 = 1.06e-5, and the terminal value sits A sqrt(1e-12) ~ 1.2e-6 from the limit.
+// approaches its limit as -A z^2 sqrt(I) (Debye-Hueckel); the 1e-12/1e-14 rung pair extrapolates
+// that tail away (reference_limit_terminal_pair); for Held 2014 NaCl in water at 298.15 K the
+// limit changes 1.3e-11 from the 1e-10/1e-12 pair's, against a raw rung change of 1.06e-5.
 inline constexpr Tolerance REFERENCE_MOLALITY_ONE{"REFERENCE_MOLALITY_ONE",
     1.0e-6,
     Category::AlgorithmTolerance,
@@ -218,12 +218,12 @@ inline constexpr Tolerance REFERENCE_MOLALITY_FOUR{"REFERENCE_MOLALITY_FOUR",
 inline constexpr Tolerance REFERENCE_CONVERGENCE_WITNESS{"REFERENCE_CONVERGENCE_WITNESS",
     1.0e-14,
     Category::AlgorithmTolerance,
-    "witness trace molality, mol/kg; its sqrt(I) bias is 1e-7 A z^2 sqrt(I/m)",
+    "finest trace molality of the infinite-dilution ladder, mol/kg",
 };
 inline constexpr Tolerance REFERENCE_CONVERGENCE_TOLERANCE{"REFERENCE_CONVERGENCE_TOLERANCE",
     5.0e-5,
     Category::AlgorithmTolerance,
-    "terminal ln(phi) change; about 4.7x the 1:1 Debye-Hueckel value, larger changes go to the witness",
+    "admitted change of the terminal-pair limit of ln(phi) and its scaled columns",
 };
 inline constexpr Tolerance REFERENCE_HEAT_CAPACITY_TOLERANCE{"REFERENCE_HEAT_CAPACITY_TOLERANCE",
     1.0e-2,

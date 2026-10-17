@@ -152,11 +152,14 @@ def test_addition_enthalpy_composes_its_endpoint_states(evidence: Any) -> None:
 def test_name_mapping_and_tie_map() -> None:
     """Names resolve to the owner's slot convention; ties map physical rows to optimizer columns."""
     p = associating_binary()
+    kij = regression.active_parameter(p, "k_ij", ("s1", "s0"))
+    assert (kij.family, list(kij.indices)) == (ParameterFamily.Kij, [1, 2])
     with pytest.raises(ParameterError):
         regression.density(p, 300.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=1.0, form="difference", mass_basis=False)
     for bad in (lambda: regression.coordinate(p, [("k_ij", ("s0", "s0"), 1)], origin=0.0, scale=1.0),
                 lambda: regression.coordinate(p, [("segment_diameter", "s9", 1)], origin=0.0, scale=1.0),
                 lambda: regression.coordinate(p, [("dielectric", "s0", 1)], origin=0.0, scale=1.0),
+                lambda: regression.active_parameter(p, "dielectric", "s0"),
                 lambda: regression.observation(p, "pressure", Problem(phases=Discover(), T=300.0, P=1.0e5, feed=Amounts({"s0": 1.0})), observed=1.0, form="log_ratio", mass_basis=False),
                 lambda: regression.observation(p, "mole_fraction", bubble(300.0), observed=1.0, phase="X", form="log_ratio", mass_basis=False),
                 lambda: regression.observation(p, "phase_fraction", bubble(300.0), observed=1.0, form="log_ratio", mass_basis=False),

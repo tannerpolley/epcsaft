@@ -839,8 +839,8 @@ void check_c3_availability() {
     bool refused = false;
     try { (void)epcsaft::equilibrium::solve_equilibrium(
         epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()), symmetric); }
-    catch (const std::runtime_error& error) {
-        refused = std::string(error.what()).find("start_symmetric") != std::string::npos;
+    catch (const epcsaft::core::DeclarationError& error) {
+        refused = std::string(error.what()).find("composition_guess") != std::string::npos;
     }
     CHECK(refused);
 }
