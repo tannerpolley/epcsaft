@@ -173,7 +173,7 @@ def test_trace_isomerisation_below_the_composition_cutoff(evidence: Any) -> None
          basis="Identity", method="logistic-analytic", claim="the polish reaches a positive root below the cutoff")
 
 
-@pytest.mark.parametrize("inventory", [1e-9, 1e-12])
+@pytest.mark.parametrize("inventory", [1e-9, 1e-12, 1e-13])
 def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: float) -> None:
     """#172: identical ethanes, 1 mol inert s0 and s1 <=> s2 (K(350 K) = 3) fed as `inventory` mol s1, so
     x_s2 = inventory K / ((1 + inventory)(1 + K)) and dx_s2/dT = x_s2 (1 - p) l1 exactly. The uniform 1e-8 box
@@ -194,15 +194,9 @@ def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: flo
     x_s2 = inventory / (1 + inventory) * p
     inputs = {"inventory_mol": inventory, "K": k, "T_K": temperature, "P_Pa": 2e5,
               "classified_residual": result.convergence.residual, "iterations": result.iterations}
-    same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-6,
+    same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-12,
          unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
          claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
-    if inventory == 1e-12:
-        # #272: pin the unchanged-polish trace state; a norm-wide residual band omitted a 1.38% correction.
-        same(evidence, "trace-inventory/polish-masking/x_s2", result.mole_fractions[2],
-             7.500000035072494e-13, atol=0.0, rtol=1e-10, unit="1", inputs=inputs,
-             basis="Numerical", method="unchanged-polish-comparison",
-             claim="the fresh-correction stop preserves the trace state of unchanged polishing")
     item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
         [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
     assert item.status == SolvedStateActionStatus.Available, item.status
