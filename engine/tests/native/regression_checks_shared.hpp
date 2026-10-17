@@ -207,7 +207,7 @@ inline Truth manufactured() {
     y.form = ResidualForm::Difference;
     y.scale = 0.01;
     result.observations.push_back(y);
-    const double P_bubble = equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0)).pressure.front();
+    const double P_bubble = *equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0)).pressure;
     result.observations.push_back(density(180.0, 2.0 * P_bubble, {0.5, 0.5}, DensityBranch::Liquid, true));
     for (auto& observation : result.observations) observation.observed = *predict(model, observation).value;
     return result;

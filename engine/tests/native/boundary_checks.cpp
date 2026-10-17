@@ -37,7 +37,7 @@ void check_s3() {
     CHECK(bubble_result.success);
     auto dew = bubble;
     dew.feed.values = {bubble_result.mole_fractions[2], bubble_result.mole_fractions[3]};
-    dew.pressure.value = bubble_result.pressure.front();
+    dew.pressure.value = *bubble_result.pressure;
     dew.phases[0].amount = epcsaft::equilibrium::AmountSpec::pinned(0.0);
     dew.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
     const auto dew_result = epcsaft::equilibrium::solve_equilibrium(model, dew);
@@ -46,16 +46,16 @@ void check_s3() {
                                   convergence_limit(dew_result.convergence));
     const auto inputs = recording_support::fields({
         recording_support::field("T", 180.0), recording_support::field("x", bubble.feed.values),
-        recording_support::field("P_bubble", bubble_result.pressure.front()),
-        recording_support::field("P_dew", dew_result.pressure.front()),
+        recording_support::field("P_bubble", *bubble_result.pressure),
+        recording_support::field("P_dew", *dew_result.pressure),
         recording_support::field("limit", limit),
     });
     recording_support::compare(
         "pressure-roundtrip", "pressure_ratio", "1",
-        dew_result.pressure.front() / bubble_result.pressure.front(), 1.0, inputs,
+        *dew_result.pressure / *bubble_result.pressure, 1.0, inputs,
         "Relationship", "bubble-dew-roundtrip",
         "dew pressure reproduces bubble pressure", "reference_or_one", limit, 0.0,
-        std::abs(dew_result.pressure.front() / bubble_result.pressure.front() - 1.0) <= limit,
+        std::abs(*dew_result.pressure / *bubble_result.pressure - 1.0) <= limit,
         "s3-pressure", "bubble-dew", "P", "T,\\mathbf{x},branch", "P_{dew}=P_{bubble}", "branch");
     for (std::size_t component = 0; component < 2; ++component) {
         const auto point = std::to_string(component);
@@ -66,8 +66,8 @@ void check_s3() {
             (std::string("composition-roundtrip/") + point).c_str(), "mole_fraction", "1",
             dew_result.mole_fractions[component], bubble_result.mole_fractions[component],
             recording_support::fields({recording_support::field("T", bubble.temperature.value),
-                                       recording_support::field("P_bubble", bubble_result.pressure.front()),
-                                       recording_support::field("P_dew", dew_result.pressure.front()),
+                                       recording_support::field("P_bubble", *bubble_result.pressure),
+                                       recording_support::field("P_dew", *dew_result.pressure),
                                        recording_support::field("feed", bubble.feed.values),
                                        recording_support::field("component", component),
                                        recording_support::field("limit", limit)}),
@@ -96,11 +96,11 @@ void check_s4() {
         specification.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(beta);
         specification.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
         specification.pressure = epcsaft::equilibrium::FreeValue::fixed(
-            bubble_result.pressure.front());
+            *bubble_result.pressure);
         const auto result = epcsaft::equilibrium::solve_equilibrium(
             model, specification, start);
-        CHECK(result.success && result.temperature.size() == 1);
-        gaps[index++] = std::abs(result.temperature.front() - bubble_result.temperature.front());
+        CHECK(result.success && result.temperature);
+        gaps[index++] = std::abs(*result.temperature - *bubble_result.temperature);
         start = result;
     }
     for (std::size_t step = 1; step < gaps.size(); ++step) {
@@ -112,8 +112,8 @@ void check_s4() {
             (std::string("temperature-ladder/") + point).c_str(),
             "temperature_gap", "K", gaps[step], gaps[step - 1],
             recording_support::fields({
-                recording_support::field("T", bubble_result.temperature.front()),
-                recording_support::field("P", bubble_result.pressure.front()),
+                recording_support::field("T", *bubble_result.temperature),
+                recording_support::field("P", *bubble_result.pressure),
                 recording_support::field("beta", std::vector<double>{1.0e-2, 1.0e-4, 1.0e-6}),
                 recording_support::field("gaps", std::vector<double>{gaps[0], gaps[1], gaps[2]}),
                 recording_support::field("step", step),
@@ -159,20 +159,20 @@ void check_s5() {
     const auto pressure_result = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(pressure_result.success);
     problem.temperature = epcsaft::equilibrium::FreeValue::variable(
-        pressure_result.temperature.front());
+        *pressure_result.temperature);
     problem.pressure = epcsaft::equilibrium::FreeValue::fixed(
-        pressure_result.pressure.front());
+        *pressure_result.pressure);
     const auto temperature_result = epcsaft::equilibrium::solve_equilibrium(
         model, problem, pressure_result);
     CHECK(temperature_result.success);
     const bool temperature_matches = std::abs(
-        temperature_result.temperature.front() - pressure_result.temperature.front()
+        *temperature_result.temperature - *pressure_result.temperature
     ) <= 1.0e-6;
     recording_support::compare(
-        "temperature-roundtrip", "temperature", "K", temperature_result.temperature.front(),
-        pressure_result.temperature.front(),
-        recording_support::fields({recording_support::field("T", pressure_result.temperature.front()),
-                                   recording_support::field("P", pressure_result.pressure.front()),
+        "temperature-roundtrip", "temperature", "K", *temperature_result.temperature,
+        *pressure_result.temperature,
+        recording_support::fields({recording_support::field("T", *pressure_result.temperature),
+                                   recording_support::field("P", *pressure_result.pressure),
                                    recording_support::field("x", problem.feed.values)}),
         "Relationship", "pressure-temperature-roundtrip", "temperature solve reproduces pressure solve",
         "reference_or_one", 1.0e-6, 0.0,
@@ -238,7 +238,7 @@ void check_s9() {
     auto pinned = bubble;
     pinned.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(1.0e-2);
     pinned.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
-    pinned.pressure = epcsaft::equilibrium::FreeValue::fixed(bubble_result.pressure.front());
+    pinned.pressure = epcsaft::equilibrium::FreeValue::fixed(*bubble_result.pressure);
     const auto pinned_result = epcsaft::equilibrium::solve_equilibrium(model, pinned, bubble_result);
     CHECK(pinned_result.success);
     const auto pinned_compiled = epcsaft::equilibrium::compile_problem(model, pinned);
@@ -506,14 +506,14 @@ void check_s14() {
                                   convergence_limit(liquid_pinned.convergence));
     recording_support::compare(
         "pinned-pressure", "pressure_ratio", "1",
-        vapor_pinned.pressure.front() / liquid_pinned.pressure.front(), 1.0,
+        *vapor_pinned.pressure / *liquid_pinned.pressure, 1.0,
         recording_support::fields({recording_support::field("T", 250.0),
                                    recording_support::field("P", 1.3e6),
                                    recording_support::field("limit", limit),
                                    recording_support::field("x", std::vector<double>{1.0})}),
         "Relationship", "pinned-phase-switch", "switching pinned phase preserves pressure",
         "reference_or_one", limit, 0.0,
-        std::abs(vapor_pinned.pressure.front() / liquid_pinned.pressure.front() - 1.0) <= limit,
+        std::abs(*vapor_pinned.pressure / *liquid_pinned.pressure - 1.0) <= limit,
         "s14-pressure", "phase-switch", "P_{vapor}/P_{liquid}", "T,P,\\mathbf{x},branch",
         "P_{vapor}=P_{liquid}", "branch");
 }
@@ -600,10 +600,10 @@ void branch_rows(const char* group, const char* label, const epcsaft::HelmholtzM
             const auto branch = problem.phases[phase].kind == PhaseKind::Vapor ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid;
             const double corrected = state.molar_densities[phase];
             const double anchor = k == 0
-                ? epcsaft::solve_density(model, state.temperature[0], state.pressure[0], x, branch, std::nullopt).molar_density
+                ? epcsaft::solve_density(model, *state.temperature, *state.pressure, x, branch, std::nullopt).molar_density
                 : anchors[phase];
-            const auto root = epcsaft::solve_density(model, state.temperature[0], state.pressure[0], x, branch, anchor);
-            const auto physical = model.state(state.temperature[0], corrected, x);
+            const auto root = epcsaft::solve_density(model, *state.temperature, *state.pressure, x, branch, anchor);
+            const auto physical = model.state(*state.temperature, corrected, x);
             const double displacement = std::abs(std::log(corrected / anchor));
             const double selected_displacement = std::abs(std::log(root.molar_density / anchor));
             const double pressure_row = [&] {
@@ -688,7 +688,7 @@ void check_e4_a() {
     for (std::size_t k = 0; k < 5; ++k) {
         const auto cold = epcsaft::equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0 + expected[k]));
         const auto& state = result.states[k];
-        const double pressure_error = std::abs(state.pressure.front() / cold.pressure.front() - 1.0);
+        const double pressure_error = std::abs(*state.pressure / *cold.pressure - 1.0);
         double composition_error = 0.0;
         for (std::size_t i = 0; i < state.mole_fractions.size(); ++i)
             composition_error = std::max(composition_error, std::abs(state.mole_fractions[i] - cold.mole_fractions[i]));
@@ -696,7 +696,7 @@ void check_e4_a() {
         const auto id = std::string("e4-a/cold/") + std::to_string(k);
         recording_support::compare(id.c_str(), "pressure_relative_error", "1", pressure_error, 0.0,
             recording_support::fields({recording_support::field("q", expected[k]), recording_support::field("T", 180.0 + expected[k]),
-                recording_support::field("P_path", state.pressure.front()), recording_support::field("P_cold", cold.pressure.front()),
+                recording_support::field("P_path", *state.pressure), recording_support::field("P_cold", *cold.pressure),
                 recording_support::field("composition_error", composition_error), recording_support::field("x_path", state.mole_fractions)}),
             "Relationship", "branch-identity", "continuation state equals the independent cold solve",
             "strict_absolute", 1.0e-8, 0.0, verdict, "e4-a", id.c_str(), "\\\\Delta P/P", "q,T", "\\\\Delta P/P\\\\leq10^{-8}", "q");
@@ -784,7 +784,7 @@ void check_e4_c() {
     dew.pressure = FreeValue::variable(0.5 * start.bubble_pressure);
     const auto dew_point = epcsaft::equilibrium::solve_equilibrium(model, dew);
     auto below = start.problem;
-    below.pressure = FreeValue::fixed(0.8 * dew_point.pressure.at(0));
+    below.pressure = FreeValue::fixed(0.8 * *dew_point.pressure);
     const auto vanished = epcsaft::equilibrium::solve_equilibrium(model, below);
     record_bool("e4-c/liquid", "e4-c", "the liquid vanishes at 0.8 times the dew pressure",
         dew_point.success && !vanished.success && vanished.message.rfind("phase L vanished", 0) == 0,
@@ -814,7 +814,7 @@ void check_e4_d() {
     const auto refused = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, trivial));
     const auto recovered = epcsaft::equilibrium::solve_equilibrium(model, trivial);
     const std::array<double, 4> feos{6753518.165684925, 0.584677746826541, 10555.743792969572, 7345.13575956793};
-    const std::array<double, 4> engine{recovered.success ? recovered.pressure[0] : NAN, recovered.success ? recovered.mole_fractions[2] : NAN,
+    const std::array<double, 4> engine{recovered.success ? *recovered.pressure : NAN, recovered.success ? recovered.mole_fractions[2] : NAN,
         recovered.success ? recovered.molar_densities[0] : NAN, recovered.success ? recovered.molar_densities[1] : NAN};
     double deviation = 0.0;
     for (std::size_t i = 0; i < feos.size(); ++i) deviation = std::max(deviation, std::abs(engine[i] / feos[i] - 1.0));
@@ -855,8 +855,8 @@ void check_e4_d() {
         double worst = -std::numeric_limits<double>::infinity();
         for (std::size_t i = 0; i < before_delta.size(); ++i) worst = std::max(worst, before_delta[i] * after_delta[i]);
         recording_support::compare_custom("e4-d/swap", "sign_product_max", "1", worst, 0.0,
-            recording_support::fields({recording_support::field("T_before", before.temperature.front()),
-                recording_support::field("T_after", after.temperature.front()),
+            recording_support::fields({recording_support::field("T_before", *before.temperature),
+                recording_support::field("T_after", *after.temperature),
                 recording_support::field("before_delta", before_delta), recording_support::field("after_delta", after_delta),
                 recording_support::field("rho_before", before.molar_densities), recording_support::field("rho_after", after.molar_densities),
                 recording_support::field("x_before", before.mole_fractions), recording_support::field("x_after", after.mole_fractions),
@@ -874,10 +874,10 @@ void check_e4_d() {
         for (std::size_t phase = 0; phase < 2; ++phase) {
             const std::vector<double> x(last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase),
                                         last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase + 2));
-            slopes.push_back(model.state(last.temperature.front(), last.molar_densities[phase], x).pressure_density_derivative);
+            slopes.push_back(model.state(*last.temperature, last.molar_densities[phase], x).pressure_density_derivative);
         }
         recording_support::observe("e4-d/last-state", "phase_distance", "1", topology.distances.empty() ? 0.0 : topology.distances.front(), std::nullopt,
-            recording_support::fields({recording_support::field("T", last.temperature.front()), recording_support::field("P", last.pressure.front()),
+            recording_support::fields({recording_support::field("T", *last.temperature), recording_support::field("P", *last.pressure),
                 recording_support::field("x", last.mole_fractions), recording_support::field("rho", last.molar_densities),
                 recording_support::field("corrected_slopes", slopes), recording_support::field("row_residual", last.convergence.residual),
                 recording_support::field("coincidence_threshold", epcsaft::policy::PHASE_COINCIDENCE_DISTANCE.value)}),
@@ -1061,7 +1061,7 @@ void check_recovery() {
         const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, problem));
         const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
         recovered += !ordinary.success && r.success;
-        const bool ok = r.success && std::abs(r.pressure[0] / row.P - 1.0) <= 1.0e-8 && within_caps(r, ordinary)
+        const bool ok = r.success && std::abs(*r.pressure / row.P - 1.0) <= 1.0e-8 && within_caps(r, ordinary)
             && (ordinary.success ? r.iterations == ordinary.iterations && r.pressure == ordinary.pressure
                                  : r.message.find("; recovered after: " + ordinary.message) != std::string::npos);
         passed += ok;
@@ -1081,7 +1081,7 @@ void check_recovery() {
     const auto onset_compiled = epcsaft::equilibrium::compile_problem(model, onset_dew);
     const auto onset_ordinary = epcsaft::equilibrium::solve_compiled(onset_compiled);
     const auto [onset, reports] = epcsaft::equilibrium::cooling_onset(onset_compiled);
-    const double onset_deviation = onset.success ? onset.temperature[0] / 239.370069623738 - 1.0 : INFINITY;
+    const double onset_deviation = onset.success ? *onset.temperature / 239.370069623738 - 1.0 : INFINITY;
     const bool descent = std::any_of(reports.begin(), reports.end(), [](const auto& report) {
         return std::any_of(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; }); });
     record_bool("e4-r/cooling-onset", "e4-r", "the refused free-T p02b dew recovers through cooling_onset to 239.370069623738 K "

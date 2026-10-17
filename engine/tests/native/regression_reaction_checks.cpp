@@ -100,7 +100,7 @@ EquilibriumProblem reacting_bubble(const HelmholtzModel& model) {
                             300.0, 0.5, 0.001, 200.0, 150.0, 220.0, equilibrium::EOS_STANDARD_STATE_ID}}};
     const auto reacting = equilibrium::solve_equilibrium(model, problem);
     CHECK(reacting.success && reacting.topology_event == equilibrium::TopologyEvent::None);
-    agree("reaction-a3/pinned_pressure", "P", "Pa", reacting.pressure.front(), center.pressure.front(), 0.0, 1.0e-10,
+    agree("reaction-a3/pinned_pressure", "P", "Pa", *reacting.pressure, *center.pressure, 0.0, 1.0e-10,
           "T=180 K", "the reacting manufactured bubble retains the original state", "reaction-fit");
     for (std::size_t i = 0; i < center.mole_fractions.size(); ++i)
         agree("reaction-a3/pinned_x/" + std::to_string(i), "x", "1", reacting.mole_fractions[i], center.mole_fractions[i],
@@ -445,9 +445,9 @@ void check_reaction_derivatives() {
     }
     const auto recovered = equilibrium::solve_equilibrium(model, free_t);
     CHECK(recovered.success && recovered.topology_event == equilibrium::TopologyEvent::None);
-    agree("reaction-a4/pinned_temperature", "T", "K", recovered.temperature.front(), 180.0, 0.0, 1.0e-10,
+    agree("reaction-a4/pinned_temperature", "T", "K", *recovered.temperature, 180.0, 0.0, 1.0e-10,
           "declared J1 compositions and packing fractions", "the free-temperature solve returns the specified J1 state", "reaction-fit");
-    agree("reaction-a4/pinned_pressure", "P", "Pa", recovered.pressure.front(), j1.pressure.front(), 0.0, 1.0e-10,
+    agree("reaction-a4/pinned_pressure", "P", "Pa", *recovered.pressure, *j1.pressure, 0.0, 1.0e-10,
           "", "the free-temperature solve retains the J1 pressure", "reaction-fit");
     for (std::size_t i = 0; i < j1.mole_fractions.size(); ++i)
         agree("reaction-a4/pinned_x/" + std::to_string(i), "x", "1", recovered.mole_fractions[i], j1.mole_fractions[i],
@@ -862,8 +862,8 @@ AdditionEndpoint endpoint_enthalpy(const HelmholtzModel& model, const Equilibriu
 
 double addition_oracle_phase_enthalpy(const HelmholtzModel& pure, const EquilibriumResult& solved_state,
                                      const ReactionLogPolynomial& law, std::size_t phase) {
-    const double T = solved_state.temperature.front();
-    const double P_ref = solved_state.pressure.front();
+    const double T = *solved_state.temperature;
+    const double P_ref = *solved_state.pressure;
     const double dt = T - 300.0;
     const double h_a = 52.0 * dt + 0.06 * dt * dt;
     const double ell = -law.b / (T * T) + law.c / T + law.d;
@@ -1080,8 +1080,8 @@ void check_free_temperature_addition() {
         const auto start=coordinates.start(parameters,{observation},record);
         const std::string id=std::string("F6/free-T-addition/")+(fixed?"fix":"sys");
         const auto inputs=fields({field("n_add_mol",0.01),field("initial_feed",initial.feed.values),
-            field("final_feed",final.feed.values),field("initial_T_K",center.solved->temperature[0]),
-            field("final_T_K",center.final_solved->temperature[0]),field("system_P_Pa",1.952823e6),
+            field("final_feed",final.feed.values),field("initial_T_K",*center.solved->temperature),
+            field("final_T_K",*center.final_solved->temperature),field("system_P_Pa",1.952823e6),
             field("source_P_Pa",fixed?5e6:1.952823e6),field("feed_T_K",300),field("feed_P_Pa",1.5e6),
             field("initial_roots",center.solved->molar_densities),field("final_roots",center.final_solved->molar_densities),
             field("initial_residual",center.solved->residual_norm()),field("final_residual",center.final_solved->residual_norm()),
@@ -1202,11 +1202,11 @@ void check_addition_enthalpy() {
                         return *batch.results[0].action;
                     };
                     const double P1 = variant.observation.problem.reactions[0].reference->reference_pressure_pa
-                        .value_or(center.solved->pressure.front());
+                        .value_or(*center.solved->pressure);
                     const double P2 = variant.observation.final_problem.reactions[0].reference->reference_pressure_pa
-                        .value_or(center.final_solved->pressure.front());
-                    omitted = (total_b_amount(*center.final_solved) * pure_action(center.final_solved->temperature.front(), P2)
-                        - total_b_amount(*center.solved) * pure_action(center.solved->temperature.front(), P1)) / amount;
+                        .value_or(*center.final_solved->pressure);
+                    omitted = (total_b_amount(*center.final_solved) * pure_action(*center.final_solved->temperature, P2)
+                        - total_b_amount(*center.solved) * pure_action(*center.solved->temperature, P1)) / amount;
                 } else {
                     omitted = -GAS_CONSTANT_J_PER_MOL_K
                         * (total_b_amount(*center.final_solved) - total_b_amount(*center.solved)) / amount;

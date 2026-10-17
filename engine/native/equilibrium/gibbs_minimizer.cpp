@@ -203,15 +203,14 @@ void copy_previous_phase(
     for (std::size_t species = 0; species < composition.size(); ++species)
         composition[species] = start.mole_fractions[phase * composition.size() + species];
     double density = start.molar_densities[phase];
-    if (spec.amount.kind == AmountKind::Pinned && !start.temperature.empty()
-        && !start.pressure.empty()) {
+    if (spec.amount.kind == AmountKind::Pinned && start.temperature && start.pressure) {
         const auto branch = spec.kind == PhaseKind::Vapor
             ? DensityBranch::Vapor : DensityBranch::Liquid;
-        density = solve_density(*compiled.model, start.temperature[0], start.pressure[0],
+        density = solve_density(*compiled.model, *start.temperature, *start.pressure,
                                 composition, branch, std::nullopt).molar_density;
     }
     point[cursor] = std::log(compiled.model->packing_fraction_coefficient(
-        start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
+        start.temperature.value_or(compiled.problem.temperature.value),
         composition) * density);
 }
 
@@ -228,8 +227,8 @@ std::vector<double> start_point(
         }
     }
     std::size_t intensive = compiled.primal_size - compiled.free_intensive_count;
-    if (compiled.problem.temperature.free && !start.temperature.empty()) point[intensive++] = start.temperature[0];
-    if (compiled.problem.pressure.free && !start.pressure.empty()) point[intensive++] = start.pressure[0];
+    if (compiled.problem.temperature.free && start.temperature) point[intensive++] = *start.temperature;
+    if (compiled.problem.pressure.free && start.pressure) point[intensive++] = *start.pressure;
     if (compiled.feasibility_cell() && start.multipliers.size() == compiled.rank + compiled.charge_row_count) {
         std::copy(start.multipliers.begin(), start.multipliers.end(), point.begin() + compiled.primal_size);
     }
@@ -250,7 +249,7 @@ bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start
             if (!(composition[i] > 0.0)) return false;
         }
         const double packing = compiled.model->packing_fraction_coefficient(
-            start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
+            start.temperature.value_or(compiled.problem.temperature.value),
             composition) * start.molar_densities[phase];
         if (!admitted_packing_fraction(packing)) return false;
     }
@@ -272,8 +271,8 @@ double largest_difference(
 
 void clear_state(EquilibriumResult& result) {
     result.optimizer_state.reset();
-    result.temperature.clear();
-    result.pressure.clear();
+    result.temperature.reset();
+    result.pressure.reset();
     result.amounts.clear();
     result.mole_fractions.clear();
     result.molar_densities.clear();
@@ -1219,8 +1218,8 @@ static EquilibriumResult run_driver_once(
     }
     result.success = true;
     if (newton && !free_amount_newton) result.solver_status = "NEWTON_CONVERGED";
-    result.temperature = {temperature};
-    result.pressure = {prepared.pressure};
+    result.temperature = temperature;
+    result.pressure = prepared.pressure;
     if (!prepared.standard.reference_diagnostics.empty()) {
         result.reference_diagnostics = prepared.standard.reference_diagnostics;
     }
@@ -1314,8 +1313,8 @@ static EquilibriumResult run_driver_once(
     }
     if (expired()) { result.message = "elapsed work budget exhausted";
         reject_elapsed(result, scope); return result; }
-    scope.probe("returned_temperature", result.temperature);
-    scope.probe("returned_pressure", result.pressure);
+    scope.probe("returned_temperature", *result.temperature);
+    scope.probe("returned_pressure", *result.pressure);
     scope.probe("returned_amounts", result.amounts);
     scope.probe("returned_mole_fractions", result.mole_fractions);
     scope.probe("returned_densities", result.molar_densities);

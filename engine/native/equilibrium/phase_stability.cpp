@@ -630,7 +630,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     EquilibriumResult recovered;
     try {
         // An ordinary dew stands only when no competing liquid descends at its temperature.
-        if (failed.success && !competing(failed.temperature[0])) {
+        if (failed.success && !competing(*failed.temperature)) {
             work.report(failed);
             return {std::move(failed), std::move(reports)};
         }
@@ -651,9 +651,9 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         boundary.phases[vapor].composition_guess = c.feed_composition;
         recovered = solve(boundary);
         if (!recovered.success) throw std::runtime_error("boundary corrector unavailable: " + recovered.message);
-        if (recovered.temperature[0] < lower - 1e-10 * upper || recovered.temperature[0] > upper + 1e-10 * upper)
+        if (*recovered.temperature < lower - 1e-10 * upper || *recovered.temperature > upper + 1e-10 * upper)
             throw std::runtime_error("boundary corrector left cooling-onset bracket");
-        if (competing(recovered.temperature[0])) throw std::runtime_error("competing liquid descent at corrected dew");
+        if (competing(*recovered.temperature)) throw std::runtime_error("competing liquid descent at corrected dew");
         work.add(failed); work.report(recovered);
         return {std::move(recovered), std::move(reports)};
     } catch (const std::exception& error) {
@@ -858,7 +858,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             // The optimizer may cross its starting root's label. Reuse the density owner's two admitted end
             // branches; a unique root takes the side its negative-slope sample establishes, else its source label (#423).
             try {
-                const auto root = anchored_root(model, best.temperature[0], best.pressure[0], trial.composition,
+                const auto root = anchored_root(model, *best.temperature, *best.pressure, trial.composition,
                     trial.quantities.at("volume_m3_per_mol"), phase.kind, trial.quantities, "addition_");
                 if (!root) throw std::runtime_error("descending trial has no admitted density branch");
                 if (const auto side = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
