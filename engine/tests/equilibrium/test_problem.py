@@ -299,6 +299,28 @@ def test_ionic_discovery_reproduces_the_declared_split() -> None:
     assert found.objective < -8.662995081104183
 
 
+@pytest.mark.parametrize("delta", [3e-11, 1e-10])
+def test_feed_charge_follows_the_state_rule(delta: float) -> None:
+    # #584: Khudaida Figure 2 point 1 with sodium raised by delta. The feed charge is 7.8e-13 (admitted, and every
+    # returned phase must pass Mixture.state) or 2.6e-12 (refused) in mole fraction against the 1e-12 state rule.
+    names = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    model = Mixture(Parameters.from_json(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=names))
+    feed = [0.7295582904360919, 0.013336215598851255, 0.20495308450174893, 0.02607620473165392, 0.02607620473165392]
+    feed[3] *= 1 + delta
+    problem = Problem(T=293.15, P=1e5, feed=Amounts(dict(zip(names, feed))), row_tolerance=1e-10, phases=[
+        Phase("Lw", kind="liquid", composition_guess=(0.80, 0.05, 0.05, 0.05, 0.05)),
+        Phase("Lo", kind="liquid", composition_guess=(0.20, 0.10, 0.6998, 0.0001, 0.0001))])
+    if delta > 5e-11:
+        with pytest.raises(ParameterError, match="feed carries net z"):
+            solve_equilibrium(model, problem)
+        return
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met and result.phase_count == 2
+    for phase in range(2):
+        model.state(result.temperature[0], rho=result.molar_densities[phase], x=result.phase_mole_fractions(phase))
+
+
 def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     """#438: the default bubble_point vapor holds only zero-charge components. NaCl 1 mol/kg at 373.15 K (Held 2008
     packet 4) and packet-3 MEA at 318.15 K equal the explicit neutral vapor and the pressures retained from it on
