@@ -109,26 +109,27 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> result(phases, compiled.feed_composition);
-    bool guessed = true;
+    std::string unguessed;
     for (std::size_t phase = 0; phase < phases; ++phase) {
         const auto& spec = compiled.problem.phases[phase];
-        guessed = guessed && spec.composition_guess.size() == spec.support.size();
-        if (spec.composition_guess.size() == spec.support.size()) {
-            result[phase].assign(components, 0.0);
-            for (std::size_t i = 0; i < spec.support.size(); ++i)
-                result[phase][spec.support[i]] = spec.composition_guess[i];
+        if (spec.composition_guess.size() != spec.support.size()) {
+            unguessed += (unguessed.empty() ? "" : ", ") + spec.name;
+            continue;
         }
+        result[phase].assign(components, 0.0);
+        for (std::size_t i = 0; i < spec.support.size(); ++i)
+            result[phase][spec.support[i]] = spec.composition_guess[i];
     }
     if (phases == 1) return {result};
-    if (guessed) {
+    if (unguessed.empty()) {
         scope.probe("start_rule", 1.0);
         return {result};
     }
     if (phases != 2 || compiled.problem.phases[0].kind == compiled.problem.phases[1].kind) {
         scope.probe("start_rule", 3.0);
-        throw std::runtime_error("start_symmetric: phases "
-            + compiled.problem.phases[0].name + " and "
-            + compiled.problem.phases[1].name + " require composition guesses or phases=Discover()");
+        throw core::DeclarationError("phases without a composition_guess: " + unguessed
+            + "; a start without guesses covers one liquid and one vapor only;"
+              " give each phase a composition_guess or use phases=Discover()");
     }
     const double temperature = compiled.seed_temperature();
     const double pressure = compiled.seed_pressure();
