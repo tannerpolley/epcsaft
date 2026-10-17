@@ -2,7 +2,7 @@
 import math
 
 from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure, _core
-from epcsaft.equilibrium import Amounts, Phase, Problem, solve_equilibrium
+from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equilibrium
 
 from tests.native_inputs import ETHANE, parameters
 
@@ -78,3 +78,13 @@ def test_declared_liquid_stays_on_its_metastable_root_inside_the_loop() -> None:
         assert result.success, result.message
         root = model.state(305.0, P=P, x=(0.5, 0.5), phase="liquid").molar_density
         assert math.isclose(result.molar_densities[0], root, rel_tol=1e-10, abs_tol=0.0), (P, root)
+
+
+def test_declared_liquid_less_densely_packed_than_the_vapor_is_refused() -> None:
+    """#599: methane/ethane at 266.5 K, above the z = 0.5 critical temperature, reaches the upper dew point with L and V swapped."""
+    model = Mixture(parameters(((16.043, 1.0, 3.7039, 150.03), ETHANE), [("k_ij", (0, 1), 0.0)]))
+    result = solve_equilibrium(model, Problem(T=266.5, P=Free(5.0e6), feed=Amounts({"s0": 0.5, "s1": 0.5}),
+                                              phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))]))
+    assert not result.success
+    assert result.message.startswith("declared liquid L (packing fraction 0.152977") and "declared vapor V (0.160234" in result.message
+    assert (result.iterations, result.evaluations, result.hessian_calls) == (24, 49, 25)

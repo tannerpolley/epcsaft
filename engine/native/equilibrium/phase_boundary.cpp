@@ -1155,6 +1155,16 @@ BranchCheck check_density_branches(
             return outcome;
         }
     }
+    // Declared kinds: a liquid less densely packed than a vapor is the other boundary with its labels swapped (#599).
+    for (std::size_t l = 0; initial && l < prepared.eta.size(); ++l)
+        for (std::size_t v = 0; v < prepared.eta.size(); ++v)
+            if (compiled.problem.phases[l].kind == PhaseKind::Liquid && compiled.problem.phases[v].kind == PhaseKind::Vapor
+                && !(prepared.eta[l] > prepared.eta[v])) {
+                outcome.message = "declared liquid " + compiled.problem.phases[l].name + " (packing fraction " + core::optional_number(prepared.eta[l])
+                    + ") is not more densely packed than declared vapor " + compiled.problem.phases[v].name + " ("
+                    + core::optional_number(prepared.eta[v]) + "): swapped phase labels";
+                return outcome;
+            }
     outcome.accepted = true;
     return outcome;
 }
