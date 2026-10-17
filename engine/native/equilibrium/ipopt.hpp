@@ -1,5 +1,6 @@
 #pragma once
 #include "core/convergence.hpp"
+#include <HSLLoader.h>
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
 #include <algorithm>
@@ -64,11 +65,31 @@ inline std::string application_return_name(Ipopt::ApplicationReturnStatus code) 
     }
 }
 
+// The one linear-solver rule, decided once per loaded library: EPCSAFT_IPOPT_LINEAR_SOLVER forces mumps or
+// ma57; otherwise MA57 when Ipopt's loader opens EPCSAFT_HSL_LIBRARY (unset: libhsl.so) and finds it, else MUMPS.
+inline const std::string& linear_solver() {
+    static const std::string chosen = [] {
+        const char* forced = std::getenv("EPCSAFT_IPOPT_LINEAR_SOLVER");
+        const std::string name = forced ? forced : "";
+        if (!name.empty() && name != "mumps" && name != "ma57")
+            throw std::invalid_argument("EPCSAFT_IPOPT_LINEAR_SOLVER must be mumps or ma57, not " + name);
+        if (name == "mumps") return name;
+        const char* path = std::getenv("EPCSAFT_HSL_LIBRARY");
+        char message[512] = "loaded library has no MA57";
+        const bool ma57 = LSL_loadHSL(path && *path ? path : nullptr, message, sizeof message) == 0
+            && LSL_isMA57available() != 0;
+        if (name == "ma57" && !ma57)
+            throw std::invalid_argument(std::string("EPCSAFT_IPOPT_LINEAR_SOLVER=ma57 is unavailable: ") + message);
+        return std::string(ma57 ? "ma57" : "mumps");
+    }();
+    return chosen;
+}
+
 // One checked option/lifecycle owner for exact curvature and estimation's BFGS.
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
     double seconds, bool exact, double objective_factor, std::map<std::string, double>* consumed = nullptr,
-    double requested_row = 0.0, const std::function<bool(double)>& warm = {}) {
+    double requested_row = 0.0, const std::function<bool(double)>& warm = {}, std::string* solver = nullptr) {
     const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
     if (!(tolerance > 0.0) || !std::isfinite(tolerance) || !(dual_tolerance > 0.0) || !std::isfinite(dual_tolerance))
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
@@ -94,6 +115,9 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
+    admit(options->SetStringValue("linear_solver", linear_solver()));
+    admit(options->SetIntegerValue("ma57_pivot_order", 2));          // AMD, as measured in #509
+    admit(options->SetStringValue("ma57_automatic_scaling", "yes")); // unscaled, a trace moiety row reads as dependent
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     if (options_file && *options_file) {
         std::error_code error;
@@ -101,6 +125,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
             throw std::invalid_argument(std::string("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: ") + options_file);
     }
     const auto initialized = app->Initialize(options_file ? options_file : "");
+    if (solver) options->GetStringValue("linear_solver", *solver, "");  // after any options-file override
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
         double value = 0.0; admit(options->GetNumericValue(name, value, "")); (*consumed)[name] = value;
     }

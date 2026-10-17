@@ -734,6 +734,7 @@ class CompiledSystem:
 class EquilibriumResult:
     solver_settings: dict[str, float]
     diagnostic_options_file: str
+    linear_solver: str
     solver_options: list[dict[str, Any]]
     """Solved phases in declared order (with Discover(): discovery.declaration.phases). Units: K, Pa, mol, mol/m^3.
     Per-phase-per-component lists are phase-major: entry p*n + i is phase p, component i of component_ids
@@ -950,6 +951,7 @@ def solved_state_actions(compiled: CompiledSystem, central: EquilibriumResult,
 def solved_state_first_actions(compiled: CompiledSystem, central: EquilibriumResult,
                                observables: Sequence[SolvedStateObservable],
                                directions: Sequence[SolvedStateActionDirection]) -> list[SolvedStateActionBatch]: ...
+def linear_solver() -> str: ...
 def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
 def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationOptions, feed_offset: Sequence[float],
                            feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
@@ -1182,6 +1184,7 @@ class MinimaxResult:
     availability: str
     application_status: str
     solver_status: str
+    linear_solver: str
     feasible: bool
     stationary: bool
     t: float

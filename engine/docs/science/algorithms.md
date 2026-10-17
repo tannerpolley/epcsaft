@@ -1157,6 +1157,22 @@ the driver's solver options, including iteration limits; unset the variable afte
 the experiment. Iterate logging can use `output_file <log-path>` and
 `file_print_level 12` in that file.
 
+The same owner chooses Ipopt's linear solver once per loaded native library
+(owner decisions 2026-10-16 and 2026-10-17). `EPCSAFT_IPOPT_LINEAR_SOLVER=mumps`
+or `ma57` forces a solver; any other nonempty value, or a forced `ma57` that
+cannot load, is an error before any solve. Otherwise Ipopt's own HSL loader
+opens `EPCSAFT_HSL_LIBRARY` (unset or empty: `libhsl.so` on the runtime linker
+path), and the driver uses MA57 with AMD ordering (`ma57_pivot_order 2`) when
+that library provides it, and MUMPS otherwise. MA57 runs with its own scaling
+(`ma57_automatic_scaling yes`, ICNTL(15)) because, unscaled, a trace moiety row
+reads as dependent; an options file can override it. HSL is user-supplied under its
+own licence and is never bundled; work whose results used MA57 acknowledges
+"HSL, a collection of Fortran codes for large-scale scientific computation. See
+https://www.hsl.rl.ac.uk/". An options file still overrides the choice. Each
+equilibrium and minimax result's `linear_solver` reads back the solver Ipopt
+ran (empty when the Newton path finished without Ipopt), and
+`_core.linear_solver()` records the process choice that fits and predictions use.
+
 The caller supplies one dimensionless row tolerance per solve request; the
 named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That value alone
 classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and

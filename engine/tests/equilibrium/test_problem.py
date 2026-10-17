@@ -221,8 +221,9 @@ def test_incidental_ipopt_options_preserve_equilibrium_state(tmp_path: Path, mon
 
 
 def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    # An explicitly selected options file with an unknown option fails Initialize(); an unavailable
-    # linear solver fails OptimizeTNLP() before any iterate, leaving the fallback start, whose classified
+    # An explicitly selected options file with an unknown option fails Initialize(); a linear solver Ipopt
+    # never has (`custom` needs an application-supplied solver, which the Engine never passes) fails
+    # OptimizeTNLP() before any iterate, leaving the fallback start, whose classified
     # rows (1.50) meet this deliberately loose criterion. A zero iteration budget is an eligible
     # non-error stop: its polished start meets the rows and still publishes.
     model = mixture()
@@ -235,7 +236,7 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
         solve_equilibrium(model, loose)
     assert str(missing) in str(failure.value)
     monkeypatch.setenv("EPCSAFT_IPOPT_OPTIONS_FILE", str(tmp_path / "diagnostic.opt"))
-    for option, fatal in (("bogus_option 1", True), ("linear_solver ma57", True), ("max_iter 0", False)):
+    for option, fatal in (("bogus_option 1", True), ("linear_solver custom", True), ("max_iter 0", False)):
         (tmp_path / "diagnostic.opt").write_text(option + "\n")
         result = solve_equilibrium(model, loose)
         if not fatal:
