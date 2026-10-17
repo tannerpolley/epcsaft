@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from . import _core
 
@@ -93,6 +93,73 @@ def _choice(families: Sequence[object], kind: str, default: str | None = None) -
     return found
 
 
+# The model_families fields from_mapping reads.
+_FAMILY_FIELDS = ("choice", "ionic_dispersion", "c_shell", "c_dielectric")
+
+
+def _named(record: Mapping[str, Any]) -> set[str]:
+    """The component ids one component, pair, correlation, site, edge or no-cross record names."""
+    ends = [record[key] for key in ("endpoint_a", "endpoint_b") if key in record]
+    return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
+
+
+def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[str]]], *,
+                       k_ij: Mapping[tuple[str, str], float] | None = None,
+                       l_ij: Mapping[tuple[str, str], float] | None = None) -> dict[str, object]:
+    """One parameter document from (packet id/version, component names) under root; set pairs replace old ones."""
+    merged: dict[str, Any] = {"schema": "epcsaft.parameters", "schema_version": 1, "components": [], "correlations": [],
+                              "pairs": [], "model_coefficients": None, "materialization": [],
+                              "topology": {"sites": [], "edges": [], "no_cross_association": []}}
+    families: dict[str, tuple[str, Mapping[str, Any]]] = {}
+    selected: set[str] = set()
+    for packet, names in packets:
+        document = json.loads((Path(root) / packet / "parameters" / "parameters.json").read_text())
+        if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1 or set(document) - _KEYS:
+            raise _core.ParameterError(f"{packet} is not a schema 1 parameter document the Engine reads")
+        chosen = set(names)
+        if missing := sorted(chosen - {c["component_id"] for c in document["components"]}):
+            raise _core.ParameterError(f"{packet} has no component {missing[0]}")
+        selected |= chosen  # a component taken twice is refused by from_mapping as a duplicate component_id
+        declared = {record["kind"]: record for record in document.get("model_families", ())}
+        for kind in ("base", "association", "electrolyte", "permittivity", "polar"):
+            record = declared.get(kind, {"kind": kind, "choice": "none"})
+            first, kept = families.setdefault(kind, (packet, record))
+            this, that = ({k: r[k] for k in _FAMILY_FIELDS if k in r} for r in (record, kept))
+            if this == that or (kind == "association" and record["choice"] == "none"):
+                continue
+            # A component without sites joins general-site exactly; every other difference is refused.
+            if kind != "association" or kept["choice"] != "none":
+                raise _core.ParameterError(f"{kind} model {this} in {packet} conflicts with {that} in {first}")
+            families[kind] = (packet, record)
+        coefficients = document.get("model_coefficients", [])
+        if merged["model_coefficients"] not in (None, coefficients):
+            raise _core.ParameterError(f"model_coefficients of {packet} differ from those of {packets[0][0]}")
+        merged["model_coefficients"] = coefficients
+        merged["components"] += [c for name in names for c in document["components"] if c["component_id"] == name]
+        topology = document.get("topology", {})
+        for into, key, items in [(merged, "correlations", document), (merged, "pairs", document)] + [
+                (merged["topology"], key, topology) for key in ("sites", "edges", "no_cross_association")]:
+            into[key] += [r for r in items.get(key, ()) if _named(r) <= chosen]
+        merged["materialization"].append({"packet": packet, "components": list(names)} | {
+            key: document.get(key, []) for key in ("sources", "domains")})
+    merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
+    for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
+        for (a, b), magnitude in values.items():
+            if a == b or not {a, b} <= selected:
+                raise _core.ParameterError(f"{family} pair ({a}, {b}) needs two selected components")
+            pair = next((p for p in merged["pairs"] if {p["component_id_a"], p["component_id_b"]} == {a, b}), None)
+            if pair is None:
+                pair = {"component_id_a": a, "component_id_b": b, "coefficients": []}
+                merged["pairs"].append(pair)
+            # A set k_ij also replaces the pair's k_ij temperature law and reciprocal-temperature slope.
+            old = [c for c in pair["coefficients"] if c["family"].startswith(family)]
+            pair["coefficients"] = [c for c in pair["coefficients"] if c not in old] + [{
+                "identity": next((c["identity"] for c in old if c["family"] == family), f"pair/{a}/{b}/{family}"),
+                "family": family, "value": {"magnitude": magnitude, "unit": "dimensionless"},
+                "provenance": {"locator": "caller-declared"}}]
+    return merged
+
+
 class Parameters:
     __slots__ = ("component_ids", "site_ids", "_native", "_document")
 
@@ -118,6 +185,12 @@ class Parameters:
     @classmethod
     def from_json(cls, path: str | Path, *, components: Sequence[str] | None = None) -> Parameters:
         return cls.from_mapping(cast(Mapping[str, object], json.loads(Path(path).read_text())), components=components)
+
+    @classmethod
+    def from_packets(cls, root: str | Path, packets: Sequence[tuple[str, Sequence[str]]], *,
+                     k_ij: Mapping[tuple[str, str], float] | None = None,
+                     l_ij: Mapping[tuple[str, str], float] | None = None) -> Parameters:
+        return cls.from_mapping(parameter_document(root, packets, k_ij=k_ij, l_ij=l_ij))
 
     @classmethod
     def from_mapping(
