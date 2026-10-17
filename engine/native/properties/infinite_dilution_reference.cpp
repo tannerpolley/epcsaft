@@ -11,6 +11,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace epcsaft {
@@ -42,7 +43,7 @@ std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std:
             require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
 }
 
-// EqID: reference_molality_sequence; the fifth rung is the convergence witness.
+// EqID: reference_molality_sequence; the last three rungs form the terminal pairs.
 constexpr std::array<double, 5> REFERENCE_MOLALITIES = {
     policy::REFERENCE_MOLALITY_ONE.value,
     policy::REFERENCE_MOLALITY_TWO.value,
@@ -380,10 +381,15 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
 
 // EqID: reference_limit_terminal_pair: the 1e-10, 1e-12, 1e-14 mol/kg rungs carry the
 // Debye-Hueckel tail f0 + c sqrt(m) + O(m); each rung pair, a factor 100 in m, extrapolates
-// sqrt(m) away as (10 f(m/100) - f(m)) / 9. The column returns the terminal pair's limit and
-// is admitted on the scaled change between the two extrapolations, O(m) ~ 1e-11 relative to the
-// tail. scaled_changes keep the raw rung changes. Returns the admitted change when the ladder is
-// complete and finite.
+// sqrt(m) away as (10 f(m/100) - f(m)) / 9. Returns the terminal pair's limit and its change
+// from the previous pair's limit, the admitted quantity, O(m) ~ 1e-11 relative to the tail.
+std::array<double, 2> terminal_limit(double coarse, double middle, double fine) {
+    const double limit = (10.0 * fine - middle) / 9.0;
+    return {limit, std::abs(limit - (10.0 * middle - coarse) / 9.0)};
+}
+
+// The column returns the terminal limit; scaled_changes keep the raw rung changes. Returns the
+// admitted change when the ladder is complete and finite.
 std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivative& column, double scale, double tolerance) {
     column.criterion = tolerance;
     const auto& ladder = column.ladder;
@@ -392,9 +398,9 @@ std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivativ
         column.message = "nonfinite reference ladder"; return std::nullopt;
     }
     for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
-    const auto limit = [&](std::size_t k) { return (10.0 * *ladder[k+1] - *ladder[k]) / 9.0; };
-    const double change = scale * std::abs(limit(1) - limit(0));
-    if (change <= tolerance) column.value = limit(1);
+    const auto [limit, raw_change] = terminal_limit(*ladder[0], *ladder[1], *ladder[2]);
+    const double change = scale * raw_change;
+    if (change <= tolerance) column.value = limit;
     else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
     return change;
 }
@@ -958,65 +964,51 @@ InfiniteDilutionReference infinite_dilution_reference(
     core::Scope scope("infinite_dilution_reference");
     InfiniteDilutionReference result;
     result.solver_options = model.solver_options();
-    std::optional<double> anchor;
-    std::array<double, 2> previous{};
-    const std::size_t columns = model.active_parameters().size();
-    std::vector<std::array<double, 2>> previous_columns(columns);
-    result.parameter_convergence_error.assign(columns, 0.0);
-    result.parameter_derivative.resize(columns);
-    result.parameter_difference.resize(columns); result.witness_parameter_difference.resize(columns);
+    const std::size_t columns = model.active_parameters().size(), first = REFERENCE_MOLALITIES.size() - 3;
     const auto values = model.active_parameter_values();
+    // Ion ln(phi) and its parameter columns at the three terminal rungs, 1e-10, 1e-12 and 1e-14 mol/kg.
+    std::array<std::array<double, 2>, 3> terminal{};
+    std::vector<std::array<std::array<double, 2>, 3>> terminal_columns(columns);
+    std::optional<double> anchor;
     for (std::size_t index = 0; index < REFERENCE_MOLALITIES.size(); ++index) {
-        const bool witness = index + 1 == REFERENCE_MOLALITIES.size();
-        const auto failed_column = [&](double e) {
-            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
-        };
-        if (witness && !(result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-            || std::any_of(result.parameter_convergence_error.begin(), result.parameter_convergence_error.end(), failed_column))) break;
         const auto composition = formula_composition(solvent_fractions, model.parameters(),
             ion_indices, stoichiometry, REFERENCE_MOLALITIES[index]);
         auto state = index == 0 ? properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, first_rung_density)
             : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
         if (const auto cause = properties::vapor_side(state)) throw std::runtime_error(*cause);
-        const auto current = ion_log_fugacity(state, ion_indices);
-        // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
-        const double error = std::max(std::abs(current[0] - previous[0]), std::abs(current[1] - previous[1]));
-        if (index) for (std::size_t i = 0; i < 2; ++i)
-            (witness ? result.witness_difference : result.value_difference)[i] = current[i] - previous[i];
-        if (witness) {
-            scope.probe("reference_witness_error", error);
-            if (result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-                && error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-                throw std::runtime_error("reference limit did not converge");
-        } else {
-            if (index) result.convergence_error = error;
-            result.log_fugacity = current;
-            result.molality = REFERENCE_MOLALITIES[index];
-            scope.probe("reference_ladder_point", {REFERENCE_MOLALITIES[index], current[0], current[1]}, static_cast<std::uint32_t>(index));
+        anchor = state.molar_density;
+        if (index >= first) {
+            terminal[index - first] = ion_log_fugacity(state, ion_indices);
+            scope.probe("reference_ladder_point", {REFERENCE_MOLALITIES[index], terminal[index - first][0], terminal[index - first][1]}, static_cast<std::uint32_t>(index));
+            for (std::size_t a = 0; a < columns; ++a) for (std::size_t i = 0; i < 2; ++i)
+                terminal_columns[a][index - first][i] = state.log_fugacity_parameter_derivative.empty() ? NAN
+                    : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
         }
-        for (std::size_t a = 0; a < columns; ++a) {
-            std::array<double, 2> column;
-            for (std::size_t i = 0; i < 2; ++i) column[i] = state.log_fugacity_parameter_derivative.empty() ? NAN
-                : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
-            if (index) for (std::size_t i = 0; i < 2; ++i)
-                (witness ? result.witness_parameter_difference : result.parameter_difference)[a][i] = column[i] - previous_columns[a][i];
-            if (index && (!witness || failed_column(result.parameter_convergence_error[a])))
-                result.parameter_convergence_error[a] = parameter_scale(model, values, a)
-                    * std::max(std::abs(column[0] - previous_columns[a][0]), std::abs(column[1] - previous_columns[a][1]));
-            if (!witness) previous_columns[a] = column;
-        }
-        result.ladder_states.push_back(state);
-        if (!witness) {
-            previous = current;
-            anchor = state.molar_density;
-            scope.probe("reference_convergence_error", result.convergence_error, static_cast<std::uint32_t>(index));
-            if (index == 0) result.first_rung_state = std::move(state);
-        }
+        if (index == 0) result.first_rung_state = state;
+        result.ladder_states.push_back(std::move(state));
     }
-    for (std::size_t a = 0; a < columns; ++a)
-        if (std::isfinite(result.parameter_convergence_error[a])
-            && result.parameter_convergence_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-            result.parameter_derivative[a] = {previous_columns[a][0], previous_columns[a][1]};
+    // EqID: reference_limit_terminal_pair; raw consecutive changes are reported, the limit change is admitted.
+    const auto limit = [&](const std::array<std::array<double, 2>, 3>& rungs, std::array<double, 2>& raw, std::array<double, 2>& fine) {
+        std::array<double, 2> value{}; double change = 0.0;
+        for (std::size_t i = 0; i < 2; ++i) {
+            const auto [v, c] = terminal_limit(rungs[0][i], rungs[1][i], rungs[2][i]);
+            value[i] = v; change = std::isfinite(c) ? std::max(change, c) : NAN;
+            raw[i] = rungs[1][i] - rungs[0][i]; fine[i] = rungs[2][i] - rungs[1][i];
+        }
+        return std::pair{value, change};
+    };
+    std::tie(result.log_fugacity, result.convergence_error) = limit(terminal, result.value_difference, result.witness_difference);
+    scope.probe("reference_convergence_error", result.convergence_error);
+    if (!(result.convergence_error <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)) throw std::runtime_error("reference limit did not converge");
+    result.molality = REFERENCE_MOLALITIES.back();
+    result.parameter_convergence_error.resize(columns); result.parameter_derivative.resize(columns);
+    result.parameter_difference.resize(columns); result.witness_parameter_difference.resize(columns);
+    for (std::size_t a = 0; a < columns; ++a) {
+        const auto [value, change] = limit(terminal_columns[a], result.parameter_difference[a], result.witness_parameter_difference[a]);
+        result.parameter_convergence_error[a] = parameter_scale(model, values, a) * change;
+        if (result.parameter_convergence_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+            result.parameter_derivative[a] = {value[0], value[1]};
+    }
     if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x > 0.0; }) == 1) {
         auto pure = solvent_reference(model, temperature, pressure, solvent_fractions, pure_solvent_density);
         if (pure.solvent_status != PropertyActionStatus::Available) throw std::runtime_error(pure.solvent_cause);
@@ -1144,30 +1136,24 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, dou
     double pure_column = 0.0;
     if (direction.temperature != 0.0 || direction.pressure != 0.0) {
         const PressureActionDirection d{direction.temperature, direction.pressure, std::vector<double>(count, 0.0), {}};
-        std::array<double, 2> previous{};
-        for (std::size_t k = 0; k < REFERENCE_MOLALITIES.size(); ++k) {
-            const bool witness = k + 1 == REFERENCE_MOLALITIES.size();
-            const double error = standard_deviation * std::max(std::abs(result.reference_difference[0]), std::abs(result.reference_difference[1]));
-            if (witness && std::isfinite(error) && error <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value) break;
-            if (witness) result.witness_evaluated = true;
-            const auto x = formula_composition(solvent, parameters, ions, stoichiometry, REFERENCE_MOLALITIES[k]);
-            const auto extra = k < reference.ladder_states.size() ? std::optional<State>{}
-                : std::optional<State>{model.state_at_pressure(temperature, pressure, x, DensityBranch::Liquid, reference.ladder_states.back().molar_density)};
-            const auto& state = extra ? *extra : reference.ladder_states[k];
-            if (const auto cause = properties::vapor_side(state)) { result.message = *cause; return result; }
-            const auto column = actions(x, state, d, {ions[0], ions[1]});
+        const std::size_t first = REFERENCE_MOLALITIES.size() - 3;
+        std::array<std::array<double, 2>, 3> terminal{};
+        for (std::size_t k = 0; k < 3; ++k) {
+            const auto x = formula_composition(solvent, parameters, ions, stoichiometry, REFERENCE_MOLALITIES[first + k]);
+            const auto column = actions(x, reference.ladder_states.at(first + k), d, {ions[0], ions[1]});
             if (column.empty()) return result;
-            for (std::size_t i = 0; i < 2; ++i) {
-                if (witness) result.witness_difference[i] = column[ions[i]] - previous[i];
-                else {
-                    if (k) result.reference_difference[i] = column[ions[i]] - previous[i];
-                    result.reference_column[i] = previous[i] = column[ions[i]];
-                }
-            }
-            if (witness && standard_deviation * std::max(std::abs(result.witness_difference[0]), std::abs(result.witness_difference[1]))
-                > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
-                result.message = "reference input action did not converge at the witness"; return result;
-            }
+            terminal[k] = {column[ions[0]], column[ions[1]]};
+        }
+        // EqID: reference_limit_terminal_pair, as for the reference value.
+        double change = 0.0;
+        for (std::size_t i = 0; i < 2; ++i) {
+            const auto [value, c] = terminal_limit(terminal[0][i], terminal[1][i], terminal[2][i]);
+            result.reference_column[i] = value; change = std::isfinite(c) ? std::max(change, c) : NAN;
+            result.reference_difference[i] = terminal[1][i] - terminal[0][i]; result.witness_difference[i] = terminal[2][i] - terminal[1][i];
+        }
+        result.witness_evaluated = true;
+        if (!(standard_deviation * change <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)) {
+            result.message = "reference input action did not converge"; return result;
         }
         if (!reference.pure_solvent_state) { result.message = "pure solvent input action unavailable"; return result; }
         const auto pure = actions(solvent, *reference.pure_solvent_state, d, {sidx});

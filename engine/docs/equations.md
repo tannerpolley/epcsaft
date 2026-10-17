@@ -75,7 +75,7 @@ $$
 - Status: Exact derivation
 - Source: Differentiation of errors_in_variables_objective and independent_feed_measurement_coordinates; existing exact pressure-closed and solved-equilibrium actions.
 - Description: Native first derivatives of standardized measurement residuals; D maps optimizer model parameters to physical parameters; a declared correlation applies the same triangular solve to every complete column.
-- Change note: Input-prior rows are exact identities before whitening. T/P actions include finite and reference states; molality actions hold the reference ladder fixed. The ionic terminal reference remains 1e-12 mol/kg, with its existing witness. Raw prediction columns dy/dv and sigma_q dy/dq come from the physical actions, never from whitened rows.
+- Change note: Input-prior rows are exact identities before whitening. T/P actions include finite and reference states; molality actions hold the reference ladder fixed. Ionic T/P reference columns are the terminal-pair limit of `reference_limit_terminal_pair`. Raw prediction columns dy/dv and sigma_q dy/dq come from the physical actions, never from whitened rows.
 
 $$
 \frac{\partial r^y_{ki}}{\partial v_a}=\frac1{\sigma_{y,ki}}\sum_b\frac{\partial f_{ki}}{\partial\theta_b}D_{ba},\quad
@@ -2056,11 +2056,11 @@ $$
 - Section: Electrolyte reference states and reported activities
 - Status: Implementation convention
 - Source: Finite terminal-change diagnostic for the declared reference molality sequence.
-- Description: Change in the returned reference quantity between its last two molality points: for ion references the maximum change in log fugacity shown below. A neutral reference contraction or column returns the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg points and is admitted on its change from the 1e-10 and 1e-12 mol/kg limit (#353).
-- Change note: Convergence diagnostic; neither an error bound nor an estimate of actual bias without additional convergence assumptions. The neutral limit removes the Debye-Hueckel c sqrt(m) tail exactly; an O(m) remainder d m leaves -d 1e-13. The ion reference keeps its 1e-12 mol/kg rung and its sqrt(m) bias near A 1e-6 (`reference_molality_sequence`); extrapolating it is a follow-up.
+- Description: Every reference quantity, an ion log fugacity or a neutral contraction and each of their columns, returns the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg points and is admitted on its change e_f from the 1e-10 and 1e-12 mol/kg limit (#353, #594). The raw consecutive rung changes Delta_k are reported, not admitted.
+- Change note: Convergence diagnostic; neither an error bound nor an estimate of actual bias without additional convergence assumptions. The neutral limit removes the Debye-Hueckel c sqrt(m) tail exactly; an O(m) remainder d m leaves -d 1e-13. For Held 2014 NaCl in water at 298.15 K, e_f is 1.3e-11 against raw rung changes of 1.06e-5.
 
 $$
-e_{\mathrm{ref}}=\max_{i\in\{+,-\}}\left|\ln\varphi_i(m_{k})-\ln\varphi_i(m_{k-1})\right|,\qquad
+\Delta_k=f(m_k)-f(m_{k-1}),\qquad
 \hat f_k=\frac{10f(m_k)-f(m_{k-1})}{9},\quad m_k=m_{k-1}/100,\quad e_f=s\,|\hat f_{10^{-14}}-\hat f_{10^{-12}}|.
 $$
 
@@ -2070,10 +2070,10 @@ $$
 - Status: Implementation convention
 - Source: EOS convergence sequence for the [Figiel2025] infinite-dilution reference
 - Description: Finite molality ladder and terminal estimate of infinite-dilution log fugacity, accepted only under the declared convergence checks.
-- Change note: A terminal estimate is not mathematical equality with the infinite-dilution limit; retain observed error diagnostics and reference-path failure. A parameter column is admitted when s_theta (`standard_state_transfer_parameter_derivative`) times its terminal change is at most 5e-5.
+- Change note: A terminal estimate is not mathematical equality with the infinite-dilution limit; retain observed error diagnostics and reference-path failure. The value is admitted when its limit change e_f (`reference_limit_terminal_pair`) is at most 5e-5, and a parameter column when s_theta (`standard_state_transfer_parameter_derivative`) times its limit change is. The limit is linear in the rungs, so each column is the exact derivative of the returned value. The reported reference molality is 1e-14 mol/kg, the finer terminal rung.
 
 $$
-\mathcal M_{\mathrm{ref}}=\{10^{-6},10^{-8},10^{-10},10^{-12}\}\,\mathrm{mol\,kg^{-1}},\qquad \widehat{\ln\phi_i^\infty}=\ln\phi_i(m=10^{-12}\,\mathrm{mol\,kg^{-1}}).
+\mathcal M_{\mathrm{ref}}=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\qquad \widehat{\ln\phi_i^\infty}=\frac{10\ln\phi_i(10^{-14}\,\mathrm{mol\,kg^{-1}})-\ln\phi_i(10^{-12}\,\mathrm{mol\,kg^{-1}})}{9}.
 $$
 
 ## `residual_chemical_potential`
@@ -2697,7 +2697,7 @@ $$
 - Status: Exact derivation
 - Source: `mean_ionic_activity_coefficient`, `molality_activity_conversion`, `practical_osmotic_coefficient` and `log_fugacity_coefficient_parameter_derivative`.
 - Description: Molality-scale mean ionic activity, solvent activity and practical osmotic first parameter columns.
-- Change note: Ionic reference columns stay at the returned 1e-12 mol/kg endpoint; a finer witness admits them without replacement. Solvent columns subtract the same-T/P pure-solvent column, including the implicit density, association and dielectric/Born derivatives. Physical coordinates, composition, T/P and molar masses are held fixed. At pure solvent activity columns are zero; unavailable Phi has unavailable columns. Energies multiply ionic reference columns by RT in J/mol.
+- Change note: Ionic reference columns are the terminal-pair limit of `reference_molality_sequence`, the exact derivative of the returned reference. Solvent columns subtract the same-T/P pure-solvent column, including the implicit density, association and dielectric/Born derivatives. Physical coordinates, composition, T/P and molar masses are held fixed. At pure solvent activity columns are zero; unavailable Phi has unavailable columns. Energies multiply ionic reference columns by RT in J/mol.
 
 $$
 \frac{\partial\gamma_\pm^{(m)}}{\partial\theta_a}

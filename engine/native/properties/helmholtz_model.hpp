@@ -532,16 +532,16 @@ struct InfiniteDilutionReference final {
     PropertyActionStatus solvent_status = PropertyActionStatus::CentralPropertyUnavailable;
     std::string solvent_cause;
     std::optional<core::Convergence> solvent_convergence;
-    std::array<double, 2> log_fugacity{};
-    double molality = 0.0;
-    double convergence_error = 0.0;
+    std::array<double, 2> log_fugacity{};  // ion ln(phi) limit of the 1e-12/1e-14 rungs
+    double molality = 0.0;  // 1e-14, the finer terminal rung; zero for a solvent-only reference
+    double convergence_error = 0.0;  // max change of the limit from the 1e-10/1e-12 limit
     std::optional<double> pure_solvent_log_fugacity;
     std::optional<State> pure_solvent_state;
     std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
     std::vector<double> parameter_convergence_error;
     State first_rung_state;
-    std::vector<State> ladder_states;
-    std::array<double, 2> value_difference{}, witness_difference{};
+    std::vector<State> ladder_states;  // all five rungs
+    std::array<double, 2> value_difference{}, witness_difference{};  // raw 1e-10->1e-12, 1e-12->1e-14 changes
     std::vector<std::array<double, 2>> parameter_difference, witness_parameter_difference;
 };
 
@@ -578,7 +578,7 @@ struct ElectrolyteInputDirection final {
 struct ElectrolyteInputAction final {
     policy::SolverOptions solver_options;
     double mean_ionic = NAN, osmotic = NAN;
-    std::array<double, 2> reference_column{}, reference_difference{}, witness_difference{};
+    std::array<double, 2> reference_column{}, reference_difference{}, witness_difference{};  // limit; raw changes
     std::vector<PropertyActionDiagnostics> diagnostics;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     std::string message;

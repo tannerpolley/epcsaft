@@ -61,16 +61,9 @@ def liquid_molality(result: _core.EquilibriumResult) -> float:
 
 
 def reference_log_ip(molality: float) -> float:
-    """2 ln(m gamma_pm) - ln K from the independent Reference.activity owner on the transfer's limit.
-
-    Reference.activity divides by its raw terminal rung (1e-12 mol/kg), which keeps the Debye-Hueckel tail
-    -A sqrt(m_t) per ion; the reaction-reference transfer behind ln K^rho returns the sqrt(m) Richardson limit
-    (EqID reference_limit_terminal_pair). Diagnosed 2026-10-16: the uncorrected F2 offset was 2.362e-6 against
-    2 A sqrt(1e-12) = 2.359e-6 (A = 1.1796); the same rule, (10 f(m_t) - f(m_prev))/9, removes it here.
-    """
+    """2 ln(m gamma_pm) - ln K from the independent Reference.activity owner; both use one infinite-dilution limit."""
     reference = model().reference(T, P, solvent_fractions=[1.0, 0.0, 0.0], ions=SPECIES[1:], stoichiometry=(1, 1))
-    tail = sum(reference._native.value_difference) / 9.0
-    return 2.0 * math.log(molality * reference.activity(molality).mean_ionic_molality_scale) - tail - LN_K
+    return 2.0 * math.log(molality * reference.activity(molality).mean_ionic_molality_scale) - LN_K
 
 
 def test_halite_solubility_and_complementarity(evidence: Any) -> None:

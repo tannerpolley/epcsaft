@@ -975,7 +975,6 @@ class InfiniteDilutionReference:
     solvent_status: PropertyActionStatus
     solvent_cause: str
     solvent_convergence: Optional[Convergence]
-    value_difference: tuple[float, float]  # terminal-rung ion log-fugacity change from the previous rung
 
 class SolventActivity:
     """Same-T/P pure-solvent activity and practical osmotic coefficient; None preserves unavailability."""
