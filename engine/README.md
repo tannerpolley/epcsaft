@@ -71,9 +71,16 @@ entry per phase and component is phase-major: entry `p*n + i` is phase `p`
 (declared order) and component `i`; `result.phase_mole_fractions(p)` returns
 that phase's slice. [`data/docs/parameter-index.md`](../data/docs/parameter-index.md)
 lists which parameter packets hold a component and what each set is for.
+`Parameters.from_packets(root, [(packet, components), ...], k_ij={(a, b): value})`
+combines components from several packets and sets a constant k_ij or l_ij by
+component pair, replacing any stored value of that pair;
+`epcsaft.parameters.parameter_document` returns the combined document with each
+packet's sources. Packets whose model families or `model_coefficients` differ
+are refused by name, as are a cross-packet pair without k_ij and two associating
+components from different packets without a declared cross association.
 
 ```python
-import json, math
+import math
 import epcsaft
 from epcsaft import equilibrium as eq, regression as rg
 pk = "data/packets/{}/parameters/parameters.json".format
@@ -103,9 +110,9 @@ lle = eq.solve_equilibrium(kh, eq.Problem(phases=eq.Discover(), T=298.15, P=1.0e
                                           feed=eq.MoleFractions({"water": 0.7, "isobutanol": 0.3})))
 print(lle.phase_count, lle.mole_fractions, lle.amounts)            # phases: lle.discovery.declaration.phases
 
-doc = json.loads(open(pk("gross-2001-methane-ethane/3")).read())
-doc["pairs"][0]["coefficients"][0]["value"]["magnitude"] = 0.02     # a what-if k_ij; here it makes test data
-truth, obs = epcsaft.Mixture(epcsaft.Parameters.from_mapping(doc, components=["methane", "ethane"])), []
+what_if = epcsaft.Parameters.from_packets("data/packets", [("gross-2001-methane-ethane/3", ["methane", "ethane"])],
+                                          k_ij={("methane", "ethane"): 0.02})  # a what-if k_ij; here it makes test data
+truth, obs = epcsaft.Mixture(what_if), []
 for T, x in [(190.0, 0.2), (200.0, 0.4), (220.0, 0.3)]:            # K, liquid methane mole fraction
     bubble = eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=T, feed=eq.MoleFractions({"methane": x, "ethane": 1 - x}))
     measured = eq.solve_equilibrium(truth, bubble).pressure[0]      # put a measured bubble pressure (Pa) here
