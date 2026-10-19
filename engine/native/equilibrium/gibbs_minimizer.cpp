@@ -1570,6 +1570,13 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
+    auto cold = start && !use_start ? std::make_optional(compiled) : std::nullopt;
+    if (cold && start->phase_count == cold->problem.phases.size()) {
+        for (std::size_t phase = 0; phase < start->phase_count; ++phase) {
+            if (valid_previous_phase(*start, phase, model.parameters().component_count()))
+                cold->problem.phases[phase].declared_composition_guess = false;
+        }
+    }
     StageWork stages;
     auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled, limits, stages);
     EquilibriumResult result;
@@ -1581,7 +1588,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied, limits, &stages);
+            initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
