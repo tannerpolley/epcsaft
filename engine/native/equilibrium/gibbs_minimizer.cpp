@@ -1424,6 +1424,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             if (phase.is_zero_pinned() && guessed) continue;
             const std::size_t source = phase.is_zero_pinned() ? 0 : index++;
             phase.composition_guess.clear();
+            phase.declared_composition_guess = false;
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
         return boundary_start(seeded, true, limits, &stages);
@@ -1569,6 +1570,13 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
+    auto cold = start && !use_start ? std::make_optional(compiled) : std::nullopt;
+    if (cold && start->phase_count == cold->problem.phases.size()) {
+        for (std::size_t phase = 0; phase < start->phase_count; ++phase) {
+            if (valid_previous_phase(*start, phase, model.parameters().component_count()))
+                cold->problem.phases[phase].declared_composition_guess = false;
+        }
+    }
     StageWork stages;
     auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled, limits, stages);
     EquilibriumResult result;
@@ -1580,7 +1588,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied, limits, &stages);
+            initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
@@ -1705,6 +1713,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                             check(seed.compositions[p].size() == compiled.declared_supports[p].size()
                                   && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }));
                             phase.composition_guess = seed.compositions[p];
+                            phase.declared_composition_guess = false;
                             restrict_composition_guess(phase, compiled.declared_supports[p]);
                         }
                         if (packed(p)) phase.packing_guess = seed.packing_fractions[p];

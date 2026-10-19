@@ -633,6 +633,20 @@ Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
+For a consumed original declared composition guess, first apply the existing supported
+positivity handling and normalization. Select species with
+$0<U_i<$ `EQUILIBRIUM_TRACE_MOIETY_FRACTION`, where $U_i$ is the compiled feed
+fraction when $B=I$, otherwise the positive compiled attainable amount divided by
+feed total. A zero compiled bound stays uncapped. Let $R$ be the sum removed by
+$\min(g_i,U_i)$ over selected species and $M$ the original normalized weight
+outside that set. Only if $R>0$ and $M>0$, cap selected entries and add $R g_i/M$
+to each recipient, then log the completed fractions without another normalization
+(#652, R-a). Otherwise preserve the original seeding arithmetic, including when
+no recipient exists. Calculated speciation, discovery and stability starts,
+supplied multistart compositions, coordinates and previous states retain their
+provenance and are excluded. A partially guessed fallback that discards the
+guesses is excluded too. This changes only initialization: phase enrichment,
+the optimizer box, stopping criteria and #407 phase amounts are unchanged.
 For an unguessed liquid/vapor start, a sole unlabelled feed-density root cannot
 supply both fugacity estimates: their self-ratio would make every $K_i=1$
 and seed identical phases. In that case only the vapor fugacity estimate uses

@@ -55,6 +55,8 @@ struct PhaseSpec final {
     bool support_declared = false;
     AmountSpec amount;
     std::vector<double> composition_guess;
+    // Calculated and supplied starts retain their compositions when reused as guesses.
+    bool declared_composition_guess = true;
     std::optional<double> packing_guess;
 
     bool is_pinned() const noexcept { return amount.kind == AmountKind::Pinned; }

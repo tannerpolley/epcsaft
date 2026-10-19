@@ -725,7 +725,9 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         auto boundary = c.problem;
         boundary.temperature = FreeValue::variable(0.5 * (upper + lower));
         boundary.phases[liquid].composition_guess = composition;
+        boundary.phases[liquid].declared_composition_guess = false;
         boundary.phases[vapor].composition_guess = c.feed_composition;
+        boundary.phases[vapor].declared_composition_guess = false;
         recovered = solve(boundary);
         if (!recovered.success) throw std::runtime_error("boundary corrector unavailable: " + recovered.message);
         if (*recovered.temperature < lower - 1e-10 * upper || *recovered.temperature > upper + 1e-10 * upper)
@@ -832,6 +834,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     if (!request.reactions.empty()) {
         const auto base = reconstruct_trial_composition(std::vector<double>(feed.size(), 1.0), united, z);
         for (auto i : united) initial.composition_guess.push_back(base[i]);
+        initial.declared_composition_guess = false;
     }
     declaration.phases = {initial};
     auto compiled = compile_problem(model, declaration);
@@ -884,6 +887,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (best.has_state()) for (std::size_t p = 0; p < best.phase_count; ++p) {
             auto& phase = record->declaration.phases[p];
             phase.composition_guess.clear();
+            phase.declared_composition_guess = false;
             for (auto j : phase.support)
                 phase.composition_guess.push_back(best.mole_fractions[p * feed.size() + j]);
             phase.packing_guess = best.packing_fractions[p];
