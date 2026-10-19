@@ -2302,7 +2302,7 @@ $$
 - Section: Equilibrium / Tangent-plane testing
 - Status: Source equation
 - Source: [Michelsen1982] Part I Eqs. 13–19 and 25–27; T,P Jacobian derived for #647 from the IsothermalPhaseHessian columns
-- Description: Michelsen's modified tangent-plane objective g* over positive trial mole numbers W on support S, at fixed T/P and the frozen shift s = standard − plane of `tangent_plane_distance`; w = W/ΣW and v is the trial label's density-owner molar volume (m³/mol). ψᵢ = Fᵢ − ln v = ln φᵢ + ln(P/RT), with F the residual reduced Helmholtz energy at unit amount (Fᵢ, F_iV, F_VV, Fᵢⱼ in mol⁻¹, m⁻³ and mol m⁻⁶ SI columns). Jᵢⱼ = n ∂ln φᵢ/∂nⱼ at fixed T,P is dimensionless and symmetric with Σᵢ wᵢJᵢⱼ = 0.
+- Description: Michelsen's modified tangent-plane objective g* over positive trial mole numbers W on support S, at fixed T/P and the frozen shift s = standard − plane of `tangent_plane_distance`; w = W/ΣW and v is the trial label's density-owner molar volume (m³/mol). ψᵢ = Fᵢ − ln v = ln φᵢ + ln(P/RT), with F the residual reduced Helmholtz energy at unit amount (Fᵢ dimensionless, F_iV in m⁻³, F_VV in mol m⁻⁶, and Fᵢⱼ in mol⁻¹, using SI derivative columns). Jᵢⱼ = n ∂ln φᵢ/∂nⱼ at fixed T,P is dimensionless and symmetric with Σᵢ wᵢJᵢⱼ = 0.
 - Change note: All-neutral, non-reacting systems only (#647). A stationary point has tpd = k = −ln ΣW; the shared tail reevaluates tpd and keeps every acceptance check.
 
 $$
