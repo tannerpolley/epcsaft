@@ -66,9 +66,9 @@ void packing_admission(double eta) {
         throw std::invalid_argument("stability point outside packing domain");
 }
 
-// ALG-STABILITY, EqID michelsen_modified_tangent_plane: Michelsen 1982 eq. 19 substitution, then eqs. 25-27 steps in
-// alpha = 2 sqrt(W) when g* does not increase. Returns the point and dual -ln sum W, or nothing (the caller's fallback).
-std::optional<std::pair<PhasePoint, double>> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
+// ALG-STABILITY, EqID michelsen_modified_tangent_plane (all-neutral, non-reacting systems); empty: the driver fallback.
+using TrialPoint = std::pair<PhasePoint, double>;  // composition and packing fraction; dual -ln sum W
+std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
     const std::vector<double>& seed, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work) {
     const auto& S = phase.support;
     const auto n = static_cast<Eigen::Index>(S.size());
@@ -83,17 +83,16 @@ std::optional<std::pair<PhasePoint, double>> tangent_plane_trial(const Helmholtz
         const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
         for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
             p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];
-        if (!std::isfinite(p.W.sum()) || !(p.W.array() > 0.0).all() || !p.g.allFinite())
-            throw std::domain_error("non-finite or non-positive Michelsen amounts");
+        if (!p.g.allFinite()) throw std::domain_error("non-finite or non-positive Michelsen amounts");  // via ln W
         p.J = Eigen::Map<const Eigen::MatrixXd>(tangent_plane_jacobian(d, 1.0 / p.density, S).data(), n, n);
         p.objective = 1.0 + p.W.dot(p.g) - p.W.sum();  // g* (eqs. 13-17)
         return p;
     };
-    const double tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
-    std::optional<std::pair<PhasePoint, double>> result;
+    const auto& criterion = policy::EQUILIBRIUM_ROW_RESIDUAL;
+    std::optional<TrialPoint> result;
     try {
         auto p = at(Eigen::Map<const Eigen::VectorXd>(seed.data(), static_cast<Eigen::Index>(seed.size()))(S));
-        while (p.g.lpNorm<Eigen::Infinity>() > tolerance && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
+        while (p.g.lpNorm<Eigen::Infinity>() > criterion.value && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
             std::optional<Iterate> q;
             if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
                 const Eigen::VectorXd root = p.W.array().sqrt();
@@ -107,9 +106,12 @@ std::optional<std::pair<PhasePoint, double>> tangent_plane_trial(const Helmholtz
             o.hessian_calls += accepted;
             p = accepted ? std::move(*q) : at(p.W.array() * (-p.g.array()).exp());
         }
-        if (p.g.lpNorm<Eigen::Infinity>() <= tolerance) {
-            o.success = true; o.message = trial.message = "converged Michelsen tangent-plane trial";
-            o.convergence.residual = p.g.lpNorm<Eigen::Infinity>();
+        const double residual = p.g.lpNorm<Eigen::Infinity>();
+        const auto stop = core::classify(residual, criterion, std::nullopt, std::nullopt, true);  // converged or the cap
+        o.convergence = core::Convergence{residual, &criterion, std::nullopt, std::nullopt, std::nullopt, o.iterations,
+            o.evaluations, stop, nullptr};
+        if (o.convergence.stop == core::Stop::converged) {
+            o.success = true; o.message = trial.message = "Michelsen tangent-plane trial " + core::describe(o.convergence);
             o.packing_fractions = {model.packing_fraction_coefficient(T, p.w) * p.density};
             for (auto i : S) trial.raw_coordinates.push_back(std::log(p.w[i]));
             trial.raw_coordinates.insert(trial.raw_coordinates.end(), {1.0, std::log(o.packing_fractions[0])});
@@ -557,9 +559,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     count_stability_work(report.work, trace, begin);
                     return report;
                 }
-                // Michelsen trials for all-neutral, non-reacting systems; the shared driver otherwise and when one fails.
                 const bool native = !c.has_ions && !c.has_reaction && !options.evaluate_supplied_trials;
-                CompiledSystem compiled;  // none for a converged Michelsen trial (rank 0)
+                CompiledSystem compiled;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
                 const auto compile = [&] {
                     compiled = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
                         trial.row_transformation);
