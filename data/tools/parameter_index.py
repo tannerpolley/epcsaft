@@ -11,6 +11,9 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parents[1]
 USES = {
+    "el-guendouzi-2004-licl-nacl-observations": "El Guendouzi 2004 LiCl-NaCl observations read from Lassin 2015 Fig. 22; inverted legend reading retained, original table not checked.",
+    "robinson-covington-1968-kcl-cacl2-observations": "Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained.",
+    "yao-1992-licl-mgcl2-observations": "Yao 1992 Table 1 LiCl-MgCl2 isopiestic observations; printed typos and the illegible row remain flagged.",
     "ascani-2022-case-study-2-electrolyte-lle": "Ascani 2022 case study 2: water/1-butanol with NaCl and KCl, electrolyte LLE at 298.15 K and 1 bar.",
     "crespo-2021-deea": "Pure diethylethanolamine (neutral PC-SAFT, Crespo 2021).",
     "dielectric-response-records": "Density-dependent relative-permittivity relations (Schreckenberg, Rueben) for water, Na+ and Cl-; formulation records, not a complete parameter set.",
