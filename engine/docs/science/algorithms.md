@@ -706,18 +706,55 @@ rule below the split loses accepted MEA states, each ending on a vanished phase;
 qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md) (#350, #356; PR #370).
 Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
 redundant density initialization for a previous successful result with compatible
-positive coordinates. A multicomponent bubble declaration (fixed temperature, free
-pressure, one liquid and one vapor pinned at zero amount) moves the caller's
-pressure seed by one fugacity step,
-$P_1=P_0\sum_{i\in V}x_i\,\phi_i^L(T,P_0,x)/\phi_i^V(T,P_0,y)$, from the seeded
-compositions; the pressure coordinate and every density seed use $P_1$, the
-incipient vapor seed becomes the same step's
-$y_i=x_i\,\phi_i^L/\phi_i^V\,P_0/P_1$ over its support when the caller-guessed start is used
-(every phase guessed; a vapor guess adds no independent information once the
-liquid is given, while the default $z/K$ liquid would return $y=z$, the trivial
-solution, and keeps its vapor seed), and a failed state keeps $P_0$ and the
-vapor guess. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
-bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. A cold
+positive coordinates. For a single neutral, non-associating, nonpolar component, the Bell–Deiters
+PC-SAFT superancillary (2023, doi:10.1021/acs.iecr.2c02916; Zotero `BEC7SFNS`)
+precedes the pressure loop below. It applies only in the same fixed-temperature,
+free-pressure cell domain, with no charged-molecule declaration or segment-diameter
+temperature law, $1\le m\le64$, $\tilde T\ge\tilde T_{min}$ and
+$\Theta=(\tilde T-\tilde T_{min})/(\tilde T_c-\tilde T_{min})\le0.999$.
+The upper start-domain limit is `SUPERANCILLARY_MAX_THETA`, beside the evaluator.
+The retained NIST coefficients define piecewise degree-16 Chebyshev expansions in
+$\Theta$ at 17 Chebyshev–Lobatto nodes in $w=1/m$; Clenshaw evaluation and the
+barycentric interpolant on those nodes give $\tilde\rho_L$ and $\tilde\rho_V$.
+Here $\tilde T=T/(\varepsilon/k)$ and
+$\rho_\phi=\tilde\rho_\phi/(N_A\sigma^3)$, with molecular number density.
+The start uses $P(T,\rho_V)$ from the shared state calculation, places both
+densities by phase kind, and skips the initial density solves. The vapor pressure
+is used because liquid stiffness amplifies density rounding at low temperature.
+The unchanged equilibrium rows and admission still decide the result. Outside
+that parameter or temperature domain, the pressure loop and original density
+and coexistence checks below remain in effect. Meson compiles the losslessly
+converted `engine/data/superancillary/pcsaft.json` into hexadecimal arrays; a
+missing file or invalid table shape fails the build, and no runtime reads a file.
+The source commit, file hashes, converter and NIST notice travel with the data.
+A neutral, nonreacting, non-associating liquid/vapor cell at fixed temperature and free
+pressure, with full positive feed support and exactly one zero-pinned phase, first
+attempts a Newton start in $\ln P$. It shares the driver's Newton and recovery
+eligibility predicates; mixtures qualify only without a declared pressure seed,
+so a seed selecting a retrograde dew branch keeps its original start. Pure fluids
+qualify with or without a declared pressure seed. The finite phase starts at feed
+composition $z$ and the incipient phase at its declared guess, else $z$.
+Each pass solves the cold liquid and vapor density roots at its pressure and
+compositions, reusing the first pass's feed states when already available.
+With $K_i=\phi_i^L/\phi_i^V$, it takes $S=\sum_i z_i K_i$ for a bubble point
+or $S=\sum_i z_i/K_i$ for a dew point, updates the incipient composition to
+$z_i K_i/S$ or $z_i/(K_i S)$ and takes
+$\Delta\ln P=\pm\ln S/(Z_V-Z_L)$ (plus for bubble, minus for dew).
+This is the exact pure-fluid pressure slope; for a mixture it replaces the
+feed-phase partial-molar-volume sum by its compressibility factor and is an
+approximate Newton start. A sole liquid-side root uses the ideal vapor limit
+($\ln\phi^V=0$, $Z_V=1$); such a pass cannot accept the start. A missing liquid
+root, nonpositive $Z_V-Z_L$, failed state or nonfinite pressure rejects the loop.
+Only a two-root pass with both $|\Delta\ln P|$ and the largest composition
+change below `EQUILIBRIUM_START_PRESSURE_STEP` replaces the start. The cap is
+`EQUILIBRIUM_START_PRESSURE_PASSES`; neither constant is an accuracy bound.
+On rejection or outside that domain, the original start runs unchanged: a
+multicomponent bubble declaration takes
+$P_1=P_0\sum_{i\in V}x_i\phi_i^L/\phi_i^V$ at the seeded compositions.
+Only when every phase is caller-guessed does it replace the vapor composition
+with $y_i=x_i\phi_i^L/\phi_i^V\,P_0/P_1$; a failed state keeps $P_0$ and the
+guesses. Pure fluids keep the existing mechanical-loop witness when positive.
+The shared rows, Newton polish, Ipopt and admission still decide the result. A cold
 reactive declaration at fixed temperature and free pressure with a phase pinned at
 zero amount first solves its finite phases alone, at the caller's pressure seed and
 with the same reactions and references; at the boundary those phases are the

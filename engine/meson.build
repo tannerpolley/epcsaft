@@ -95,6 +95,11 @@ native_inc = include_directories('native')
 # contributions/ is header-only: the terms are templated so one source both
 # evaluates a double and records a tape, so there is nothing to compile into
 # the archive until the properties layer.
+superancillary_table = custom_target('pcsaft_superancillary',
+  input: 'data/superancillary/pcsaft.json',
+  output: 'pcsaft_superancillary_table.hpp',
+  command: [py, files('tools/pcsaft_superancillary_table.py'), '@INPUT@', '@OUTPUT@'],
+)
 properties_sources = files(
   'native/properties/helmholtz_model.cpp',
   'native/properties/density.cpp',
@@ -123,6 +128,7 @@ epcsaft_native = shared_library(
   'epcsaft_native',
   'native/core/trace.cpp',
   properties_sources,
+  superancillary_table,
   surface_sources,
   equilibrium_sources,
   regression_sources,

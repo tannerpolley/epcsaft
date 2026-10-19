@@ -61,7 +61,9 @@ void validate_density_seed(const DensityRoot& root) {
 struct PhaseStart final {
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts{};
-    double vapor_density = 0.0, pressure = 0.0;
+    double vapor_density = 0.0, pressure = 0.0, loop_pressure = 0.0;
+    std::array<std::optional<State>, 2> feed_states{};
+    std::vector<double> densities{};
 };
 
 // The Rachford-Rice split of `total` mol of composition z: beta is the interior root of
@@ -106,14 +108,25 @@ std::optional<PhaseStart> rachford_rice(const CompiledSystem& compiled, const st
 }
 
 // The feed root resolves its liquid side: two stable roots, or a sole root denser than its negative-slope density.
-bool liquid_feed(const DensityRoot& r) {
+template <class Root> bool liquid_feed(const Root& r) {
     return r.stable_root_count.value_or(0) > 1 || (r.negative_slope_density && r.molar_density > *r.negative_slope_density);
+}
+
+bool pressure_loop_eligible(const CompiledSystem& c) {
+    return c.problem.pressure.free && !c.problem.temperature.free && newton_eligible(c) && recovery_eligible(c)
+        && (c.model->parameters().component_count() == 1 || !c.problem.pressure.is_positive());
 }
 
 PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> result(phases, compiled.feed_composition);
+    if (pressure_loop_eligible(compiled)) if (auto rho = superancillary_densities(*compiled.model, compiled.seed_temperature())) {
+        const double pressure = compiled.model->state(compiled.seed_temperature(), (*rho)[1], compiled.feed_composition).pressure;
+        scope.probe("superancillary_start", pressure);
+        if (compiled.problem.phases[0].kind == PhaseKind::Vapor) std::swap((*rho)[0], (*rho)[1]);
+        return {result, {}, 0.0, pressure, 0.0, {}, {(*rho)[0], (*rho)[1]}};
+    }
     std::string unguessed;
     for (std::size_t phase = 0; phase < phases; ++phase) {
         const auto& spec = compiled.problem.phases[phase];
@@ -142,9 +155,9 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
     const auto vapor_root = solve_density(
         *compiled.model, temperature, pressure, compiled.feed_composition,
         DensityBranch::Vapor, std::nullopt, &liquid_root);
-    const auto vapor = compiled.model->state(
+    auto vapor = compiled.model->state(
         temperature, vapor_root.molar_density, compiled.feed_composition);
-    const auto liquid = compiled.model->state(
+    auto liquid = compiled.model->state(
         temperature, liquid_root.molar_density, compiled.feed_composition);
     if (!vapor.log_fugacity_coefficient || !liquid.log_fugacity_coefficient)
         throw std::runtime_error("boundary start has no fugacity coefficients");
@@ -163,6 +176,11 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
         if (std::isfinite(witness) && witness > 0.0) { scope.probe("loop_pressure_seed", witness); return {result, {}, 0.0, witness}; }
         witness = NAN;
     }
+    const double loop_pressure = pressure_loop_eligible(compiled) && !liquid_feed(liquid_root)
+        && vapor_root.negative_slope_density ? compiled.model->state(
+            temperature, *vapor_root.negative_slope_density, compiled.feed_composition).pressure : 0.0;
+    liquid.stable_root_count = liquid_root.stable_root_count; liquid.negative_slope_density = liquid_root.negative_slope_density;
+    vapor.stable_root_count = vapor_root.stable_root_count; vapor.negative_slope_density = vapor_root.negative_slope_density;
     std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
     for (std::size_t i = 0; i < components; ++i) {
@@ -193,59 +211,77 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
                 return false;
             }()) ? compiled.feed_composition : compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
     }
-    return {result, {}, 0.0, witness};
+    return {result, {}, 0.0, witness, loop_pressure, {std::move(liquid), std::move(vapor)}};
 }
 
-// A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
-// move the caller's pressure seed by one fugacity step, P1 = P0 sum_{i in V} x_i phi_i^L/phi_i^V,
-// from the seeded compositions (phi^L ~ 1/P: the seeded liquid's saturation pressure) and the same step's
-// y_i = x_i (phi_i^L/phi_i^V) P0/P1. A failed state keeps the caller's seeds; equations and tolerances do not move.
+// ALG-EQUILIBRIUM: a converged ln P start, otherwise the existing one-step bubble seed.
 double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
-                            const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
+                            const std::vector<std::size_t>& phase_offsets, const PhaseStart& start, core::Scope& scope, bool allow_loop = true) {
     const auto& problem = compiled.problem;
-    const double seed = compiled.seed_pressure();
-    // Pure saturation keeps its coexistence-root start.
+    const double seed = compiled.seed_pressure(), fallback = start.pressure > 0.0 ? start.pressure : seed;
+    const bool loop = allow_loop && pressure_loop_eligible(compiled);
     if (!problem.pressure.free || problem.temperature.free || problem.phases.size() != 2
         || problem.phases[0].kind == problem.phases[1].kind
-        || compiled.model->parameters().component_count() < 2) return seed;
+        || (!loop && compiled.model->parameters().component_count() < 2)) return fallback;
     const std::size_t vapor = problem.phases[0].kind == PhaseKind::Vapor ? 0 : 1;
-    if (!problem.phases[vapor].is_zero_pinned()) return seed;
+    const bool zero_v = problem.phases[vapor].is_zero_pinned();
+    if (!loop && !zero_v) return fallback;
+    const std::size_t pinned = zero_v ? vapor : 1 - vapor;
+    const auto& support = problem.phases[pinned].support;
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> x(2, std::vector<double>(components, 0.0));
     for (std::size_t phase = 0; phase < 2; ++phase) {
-        const auto& support = problem.phases[phase].support;
-        for (std::size_t i = 0; i < support.size(); ++i)
-            x[phase][support[i]] = std::exp(point[phase_offsets[phase] + i]);
+        const auto& own = problem.phases[phase];
+        for (std::size_t i = 0; i < own.support.size(); ++i)
+            x[phase][own.support[i]] = loop ? (phase != pinned || own.composition_guess.empty()
+                ? compiled.feed_composition[own.support[i]] : own.composition_guess[i]) : std::exp(point[phase_offsets[phase] + i]);
     }
     const double temperature = compiled.seed_temperature();
+    double pressure = loop && std::isfinite(start.loop_pressure) && start.loop_pressure > 0.0 ? start.loop_pressure : fallback;
     try {
-        const auto liquid = compiled.model->state_at_pressure(
-            temperature, seed, x[1 - vapor], DensityBranch::Liquid);
-        const auto gas = compiled.model->state_at_pressure(
-            temperature, seed, x[vapor], DensityBranch::Vapor);
-        if (!liquid.log_fugacity_coefficient || !gas.log_fugacity_coefficient) return seed;
-        const auto& support = problem.phases[vapor].support;
-        std::vector<double> y(support.size());
-        double sum = 0.0;
-        for (std::size_t k = 0; k < support.size(); ++k) {
-            const std::size_t i = support[k];
-            y[k] = x[1 - vapor][i] * std::exp(require_component_property((*liquid.log_fugacity_coefficient)[i])
-                                              - require_component_property((*gas.log_fugacity_coefficient)[i]));
-            sum += y[k];
+        for (int pass = 0; pass < (loop ? policy::EQUILIBRIUM_START_PRESSURE_PASSES.value : 1.0); ++pass) {
+            std::array<State, 2> states;
+            for (std::size_t side = 0; side < 2; ++side) {
+                const auto& composition = x[side == 1 ? vapor : 1 - vapor];
+                states[side] = loop && pass == 0 && pressure == seed && composition == compiled.feed_composition && start.feed_states[side]
+                    ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
+                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
+            }
+            if (!states[0].log_fugacity_coefficient || !states[1].log_fugacity_coefficient) break;
+            if (loop && states[0].stable_root_count == 1 && !liquid_feed(states[0])) break;
+            const bool ideal = loop && states[1].stable_root_count == 1 && liquid_feed(states[1]);
+            const double dz = (ideal ? 1.0 : states[1].compressibility_factor) - states[0].compressibility_factor;
+            if (loop && !(dz > 0.0)) break;
+            std::vector<double> next(support.size());
+            double sum = 0.0, change = 0.0;
+            for (std::size_t k = 0; k < support.size(); ++k) {
+                const std::size_t i = support[k];
+                const double log_k = require_component_property((*states[0].log_fugacity_coefficient)[i])
+                    - (ideal ? 0.0 : require_component_property((*states[1].log_fugacity_coefficient)[i]));
+                next[k] = x[1 - pinned][i] * std::exp(zero_v ? log_k : -log_k);
+                sum += next[k];
+            }
+            const double step = (zero_v ? std::log(sum) : -std::log(sum)) / dz;
+            const double stepped = loop ? pressure * std::exp(step) : seed * sum;
+            if (!(std::isfinite(stepped) && stepped > 0.0)) break;
+            for (std::size_t k = 0; k < support.size(); ++k) {
+                next[k] /= sum; change = std::max(change, std::abs(next[k] - x[pinned][support[k]]));
+                x[pinned][support[k]] = next[k];
+            }
+            if (!loop || (std::abs(step) < policy::EQUILIBRIUM_START_PRESSURE_STEP.value
+                && change < policy::EQUILIBRIUM_START_PRESSURE_STEP.value)) {
+                if (ideal) break;
+                if (loop || std::all_of(problem.phases.begin(), problem.phases.end(),
+                        [](const PhaseSpec& phase) { return phase.composition_guess.size() == phase.support.size(); }))
+                    for (std::size_t k = 0; k < support.size(); ++k)
+                        if (next[k] > 0.0) point[phase_offsets[pinned] + k] = std::log(next[k]);
+                if (loop) seed_composition(compiled, 1 - pinned, compiled.feed_composition, point, phase_offsets[1 - pinned]);
+                scope.probe("fugacity_pressure_seed", stepped); return stepped;
+            }
+            pressure = stepped;
         }
-        const double stepped = seed * sum;
-        if (!(std::isfinite(stepped) && stepped > 0.0)) return seed;
-        // y is as good as the seeded liquid: only the all-guessed caller start (start_compositions) carries one;
-        // the default z/K liquid would return y = z, the trivial solution.
-        if (std::all_of(problem.phases.begin(), problem.phases.end(),
-                [](const PhaseSpec& phase) { return phase.composition_guess.size() == phase.support.size(); }))
-            for (std::size_t k = 0; k < support.size(); ++k)
-                if (y[k] > 0.0) point[phase_offsets[vapor] + k] = std::log(y[k] / sum);
-        scope.probe("fugacity_pressure_seed", stepped);
-        return stepped;
-    } catch (const std::exception&) {
-        return seed;
-    }
+    } catch (const std::exception&) {}  // A failed start leaves the original path unchanged.
+    return loop ? fugacity_pressure_seed(compiled, point, phase_offsets, start, scope, false) : fallback;
 }
 
 // Ideal-solution chemical equilibrium with frozen c_j: minimize sum_j n_j (c_j + ln n_j/n) subject to B n = b
@@ -996,7 +1032,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = start->pressure > 0.0 ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
+    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -1020,8 +1056,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             scope.probe("packing_guess", packing, static_cast<std::uint32_t>(phase));
             continue;
         }
-        if (speciated_density.has_value()) {  // the last sweep's root, at nearly the speciated composition
-            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *speciated_density);
+        const auto density = start->densities.empty() ? speciated_density : std::optional(start->densities[phase]);
+        if (density.has_value()) {
+            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
             continue;
         }
         const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor

@@ -28,6 +28,7 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
+bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values

@@ -1,4 +1,5 @@
 #include "properties/helmholtz_model.hpp"
+#include "pcsaft_superancillary_table.hpp"
 
 #include "core/convergence.hpp"
 #include "core/numerical_policy.hpp"
@@ -1442,6 +1443,52 @@ DensityRoot solve_density(
     scope.finish(result.convergence);
     return result;
 
+}
+
+namespace {
+// Bell and Deiters (2023), doi:10.1021/acs.iecr.2c02916; start domain verified through this reduced temperature.
+constexpr double SUPERANCILLARY_MAX_THETA = 0.999;
+double superancillary_series(std::size_t collection, double x) {
+    auto first = superancillary::offsets[collection], last = superancillary::offsets[collection + 1];
+    while (first + 1 < last) {
+        const auto middle = (first + last) / 2;
+        if (x < superancillary::segments[middle][0]) last = middle;
+        else first = middle;
+    }
+    const auto& s = superancillary::segments[first];
+    const double u = (2.0 * x - s[0] - s[1]) / (s[1] - s[0]);
+    double a = 0.0, b = 0.0;
+    for (int j = 16; j > 0; --j) { const double previous = a; a = 2.0 * u * a - b + s[j + 2]; b = previous; }
+    return u * a - b + s[2];
+}
+}
+std::optional<std::array<double, 2>> superancillary_densities(const HelmholtzModel& model, double temperature) {
+    const auto& p = model.parameters();
+    const auto zero = [](const auto& v) { return std::all_of(v.begin(), v.end(), [](auto x) { return x == 0; }); };
+    if (p.component_count() != 1 || !zero(p.charge_number) || !zero(p.molecular_ion) || !p.site_component.empty()
+        || !zero(p.dipole_moment_debye) || !zero(p.quadrupole_moment_debye_angstrom) || !p.sigma_term_component.empty()) return std::nullopt;
+    const double m = p.segment_count[0], reduced = temperature / p.dispersion_energy_over_k[0];
+    if (!(m >= 1 && m <= 64)) return std::nullopt;
+    const double w = 1.0 / m, critical = superancillary_series(0, w);
+    const auto& lower = superancillary::lower_temperature[0];
+    const double minimum = std::exp(lower[0]) * std::pow(m, lower[1]) * critical;
+    const double theta = (reduced - minimum) / (critical - minimum);
+    if (!(theta >= 0.0 && theta <= SUPERANCILLARY_MAX_THETA)) return std::nullopt;
+    std::size_t interval = 0;
+    while (w > superancillary::nodes[interval][0]) ++interval;
+    std::array<double, 2> densities{};
+    for (std::size_t phase = 0; phase < densities.size(); ++phase) {
+        double numerator = 0.0, denominator = 0.0;
+        for (std::size_t j = 0; j < 17; ++j) {
+            const double value = superancillary_series(1 + interval * 34 + phase * 17 + j, theta);
+            const double delta = w - superancillary::nodes[interval][j];
+            if (delta == 0.0) { numerator = value; denominator = 1.0; break; }
+            const double weight = (j % 2 == 0 ? 1.0 : -1.0) * (j == 0 || j == 16 ? 0.5 : 1.0) / delta;
+            numerator += weight * value; denominator += weight;
+        }
+        densities[phase] = numerator / denominator / (NUMBER_DENSITY_PER_ANGSTROM3 * std::pow(p.sigma_constant[0], 3));
+    }
+    return densities;
 }
 
 }  // namespace epcsaft

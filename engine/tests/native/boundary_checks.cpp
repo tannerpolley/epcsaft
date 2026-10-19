@@ -518,6 +518,67 @@ void check_s14() {
         "P_{vapor}=P_{liquid}", "branch");
 }
 
+// Bell and Deiters (2023) source coefficients against the Engine coexistence equations, m = 1..64.
+void check_superancillary() {
+    struct Fluid { double m, sigma, epsilon; std::vector<double> temperatures; };
+    double density_error = 0.0, pressure_error = 0.0;
+    std::size_t rows = 0;
+    for (const auto& fluid : {
+        Fluid{1.0, 3.7039, 150.03, {38.21203771241374, 55.23298699862721, 72.25393628484068, 89.27488557105414, 106.29583485726761, 123.31678414348107, 140.33773342969454, 157.35868271590803, 174.3796320021215, 182.89010664522823, 189.6984863597136, 191.2303717954728}},
+        Fluid{1.6069, 3.5206, 191.42, {67.69638918980614, 94.5029574147185, 121.30952563963086, 148.11609386454322, 174.9226620894556, 201.72923031436792, 228.5357985392803, 255.3423667641927, 282.14893498910504, 295.5522191015612, 306.2748463915262, 308.6874375317682}},
+        Fluid{2.002, 3.6184, 208.11, {86.05184909265563, 118.17275780252494, 150.29366651239422, 182.41457522226355, 214.53548393213288, 246.65639264200215, 278.7773013518715, 310.89821006174077, 343.01911877161007, 359.07957312654474, 371.92793661049245, 374.8188183943807}},
+        Fluid{4.6627, 3.8384, 243.87, {225.80017945227593, 276.39700491391477, 326.99383037555367, 377.59065583719257, 428.1874812988314, 478.7843067604703, 529.3811322221092, 579.9779576837481, 605.2763704145675, 625.5151005992229, 630.0688148907706}},
+        Fluid{7.9849, 3.9869, 257.75, {308.9518764299404, 368.4613841199272, 427.97089180991406, 487.48039949990084, 546.9899071898877, 606.4994148798744, 666.0089225698614, 725.5184302598483, 755.2731841048416, 779.0769871808363, 784.4328428729351}},
+        Fluid{40.0, 4.0, 260.0, {638.1869526464741, 696.3414181961376, 754.4958837458013, 812.6503492954648, 870.8048148451286, 928.959280394792, 987.1137459444558, 1016.1909787192875, 1039.452764939153, 1044.6866668386228}},
+        Fluid{20.0, 4.0, 260.0, {451.7621899548902, 514.570317542461, 577.378445130032, 640.1865727176028, 702.9947003051736, 765.8028278927445, 828.6109554803155, 891.4190830678864, 922.8231468616717, 947.9463978967001, 953.5991293795814}},
+        Fluid{30.0, 4.0, 260.0, {584.5409306463084, 645.3372035613955, 706.1334764764824, 766.9297493915695, 827.7260223066565, 888.5222952217437, 949.3185681368305, 979.7167045943739, 1004.0352137604089, 1009.5068783227666}},
+        Fluid{45.0, 4.0, 260.0, {661.3365682741642, 718.1141973590372, 774.8918264439105, 831.6694555287838, 888.4470846136569, 945.2247136985302, 1002.0023427834034, 1030.39115732584, 1053.1022089597893, 1058.212195577428}},
+        Fluid{64.0, 4.0, 260.0, {735.4655211268557, 787.0683896964205, 838.6712582659853, 890.2741268355501, 941.8769954051149, 993.4798639746798, 1045.0827325442447, 1070.8841668290272, 1091.525314256853, 1096.1695724281137}}}) {
+        auto parameters = properties_support::parameters(1);
+        parameters.molar_mass_kg_per_mol = {0.044097};
+        parameters.segment_count = {fluid.m};
+        parameters.sigma_constant = {fluid.sigma};
+        parameters.dispersion_energy_over_k = {fluid.epsilon};
+        epcsaft::HelmholtzModel model(parameters);
+        auto problem = equilibrium_support::flash(1);
+        problem.pressure = epcsaft::equilibrium::FreeValue::variable();
+        problem.phases.push_back(equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
+            epcsaft::equilibrium::AmountSpec::pinned(0.0)));
+        for (double temperature : fluid.temperatures) {
+            problem.temperature.value = temperature;
+            const auto density = epcsaft::superancillary_densities(model, temperature);
+            CHECK(density.has_value());
+            const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
+            CHECK(r.success && r.iterations == 0 && r.evaluations <= 3);
+            for (std::size_t phase = 0; phase < 2; ++phase)
+                density_error = std::max(density_error, std::abs((*density)[phase] / r.molar_densities[phase] - 1.0));
+            const double pressure = model.state(temperature, (*density)[1], {1.0}).pressure;
+            pressure_error = std::max(pressure_error, std::abs(pressure / *r.pressure - 1.0));
+            ++rows;
+        }
+    }
+    CHECK(density_error <= 1.0e-11 && pressure_error <= 1.0e-12);
+    std::printf("superancillary rows=%zu density_relative=%.17g pressure_relative=%.17g\n", rows, density_error, pressure_error);
+}
+
+// #648: the 100 K methane/ethane dew state from the pre-change Engine, main 7aacf971.
+void check_cold_dew() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::bubble_at(100.0);
+    problem.pressure = epcsaft::equilibrium::FreeValue::variable();
+    problem.phases[0].amount = epcsaft::equilibrium::AmountSpec::pinned(0.0);
+    problem.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
+    problem.phases[1].composition_guess = {0.5, 0.5};
+    const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    CHECK(r.success);
+    CHECK(r.iterations == 0 && r.evaluations <= 4);
+    CHECK(std::abs(*r.pressure / 22.244530615491858 - 1.0) <= 1.0e-10);
+    const std::array<double, 2> density{21475.329121199135, 0.026754521313143716};
+    const std::array<double, 4> composition{0.00015533300893750434, 0.9998446669910626, 0.5, 0.5};
+    for (std::size_t i = 0; i < density.size(); ++i) CHECK(std::abs(r.molar_densities[i] / density[i] - 1.0) <= 1.0e-10);
+    for (std::size_t i = 0; i < composition.size(); ++i) CHECK(std::abs(r.mole_fractions[i] / composition[i] - 1.0) <= 1.0e-10);
+}
+
 void check_s15c() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto problem = equilibrium_support::boundary();
@@ -1170,6 +1231,8 @@ int main(int argc, char** argv) {
         {{"native.boundary.s10", "S10"}, check_s10},
         {{"native.boundary.s14", "S14"}, check_s14},
         {{"native.boundary.s15c", "S15c"}, check_s15c},
+        {{"native.boundary.cold-dew", "cold-dew"}, check_cold_dew},
+        {{"native.boundary.superancillary", "superancillary"}, check_superancillary},
         {{"native.boundary.e4-a", "E4-A"}, check_e4_a},
         {{"native.boundary.e4-b", "E4-B"}, check_e4_b},
         {{"native.boundary.e4-c", "E4-C"}, check_e4_c},
