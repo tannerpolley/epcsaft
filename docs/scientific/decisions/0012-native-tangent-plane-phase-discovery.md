@@ -73,6 +73,16 @@ physical validation or universal stability. The owning issue and retained
 analysis hold required evidence and remaining work; this ADR is not a parallel
 implementation plan.
 
+## Addendum (2026-10-19, #647)
+
+The owner admitted a native Michelsen (1982) tangent-plane trial minimizer on 2026-10-19 (#647). It replaces the
+per-seed shared-driver trial only for systems whose fed-plus-participant species are all neutral and that declare
+no reactions. Ionic and reacting systems, supplied-trial evaluation and every failed or capped Michelsen trial keep
+the shared driver. It uses the existing seeds, frozen plane, density owner and exact derivatives. It changes no
+acceptance check: reconstruction, donor descent with finite splits, deduplication, addition and removal
+declarations, branch checks, the lower-G margin and the final no-descent round are unchanged. The rejection of a
+separate tangent-plane minimizer above applies outside this scope.
+
 ## Addendum: charged-trial admission by permittivity form
 
 The owner adopted this condition on 2026-10-02 in #223. Charged trial phases in
