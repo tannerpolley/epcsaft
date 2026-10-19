@@ -754,4 +754,38 @@ void check_density_branch_admission() {
           && donor->message.find("below the negative-slope sample 8026.59") != std::string::npos);
 }
 
+// #647 falsifier 4, EqID michelsen_modified_tangent_plane: J_ij = n dln(phi_i)/dn_j at fixed T, P from one
+// IsothermalPhaseHessian evaluation against exact pressure-chart ln(phi_i) actions along e_j - x, and
+// Gibbs-Duhem sum_i x_i J_ij = 0. Gross 2001 methane/ethane x = 0.7 on its two stable roots; the associating binary liquid.
+void check_tangent_plane_jacobian() {
+    using namespace epcsaft;
+    struct Point { const char* id; Parameters parameters; double T, P; std::vector<double> x; DensityBranch branch; };
+    for (const auto& [id, parameters, T, P, x, branch] : std::vector<Point>{
+             {"methane-ethane-220K-4MPa/liquid", properties_support::neutral_binary(), 220.0, 4e6, {0.7, 0.3}, DensityBranch::Liquid},
+             {"methane-ethane-220K-4MPa/vapor", properties_support::neutral_binary(), 220.0, 4e6, {0.7, 0.3}, DensityBranch::Vapor},
+             {"associating-binary-298K-0.1MPa/liquid", properties_support::associating_binary(), 298.15, 1e5, {0.3, 0.7},
+              DensityBranch::Liquid}}) {
+        const HelmholtzModel model(parameters);
+        const double v = 1.0 / solve_density(model, T, P, x, branch, std::nullopt).molar_density;
+        const auto J = equilibrium::tangent_plane_jacobian(model.evaluate(T, v, x, DerivativeOrder::IsothermalPhaseHessian), v, {0, 1});
+        const auto inputs = recording_support::fields({recording_support::field("T_K", T), recording_support::field("P_Pa", P),
+            recording_support::field("x", x), recording_support::field("v_m3_per_mol", v)});
+        for (std::size_t j = 0; j < 2; ++j) {
+            PressureActionDirection direction{0.0, 0.0, {-x[0], -x[1]}, {}};
+            direction.composition[j] += 1.0;
+            const auto batch = model.pressure_actions(T, P, x, branch, {PropertyObservable::LogFugacityCoefficient}, {direction});
+            double duhem = 0.0, scale = 1.0;
+            for (std::size_t i = 0; i < 2; ++i) {
+                const auto& action = batch.results.at(i);
+                CHECK(action.component == i && action.action);
+                const double value = J[i * 2 + j];
+                tpd_compare(std::string("tangent-plane-jacobian/") + id + "/J" + std::to_string(i) + std::to_string(j), value,
+                    action.action.value_or(NAN), 1e-10 * std::max(1.0, std::abs(value)), inputs);
+                duhem += x[i] * value; scale = std::max(scale, std::abs(value));
+            }
+            tpd_compare(std::string("tangent-plane-jacobian/") + id + "/gibbs-duhem/" + std::to_string(j), duhem, 0.0, 1e-10 * scale, inputs);
+        }
+    }
+}
+
 }  // namespace equilibrium_checks

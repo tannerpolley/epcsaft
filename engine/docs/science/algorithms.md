@@ -1621,8 +1621,9 @@ parents. Python declares capture and reads/serializes completed records only.
 The explicit native tangent-plane test and fixed-T/P discovery adopted in
 [#223](https://github.com/tannerpolley/ePC-SAFT/issues/223) reuse `CompiledSystem`,
 `run_driver`, density/association owners and exact CppAD value/derivative chains.
-No second minimizer, production finite differences or Python search loop is
-admitted. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
+No production finite differences or Python search loop is admitted. One second minimizer is admitted (owner,
+2026-10-19, #647): the native Michelsen trial minimizer below, for all-neutral, non-reacting systems only. It
+changes no acceptance check. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
 owns physical admission and claim meaning; EqID: `tangent_plane_distance` owns
 the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-discovery/)
 retains numerical qualification on the stated neutral and admitted
@@ -1751,7 +1752,15 @@ using EqID: `electroneutral_trial_reconstruction`. Density-owner Liquid/Vapor
 roots supply packing starts; deduplicate identical seed/root pairs within
 `DENSITY_ANCHOR_LOG_WINDOW`. Retain failed roots as unresolved trials.
 
-Run **every enumerated distinct start** through the shared driver. Compile an
+For systems whose fed-plus-participant species are all neutral and that declare no reactions, minimize each
+enumerated distinct start natively with Michelsen's modified tangent-plane objective (EqID:
+`michelsen_modified_tangent_plane`). Take `TANGENT_PLANE_SUBSTITUTIONS` direct substitutions (Michelsen 1982 eq.
+19), then second-order steps in αᵢ = 2√Wᵢ with the exact T,P Jacobian (eqs. 25–27). Take a step when its
+Cholesky factor exists, α stays positive and g* does not increase; otherwise take a substitution step. Each
+iterate uses the trial label's unanchored density-owner root. A trial converges when
+‖ln Wᵢ + ψᵢ + sᵢ‖∞ ≤ `EQUILIBRIUM_ROW_RESIDUAL`, and its trial dual is k = −ln ΣW. A start that reaches
+`EQUILIBRIUM_MAX_ITERATIONS`, throws, or leaves finite positive W runs through the shared driver unchanged. Run
+every other enumerated distinct start, and every start of ionic or reacting systems, through the shared driver. Compile an
 internal one-free-phase unit-amount system with reduced balance rows spanning
 normalization/charge and no reactions (EqID: `tangent_plane_trial_balance`);
 do not pass it through public no-reaction compilation that restores species
@@ -1766,7 +1775,8 @@ not required to satisfy the original zero-affinity rows.
 
 For ordinary search, retain raw coordinates only from an actual nonfatal finite, domain-valid
 optimizer attempt, including a nonconverged attempt. Failed initialization has
-no optimizer point. Keep raw residuals separate from reconstructed composition,
+no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
+residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
 and the largest-entry positive/negative pivot correction follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. Recompute molar volume
