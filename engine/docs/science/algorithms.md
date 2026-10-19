@@ -2644,7 +2644,8 @@ $$
 
 where $x_{\mathrm{cut}}$ is `EQUILIBRIUM_BOX_FLOOR`, $\varepsilon$ is
 `EQUILIBRIUM_BOX_INVENTORY_FRACTION` and $u_i$ is the largest attainable total amount of $i$,
-one HiGHS linear program per species, cached during compilation. Rows of $B$ can carry mixed signs (a hydrogen row
+one HiGHS linear program per species, cached during compilation. With $B = I$ and every fed
+fraction $\ge$ 1e-6, the feasible set is the feed point and $u_i = n_i$ is taken directly. Rows of $B$ can carry mixed signs (a hydrogen row
 $n_{\mathrm{H^+}}-n_{\mathrm{LiA}}-n_{\mathrm{NaA}}$), so no single row ratio bounds $n_i$; an
 unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution domain whenever
 $\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem

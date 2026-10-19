@@ -95,7 +95,10 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
             + " objective_factor=" + core::optional_number(objective_factor) + " produces invalid inner target="
             + core::optional_number(tolerance) + " or dual_inf_tol=" + core::optional_number(dual_tolerance));
-    auto app = Ipopt::SmartPtr<Ipopt::IpoptApplication>(::IpoptApplicationFactory());
+    const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    // Clones share this thread's option registry and journalist (#646); an options file's output_file must not.
+    thread_local const Ipopt::SmartPtr<Ipopt::IpoptApplication> base = ::IpoptApplicationFactory();
+    const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory() : base->clone();
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));
@@ -118,7 +121,6 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     admit(options->SetStringValue("linear_solver", linear_solver()));
     admit(options->SetIntegerValue("ma57_pivot_order", 2));          // AMD, as measured in #509
     admit(options->SetStringValue("ma57_automatic_scaling", "yes")); // unscaled, a trace moiety row reads as dependent
-    const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     if (options_file && *options_file) {
         std::error_code error;
         if (!std::filesystem::is_regular_file(options_file, error) || !std::ifstream(options_file).good())

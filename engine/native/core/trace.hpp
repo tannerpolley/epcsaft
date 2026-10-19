@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <ctime>
 #include <exception>
 #include <initializer_list>
 #include <string>
@@ -29,7 +28,6 @@ struct Span final {
     std::optional<std::uint32_t> parent;
     std::optional<Convergence> convergence;
     double wall_us = 0.0;
-    double cpu_us = 0.0;
     bool completed = false;
 };
 
@@ -110,7 +108,6 @@ public:
         index_ = static_cast<std::uint32_t>(trace_->spans.size() - 1);
         trace_->current = index_;
         start_ = now;
-        cpu_ = std::clock();
     }
 
     ~Scope() {
@@ -118,7 +115,6 @@ public:
         const auto now = std::chrono::steady_clock::now();
         trace_->spans[*index_].wall_us =
             std::chrono::duration<double, std::micro>(now - start_).count();
-        trace_->spans[*index_].cpu_us = 1.0e6 * (std::clock() - cpu_) / CLOCKS_PER_SEC;
         trace_->spans[*index_].completed = std::uncaught_exceptions() == exceptions_;
         trace_->current = parent_;
     }
@@ -169,7 +165,6 @@ private:
     std::optional<std::uint32_t> index_;
     std::optional<std::uint32_t> parent_;
     std::chrono::steady_clock::time_point start_;
-    std::clock_t cpu_ = 0;
     int exceptions_ = std::uncaught_exceptions();
 };
 
