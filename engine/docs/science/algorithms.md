@@ -1173,9 +1173,11 @@ the experiment. Iterate logging can use `output_file <log-path>` and
 `file_print_level 12` in that file.
 
 The same owner chooses Ipopt's linear solver once per loaded native library
-(owner decisions 2026-10-16 and 2026-10-17). `EPCSAFT_IPOPT_LINEAR_SOLVER=mumps`
+(owner decisions 2026-10-16, 2026-10-17 and 2026-10-18). `EPCSAFT_IPOPT_LINEAR_SOLVER=mumps`
 or `ma57` forces a solver; any other nonempty value, or a forced `ma57` that
-cannot load, is an error before any solve. Otherwise Ipopt's own HSL loader
+cannot load, is an error at the first Ipopt solve or `_core.linear_solver()`
+call, before that solve starts; a solve the free-amount Newton path finishes
+never reads the variable. Otherwise Ipopt's own HSL loader
 opens `EPCSAFT_HSL_LIBRARY` (unset or empty: `libhsl.so` on the runtime linker
 path), and the driver uses MA57 with AMD ordering (`ma57_pivot_order 2`) when
 that library provides it, and MUMPS otherwise. MA57 runs with its own scaling
