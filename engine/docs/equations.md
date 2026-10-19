@@ -2297,6 +2297,25 @@ N\mathbf B_t\mathbf w&=\mathbf b_t,\quad \mathbf e_S^{\mathsf T}\mathbf w=1
 \end{aligned}
 $$
 
+## `michelsen_modified_tangent_plane`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Source equation
+- Source: [Michelsen1982] Part I Eqs. 13–19 and 25–27; T,P Jacobian derived for #647 from the IsothermalPhaseHessian columns
+- Description: Michelsen's modified tangent-plane objective g* over positive trial mole numbers W on support S, at fixed T/P and the frozen shift s = standard − plane of `tangent_plane_distance`; w = W/ΣW and v is the trial label's density-owner molar volume (m³/mol). ψᵢ = Fᵢ − ln v = ln φᵢ + ln(P/RT), with F the residual reduced Helmholtz energy at unit amount (Fᵢ, F_iV, F_VV, Fᵢⱼ in mol⁻¹, m⁻³ and mol m⁻⁶ SI columns). Jᵢⱼ = n ∂ln φᵢ/∂nⱼ at fixed T,P is dimensionless and symmetric with Σᵢ wᵢJᵢⱼ = 0.
+- Change note: All-neutral, non-reacting systems only (#647). A stationary point has tpd = k = −ln ΣW; the shared tail reevaluates tpd and keeps every acceptance check.
+
+$$
+\begin{aligned}
+g^*(\mathbf W)&=1+\sum_{i\in S}W_i\left(\ln W_i+\psi_i(\mathbf w)+s_i-1\right),\qquad
+\frac{\partial g^*}{\partial W_i}=g_i=\ln W_i+\psi_i+s_i,\\
+\ln W_i^{(k+1)}&=-s_i-\psi_i^{(k)}\quad\text{(Eq. 19)},\qquad
+\alpha_i=2\sqrt{W_i},\qquad
+H_{ij}=\delta_{ij}+\frac{\sqrt{W_iW_j}}{\sum_l W_l}J_{ij}+\tfrac12\delta_{ij}g_i\quad\text{(Eqs. 25–27)},\\
+J_{ij}&=F_{ij}+1+\frac{p_ip_j}{p_V},\qquad p_i=\frac1v-F_{iV},\qquad p_V=-F_{VV}-\frac1{v^2}.
+\end{aligned}
+$$
+
 ## `tangent_plane_shift_log_curvature`
 
 - Section: Equilibrium / Tangent-plane testing

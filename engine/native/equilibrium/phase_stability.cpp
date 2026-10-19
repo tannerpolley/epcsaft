@@ -66,6 +66,62 @@ void packing_admission(double eta) {
         throw std::invalid_argument("stability point outside packing domain");
 }
 
+// ALG-STABILITY, EqID michelsen_modified_tangent_plane: Michelsen 1982 eq. 19 substitution, then eqs. 25-27 steps in
+// alpha = 2 sqrt(W) when g* does not increase. Returns the point and dual -ln sum W, or nothing (the caller's fallback).
+std::optional<std::pair<PhasePoint, double>> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
+    const std::vector<double>& seed, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work) {
+    const auto& S = phase.support;
+    const auto n = static_cast<Eigen::Index>(S.size());
+    struct Iterate { Eigen::VectorXd W, g; Eigen::MatrixXd J; std::vector<double> w; double density = 0.0, objective = 0.0; };
+    auto& o = trial.optimizer;
+    const auto at = [&](Eigen::VectorXd W) {
+        Iterate p{std::move(W), Eigen::VectorXd(n), {}, std::vector<double>(seed.size(), 0.0)};
+        for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
+        ++o.evaluations;
+        p.density = stability_root(model, T, P, p.w, phase.kind).molar_density;
+        packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
+        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
+        for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
+            p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];
+        if (!std::isfinite(p.W.sum()) || !(p.W.array() > 0.0).all() || !p.g.allFinite())
+            throw std::domain_error("non-finite or non-positive Michelsen amounts");
+        p.J = Eigen::Map<const Eigen::MatrixXd>(tangent_plane_jacobian(d, 1.0 / p.density, S).data(), n, n);
+        p.objective = 1.0 + p.W.dot(p.g) - p.W.sum();  // g* (eqs. 13-17)
+        return p;
+    };
+    const double tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    std::optional<std::pair<PhasePoint, double>> result;
+    try {
+        auto p = at(Eigen::Map<const Eigen::VectorXd>(seed.data(), static_cast<Eigen::Index>(seed.size()))(S));
+        while (p.g.lpNorm<Eigen::Infinity>() > tolerance && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
+            std::optional<Iterate> q;
+            if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
+                const Eigen::VectorXd root = p.W.array().sqrt();
+                Eigen::MatrixXd H = p.J.cwiseProduct(root * root.transpose()) / p.W.sum();
+                H.diagonal().array() += 1.0 + 0.5 * p.g.array();
+                const Eigen::LLT<Eigen::MatrixXd> factor(H);
+                const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
+                if (factor.info() == Eigen::Success && (alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
+            }
+            const bool accepted = q && q->objective <= p.objective;
+            o.hessian_calls += accepted;
+            p = accepted ? std::move(*q) : at(p.W.array() * (-p.g.array()).exp());
+        }
+        if (p.g.lpNorm<Eigen::Infinity>() <= tolerance) {
+            o.success = true; o.message = trial.message = "converged Michelsen tangent-plane trial";
+            o.convergence.residual = p.g.lpNorm<Eigen::Infinity>();
+            o.packing_fractions = {model.packing_fraction_coefficient(T, p.w) * p.density};
+            for (auto i : S) trial.raw_coordinates.push_back(std::log(p.w[i]));
+            trial.raw_coordinates.insert(trial.raw_coordinates.end(), {1.0, std::log(o.packing_fractions[0])});
+            PhasePoint point; point.composition = {p.w}; point.eta = o.packing_fractions;
+            result.emplace(std::move(point), -std::log(p.W.sum()));
+        }
+    } catch (const std::exception&) {}
+    ++work["trial_tangent_plane_invocations"];
+    work["trial_tangent_plane_iterations"] += o.iterations; work["trial_tangent_plane_newton_steps"] += o.hessian_calls;
+    return result;
+}
+
 // Reduced energy and Euler/association estimates use unit-mol amount columns and the SI volume column.
 Quantities phase_energy(const HelmholtzModel& model, double T, double P, double v,
     const std::vector<double>& w, const std::vector<double>& standard, Quantities& work,
@@ -259,6 +315,17 @@ std::vector<double> trial_coordinates(const CompiledSystem& c, const std::vector
     return point;
 }
 } // namespace
+
+// EqID michelsen_modified_tangent_plane: J_ij = F_ij + 1 + p_i p_j / p_V, p_i = 1/v - F_iV, p_V = -F_VV - 1/v^2.
+std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double v, const std::vector<std::size_t>& support) {
+    const std::size_t width = d.gradient.size(), n = support.size();
+    const double pv = -d.hessian[width + 1] - 1.0 / (v * v);
+    std::vector<double> p(n), J(n * n);
+    for (std::size_t a = 0; a < n; ++a) p[a] = 1.0 / v - d.hessian[(2 + support[a]) * width + 1];
+    for (std::size_t a = 0; a < n; ++a) for (std::size_t b = 0; b < n; ++b)
+        J[a * n + b] = d.hessian[(2 + support[a]) * width + 2 + support[b]] + 1.0 + p[a] * p[b] / pv;
+    return J;
+}
 
 // Charge rescaling followed by a two-pivot arithmetic correction (largest entry, ties by index).
 std::vector<double> reconstruct_trial_composition(std::vector<double> w,
@@ -490,14 +557,23 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     count_stability_work(report.work, trace, begin);
                     return report;
                 }
-                auto compiled = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
-                    trial.row_transformation);
-                trial.basis = compiled.B;
+                // Michelsen trials for all-neutral, non-reacting systems; the shared driver otherwise and when one fails.
+                const bool native = !c.has_ions && !c.has_reaction && !options.evaluate_supplied_trials;
+                CompiledSystem compiled;  // none for a converged Michelsen trial (rank 0)
+                const auto compile = [&] {
+                    compiled = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
+                        trial.row_transformation);
+                    trial.basis = compiled.B;
+                };
+                if (!native) compile();
                 core::Scope scope("tangent_plane_trial");
-                const auto initial = trial_coordinates(compiled, seed, eta);
                 ++report.work["trial_invocations"];
+                const auto found = native ? tangent_plane_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
+                    trial, report.work) : std::nullopt;
+                if (native && !found) compile();
+                const auto initial = found ? std::vector<double>{} : trial_coordinates(compiled, seed, eta);
                 if (options.evaluate_supplied_trials) trial.raw_coordinates = initial;
-                else {
+                else if (!found) {
                     EquilibriumResult audit;
                     try {
                         trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
@@ -507,8 +583,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     trial.message = trial.optimizer.message;
                 }
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
-                const auto raw = compiled.prepare(trial.raw_coordinates, true);
-                trial.raw_residuals = compiled.evaluate_at(raw).values;
+                const auto raw = found ? found->first : compiled.prepare(trial.raw_coordinates, true);
+                if (!found) trial.raw_residuals = compiled.evaluate_at(raw).values;
                 trial.composition = reconstruct_trial_composition(raw.composition[0], phase.support, z);
                 ++report.work["reconstruction_evaluations"];
                 const double volume = c.model->packing_fraction_coefficient(at.temperature, trial.composition) / raw.eta[0];
@@ -533,11 +609,11 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                         displacement += std::abs(trial.composition[i] - phase.composition_guess[i]);
                     q["input_reconstruction_l1"] = displacement;
                 } else {
-                    double dual = 0.0;
+                    double dual = found ? found->second : 0.0;
                     for (std::size_t k = 0; k < compiled.rank; ++k)
                         dual += trial.raw_coordinates[compiled.primal_size + k] * compiled.balance[k];
                     q["trial_dual_over_rt"] = dual; q["trial_identity_defect_over_rt"] = q["tpd_over_rt"] - dual;
-                    q["raw_objective_over_rt"] = trial.optimizer.objective;
+                    if (!found) q["raw_objective_over_rt"] = trial.optimizer.objective;
                 }
                 trial.evidence = "no_resolved_descent";
                 if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options);

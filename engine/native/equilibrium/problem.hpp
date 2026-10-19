@@ -523,6 +523,8 @@ CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, co
 double present_phase_residual_distance(double, double);
 bool descent_resolved(double, double, double);
 std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&);
+// n dln(phi_i)/dn_j at fixed T, P on the support (row-major), from an IsothermalPhaseHessian evaluation at unit amount and v.
+std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives&, double, const std::vector<std::size_t>&);
 std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
     const std::vector<double>&, std::map<std::string, double>* = nullptr);
 StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
