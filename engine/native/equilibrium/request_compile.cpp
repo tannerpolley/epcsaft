@@ -1205,7 +1205,7 @@ static CompiledSystem compile_with_basis(
     // species whose box 1e-2 u_i/N_feed would fall below 1e-8 keeps HiGHS, so no box changes (#646).
     bool feed_point = !trial_basis && request.reactions.empty() && !request.azeotrope;
     for (const std::size_t i : all)
-        feed_point = feed_point && (compiled.n_feed[i] == 0.0 || (std::binary_search(indices.begin(), indices.end(), i)
+        feed_point = feed_point && (compiled.n_feed[i] == 0.0 || (std::count(indices.begin(), indices.end(), i)
             && policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled.feed_composition[i] >= policy::EQUILIBRIUM_COMPOSITION_BOX.value));
     const auto bounds = feed_point ? std::vector<InventoryBound>{} : inventory_bounds(inventory, indices, false, 0.0);
     compiled.inventory_upper_bounds = feed_point ? compiled.feed_composition : std::vector<double>(components, 1.0);
