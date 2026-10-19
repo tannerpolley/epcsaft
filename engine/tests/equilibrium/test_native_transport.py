@@ -136,7 +136,11 @@ def test_log_activity_actions_follow_the_correlated_reaction(evidence: Any) -> N
         for phase in range(2):
             terms = [nu * batch.results[3 * phase + i].action for i, nu in enumerate(NU)]
             bound = CRITERION[len(directions) - 1] * sum(abs(term) for term in terms)
-            same(evidence, f"e5-10/manifold/{label}/phase{phase}", sum(terms))
+            name = f"e5-10/manifold/{label}/phase{phase}"
+            if reference == 0.0:  # the solve resolves this exact zero: twice the recording route's distance from it (#605)
+                same(evidence, name, sum(terms), ROWS[name], 2 * max(abs(ROWS[f"e5-10/manifold/{label}/phase{p}"]) for p in range(2)))
+            else:
+                same(evidence, name, sum(terms))
             same(evidence, f"manifold/{label}/phase{phase}", sum(terms), reference, bound, 0.0)
             assert abs(sum(terms) + terms[2] - reference) > bound  # nu = (-1, -1, 2) fails the identity's own criterion
 

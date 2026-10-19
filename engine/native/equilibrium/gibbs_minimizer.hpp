@@ -1,5 +1,6 @@
 #pragma once
 
+#include "equilibrium/ipopt.hpp"
 #include "equilibrium/problem.hpp"
 
 #include <IpIpoptData.hpp>

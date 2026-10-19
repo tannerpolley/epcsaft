@@ -53,7 +53,7 @@ struct MinimaxRow final {
     std::vector<std::size_t> members;
 };
 struct MinimaxResult final {
-    std::string availability = "not_evaluated", application_status, solver_status;
+    std::string availability = "not_evaluated", application_status, solver_status, linear_solver;
     bool feasible = false, stationary = false;
     double t = 0.0, target_maximum = 0.0, gap = 0.0;
     double primal = 0.0, stationarity = 0.0, dual_sign = 0.0, complementarity = 0.0;

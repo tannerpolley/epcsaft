@@ -283,7 +283,8 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
         require(request.minimax.has_value(), "missing minimax declaration");
         SmartPtr<Minimax> nlp = new Minimax(request, result, evaluate, start, frozen);
         const auto [initialized, returned] = equilibrium::run_ipopt(nlp, request.minimax->tolerance,
-            request.controls.maximum_iterations, request.controls.maximum_elapsed_time_seconds, false, 1.0);
+            request.controls.maximum_iterations, request.controls.maximum_elapsed_time_seconds, false, 1.0, nullptr, 0.0, {},
+            &result.minimax->linear_solver);
         result.minimax->application_status = equilibrium::application_return_name(returned);
         if (initialized != Solve_Succeeded || (returned <= Invalid_Problem_Definition && returned != Invalid_Number_Detected)) {
             result.message = "Ipopt " + equilibrium::application_return_name(initialized) + "; " + result.minimax->application_status;
