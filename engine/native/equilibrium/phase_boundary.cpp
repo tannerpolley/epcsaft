@@ -34,9 +34,9 @@ bool supports_split_seed(const CompiledSystem& compiled) {
 
 namespace {
 
-void seed_composition(const CompiledSystem& compiled, std::size_t phase,
-                      const std::vector<double>& composition,
-                      std::vector<double>& point, std::size_t offset) {
+std::vector<double> seed_composition(const CompiledSystem& compiled, std::size_t phase,
+                      std::vector<double> composition,
+                      std::vector<double>& point, std::size_t offset, bool declared = false) {
     const auto& spec = compiled.problem.phases[phase];
     double total = 0.0;
     for (std::size_t i = 0; i < spec.support.size(); ++i) {
@@ -46,8 +46,37 @@ void seed_composition(const CompiledSystem& compiled, std::size_t phase,
         point[offset + i] = value;
         total += value;
     }
+    if (declared && spec.declared_composition_guess) {
+        const std::size_t components = compiled.feed_composition.size();
+        bool identity = compiled.B.size() == components;
+        for (std::size_t i = 0; i < compiled.B.size(); ++i)
+            for (std::size_t j = 0; j < components; ++j)
+                identity = identity && compiled.B[i][j] == static_cast<double>(i == j);
+        std::vector<double> upper(spec.support.size());
+        double removed = 0.0, recipients = 0.0;
+        for (std::size_t i = 0; i < spec.support.size(); ++i) {
+            const auto species = spec.support[i];
+            double u = identity ? compiled.feed_composition[species] : compiled.inventory_upper_bounds[species];
+            if (!(u > 0.0 && u < policy::EQUILIBRIUM_TRACE_MOIETY_FRACTION.value))
+                u = std::numeric_limits<double>::infinity();
+            upper[i] = u;
+            const double g = point[offset + i] / total;
+            removed += g - std::min(g, u);
+            if (!std::isfinite(u)) recipients += g;
+        }
+        if (removed > 0.0 && recipients > 0.0) {
+            for (std::size_t i = 0; i < spec.support.size(); ++i) {
+                const double g = point[offset + i] / total;
+                const double value = std::isfinite(upper[i]) ? std::min(g, upper[i]) : g + removed * g / recipients;
+                composition[spec.support[i]] = value;
+                point[offset + i] = std::log(value);
+            }
+            return composition;
+        }
+    }
     for (std::size_t i = 0; i < spec.support.size(); ++i)
         point[offset + i] = std::log(point[offset + i] / total);
+    return composition;
 }
 
 void validate_density_seed(const DensityRoot& root) {
@@ -62,6 +91,7 @@ struct PhaseStart final {
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts{};
     double vapor_density = 0.0, pressure = 0.0;
+    bool declared_guesses = false;
 };
 
 // The Rachford-Rice split of `total` mol of composition z: beta is the interior root of
@@ -125,10 +155,10 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
         for (std::size_t i = 0; i < spec.support.size(); ++i)
             result[phase][spec.support[i]] = spec.composition_guess[i];
     }
-    if (phases == 1) return {result};
+    if (phases == 1) return {result, {}, 0.0, 0.0, unguessed.empty()};
     if (unguessed.empty()) {
         scope.probe("start_rule", 1.0);
-        return {result};
+        return {result, {}, 0.0, 0.0, true};
     }
     if (phases != 2 || compiled.problem.phases[0].kind == compiled.problem.phases[1].kind) {
         scope.probe("start_rule", 3.0);
@@ -984,7 +1014,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     }
     auto start = true_species_split(compiled, scope, limits);
     if (!start) start = start_compositions(compiled, scope);
-    const auto& compositions = start->compositions;
+    auto& compositions = start->compositions;
     const std::size_t free_phases = compiled.problem.phases.size() - compiled.pinned_count;
     const double feed_total = compiled.feed_total;
     std::optional<double> speciated_density;
@@ -992,7 +1022,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     scope.probe("free_phases", static_cast<double>(free_phases));
     scope.probe("feed_total", feed_total);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
-        seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase]);
+        compositions[phase] = seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase], start->declared_guesses);
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;

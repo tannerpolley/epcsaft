@@ -1424,6 +1424,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             if (phase.is_zero_pinned() && guessed) continue;
             const std::size_t source = phase.is_zero_pinned() ? 0 : index++;
             phase.composition_guess.clear();
+            phase.declared_composition_guess = false;
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
         return boundary_start(seeded, true, limits, &stages);
@@ -1705,6 +1706,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                             check(seed.compositions[p].size() == compiled.declared_supports[p].size()
                                   && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }));
                             phase.composition_guess = seed.compositions[p];
+                            phase.declared_composition_guess = false;
                             restrict_composition_guess(phase, compiled.declared_supports[p]);
                         }
                         if (packed(p)) phase.packing_guess = seed.packing_fractions[p];

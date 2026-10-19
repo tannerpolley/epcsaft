@@ -24,6 +24,22 @@ from tests.native_inputs import ETHANE, parameters, same
 from tests.packets import parameters_json
 
 
+def test_trace_ethanol_retains_two_liquids(evidence: Any) -> None:
+    # #650/#652 failing declaration: trace inventory must not drain an initially enriched phase away.
+    model = Mixture(Parameters.from_json(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7),
+                                        components=("water", "ethanol", "isobutanol")))
+    problem = Problem(T=293.15, P=1e5, row_tolerance=1e-10,
+                      feed=Amounts({"water": .6, "ethanol": 1e-19, "isobutanol": .4}), phases=[
+                          Phase("Lw", kind="liquid", composition_guess=(.98, .001, .019)),
+                          Phase("Lo", kind="liquid", composition_guess=(.3, .001, .699))])
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    assert result.amounts[0] > 0. and result.amounts[1] > 0.
+    same(evidence, "trace-ethanol/two-liquids/classified-residual", result.convergence.residual, 0.,
+         atol=1e-10, rtol=0., unit="1", basis="Identity", method="shared-equilibrium-rows",
+         claim="the original trace-ethanol declaration retains two liquids and meets its classified rows")
+
+
 @pytest.mark.parametrize("total", [1.0, 10.0])
 @pytest.mark.parametrize("equilibrium_constant", [1e-4, 1e-8, 1e-12, 1e-16])
 def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_constant: float, total: float) -> None:
