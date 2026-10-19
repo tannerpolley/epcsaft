@@ -1,6 +1,5 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
-#include "equilibrium/ipopt.hpp"
 #include "contributions/helmholtz.hpp"
 
 #include "core/trace.hpp"
@@ -816,6 +815,7 @@ static EquilibriumResult run_driver_once(
         if (!audit) return;
         audit->solver_settings = result.solver_settings;
         audit->diagnostic_options_file = result.diagnostic_options_file;
+        audit->linear_solver = result.linear_solver;
         audit->solver_status = solver_status_name(nlp->status());
         audit->convergence.iterations = audit->iterations = nlp->iterations();
         audit->convergence.evaluations = audit->evaluations = nlp->evaluations();
@@ -841,7 +841,7 @@ static EquilibriumResult run_driver_once(
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
-            warm_start);
+            warm_start, &result.linear_solver);
         } catch (...) { capture_driver(); throw; }
     }();
     capture_driver();

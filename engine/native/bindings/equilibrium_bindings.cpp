@@ -139,7 +139,7 @@ void register_equilibrium(nb::module_& module) {
             nb::arg("point"), nb::arg("constraint_multipliers") = std::vector<double>{});
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
-        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file)
+        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
@@ -280,6 +280,7 @@ void register_equilibrium(nb::module_& module) {
         return asl_record(document, p, continuation, map, native.solver_options());
     }, nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
+    module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
     module.def("compile_problem", &compile_problem, nb::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, nb::arg("model"), nb::arg("problem"),

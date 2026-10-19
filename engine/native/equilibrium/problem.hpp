@@ -441,7 +441,7 @@ struct CriticalRecord final {
 struct OptimizerState;
 struct EquilibriumResult final {
     std::map<std::string, double> solver_settings;
-    std::string diagnostic_options_file;
+    std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
     const HelmholtzModel* model_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;

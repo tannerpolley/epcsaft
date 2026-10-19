@@ -474,7 +474,7 @@ def rule_exact_hessian_callback() -> list[str]:
         bad.append("equilibrium/gibbs_minimizer.cpp has no eval_h callback")
     options = without_comments((NATIVE / "equilibrium" / "ipopt.hpp").read_text())
     call = re.search(r"run_ipopt\((.*?)\);", text, re.S)
-    if call is None or call.group(1).rsplit(",", 5)[-5].strip() != "true" or not re.search(
+    if call is None or call.group(1).rsplit(",", 6)[-6].strip() != "true" or not re.search(
         r'"hessian_approximation",\s*exact\s*\?\s*"exact"\s*:\s*"limited-memory"', options
     ):
         bad.append("solve_equilibrium must request exact curvature from the common Ipopt owner")

@@ -87,4 +87,4 @@ def test_declared_liquid_less_densely_packed_than_the_vapor_is_refused() -> None
                                               phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))]))
     assert not result.success
     assert result.message.startswith("declared liquid L (packing fraction 0.152977") and "declared vapor V (0.160234" in result.message
-    assert (result.iterations, result.evaluations, result.hessian_calls) == (24, 49, 25)
+    assert (result.iterations, result.evaluations, result.hessian_calls) == {"mumps": (24, 49, 25), "ma57": (24, 48, 25)}[result.linear_solver]

@@ -172,7 +172,7 @@ void register_regression(nb::module_& module) {
     nb::class_<MinimaxRow>(module, "MinimaxRow")
         EPCSAFT_READONLY(MinimaxRow, kind, row, group, metric, sign, threshold, scale, auxiliary, members);
     nb::class_<MinimaxResult>(module, "MinimaxResult")
-        EPCSAFT_READONLY(MinimaxResult, availability, application_status, solver_status, feasible, stationary, t,
+        EPCSAFT_READONLY(MinimaxResult, availability, application_status, solver_status, linear_solver, feasible, stationary, t,
             target_maximum, gap, primal, stationarity, dual_sign, complementarity, point, lower, upper, values,
             physical_values, jacobian, multipliers, physical_multipliers, z_lower, z_upper, physical_z_lower,
             physical_z_upper, lower_distances, upper_distances, hold_multipliers, full_stationarity, root_errors,
