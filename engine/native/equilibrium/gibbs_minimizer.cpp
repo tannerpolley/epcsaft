@@ -1510,7 +1510,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
     return result;
 }
 
-static bool newton_eligible(const CompiledSystem& compiled) {
+bool newton_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
         || compiled.has_caloric_condition() || p.critical || p.envelope || p.azeotrope || p.discovery
@@ -1537,7 +1537,7 @@ static bool free_amount_newton_eligible(const CompiledSystem& compiled) {
 
 // The #565 recovery domain: a neutral nonreacting non-associating L+V boundary or TP flash on the full positive feed,
 // never an azeotrope cell.
-static bool recovery_eligible(const CompiledSystem& compiled) {
+bool recovery_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     const auto components = compiled.model->parameters().component_count();
     return (newton_eligible(compiled) || free_amount_newton_eligible(compiled)) && p.phases[0].kind != p.phases[1].kind

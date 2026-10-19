@@ -518,6 +518,24 @@ void check_s14() {
         "P_{vapor}=P_{liquid}", "branch");
 }
 
+// #648: the 100 K methane/ethane dew state from the pre-change Engine, main 7aacf971.
+void check_cold_dew() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::bubble_at(100.0);
+    problem.pressure = epcsaft::equilibrium::FreeValue::variable();
+    problem.phases[0].amount = epcsaft::equilibrium::AmountSpec::pinned(0.0);
+    problem.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
+    problem.phases[1].composition_guess = {0.5, 0.5};
+    const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    CHECK(r.success);
+    CHECK(r.iterations == 0 && r.evaluations <= 4);
+    CHECK(std::abs(*r.pressure / 22.244530615491858 - 1.0) <= 1.0e-10);
+    const std::array<double, 2> density{21475.329121199135, 0.026754521313143716};
+    const std::array<double, 4> composition{0.00015533300893750434, 0.9998446669910626, 0.5, 0.5};
+    for (std::size_t i = 0; i < density.size(); ++i) CHECK(std::abs(r.molar_densities[i] / density[i] - 1.0) <= 1.0e-10);
+    for (std::size_t i = 0; i < composition.size(); ++i) CHECK(std::abs(r.mole_fractions[i] / composition[i] - 1.0) <= 1.0e-10);
+}
+
 void check_s15c() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto problem = equilibrium_support::boundary();
@@ -1170,6 +1188,7 @@ int main(int argc, char** argv) {
         {{"native.boundary.s10", "S10"}, check_s10},
         {{"native.boundary.s14", "S14"}, check_s14},
         {{"native.boundary.s15c", "S15c"}, check_s15c},
+        {{"native.boundary.cold-dew", "cold-dew"}, check_cold_dew},
         {{"native.boundary.e4-a", "E4-A"}, check_e4_a},
         {{"native.boundary.e4-b", "E4-B"}, check_e4_b},
         {{"native.boundary.e4-c", "E4-C"}, check_e4_c},
