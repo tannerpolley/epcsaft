@@ -159,6 +159,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     result.dispersion_energy_over_k.assign(components, 0.0);
     result.molar_mass_kg_per_mol.assign(components, 0.0);
     result.charge_number.assign(components, 0);
+    result.molecular_ion.assign(components, 0);
     result.packing_diameter_angstrom.assign(components, 0.0);
     result.debye_huckel_diameter_angstrom.assign(components, 0.0);
     result.born_diameter_angstrom.assign(components, 0.0);
@@ -289,6 +290,10 @@ Parameters build_parameters(const ParameterDocument& document) {
                 reject("charge " + where(entry) + " is not integral");
             }
             result.charge_number[i] = static_cast<int>(entry.magnitude * factor);
+        } else if (entry.field == "charged_molecule_ion") {
+            const auto i = component_index(entry, components);
+            if (entry.magnitude * unit_factor(entry, "dimensionless") != 1.0) reject("charged_molecule_ion is not 1: " + where(entry));
+            result.molecular_ion[i] = 1;
         } else if (entry.field == "segment_count" || entry.field == "sigma_constant"
                    || entry.field == "dispersion_energy_over_k" || entry.field == "solvation_factor"
                    || entry.field == "relative_permittivity" || entry.field == "packing_diameter"
@@ -488,7 +493,9 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (component_fields.find({"sigma_constant", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_diameter");
         if (component_fields.find({"dispersion_energy_over_k", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/dispersion_energy_over_k");
         if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && component_fields.find({"solvation_factor", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/solvation_factor");
-        if (result.charge_number[i] != 0 && component_fields.find({"packing_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/packing_diameter");
+        if (result.molecular_ion[i] && result.charge_number[i] == 0) reject("unconsumed component/" + document.component_ids[i] + "/charged_molecule_ion");
+        const bool packing = component_fields.find({"packing_diameter", i}) != component_fields.end();
+        if (result.charge_number[i] != 0 && packing == bool(result.molecular_ion[i])) reject((packing ? "unconsumed component/" : "missing component/") + document.component_ids[i] + "/packing_diameter");
         if (result.charge_number[i] != 0 && component_fields.find({"debye_huckel_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/debye_huckel_diameter");
         if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
         // Schreckenberg records belong to every neutral solvent only; Rueben records to every component.
@@ -507,7 +514,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         const bool same_sign = result.charge_number[i] * result.charge_number[j] > 0;
         const bool k_law = law_slots.count({1, i * components + j}) != 0;
         if (k_law && result.k_ij_reference_temperature_k[i * components + j] != 0.0) reject("unconsumed k_ij slope of a temperature law pair");
-        if (same_sign && result.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)) {
+        if (same_sign && result.ionic_dispersion.is(IonicDispersion::ExcludeSameSign) && !(result.molecular_ion[i] && result.molecular_ion[j])) {
             if (k_law) reject("unconsumed k_ij temperature law under exclude-same-sign-ion-pairs");
             for (const auto& entry : document.entries) {
                 if (entry.index.size() != 2

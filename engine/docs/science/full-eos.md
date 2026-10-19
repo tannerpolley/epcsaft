@@ -27,8 +27,8 @@ Correct mathematics is not weakened to match an implementation defect.
 | Perdomo2025 | Perdomo et al., *Comput. Chem. Eng.* 2025, 194, 108977, DOI `10.1016/j.compchemeng.2024.108977` | Read-only NaCl--water vapor/liquid endpoint diagnostic; not an ePC-SAFT parameter source |
 | Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Source-complete water plus all 29 Table 2 ion parameters and fully dissociated water-electrolyte formulation; package reference domain 298.15 K and 1 bar |
 | Bulow2021 | Bülow, Ascani, and Held, *Fluid Phase Equilibria* 2021, 537, 112989, DOI `10.1016/j.fluid.2021.112989` | Linear ion-mole permittivity rule (§2.3, Table 5) and Born charging work (Eq. 24) for salts in an ionic liquid, with no neutral species |
-| Held2014 | Held et al., *Chem. Eng. Res. Des.* 2014, 92, 2884-2897, DOI `10.1016/j.cherd.2014.05.017` | Affine `k_ij(T)` laws of Tables 1-2 (pp. 2888-2889), temperature-law falsifiers only |
-| Uyan2015 | Uyan et al., *Fluid Phase Equilibria* 2015, 393, 91-100, DOI `10.1016/j.fluid.2015.02.026` | Quadratic `k_ij(T)` at 298 K, Eqs. (26)-(27), and the Wolbach--Sandler volume correction outside the square root, Eq. (9) and Table 5 |
+| Held2014 | Held et al., *Chem. Eng. Res. Des.* 2014, 92, 2884-2897, DOI `10.1016/j.cherd.2014.05.017` | Affine `k_ij(T)` laws of Tables 1-2 (pp. 2888-2889), temperature-law falsifiers; the text after Eqs. (21)-(22), the ion diameter from zero like-ion dispersion (§4) |
+| Uyan2015 | Uyan et al., *Fluid Phase Equilibria* 2015, 393, 91-100, DOI `10.1016/j.fluid.2015.02.026` | Quadratic `k_ij(T)` at 298 K, Eqs. (26)-(27), and the Wolbach--Sandler volume correction outside the square root, Eq. (9) and Table 5; Eqs. (10)-(11), the ion diameter from zero like-ion dispersion (§4) |
 | Bulow2021MDEA | Bülow et al., *Ind. Eng. Chem. Res.* 2021, 60, 6327-6336, DOI `10.1021/acs.iecr.1c00176` | Cubic water--MDEA `k_ij(T)`, Eq. (26) and Table 3, temperature-law falsifier only |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
@@ -221,7 +221,16 @@ zero-matrix identity.
 
 For charged components, the electrolyte model family declares its source rule.
 Figiel2025 sets cation--cation and anion--anion dispersion energies to zero;
-Ji2012 retains dispersion among all ionic species. Opposite-sign and
+Ji2012 retains dispersion among all ionic species. An ion declaring
+`fixed.charged_molecule_ion` is a charged molecule: it keeps dispersion with
+itself and with every other declared charged molecule, and takes the neutral
+Gross2001 diameter with its own `u_i` instead of a packing diameter.
+Held2014 and Uyan2015 derive the fixed ion diameter from zero like-ion
+dispersion; that a kept like-ion dispersion restores the temperature-dependent
+diameter is our inference from that derivation, which the sources state only in
+the zero-dispersion direction. Ji2012 is precedent for kept like-ion dispersion,
+not for the ion diameter, which its text does not state.
+The declaration is opt-in with no default. Opposite-sign and
 solvent--ion pairs always retain the Gross combining equation with their
 explicit source-backed `k_ij`. These ionic rules are part of the common scalar
 kernel, so Helmholtz values and CppAD composition derivatives consume the same
@@ -284,7 +293,9 @@ before subset selection. Repeated records are ambiguous physical inputs, not
 parameter overrides. Every selected component supplies fixed.charge_number,
 including zero for a neutral species. Python transports that record; native
 admission rejects omission by component identity. No charge is inferred from
-a component name, source label, or absent field. The version-3 Gross/DEEA
+a component name, source label, or absent field. A charged component may
+supply fixed.charged_molecule_ion with magnitude 1 (§4); admission refuses it
+on a neutral component, beside a packing_diameter, or with another magnitude. The version-3 Gross/DEEA
 packets state previously implicit neutral charges without changing coefficients.
 
 For each explicit site `A` on component `i`, define the site fraction

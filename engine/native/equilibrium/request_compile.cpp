@@ -20,7 +20,7 @@ std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& p = c.model->parameters();
     std::vector<double> id;
     const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
-    append(p.charge_number); append(p.molar_mass_kg_per_mol); append(p.site_component);
+    append(p.charge_number); append(p.molecular_ion); append(p.molar_mass_kg_per_mol); append(p.site_component);
     append(p.site_multiplicity); append(p.association_active); append(p.sigma_term_component);
     append(p.permittivity_term_component); append(p.permittivity_term_power);
     append(p.form_identity());
@@ -76,7 +76,7 @@ PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
     const double scale = (PI / 6.0) * NUMBER_DENSITY_PER_ANGSTROM3;
     for (std::size_t i = 0; i < composition.size(); ++i) {
         double diameter_t = 0.0;
-        if (parameters.charge_number[i] == 0) {
+        if (gross_diameter(parameters, i)) {
             const double exponential = std::exp(-3.0
                 * parameters.dispersion_energy_over_k[i] / temperature);
             diameter_t = sigma_t[i] * (1.0 - 0.12 * exponential)

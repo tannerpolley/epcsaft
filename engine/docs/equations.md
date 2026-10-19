@@ -474,13 +474,13 @@ $$
 - Status: Source equation
 - Source: [Gross2001], Eq.~(A.15)
 - Description: Unlike-pair dispersion energy for an applicable pair.
-- Change note: Keeps k_ij semantically distinct from l_ij and association data. A pair with a declared reference temperature $T_{\mathrm{ref},ij}>0$ takes the record's linear-in-$1/T$ law; its slope $b_{ij}$ (K) is an active-parameter family like $k_{ij}$ (#152).
+- Change note: Keeps k_ij semantically distinct from l_ij and association data. A pair with a declared reference temperature $T_{\mathrm{ref},ij}>0$ takes the record's linear-in-$1/T$ law; its slope $b_{ij}$ (K) is an active-parameter family like $k_{ij}$ (#152). The applicable pairs are the first case of `same_sign_ionic_dispersion`, with C the declared charged molecules (#641).
 
 $$
 \frac{\epsilon_{ij}}{k_B}
 =\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}}\,\bigl(1-k_{ij}(T)\bigr),
 \qquad k_{ij}(T)=k_{ij}+b_{ij}\Bigl(\frac{1}{T}-\frac{1}{T_{\mathrm{ref},ij}}\Bigr),
-\qquad z_iz_j\le0.
+\qquad z_iz_j\le0,\ \text{all-ion-pair dispersion, or } i,j\in C.
 $$
 
 ## `cross_segment_diameter`
@@ -1088,10 +1088,10 @@ $$
 - Status: Implementation convention
 - Source: Declared ion-specific hard-chain diameter; source packets retain the originating convention
 - Description: Ionic hard-chain packing diameter, independent of Debye--Huckel and Born diameters.
-- Change note: Removes the Born-selector dependency and keeps packing, Debye--Huckel, and Born lengths independently declarable.
+- Change note: Removes the Born-selector dependency and keeps packing, Debye--Huckel, and Born lengths independently declarable. A declared charged molecule (i in C) takes `neutral_segment_diameter` and declares no packing diameter (#641).
 
 $$
-d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\qquad d_i^{\mathrm{pack}}>0.
+d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\ i\notin C,\qquad d_i^{\mathrm{pack}}>0.
 $$
 
 ## `ionic_strength_charge_sum`
@@ -1301,13 +1301,13 @@ $$
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.9)
-- Description: Temperature-dependent hard-chain diameter for neutral components.
-- Change note: Reconciled to the current neutral diameter branch.
+- Source: [Gross2001], Eq.~(A.9); for i in C, [Held2014] Eqs.~(21)--(22) and the text after them, [Uyan2015] Eqs.~(10)--(11)
+- Description: Temperature-dependent hard-chain diameter for neutral components and declared charged molecules.
+- Change note: Reconciled to the current neutral diameter branch. #641: C is the set of ions declaring `fixed.charged_molecule_ion`. Held2014 and Uyan2015 obtain the fixed ion diameter 0.88 sigma from this equation with the like-ion dispersion energy set to zero; an ion that keeps its own like-pair well depth takes this equation with its own u_i (an inference from that derivation; the sources state only the zero-dispersion direction). Its u_i derivative is `packing_coefficient_parameter_derivative`'s neutral rule.
 
 $$
 d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
-\qquad z_i=0.
+\qquad z_i=0\ \text{or}\ i\in C.
 $$
 
 ## `outer_approximation_bound`
@@ -2181,12 +2181,12 @@ $$
 
 - Section: Parameter setup
 - Status: Implementation convention
-- Source: [Figiel2025], same-sign ion exclusion; [Ji2012], all-ion-pair dispersion
+- Source: [Figiel2025], same-sign ion exclusion; [Ji2012] §2.1 and Eq.~(4), all-ion-pair dispersion and ion-based species with dispersion among all ion pairs; [Held2014] text after Eqs.~(21)--(22)
 - Description: Select the source-declared dispersion rule for equally charged ions.
-- Change note: The caller selects all ion pairs or same-sign exclusion as part of the electrolyte model family.
+- Change note: The caller selects all ion pairs or same-sign exclusion as part of the electrolyte model family. #641: C is the opt-in set of charged molecules (`fixed.charged_molecule_ion`, no default). The pair i, j in C includes i = j, so a declared ion keeps its self pair with k_ii = 0; two different declared molecules of the same sign keep their pair under the combining rule and need a declared k_ij like any applicable pair.
 
 $$
-\epsilon_{ij}=\begin{cases}\sqrt{\epsilon_i\epsilon_j}(1-k_{ij}),&z_iz_j\leq 0\ \text{or all-ion-pair dispersion},\\0,&z_iz_j>0\ \text{and same-sign exclusion}.\end{cases}
+\epsilon_{ij}=\begin{cases}\sqrt{\epsilon_i\epsilon_j}(1-k_{ij}),&z_iz_j\leq 0,\ \text{all-ion-pair dispersion, or } i,j\in C,\\0,&z_iz_j>0,\ \text{same-sign exclusion, and not } i,j\in C.\end{cases}
 $$
 
 ## `segment_sigma_correlation`

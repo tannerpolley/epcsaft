@@ -710,6 +710,7 @@ HelmholtzModel::HelmholtzModel(
             "dispersion_energy_over_k");
     require(parameters_.molar_mass_kg_per_mol.size() == components, "molar_mass");
     require(parameters_.charge_number.size() == components, "charge_number");
+    require(parameters_.molecular_ion.empty() || parameters_.molecular_ion.size() == components, "charged_molecule_ion");
     require(parameters_.relative_permittivity.size() == components,
             "relative_permittivity");
     require(parameters_.packing_diameter_angstrom.size() == components,
@@ -828,7 +829,7 @@ HelmholtzModel::HelmholtzModel(
         if (parameters_.charge_number[component] == 0) {
             continue;
         }
-        require(parameters_.packing_diameter_angstrom[component] > 0.0,
+        require(molecular_ion(parameters_, component) || parameters_.packing_diameter_angstrom[component] > 0.0,
                 "packing_diameter");
         require(parameters_.debye_huckel_diameter_angstrom[component] > 0.0,
                 "debye_huckel_diameter");

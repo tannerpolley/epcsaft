@@ -234,7 +234,7 @@ class Parameters:
         for component_id in selected_ids:
             record = component_records[component_id]
             fixed = _mapping(record.get("fixed", {}), f"component/{component_id}/fixed")
-            for family in ("molar_mass", "charge_number"):
+            for family in ("molar_mass", "charge_number", "charged_molecule_ion"):
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
                     entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))

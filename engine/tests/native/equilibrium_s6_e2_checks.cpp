@@ -493,6 +493,13 @@ void check_f5() {
         for (std::size_t row = 0; row < weights.size(); ++row)
             weights[row] = 0.35 + 0.1 * static_cast<double>(row);
         check_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label, 1.0e-5);
+        if (variant == 4) {
+            // #641: a charged molecule's neutral d(T) reaches the T column through packing_terms' hand-written dd/dT.
+            auto charged = properties_support::aqueous_electrolyte();
+            charged.molecular_ion = {0, 1, 0};
+            const epcsaft::HelmholtzModel charged_model(charged);
+            check_finite_difference(epcsaft::equilibrium::compile_problem(charged_model, request), callback_point);
+        }
         if (variant == 1) {
             epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
             Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
