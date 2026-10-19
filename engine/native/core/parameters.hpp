@@ -33,7 +33,7 @@ enum class ElectrolyteForm {
 // rejected by the model constructor, and a neutral set may not declare one.
 enum class IonicDispersion {
     AllIonPairs = 1,      // every pair takes sqrt(eps_i eps_j)(1 - k_ij)
-    ExcludeSameSign = 2,  // pairs with z_i z_j > 0, the diagonal included, take 0
+    ExcludeSameSign = 2,  // pairs with z_i z_j > 0, the diagonal included, take 0 unless both are charged molecules
 };
 
 // Quantities a temperature law may own (equation pair_parameter_temperature_law).
@@ -73,6 +73,7 @@ struct FixedParameters {
 
     // Electrolyte
     std::vector<int> charge_number;
+    std::vector<int> molecular_ion;  // 1: an ion keeping the neutral short-range terms (#641); empty means none
     std::vector<double> solvation_factor;
     double born_c_shell = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;

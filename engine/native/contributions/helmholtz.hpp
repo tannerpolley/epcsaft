@@ -163,6 +163,12 @@ std::vector<Scalar> segment_sigma(
     return sigma;
 }
 
+// A declared charged_molecule_ion keeps self-dispersion and the Gross 2001 (A.9) diameter (Held 2014 Eqs. 21-22).
+template <typename ParameterSet>
+bool molecular_ion(const ParameterSet& p, std::size_t i) { return !p.molecular_ion.empty() && p.molecular_ion[i] != 0; }
+template <typename ParameterSet>
+bool gross_diameter(const ParameterSet& p, std::size_t i) { return p.charge_number[i] == 0 || molecular_ion(p, i); }
+
 template <typename Scalar, typename ParameterSet>
 // EqID: neutral_segment_diameter
 // EqID: ionic_packing_diameter
@@ -173,7 +179,7 @@ std::vector<Scalar> segment_diameter(
 ) {
     std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
-        diameter[component] = parameters.charge_number[component] == 0
+        diameter[component] = gross_diameter(parameters, component)
             ? sigma[component] *
                 (Scalar(1.0) - Scalar(0.12) * scalar_exp(
                     Scalar(-3.0)
@@ -478,7 +484,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             const int charge_j = parameters.charge_number[j];
             const bool same_sign_excluded =
                 parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)
-                && charge_i * charge_j > 0;
+                && charge_i * charge_j > 0 && !(molecular_ion(parameters, i) && molecular_ion(parameters, j));
             const Fixed epsilon_i = Fixed(parameters.dispersion_energy_over_k[i]);
             const Fixed epsilon_j = Fixed(parameters.dispersion_energy_over_k[j]);
             const Fixed epsilon_ij = same_sign_excluded
