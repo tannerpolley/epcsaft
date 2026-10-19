@@ -371,6 +371,12 @@ inline constexpr Tolerance EQUILIBRIUM_POLISH_CORRECTION{"EQUILIBRIUM_POLISH_COR
     1.0e-12, Category::AlgorithmTolerance,
     "#272 scaled undamped Newton correction and forward-error estimate; local termination, not a state-error certificate",
 };
+// ALG-EQUILIBRIUM polish (#633): a moiety no larger than this fraction of the feed, by inventory and by the
+// terms its balance row sums, is judged relative to that size. The threshold of #272's trace-species definition.
+inline constexpr Tolerance EQUILIBRIUM_TRACE_MOIETY_FRACTION{"EQUILIBRIUM_TRACE_MOIETY_FRACTION",
+    1.0e-6, Category::AlgorithmTolerance,
+    "largest moiety size, per mol of feed, whose balance row is judged relative to that size; not an accuracy bound",
+};
 // A reacting one-phase start is the ideal-solution speciation of its feed with frozen nonideal terms
 // (ALG-EQUILIBRIUM, #154/#157); its element-potential Newton iteration stops when every log-amount step,
 // trace species included, is below this. The frozen terms bound the start's accuracy, not this value.
@@ -471,7 +477,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &PHASE_DISAPPEARANCE_AMOUNT, &EQUILIBRIUM_AMOUNT_STEP_RETENTION, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
-    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &EQUILIBRIUM_CALORIC_SEED_ITERATIONS, &COOLING_RATIO, &EQUILIBRIUM_RECOVERY_SOURCES, &EQUILIBRIUM_RECOVERY_WORK, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
+    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_TRACE_MOIETY_FRACTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &EQUILIBRIUM_CALORIC_SEED_ITERATIONS, &COOLING_RATIO, &EQUILIBRIUM_RECOVERY_SOURCES, &EQUILIBRIUM_RECOVERY_WORK, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
     &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 // Six stopping controls; defaults remain the policies above. Presence survives inheritance.

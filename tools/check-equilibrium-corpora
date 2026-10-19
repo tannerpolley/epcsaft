@@ -59,7 +59,7 @@ ACCEPTED = dict(
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
-                fitting=dict(rows=216, cases=3, success=0, requested_tolerance_met=0, keys='6a8ed890c0f67ea0'),  # #543: five more Held fit history rows after tape optimization.
+                fitting=dict(rows=215, cases=3, success=0, requested_tolerance_met=0, keys='f206f77b19555b12'),  # #594: held-NaCl recovery stops at 25, not 26, iterations; at the evaluation floor the stop follows noise.
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 

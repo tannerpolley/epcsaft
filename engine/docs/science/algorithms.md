@@ -877,6 +877,21 @@ positive finite composition of every supported species; exact absence is the
 compiled support (#231). No composition cutoff applies, so the polish reaches
 positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
 (#87, 2026-09-21; #266, 2026-10-07: MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
+A trace moiety row is taken relative to its own size in the polish's progress
+measure, admission, stops, Newton system and #272 forward-error bound, and in the
+classified residual (#633). Its size $s_k$ is the larger of the moiety's feed
+inventory $\sum_i |B_{ki}| n^{\mathrm{feed}}_i$ and the magnitude
+$\sum_p N_p \sum_i |B_{ki}| x_{pi} + \sum_s |\beta_{sk}| n_s$ of the terms the row
+sums at the current point, both divided by $N_{\mathrm{feed}}$. When
+$0 < s_k \le$ `EQUILIBRIUM_TRACE_MOIETY_FRACTION` $=10^{-6}$, the threshold of
+#272's trace-species definition, the row and its Jacobian row are divided by
+$s_k$. A feed-normalized trace row (9.86e-18 at 1e-13 mol) otherwise lies below
+the rounding of the O(1) rows, so the raw maximum cannot fall and an available
+correction is discarded. Row equilibration leaves the Newton direction unchanged
+in exact arithmetic; the optimizer's constraints and the exact derivatives of a
+solved state are unchanged. The term magnitude keeps a row that cancels large
+solution-side amounts, such as carbon in a loaded MEA liquid, at the size its
+rounding allows.
 Before evaluating a trial, a fresh undamped correction may terminate polishing
 when the current point is the stored best point, its classified maximum is within
 the unchanged caller criterion, and every free phase amount is positive (#272).
@@ -1271,7 +1286,8 @@ therefore classifies the free-amount route by the KKT-scaled stationarity
 residuals `N_p x_i mu_i / N_feed` and `N_p / N_feed` times the pressure row (the
 first-order conditions in the solved chart; owner decision 2026-09-16), keeps
 the unscaled rows in `residuals` as diagnostics, and classifies a feasibility cell by
-its unscaled rows, which are its constraints. Species thermochemistry attached to a
+its unscaled rows, which are its constraints. In both routes a trace moiety row is
+classified relative to its size $s_k$ (polish, above). Species thermochemistry attached to a
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 

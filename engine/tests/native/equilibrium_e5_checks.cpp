@@ -327,13 +327,14 @@ std::vector<double> action_term_scale(const Fixture& fixture, const CompiledSyst
     return result;
 }
 
-// Qualify one fixture through orders 1 to 3; every observable/order/step is retained.
-bool qualify(const Fixture& fixture, const char* group) {
+// Qualify one fixture through orders 1 to min(orders, 3); every observable/order/step is retained.
+// analyses/2026-reactive-caloric-actions/scripts/main-2026-10-06/surface-equilibrium.cpp passes orders = 1.
+bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3) {
     const auto model = fixture.model();
     const auto compiled = epcsaft::equilibrium::compile_problem(model, fixture.problem);
     const auto central = epcsaft::equilibrium::solve_equilibrium(model, fixture.problem);
     CHECK(central.success);
-    for (std::size_t order = 1; order <= 3; ++order) {
+    for (std::size_t order = 1; order <= std::min<std::size_t>(orders, 3); ++order) {
         SolvedStateActionRequest request;
         request.observables = fixture.observables;
         request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order));

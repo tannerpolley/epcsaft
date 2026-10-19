@@ -1584,7 +1584,7 @@ CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double
 std::vector<double> CompiledSystem::classified_residuals(
     const PhasePoint& prepared, const std::vector<double>& values
 ) const {
-    std::vector<double> result = values;
+    std::vector<double> result = trace_moiety_relative(prepared, values);
     if (feasibility_cell() || values.size() != rows.size()) return result;
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const auto& item = rows[row];
@@ -1595,6 +1595,28 @@ std::vector<double> CompiledSystem::classified_residuals(
         }
     }
     return result;
+}
+
+std::vector<double> CompiledSystem::trace_moiety_relative(
+    const PhasePoint& prepared, std::vector<double> values, std::size_t width
+) const {
+    const double trace = policy::EQUILIBRIUM_TRACE_MOIETY_FRACTION.value;
+    if (values.size() != rows.size() * width) return values;
+    for (std::size_t row = 0; row < rows.size(); ++row) {
+        if (rows[row].kind != RowKind::Moiety) continue;
+        const auto& b = B[rows[row].index];
+        double inventory = 0.0, terms = 0.0;
+        for (std::size_t i = 0; i < b.size(); ++i) inventory += std::abs(b[i]) * n_feed[i];
+        if (inventory / feed_total > trace) continue;
+        for (std::size_t p = 0; p < prepared.amount.size(); ++p)
+            for (std::size_t i = 0; i < b.size(); ++i) terms += std::abs(b[i]) * prepared.amount[p] * prepared.composition[p][i];
+        for (const auto& solid : solids)
+            if (solid.column) terms += std::abs(solid.balance[rows[row].index] * prepared.point[*solid.column]);
+        const double size = std::max(inventory, terms) / feed_total;
+        if (!(size > 0.0) || size > trace) continue;
+        for (std::size_t j = 0; j < width; ++j) values[row * width + j] /= size;
+    }
+    return values;
 }
 
 double CompiledSystem::classified_residual_norm(const std::vector<double>& point) const {
