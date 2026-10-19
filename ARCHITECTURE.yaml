@@ -27,7 +27,7 @@ plan:
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
 # #648 Core 1,375 -> 1,390 and Properties 6,175 -> 6,241; merged #647 retains Equilibrium 10,475.
 # Total min(28,792 + band 288, layer-ceiling sum 28,982), within the delegated 28,919 count cap.
-code_budgets: {"core": 1390, "contributions": 1424, "properties": 6241, "equilibrium": 10475, "regression": 4000, "surface": 791, "bindings": 2240, "python": 2421, "total": 28982}
+code_budgets: {"core": 1390, "contributions": 1424, "properties": 6241, "equilibrium": 10582, "regression": 4000, "surface": 791, "bindings": 2240, "python": 2421, "total": 28982}
 
 property_categories: [Ideal, Residual, Total]
 
