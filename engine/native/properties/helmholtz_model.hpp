@@ -199,6 +199,8 @@ struct State final {
         partial_molar_entropy;  // component order
 };
 
+std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
+
 struct DensityRoot final {
     double molar_density = 0.0;
     double pressure_residual = 0.0;

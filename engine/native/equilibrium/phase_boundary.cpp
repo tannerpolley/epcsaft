@@ -63,6 +63,7 @@ struct PhaseStart final {
     std::vector<double> amounts{};
     double vapor_density = 0.0, pressure = 0.0, loop_pressure = 0.0;
     std::array<std::optional<State>, 2> feed_states{};
+    std::vector<double> densities{};
 };
 
 // The Rachford-Rice split of `total` mol of composition z: beta is the interior root of
@@ -120,6 +121,12 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> result(phases, compiled.feed_composition);
+    if (pressure_loop_eligible(compiled)) if (auto rho = superancillary_densities(*compiled.model, compiled.seed_temperature())) {
+        const double pressure = compiled.model->state(compiled.seed_temperature(), (*rho)[1], compiled.feed_composition).pressure;
+        scope.probe("superancillary_start", pressure);
+        if (compiled.problem.phases[0].kind == PhaseKind::Vapor) std::swap((*rho)[0], (*rho)[1]);
+        return {result, {}, 0.0, pressure, 0.0, {}, {(*rho)[0], (*rho)[1]}};
+    }
     std::string unguessed;
     for (std::size_t phase = 0; phase < phases; ++phase) {
         const auto& spec = compiled.problem.phases[phase];
@@ -1025,7 +1032,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope);
+    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -1049,8 +1056,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             scope.probe("packing_guess", packing, static_cast<std::uint32_t>(phase));
             continue;
         }
-        if (speciated_density.has_value()) {  // the last sweep's root, at nearly the speciated composition
-            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *speciated_density);
+        const auto density = start->densities.empty() ? speciated_density : std::optional(start->densities[phase]);
+        if (density.has_value()) {
+            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
             continue;
         }
         const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor

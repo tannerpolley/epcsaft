@@ -706,7 +706,28 @@ rule below the split loses accepted MEA states, each ending on a vanished phase;
 qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md) (#350, #356; PR #370).
 Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
 redundant density initialization for a previous successful result with compatible
-positive coordinates. A neutral, nonreacting, non-associating liquid/vapor cell at fixed temperature and free
+positive coordinates. For a single neutral, non-associating, nonpolar component, the Bell–Deiters
+PC-SAFT superancillary (2023, doi:10.1021/acs.iecr.2c02916; Zotero `BEC7SFNS`)
+precedes the pressure loop below. It applies only in the same fixed-temperature,
+free-pressure cell domain, with no charged-molecule declaration or segment-diameter
+temperature law, $1\le m\le64$, $\tilde T\ge\tilde T_{min}$ and
+$\Theta=(\tilde T-\tilde T_{min})/(\tilde T_c-\tilde T_{min})\le0.999$.
+The upper start-domain limit is `SUPERANCILLARY_MAX_THETA`, beside the evaluator.
+The retained NIST coefficients define piecewise degree-16 Chebyshev expansions in
+$\Theta$ at 17 Chebyshev–Lobatto nodes in $w=1/m$; Clenshaw evaluation and the
+barycentric interpolant on those nodes give $\tilde\rho_L$ and $\tilde\rho_V$.
+Here $\tilde T=T/(\varepsilon/k)$ and
+$\rho_\phi=\tilde\rho_\phi/(N_A\sigma^3)$, with molecular number density.
+The start uses $P(T,\rho_V)$ from the shared state calculation, places both
+densities by phase kind, and skips the initial density solves. The vapor pressure
+is used because liquid stiffness amplifies density rounding at low temperature.
+The unchanged equilibrium rows and admission still decide the result. Outside
+that parameter or temperature domain, the pressure loop and original density
+and coexistence checks below remain in effect. Meson compiles the losslessly
+converted `engine/data/superancillary/pcsaft.json` into hexadecimal arrays; a
+missing file or invalid table shape fails the build, and no runtime reads a file.
+The source commit, file hashes, converter and NIST notice travel with the data.
+A neutral, nonreacting, non-associating liquid/vapor cell at fixed temperature and free
 pressure, with full positive feed support and exactly one zero-pinned phase, first
 attempts a Newton start in $\ln P$. It shares the driver's Newton and recovery
 eligibility predicates; mixtures qualify only without a declared pressure seed,
