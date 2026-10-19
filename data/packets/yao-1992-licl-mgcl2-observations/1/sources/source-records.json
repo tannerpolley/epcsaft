@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "source_id": "yao-1992",
+      "citation": "Yao et al. (1992), Thermodynamics of Aqueous Electrolyte Solution: Isopiestic Determination of Osmotic and Activity Coefficients in LiCl–MgCl₂–H₂O at 25 °C, Acta Chimica Sinica 50, 839–848.",
+      "use_basis": "Zotero PELPB487, Chinese; Table 1 p.841 (PDF p.3); printed values and all flags retained. Set/row means order within the printed set."
+    }
+  ],
+  "description": "Yao 1992 LiCl-MgCl2 isopiestic observations at 298.15 K",
+  "source_pdf_sha256": "66750a694c48d525635488a20fe5d757a29a481f359e3a302d6fc866852510ab",
+  "source_pdf_name": "yao-1992-acta-chim-sinica-50-839.pdf"
+}

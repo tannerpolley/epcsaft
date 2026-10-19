@@ -1,0 +1,13 @@
+{
+  "sources": [
+    {
+      "source_id": "robinson-covington-1968",
+      "citation": "Robinson and Covington (1968), The Thermodynamics of the Ternary System: Water-Potassium Chloride-Calcium Chloride at 25 °C, J. Res. NBS 72A, 239.",
+      "doi": "10.6028/jres.072a.022",
+      "use_basis": "Zotero L43EDHNC/RXXNACBK; Table 1 p.240, PDF p.2. Observed Phi only; every measurement including starred rows retained. Dotted m(KCl) endpoints are structural zero."
+    }
+  ],
+  "description": "Robinson-Covington 1968 KCl-CaCl2 isopiestic observations at 298.15 K",
+  "source_pdf_sha256": "cadcbbdfa200bf45db99fad932148b0faf8cb85e6eda230dd6ccf1cb6beb409d",
+  "source_pdf_name": "Robinson and Covington - 1968 - The thermodynamics of the ternary system Water-potassium chloride-calcium chloride at 25 C.pdf"
+}

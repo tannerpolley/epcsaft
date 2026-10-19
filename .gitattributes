@@ -24,6 +24,7 @@ data/packets/**/parameters/parameters.json                      -diff linguist-g
 analyses/2026-tpd-phase-discovery/results/**/*.csv -text
 analyses/2026-mixed-chloride-water-activity/inputs/** -text
 data/packets/mixed-chloride-water-observations/** -text
+data/packets/el-guendouzi-2004-licl-nacl-observations/*/observations/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 # Empty terminal TSV fields retain their tab delimiters.
 analyses/2026-reactive-caloric-actions/results/main-2026-10-06/*.tsv whitespace=-blank-at-eol

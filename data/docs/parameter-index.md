@@ -11,6 +11,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `ascani-2022-case-study-2-electrolyte-lle` | 3 | 2, 3 | Ascani 2022 case study 2: water/1-butanol with NaCl and KCl, electrolyte LLE at 298.15 K and 1 bar. |
 | `crespo-2021-deea` | 3 | 2, 3 | Pure diethylethanolamine (neutral PC-SAFT, Crespo 2021). |
 | `dielectric-response-records` | 1 | 1 | Density-dependent relative-permittivity relations (Schreckenberg, Rueben) for water, Na+ and Cl-; formulation records, not a complete parameter set. |
+| `el-guendouzi-2004-licl-nacl-observations` | 1 | 1 | El Guendouzi 2004 LiCl-NaCl observations read from Lassin 2015 Fig. 22; inverted legend reading retained, original table not checked. |
 | `feos-esper-2023` | 1 | 1 | Esper 2023 PCP-SAFT pure parameters for 1842 substances (FeOs); non-commercial use (CC BY-NC 4.0); no mixture parameters. |
 | `feos-gross-sadowski-2001` | 1 | 1 | Gross and Sadowski 2001 Table 2 nonassociating pure fluids as distributed by FeOs; values equal gross-sadowski-2001. |
 | `feos-gross-sadowski-2002` | 1 | 1 | Gross and Sadowski 2002 Table 1 associating pure fluids (FeOs) with explicit Wolbach-Sandler rules; supply k_ij for a mixture. |
@@ -36,7 +37,9 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
 | `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
+| `robinson-covington-1968-kcl-cacl2-observations` | 1 | 1 | Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained. |
 | `saad-padova-marcus-1980-nacl-kcl-cacl2-observations` | 1 | 1 | Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980). |
+| `yao-1992-licl-mgcl2-observations` | 1 | 1 | Yao 1992 Table 1 LiCl-MgCl2 isopiestic observations; printed typos and the illegible row remain flagged. |
 | `zuber-2014-electrolyte-permittivity` | 1 | 1 | Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol. |
 
 ## Components

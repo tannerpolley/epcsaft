@@ -1,0 +1,45 @@
+schema_version = 2
+packet_id = "el-guendouzi-2004-licl-nacl-observations"
+packet_version = "1"
+title = "El Guendouzi 2004 LiCl-NaCl measurements read from Lassin 2015 Fig.22 at 298.15 K"
+description = "El Guendouzi 2004 LiCl-NaCl measurements read from Lassin 2015 Fig.22 at 298.15 K"
+license_or_use_basis = "Factual numerical observations and project metadata for private scientific verification; no full article content."
+tolerance_rationale = "Printed precision is retained; no pointwise statistical uncertainty or model-acceptance tolerance is assigned."
+
+[[sources]]
+source_id = "el-guendouzi-2004"
+citation = "El Guendouzi, Benbiyi, Dinane and Azougen (2004), Calphad 28, 97–103."
+doi = "10.1016/j.calphad.2004.05.004"
+use_basis = "Measurement: Zotero PPC82MCC. Read from UCN2I6PC Fig.22 p.244. Inverted legend interpreted as m(LiCl)/m(NaCl)=0.5,1,2; not checked against the original table; duplicate compositions kept."
+
+[[sources]]
+source_id = "lassin-2015"
+citation = "Lassin et al. (2015), American Journal of Science 315, 204–256."
+doi = "10.2475/03.2015.02"
+use_basis = "Zotero UCN2I6PC; Fig.22 p.244 (PDF p.41), vector markers, plotted precision 0.001 in Phi; measurement attributed to El Guendouzi 2004."
+
+[[domains]]
+domain_id = "el-guendouzi-2004-licl-nacl-observations-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "El Guendouzi 2004 LiCl-NaCl measurements read from Lassin 2015 Fig.22 at 298.15 K"
+
+[[files]]
+path = "observations/el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "28b511d458f0ada0b10fe7f571ceedd3db548d61997fbbb1e529bec7147154ac"
+source_refs = ["el-guendouzi-2004", "lassin-2015"]
+domain_refs = ["el-guendouzi-2004-licl-nacl-observations-298-15-k"]
+units_basis = "Molalities and ionic strength: mol/kg water; osmotic coefficient, activity and ratios: dimensionless; source locators retained."
+
+[[files]]
+path = "sources/source-records.json"
+role = "source"
+media_type = "application/json"
+sha256 = "a4e5a8a3cb19a9111da4a3efb1bc376ad29c435de4c52284e08ac7acd3407680"
+source_refs = ["el-guendouzi-2004", "lassin-2015"]
+domain_refs = ["el-guendouzi-2004-licl-nacl-observations-298-15-k"]
+units_basis = "Non-numeric source identities, locators, reading notes and PDF digest."

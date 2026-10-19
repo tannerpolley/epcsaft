@@ -345,6 +345,27 @@
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
       "packet_fingerprint": "ad1194a1dab24e5cd748e8992500e91b664715be59892cdd82ac5888a7b85004",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "yao-1992-licl-mgcl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/yao-1992-licl-mgcl2-observations/1",
+      "packet_fingerprint": "07084b69b26934602cd4be8b7a96c23194092620cb6d536b69f4034bcd4ca2ab",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "el-guendouzi-2004-licl-nacl-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/el-guendouzi-2004-licl-nacl-observations/1",
+      "packet_fingerprint": "020992ba5ec1f655206cecc0c7dae1f02dca422a0f2c4122dfd5add07a5924e6",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "robinson-covington-1968-kcl-cacl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/robinson-covington-1968-kcl-cacl2-observations/1",
+      "packet_fingerprint": "2b40b11665854d49403957ba1a5dcd4a486cccc6f17ced07f52a2a20faa31a3e",
+      "materialization": "byte-for-byte"
     }
   ]
 }
