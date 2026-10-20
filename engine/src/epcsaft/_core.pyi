@@ -195,6 +195,8 @@ class ParameterFamily:
     DielectricVolume: ParameterFamily
     DielectricTemperature: ParameterFamily
     TemperatureLawCoefficient: ParameterFamily
+    CationPairMixing: ParameterFamily
+    CationTripleMixing: ParameterFamily
 
 class ActiveParameter:
     family: ParameterFamily
@@ -332,6 +334,7 @@ class State:
     association: float
     debye_huckel: float
     born: float
+    cation_mixing: float
     dipolar: float  # the declared polar term: dipole-dipole or quadrupole-quadrupole
     bulk_relative_permittivity: float
     residual_helmholtz: float

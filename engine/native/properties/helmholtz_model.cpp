@@ -693,6 +693,21 @@ PropertyActionBatch evaluate_actions(
 }
 }  // namespace
 
+void validate_cation_mixing(const Parameters& p) {
+    const auto size = p.cation_mixing.size();
+    require(size <= 1 && p.cation_pair_mixing.size() == size && p.cation_triple_mixing.size() == size, "cation mixing record");
+    if (!size) return;
+    const auto [s, i, j, k] = p.cation_mixing.front();
+    for (const int index : {s, i, j, k}) require(index >= 0 && static_cast<std::size_t>(index) < p.component_count(), "cation mixing index");
+    require(i < j && p.charge_number[s] == 0 && p.charge_number[i] > 0 && p.charge_number[j] > 0
+        && p.charge_number[k] < 0 && p.electrolyte_form.declared(), "cation mixing participants");
+    require(std::count(p.charge_number.begin(), p.charge_number.end(), 0) == 1
+        && std::count_if(p.charge_number.begin(), p.charge_number.end(), [](int z) { return z < 0; }) == 1,
+        "cation mixing requires one solvent and one anion");
+    require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
+        && finite_vector(p.cation_pair_mixing) && finite_vector(p.cation_triple_mixing), "cation mixing values");
+}
+
 HelmholtzModel::HelmholtzModel(
     Parameters parameters,
     std::vector<detail::ActiveParameter> active,
@@ -710,6 +725,7 @@ HelmholtzModel::HelmholtzModel(
             "dispersion_energy_over_k");
     require(parameters_.molar_mass_kg_per_mol.size() == components, "molar_mass");
     require(parameters_.charge_number.size() == components, "charge_number");
+    validate_cation_mixing(parameters_);
     require(parameters_.molecular_ion.empty() || parameters_.molecular_ion.size() == components, "charged_molecule_ion");
     require(parameters_.relative_permittivity.size() == components,
             "relative_permittivity");
@@ -1889,6 +1905,7 @@ State HelmholtzModel::state(
     result.debye_huckel = terms.debye_huckel;
     result.born = terms.born;
     result.dipolar = terms.dipolar;
+    result.cation_mixing = terms.cation_mixing;
     result.bulk_relative_permittivity = electro.bulk_relative_permittivity;
     result.residual_helmholtz = derivatives.value;
     result.compressibility_factor = z;

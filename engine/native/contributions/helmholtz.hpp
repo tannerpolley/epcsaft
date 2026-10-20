@@ -131,7 +131,19 @@ struct HelmholtzResult final {
     Scalar debye_huckel;
     Scalar born;
     Scalar dipolar;
+    Scalar cation_mixing;
 };
+
+// EqID: cation_pair_triple_mixing_helmholtz
+template <typename Scalar, typename ParameterSet>
+Scalar cation_mixing_helmholtz(const std::vector<Scalar>& x, const ParameterSet& parameters) {
+    if (parameters.cation_mixing.empty()) return Scalar(0.0);
+    const auto [s, i, j, k] = parameters.cation_mixing.front();
+    const Scalar mass = parameters.molar_mass_kg_per_mol[s] * x[s];
+    if (!(mass > Scalar(0.0))) throw std::invalid_argument("cation mixing requires positive solvent mass");
+    return 2.0 * parameters.cation_pair_mixing[0] * x[i] * x[j] / mass
+        + parameters.cation_triple_mixing[0] * x[i] * x[j] * x[k] / (mass * mass);
+}
 
 // Fixed: the scalar of quantities that do not depend on density (temperature and composition), so a
 // density series carries only density-dependent arithmetic; the tape and double instantiations take Fixed = Scalar.
@@ -525,7 +537,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
             (scalar_log(site_fraction[site]) - site_fraction[site] / 2.0 + 0.5);
     }
     // EqID: residual_helmholtz
-    return {hard_chain, dispersion, association, debye_huckel, born, dipolar};
+    return {hard_chain, dispersion, association, debye_huckel, born, dipolar,
+        cation_mixing_helmholtz(mole_fractions, parameters)};
 }
 
 }  // namespace epcsaft
