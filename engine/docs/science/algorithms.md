@@ -1928,8 +1928,16 @@ failed donor density search is a failed finite check.
 Retain each failed check and count energy/density evaluations. Admit numerical
 descent only when the finite Gibbs decrease exceeds its propagated estimate.
 Optimizer convergence and positive trial inertia are diagnostics, not descent
-requirements. An inaccessible negative plane remains unresolved; missing error
-terms, near-zero margins or failed finite descent are indeterminate.
+requirements. An inaccessible negative plane remains unresolved. In ordinary
+negative-plane donor analysis, after reconstruction, support, domain and
+positive-donor admission, a finite slope with a finite nonnegative complete
+error estimate is labelled `no_resolved_descent` when $d_p\ge-E_d$; retain the
+plane value, slope and error. This label means that this trial's slope does not
+resolve descent against that estimate. Missing or invalid error terms remain
+indeterminate. For $d_p<-E_d$, retain the negative-plane and conserved
+finite-split requirements; failure to establish the finite decrease remains
+indeterminate. The label neither asserts a nonnegative exact distance nor
+certifies equilibrium.
 
 The adopted output is **numerically resolved descending split with estimated
 uncertainty**. Calling it a **proved instability witness** requires justified
