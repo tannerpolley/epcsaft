@@ -498,11 +498,11 @@ class IdealNASA7:
     See cp_ideal_nasa7 in engine/docs/equations.md. Coefficients must be enclosed in an explicit IdealInterval.
     """
     coefficients: list[float]
-    """7 values in source order a0 through a6; temperature is in K. Heat capacity divided by R uses
-    powers T**0 through T**4; a5/T and a6 are the enthalpy and entropy integration terms.
-    Coefficient units follow these powers; retain the source gas constant until
-    prepare_thermochemistry.
-    """
+    """Seven coefficients [a0, a1, a2, a3, a4, a5, a6] in source order, with T
+    in K. Cp/R uses powers T**0 through T**4; a5/T and a6 are the h/(RT)
+    and s/R integration terms. Units are dimensionless for a0 and a6,
+    K**(-k) for a[k] with k=1 through 4, and K for a5. Native evaluation
+    uses GAS_CONSTANT_J_PER_MOL_K; prepare_thermochemistry accepts NASA9 only."""
     def __init__(self, coefficients: Sequence[float]) -> None:
         """Initialize IdealNASA7 from the declared inputs.
 
@@ -761,7 +761,7 @@ class ParameterFamily:
     PackingDiameter: ParameterFamily
     """Ionic packing diameter in angstrom, component slots."""
     IonSuppressionCoefficient: ParameterFamily
-    """Ion suppression coefficient in kg/mol, component slots."""
+    """Ion suppression coefficient, dimensionless, in charged-component slots."""
     SegmentCount: ParameterFamily
     """Segment count per molecule, dimensionless, component slots."""
     SigmaConstant: ParameterFamily
@@ -980,9 +980,9 @@ class DensityActionDirection:
     molar_density: float
     """Molar density increment in mol/m^3."""
     composition: list[float]
-    """Mole-fraction increments, length n or empty for no composition motion; dimensionless,
-    preserving normalization and charge balance.
-    """
+    """Dimensionless mole-fraction increments, length n in component_ids order.
+    Supply n zeros for no composition motion; an empty vector is rejected by
+    the native action readers. Increments must preserve normalization and charge balance."""
     parameter: list[ParameterActionDirection]
     """Physical parameter increments, in declaration order; empty means no parameter motion."""
     def __init__(self, temperature: float = 0.0, molar_density: float = 0.0,
@@ -1020,9 +1020,9 @@ class PressureActionDirection:
     pressure: float
     """Pressure increment in Pa."""
     composition: list[float]
-    """Mole-fraction increments, length n or empty for no composition motion; dimensionless,
-    preserving normalization and charge balance.
-    """
+    """Dimensionless mole-fraction increments, length n in component_ids order.
+    Supply n zeros for no composition motion; an empty vector is rejected by
+    the native action readers. Increments must preserve normalization and charge balance."""
     parameter: list[ParameterActionDirection]
     """Physical parameter increments, in declaration order; empty means no parameter motion."""
     def __init__(self, temperature: float = 0.0, pressure: float = 0.0,
@@ -1117,17 +1117,22 @@ class PropertyActionDiagnostics:
     site_solves: int
     """Number of association linear solves."""
     site_pivot_ratio: float
-    """Dimensionless ratio of largest to smallest absolute association factorization pivot."""
+    """Dimensionless largest/smallest absolute association pivot ratio when the
+    smallest pivot is positive. Zero when not computed or when the smallest pivot
+    is zero; inspect the action status before interpreting conditioning."""
     association_residual: float
     """Dimensionless association mass-action residual magnitude."""
     pressure_density_derivative: float
-    """Central dP/drho at fixed T and composition, Pa m^3/mol."""
+    """Pressure-chart central dP/drho at fixed T and composition, Pa m^3/mol.
+    Zero when no pressure root was supplied; the density chart does not compute
+    this diagnostic."""
     pressure_residual: float
-    """Density closure pressure residual, Pa."""
+    """Pressure-chart EOS pressure minus prescribed pressure, Pa. Zero when no
+    pressure root was supplied; this default does not establish pressure closure."""
     stability_determinant: float
-    """Dimensionless pressure slope (dP/drho)/(RT); mechanical regularity evidence, not global
-    stability.
-    """
+    """Pressure-chart dimensionless slope (dP/drho)/(RT); mechanical regularity
+    evidence rather than global stability. Zero when no pressure root was
+    supplied; this default does not identify a spinodal."""
     pressure_factorizations: int
     """Number of implicit pressure factorizations."""
     pressure_solves: int
@@ -1154,7 +1159,9 @@ class PropertyActionBatch:
     results: list[PropertyActionResult]
     """Results in observable order; log-fugacity requests expand into component_ids order."""
     maximum_energy_order: int
-    """Maximum Helmholtz derivative order used across the batch."""
+    """Reported Helmholtz derivative-order requirement for the batch. It can be
+    populated when evaluation is refused and does not establish completed
+    derivative work."""
     diagnostics: PropertyActionDiagnostics
     """Shared conditioning, work and pressure-closure diagnostics."""
     molar_density: Optional[float]
@@ -1172,7 +1179,8 @@ class PropertyActionBatch:
     density_message: str
     """Native density refusal explanation, possibly empty."""
     density_convergence: Optional[Convergence]
-    """Density-root convergence record, or None without such a solve."""
+    """Density-closure failure record when a ConvergenceFailure was caught. None
+    for successful pressure closure and for failures without that record."""
 
 class State:
     """One homogeneous state with SI molar quantities.
@@ -1210,18 +1218,20 @@ class State:
     entry is None for unavailable charged insertion.
     """
     log_fugacity_coefficient: Optional[list[Optional[float]]]
-    """Length n in component_ids order, ln(phi_i)=mu_res_i/(RT)-ln(Z), dimensionless. The list is
-    None unless Z is positive and finite; individual entries preserve unavailable chemical
-    potentials.
-    """
+    """Dimensionless component ln(phi_i), length n in component_ids order. Direct-density
+    states subtract ln(compressibility_factor) from mu_res_i/(RT); pressure-closed
+    states subtract ln(P_target/(rho RT)) using the prescribed pressure. The list
+    is None unless the EOS compressibility factor is positive and finite; unavailable
+    component chemical potentials give None entries."""
     component_property_status: list[PropertyActionStatus]
     """Length n, component_ids order; explains component-property availability, including
     IonicInsertion.
     """
     log_fugacity_parameter_derivative: list[Optional[float]]
-    """Flattened row-major (n, a) first partials of ln(phi_i) at fixed T/P/x, inverse native
-    parameter units; unavailable entries are None.
-    """
+    """Flattened row-major (n, a) first partials of ln(phi_i) at fixed T/P/x, in
+    inverse native parameter units. Populated only when the fugacity list exists
+    and dP/drho is finite and positive; otherwise empty. Within a populated array,
+    unavailable component insertions have None entries."""
     residual_entropy: float
     """Residual molar entropy in J/(mol K). Residual means minus ideal gas at the same T and rho."""
     residual_internal_energy: float
@@ -1315,18 +1325,19 @@ class State:
     total Cp and positive pressure slope are available.
     """
     partial_molar_volume: Optional[list[Optional[float]]]
-    """Length n in component_ids order, m^3/mol; None unless requested with positive pressure
-    slope; individual unavailable insertions remain None.
-    """
+    """Partial molar volumes in m^3/mol, in component_ids order. None when derived
+    properties were not requested; otherwise a length-n list. Entries are None
+    without a positive finite pressure slope, for unavailable insertions, or for nonfinite results."""
     partial_molar_enthalpy: Optional[list[Optional[float]]]
-    """Length n in component_ids order, J/mol; None unless requested with positive pressure slope
-    and admitted thermochemistry; unavailable component insertions remain None.
-    """
+    """Partial molar enthalpies in J/mol, in component_ids order. None when derived
+    properties were not requested; otherwise a length-n list. Entries are None
+    without a positive finite pressure slope or admitted thermochemistry, for unavailable
+    insertions, or for nonfinite results."""
     partial_molar_entropy: Optional[list[Optional[float]]]
-    """Length n in component_ids order, J/(mol K); None unless requested with positive pressure
-    slope and thermochemistry; zero-fraction species and unavailable insertions have None
-    entries.
-    """
+    """Partial molar entropies in J/(mol K), in component_ids order. None when derived
+    properties were not requested; otherwise a length-n list. Entries are None
+    without a positive finite pressure slope or admitted thermochemistry, for zero-fraction
+    species or unavailable insertions, or for nonfinite results."""
 
 class DensityDiagnosticPoint:
     """One sampled or refined point on a fixed-composition isotherm."""
@@ -1347,17 +1358,18 @@ class DensityDiagnosticPoint:
     (dP/drho)/(RT) for spinodals; may be nonfinite after refusal.
     """
     mechanical_sign: int
-    """Sign of dP/drho: positive for mechanical stability, negative for instability, zero at a zero
-    slope or when unresolved.
-    """
+    """Sign of dP/drho for ordinary evaluated samples and pressure roots: +1 for
+    positive slope and -1 for negative slope. Spinodal records force this value
+    to zero even when their retained slope is not exactly zero; unevaluated
+    records also retain zero."""
     linked: bool
     """Whether the diagnostic linked this point through its scan/refinement logic; not a global
     phase-stability statement.
     """
     declared: bool
-    """Whether this point belongs to the declared search evidence rather than an unresolved
-    auxiliary result.
-    """
+    """False for extra samples introduced by the adaptive slope search; True for
+    records retaining the declared-evidence default, including failed declared
+    nodes and unresolved brackets. This marker does not indicate successful resolution."""
     cause: str
     """Native failure or refinement explanation, possibly empty."""
     stop: str
@@ -1397,7 +1409,9 @@ class DensityDiagnostics:
     geometric_cap: float
     """Packing-derived upper density bound in mol/m^3; not proof of finite evaluability below it."""
     declared_crossings: int
-    """Number of pressure crossings declared by the search."""
+    """Number of strict sign-changing pressure brackets between connected declared
+    nodes; equals len(declared_brackets). Exact-zero samples and additional
+    adaptive crossings do not increase this count."""
     evaluations: int
     """Number of diagnostic EOS evaluations."""
     stop: str
@@ -1509,7 +1523,7 @@ class HelmholtzModel:
         observables : Sequence[PropertyObservable]
             Ordered property selections; values and contractions use PropertyObservable units.
         directions : Sequence[DensityActionDirection]
-            Ordered physical increments; mixed actions contract all directions, whereas each first density action is reported separately.
+            Ordered physical increments defining one mixed property contraction.
 
         Returns
         -------
@@ -1838,8 +1852,7 @@ class PhaseSpec:
     amount: AmountSpec
     """Free amount or dimensionless feed-relative pinned fraction."""
     composition_guess: list[float]
-    """Dimensionless full-component mole-fraction seed, length n, or empty for native
-    initialization; restricted to the admitted support.
+    """Dimensionless mole-fraction seed in support order, length len(support), or empty for native initialization. For direct supplied stability trials, use n entries in component order with zero outside support.
     """
     packing_guess: Optional[float]
     """Optional dimensionless packing-fraction seed, not a density in mol/m^3."""
@@ -1986,11 +1999,10 @@ class NeutralReferenceReactionDiagnostic:
     a local numerical estimate, not a universal error bound.
     """
     terminal_contraction_pressure_derivative: Optional[float]
-    """First partial of the contraction with respect to source pressure, 1/Pa, or None when
-    unavailable.
+    """First partial of the contraction with respect to system pressure at fixed temperature, 1/Pa; exactly zero for a fixed source pressure, or None when the requested column is unavailable or was not evaluated.
     """
     terminal_contraction_pressure_second_derivative: Optional[float]
-    """Second source-pressure partial, 1/Pa^2, or None when unavailable."""
+    """Second partial with respect to system pressure at fixed temperature, 1/Pa^2; exactly zero for a fixed source pressure, or None when the requested column is unavailable or was not evaluated."""
     reference_pressure_pa: float
     """Resolved source reference pressure in Pa."""
     status: NeutralReferenceStatus
@@ -2038,8 +2050,7 @@ class ReactionSpec:
     stoichiometric numbers.
     """
     equilibrium_constant: Optional[float]
-    """Optional positive dimensionless K on the native standard; mutually exclusive with affinity
-    and correlation.
+    """Optional positive dimensionless K on the native EOS standard without reference, or on the declared source basis with reference. Mutually exclusive with affinity and correlation.
     """
     affinity_j_per_mol: Optional[float]
     """Optional reaction affinity target in J/mol of reaction; mutually exclusive with K and
@@ -2148,10 +2159,9 @@ class StabilityTrial:
     reconstructed; otherwise empty.
     """
     split_coordinates: list[float]
-    """Full candidate chart coordinates for the retained finite split, or empty without one."""
+    """Finite-split seed blocks for existing phases in declaration order followed by the added trial phase: supported log mole fractions, phase amount in mol and log packing. Multipliers are omitted; empty without a retained finite split."""
     basis: list[list[float]]
-    """Ragged rows of the conserved trial basis in native row order; coefficients are
-    dimensionless.
+    """Rectangular (b, n) conserved trial basis, with b basis rows and n component columns in component order; coefficients are dimensionless. Empty when no compiled trial basis is retained.
     """
     row_transformation: list[list[float]]
     """Rows mapping the native trial constraints into the retained basis; dimensionless matrix in
@@ -2181,7 +2191,7 @@ class StabilityReport:
     trials: list[StabilityTrial]
     """Trial records in attempted order, including failed or unresolved trials."""
     candidate_coordinates: list[float]
-    """Retained central candidate in its compiled coordinate order."""
+    """Repaired candidate phase blocks in declaration order: supported log mole fractions, phase amount in mol and log packing. Includes an amount entry for every phase and omits multipliers and free-intensive coordinates; this is not a full CompiledSystem point."""
     standard_over_rt: list[float]
     """Length n of species standard Gibbs terms divided by RT, dimensionless, in component order."""
     plane_over_rt: list[float]
@@ -2189,8 +2199,7 @@ class StabilityReport:
     present_phases: list[dict[str, float]]
     """Named present-phase consistency quantities per phase; units follow native dictionary keys."""
     work: dict[str, float]
-    """Named numerical-work counts and timing; units follow keys rather than a common thermodynamic
-    unit.
+    """Counts for this finite search; absent keys have no retained count. root_calls counts solve_density trace spans, root_evaluations counts energy-evaluation spans inside those roots, and energy_evaluations counts all energy-evaluation spans. trial_invocations counts rooted, distinct trials admitted to direct evaluation or search; reconstruction_evaluations counts completed composition reconstructions. driver_invocations and trial_driver_invocations count shared-driver trial calls; iterations, evaluations and hessian_calls sum their returned work. trial_tangent_plane_invocations, trial_tangent_plane_iterations and trial_tangent_plane_newton_steps report the separate reduced tangent-plane search work. association_diagnostic_evaluations counts extra association diagnostics; finite_split_evaluations counts finite donor/split energy comparisons. All are counts; no elapsed time is retained.
     """
 
 class DiscoveryRecord:
@@ -2213,7 +2222,7 @@ class DiscoveryRecord:
     declaration_attempt_coordinates: list[list[float]]
     """Native attempted coordinates per declaration; preserved even when no state was admitted."""
     work: dict[str, float]
-    """Named accumulated work counts and timing; units follow keys."""
+    """Accumulated search and shared-driver counts, using StabilityReport.work meanings. driver_invocations, iterations, evaluations and hessian_calls include declaration solves; declaration_invocations counts those driver calls and declaration_initialization_failures counts attempts that failed before invoking the driver. root_calls, root_evaluations and energy_evaluations are recounted over the whole discovery trace. When a phase removal is attempted, removal_component_error_mol and removal_moiety_error_mol retain the latest maximum absolute component and moiety conservation errors in mol. No elapsed time is retained."""
 
 
 def cooling_onset(compiled: CompiledSystem) -> tuple[EquilibriumResult, list[StabilityReport]]:
@@ -2387,8 +2396,7 @@ class EquilibriumProblem:
     topology_declared: bool
     """Whether the supplied phase topology is declared for the solve."""
     row_tolerance: float
-    """Requested dimensionless native row-residual criterion; numerical floor admission is reported
-    separately.
+    """Caller criterion applied to the maximum absolute classified row residual. Most rows are dimensionless; absent free-solid amount rows retain mol. Numerical floor admission is reported separately.
     """
     enthalpy_j: float | None
     """Optional extensive enthalpy specification in J on the absolute feed basis; not J/mol."""
@@ -2485,7 +2493,7 @@ def inventory_bounds(compiled: CompiledSystem, species: Sequence[int], fraction:
     fraction : bool
         True requests dimensionless mole-fraction bounds; False requests absolute mol bounds.
     floor : float
-        Positive dimensionless native support floor used in witness admission.
+        Finite nonnegative mole-fraction floor; must be zero when fraction=False. In fraction mode, the number of supported species times floor must not exceed one.
 
     Returns
     -------
@@ -2530,7 +2538,7 @@ class RowKind:
     AzeotropeCondition: RowKind
     """Binary azeotrope composition equality, dimensionless."""
     SolidAffinity: RowKind
-    """Solid saturation/complementarity classification row, native dimensionless normalization."""
+    """Present free solid: -A_s/(RT), dimensionless. Absent free solid: n_s, in mol. Pinned(0) solids have no row."""
 
 class Row:
     """Identity of a defining or classification equation."""
@@ -2548,9 +2556,9 @@ class Row:
 class PointEvaluation:
     """Defining rows, objective and numerical floor at a compiled point."""
     values: list[float]
-    """Length m of native dimensionless defining-row residuals in CompiledSystem.rows order."""
+    """Length m of defining-row residuals in CompiledSystem.rows order. Most rows are dimensionless; an absent free-solid row is its amount in mol."""
     objective: float
-    """Native dimensionless equilibrium objective; a value alone does not establish equilibrium."""
+    """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis; a value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
 
@@ -2559,7 +2567,7 @@ class CompiledSystem:
 
     Notes
     -----
-    The model must outlive this compiled object. The full point has d = primal_size + rank + charge_row_count entries: per-phase log compositions, a free physical amount and log packing, followed by mode/free-intensive coordinates where present, then dimensionless multipliers. Physical free amounts use mol; free temperature and pressure coordinates use K and Pa. See ALG-EQUILIBRIUM and equilibrium/formulation.md.
+    The model must outlive this compiled object. The full point has d = primal_size + rank + charge_row_count entries: each fluid phase's log compositions, free amount when present and log packing; then free-solid amounts in solid declaration order; then mode and free-intensive coordinates where present; then dimensionless conserved and electrical multipliers. Free amounts use mol, free temperature uses K and free pressure uses Pa. See ALG-EQUILIBRIUM and equilibrium/formulation.md.
     """
     rows: list[Row]
     """Ordered defining/classification rows; this order owns residual and Jacobian rows."""
@@ -2643,7 +2651,7 @@ class CompiledSystem:
         """
         ...
     def objective_gradient(self, point: Sequence[float]) -> list[float]:
-        """Differentiate the native equilibrium objective.
+        """Differentiate the native optimizer objective; feasibility cells return a zero vector.
 
         Parameters
         ----------
@@ -2653,7 +2661,7 @@ class CompiledSystem:
         Returns
         -------
         list[float]
-            Length d in full-point order; objective units divided by each chart coordinate unit.
+            Length d in full-point order. Gibbs cells differentiate G/(RT), in mol, with respect to each chart coordinate. Feasibility cells use a zero optimizer objective and do not differentiate PointEvaluation.objective.
         """
         ...
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]:
@@ -2669,7 +2677,7 @@ class CompiledSystem:
         Returns
         -------
         list[float]
-            Flattened row-major (d, d) Hessian in full-point order, with native objective/constraint normalization.
+            Flattened row-major (d, d) optimizer Lagrangian Hessian in full-point order. Gibbs cells include G/(RT) curvature; feasibility cells have a zero objective and return constraint curvature only.
         """
         ...
 
@@ -2719,14 +2727,12 @@ class EquilibriumResult:
     multipliers: list[float]
     """Dimensionless conserved-moiety and electrical multipliers in compiled order."""
     constraint_multipliers: list[float]
-    """Optimizer constraint multipliers in the solver's constraint order; not a synonym for species
-    chemical potentials.
+    """Gibbs cells: reconstructed extensive-objective multipliers for rows excluding Chemical, Pressure and SolidAffinity, preserving rows order. Material and charge values are -feed_total*lambda and -phase_amount*phi; other retained rows are zero. Feasibility cells: raw Ipopt constraint multipliers, or zeros for a Newton result.
     """
     residuals: list[float]
-    """Native dimensionless unclassified rows in rows order."""
+    """Unclassified defining rows in rows order. Most are dimensionless; an absent free-solid row is its amount in mol."""
     classified_residuals: list[float]
-    """Dimensionless rows actually used for admission, including free-amount weighting and
-    trace-inventory normalization where applicable.
+    """Rows used for admission, including free-amount weighting and trace-inventory normalization where applicable. Most are dimensionless; absent free-solid amount rows retain mol.
     """
     coordinates: list[float]
     """Full native state chart including multipliers; follows the compiled point order and is not a
@@ -2741,7 +2747,7 @@ class EquilibriumResult:
     hessian_calls: int
     """Exact Hessian evaluation count."""
     objective: float
-    """Native dimensionless equilibrium objective at the retained candidate."""
+    """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis, at the retained candidate."""
     reduced_hessian_minimum: float
     """Minimum eigenvalue of the native reduced Hessian; local curvature evidence, not a global
     certificate.
@@ -2811,7 +2817,7 @@ class ContinuationStop:
     Native enum name/value properties follow the module convention in epcsaft._core.
     """
     reached_target: ContinuationStop
-    """Ordinary path reached its target."""
+    """Ordinary path reached its target, or an envelope trace completed its closing step."""
     initial_failure: ContinuationStop
     """No admitted starting state."""
     invalid_path: ContinuationStop
@@ -2844,7 +2850,7 @@ class ContinuationOptions:
 
     Notes
     -----
-    Envelope mode ignores the target problem and initial_step. It requires T/P guesses. After an accepted envelope step the predictor density error sizes the next step; retryable ordinary rejection halves it. A failed critical crossing, closing step or terminal refusal ends the trace with accepted states retained. See ALG-EQUILIBRIUM.
+    Envelope mode ignores initial_step and the target problem after the shared rejection of solids in either endpoint. Explicit T/P guesses are optional; absent free-intensive guesses use native initialization. After an accepted envelope step the predictor density error sizes the next step; retryable ordinary rejection halves it. A failed critical crossing, closing step or terminal refusal ends the trace with accepted states retained. See ALG-EQUILIBRIUM.
     """
     initial_step: float
     """Largest dimensionless fraction of the ordinary start-to-target path; rejected steps halve
@@ -2906,7 +2912,7 @@ class ContinuationRequest:
     start_problem: EquilibriumProblem
     """Starting physical declaration; an envelope condition selects envelope tracing."""
     target_problem: EquilibriumProblem
-    """Ordinary-path endpoint; ignored in envelope mode."""
+    """Ordinary-path endpoint. Envelope tracing ignores it after the shared rejection of solids in either endpoint."""
     start_result: Optional[EquilibriumResult]
     """Optional admitted starting result on the same declaration, or None to solve the start."""
     options: ContinuationOptions
@@ -2940,15 +2946,14 @@ class ContinuationResult:
     target per accepted envelope state.
     """
     parameter_values: list[list[float]]
-    """One physical active-parameter vector per accepted state, in model active order and family
-    units.
+    """Physical active-parameter vector per accepted state only for a declared parameter path, in model active order and family units; empty for ordinary feed/intensive paths and envelope traces.
     """
     states: list[EquilibriumResult]
     """Accepted EquilibriumResults in path order; retained on later failure."""
     reached_path: float
-    """Last accepted ordinary path fraction or envelope condition target, dimensionless."""
+    """Path fraction or envelope target of the last accepted corrector step, dimensionless; remains zero before the first accepted step, even when an initialized envelope has a nonzero starting target."""
     attempted_path: Optional[float]
-    """Last attempted path fraction/target, or None without an attempted step."""
+    """Path fraction or envelope target of the most recent rejected attempt, retained across later accepted steps; None if no attempt was rejected."""
     event_phase: Optional[int]
     """Vanished phase index, or None without this topology event."""
     event_pair: Optional[tuple[int, int]]
@@ -2960,7 +2965,7 @@ class ContinuationResult:
     retries: int
     """Number of rejected retry attempts."""
     last_result: Optional[EquilibriumResult]
-    """Last corrector result, possibly refused, or None without a retained attempt."""
+    """Result retained from the most recent rejected attempt, possibly refused; None if no rejected attempt retained a result. The latest accepted result is in states."""
     cause_stop: Optional[ContinuationStop]
     """Underlying retry/terminal stop, or None when no distinct cause is retained."""
     cause_convergence: Optional[Convergence]
@@ -2993,7 +2998,7 @@ def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) ->
 
     Notes
     -----
-    Ordinary continuation follows the start-to-target path; an envelope start selects the native envelope controller and ignores the target declaration.
+    Ordinary continuation follows the start-to-target path. Both endpoint declarations are first checked for unsupported solids; an envelope start then selects the native envelope controller and ignores the target declaration.
     """
     ...
 
@@ -3450,23 +3455,25 @@ class InfiniteDilutionReference:
     solver_options: list[dict[str, Any]]
     """Effective numerical settings for the reference calculation."""
     parameter_derivative: list[tuple[Optional[float], Optional[float]]]
-    """Length a of (cation, anion) reference log-fugacity partials in inverse parameter units;
-    individual columns are None when their limiting admission fails.
-    """
+    """For an ionic reference, length a of (cation, anion) log-fugacity partials
+    in inverse native parameter units; an unadmitted column has None in both
+    entries. Empty for a solvent-only reference."""
     parameter_convergence_error: list[float]
-    """Length a of dimensionless maximum two-ion terminal-pair derivative changes multiplied by
-    each native parameter scale; used for independent column admission.
-    """
+    """For an ionic reference, length a of dimensionless maximum two-ion changes
+    between terminal-pair derivative limits, multiplied by the native parameter
+    scale used for independent column admission. Empty for a solvent-only reference."""
     log_fugacity: tuple[float, float]
     """Extrapolated dimensionless ln fugacity coefficients in (cation, anion) order; solvent-only
     references carry no ionic limit.
     """
     molality: float
-    """Retained reference molality in mol/kg solvent; this finite rung is not an exact
-    zero-concentration state.
-    """
+    """Terminal finite formula molality in mol/kg solvent for an ionic reference;
+    this rung is not an exact zero-concentration state. Zero for a solvent-only
+    reference, which carries no ionic limit."""
     convergence_error: float
-    """Dimensionless terminal change of the reference log fugacities."""
+    """For an ionic reference, dimensionless maximum two-ion change between the
+    last two extrapolated reference limits. Zero for a solvent-only reference,
+    where it is a placeholder rather than ionic convergence evidence."""
     pure_solvent_log_fugacity: Optional[float]
     """Same-T/P pure-solvent ln fugacity coefficient, dimensionless, or None when unavailable."""
     pure_solvent_state: Optional[State]
@@ -3512,7 +3519,10 @@ class SolventActivity:
     osmotic_cause: str
     """Independent osmotic-coefficient refusal explanation, possibly empty."""
     state: State
-    """Finite-composition homogeneous state used for the activity calculation."""
+    """Retained mixture state, or the pure-solvent state for a pure-solvent input,
+    when evaluated. After an early refusal this may be a default State or carry
+    only density-convergence evidence; inspect status and cause before consuming
+    its physical fields."""
 
 class HenryConstant:
     """Infinite-dilution Henry pressure constant on the mole-fraction scale.
@@ -3551,18 +3561,18 @@ def henry_constants(model: HelmholtzModel, temperature: float, pressure: float,
     pressure : float
         Positive prescribed pressure in Pa.
     solvent_fractions : Sequence[float]
-        Length n of normalized, charge-neutral solvent mole fractions in component_ids order; no formula ions are inserted here.
+        Length n in component_ids order, with exactly one pure neutral solvent fraction equal to 1 and all other entries zero.
     solute_indices : Sequence[int]
-        Ordered solute component indices; each result retains its own reference availability.
+        Nonempty sequence of distinct known solute component indices excluding the solvent; native output is sorted by component index.
 
     Returns
     -------
     list[HenryConstant]
-        One HenryConstant per solute_indices entry, preserving requested order.
+        One HenryConstant per requested solute, returned in ascending component-index order.
 
     Notes
     -----
-    See henry_constant_px and ALG-REFERENCE. Each constant is in Pa, with solvent composition and liquid reference held at the supplied T/P.
+    See henry_constant_px and ALG-REFERENCE. Constants are in Pa at the supplied T/P with one pure-solvent liquid reference. All model components must be neutral; a charged model returns NonNeutralDeclaration results.
     """
     ...
 
@@ -3606,7 +3616,7 @@ def solvent_activity(model: HelmholtzModel, temperature: float, pressure: float,
     composition : Sequence[float]
         Length n, dimensionless mole fractions in component_ids order; normalized and charge neutral.
     reference : InfiniteDilutionReference
-        Infinite-dilution reference for the same model, T/P, solvent, ions and stoichiometry.
+        Reference carrying an admitted pure-solvent state for the same model, T/P and numerical settings; solvent_reference is sufficient and no ionic limit is required.
 
     Returns
     -------
@@ -3689,7 +3699,7 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
     stoichiometry : tuple[int, int]
         Two positive formula-unit ion counts in (cation, anion) order; the resulting formula must be charge neutral.
     molality : float
-        Nonnegative formula-unit concentration in mol/kg declared solvent.
+        Finite positive formula-unit concentration in mol/kg declared solvent; zero is rejected.
     reference : InfiniteDilutionReference
         Infinite-dilution reference for the same model, T/P, solvent, ions and stoichiometry.
 
@@ -4221,7 +4231,7 @@ class MinimaxResult:
 
     Notes
     -----
-    Availability, optimizer termination, feasibility, stationarity and final check acceptance are distinct. Local infeasibility is not proof of global infeasibility. Point evaluation supplies no optimization certificate; minimax supplies no covariance. See ALG-FIT.
+    Availability, optimizer termination, feasibility, stationarity and final check acceptance are distinct. Interpret post-solve scalar diagnostics, physical_values, multiplier conversions, bound distances/activity and hold/root diagnostics only when availability is 'available'. Point-only evaluation sets 'values_only': point, bounds, scaled values, Jacobian, row identities and frozen checks are retained, while post-solve diagnostics keep uncomputed defaults. Its actual epigraph is point[len(FitResult.optimizer)], not the default t field. Local infeasibility is not proof of global infeasibility. Point evaluation supplies no optimization certificate; minimax supplies no covariance. See ALG-FIT.
     """
     availability: str
     """Whether complete candidate values and derivative diagnostics were evaluated; not an
@@ -4370,8 +4380,7 @@ class MeasurementGroup:
     alone do not establish sharing.
     """
     inputs: list[MeasuredInput]
-    """Measured inputs in declared order; positive-sigma inputs become standardized correction
-    columns.
+    """Measured inputs in declaration order. A positive-sigma input becomes a standardized correction column only when the group contains at least one positive-weight output.
     """
     dependent_species: list[int]
     """Component indices reconstructed by the admitted normalization/charge chart; not independent
@@ -4400,13 +4409,10 @@ class MeasurementUncertainty:
     groups: list[MeasurementGroup]
     """Explicit shared-input measurement groups in declaration order."""
     output_sigma: list[float]
-    """Known positive output standard deviations in observation order and each observation's
-    physical unit; Difference residuals and unit positive relative weights are required.
+    """Length-N output standard deviations in observation order and each observation's physical unit. Positive-weight outputs require finite positive values; excluded zero-weight entries are unused. Difference residuals and unit positive relative weights are required.
     """
     covariance: list[float] | None
-    """Optional flattened row-major (M, M) known physical covariance: positive-weight outputs in
-    row order, then positive-sigma inputs in group/input order. Entry units are products of the
-    corresponding physical units.
+    """Optional flattened row-major (M, M) known physical covariance: positive-weight outputs in observation order, then active input correction columns in group/input order. Entry units are products of the corresponding physical units.
     """
     correlation: list[float] | None
     """Optional flattened row-major (M, M) dimensionless known correlation in the same order;
@@ -4483,8 +4489,7 @@ class FitResult:
     message: str
     """Estimator conclusion and failure explanation."""
     usable: bool
-    """Whether a finite candidate point with values was published; does not establish convergence,
-    check acceptance or physical validity.
+    """Whether the native estimator marks the retained candidate usable. Least squares requires a published candidate with finite physical values and a termination other than failed; a limit may still be usable. This does not establish convergence, check acceptance or physical validity.
     """
     physical: list[float]
     """Physical rows in chart order: EOS targets, held Born diameters, then reaction coordinates.
@@ -4697,8 +4702,7 @@ class HoldResult:
     derivative: float
     """Held-row partial H_d in J/(mol angstrom)."""
     parameter_derivative: list[float]
-    """Held energy-row partials in evaluated physical-row order; units J/mol divided by each row's
-    native unit.
+    """Held energy-row partials in EvaluatedCoordinates.active order: independent EOS targets followed by held Born diameters, excluding reaction-coordinate rows. Units are J/mol divided by each active parameter's native unit.
     """
     iterations: int
     """Inner safeguarded-Newton iteration count."""
@@ -5027,7 +5031,7 @@ def formula_composition(solvent_fractions: Sequence[float], parameters: Paramete
     stoichiometry : tuple[int, int]
         Two positive formula-unit ion counts in (cation, anion) order; the resulting formula must be charge neutral.
     molality : float
-        Nonnegative formula-unit concentration in mol/kg declared solvent.
+        Finite positive formula-unit concentration in mol/kg declared solvent; zero is refused.
 
     Returns
     -------
@@ -5054,8 +5058,7 @@ class EquilibriumStart:
     amounts: list[float]
     """Optional fluid-phase amount guesses in mol, phase order; empty leaves them unspecified."""
     compositions: list[list[float]]
-    """Optional (p, n) mole-fraction guesses, phase then component order; empty leaves them
-    unspecified.
+    """Optional ragged mole-fraction guesses in phase order. Each nonempty row follows that phase's declared support, with one entry per declared support component; an empty row leaves that phase unspecified.
     """
     packing_fractions: list[Optional[float]]
     """Optional per-phase dimensionless packing guesses; each None leaves that phase unspecified."""
@@ -5142,7 +5145,7 @@ class EquilibriumWorkLimits:
 class EquilibriumStartsResult:
     """Ordered start outcomes and actual budget use."""
     selected: Optional[int]
-    """Selected start index, or None when no result was admitted."""
+    """Index of the first result with success=True and requested_tolerance_met=True, or None without such a result; a retained floor-admitted state need not be selected."""
     results: list[Optional[EquilibriumResult]]
     """One optional result per declared start in input order; None preserves an unrun/refused
     attempt with causes.
