@@ -41,15 +41,15 @@ amounts. One mol NaCl supplies one mol Na⁺ and one mol Cl⁻. Keep formula-uni
 molality distinct from the sum of ionic molalities; the
 [NaCl notebook](../examples/aqueous-nacl-activity.ipynb) demonstrates the basis.
 
-`Free()` leaves a phase amount or intensive quantity to be solved;
-`Free(guess)` additionally supplies an initial value. `Pinned(value)` fixes a
+`Free()` leaves a phase amount or intensive quantity to be solved; for temperature or pressure, `Free(guess)` additionally supplies an initial value in K or Pa, respectively. `Pinned(value)` fixes a
 phase amount condition. With an absolute-amount feed, phase amounts are mol;
 with a normalized fraction feed the amount constraints follow that normalized
 basis. Do not treat a phase fraction as an absolute amount.
 
 ```{doctest}
 >>> from epcsaft.equilibrium import Free, Pinned
->>> Free(250.0).guess
+>>> temperature = Free(250.0)
+>>> temperature.guess
 250.0
 >>> Pinned(0.0).value
 0.0

@@ -46,9 +46,7 @@ $$
 Temperature and the declared reference temperature are K. The coefficients
 have units that make ln K dimensionless: b is K, c and a are dimensionless,
 and d is K⁻¹. Supply the correlation's admitted temperature interval and its
-standard-state identity. A base-ten reciprocal-temperature source must be
-converted explicitly; the native `reaction_log10_reciprocal` helper supports
-that conversion. Do not pass log10 K as ln K.
+standard-state identity. A base-ten reciprocal-temperature source must be converted explicitly to natural-log coefficients before constructing `ReactionLogPolynomial`. Do not pass log10 K as ln K.
 
 A constant or correlation on a source molality or infinite-dilution basis
 also needs a `ReactionReference`. Declare the standard concentration or
