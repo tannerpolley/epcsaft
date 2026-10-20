@@ -14,8 +14,23 @@ Count the lines of each runtime file as one pinned formatter lays it out,
 without changing the file: C++ with `clang-format-18` and the style
 `tools/line-count.clang-format`, Python with the `.venv` ruff (`uv.lock`
 version) at 120 columns, where a trailing comma does not choose the layout. The
-counter's `formatted_lines` holds the exact commands. Comments and blank lines
-count as the formatter keeps them; comments are not reflowed. Count the
+counter's `formatted_lines` holds the exact commands. Format original source
+before excluding documentation or comments; comments are not reflowed.
+For Python, mask only first-statement module, class, sync-function and
+async-function string docstrings using their exact AST UTF-8 byte spans, then
+count the union of lines occupied by retained tokens. Comments, whitespace,
+layout and blank lines do not count. Other string expressions, assigned strings
+(including blank-looking multiline data), annotations and declarations count;
+code sharing a docstring line remains counted. Attribute prose belongs in its
+class's NumPy Attributes section.
+For C++, scan literals and preprocessing tokens after backslash-newline
+continuation: exclude comments outside literals and whitespace-only lines.
+Preserve ordinary/character/raw strings, raw-string data, header names and digit
+separators. Declarations, braces, directives, macros and inactive branches count;
+no preprocessing or compilation changes the count. Unterminated or unrecognised
+lexical input fails visibly. This is formatted source size, not executed
+instructions. The original-source formatter-disable refusal still runs first.
+Count the
 complete working `engine/native/` and `engine/src/epcsaft/` trees, except the
 type stub `engine/src/epcsaft/_core.pyi`. The stub declares the compiled
 extension's types and holds no Python logic; `tools/check-engine-architecture.py`
@@ -81,6 +96,8 @@ method does not fit, report that evidence and revise the design/budget openly.
 Budget changes must not silently change scientific scope.
 
 ## Amendments
+
+- 2026-10-20, #700 / #695 (owner decision, 2026-10-20): exclude Python AST-span docstrings, comments and empty layout lines, and C++ comments outside literals and empty lines, while retaining the pinned formatters and all bypass refusals. This accounting change adds or removes no Engine calculation. All eight layer ceilings lower to the measured count plus the rounded-up 1% band under rule 2; the total lowers from 29,191 to 26,837 for 26,571 counted lines, capped by the layer-ceiling sum. Per-layer before/after measurements are retained in the issue's PR.
 
 - 2026-10-20, #692 (owner approval): shared physical-mol recovery has an allowance of +120 net / 166 gross formatted Equilibrium lines against `31460744`, with zero growth in every other runtime layer. Equilibrium **10,582 → 10,794**, the count 10,687 plus its rounded-up 1% band of 107 under rule 1. Total count **29,172** remains under the unchanged **29,191** ceiling. One recovery beside `run_driver` owns eligibility, invocation, admission and work/cause retention across ordinary solves, discovery, start sets and continuation.
 
