@@ -265,6 +265,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     }
     if ((J * applied - rhs).lpNorm<Eigen::Infinity>() > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
         throw std::invalid_argument("stability amount correction rank/consistency failure");
+    at.energy_actions.clear();
     report.candidate_coordinates.clear();
     for (std::size_t p = 0; p < at.amount.size(); ++p) {
         if (at.amount[p] > 0.0) {
