@@ -1882,11 +1882,12 @@ std::vector<double> CompiledSystem::hessian_at(
             for (std::size_t j = 0; j < spec.support.size(); ++j) {
                 const std::size_t sj = spec.support[j];
                 const double dv_j = packing.component[sj] / eta;
-                const double h_xx = phase_amount_value * (
-                    derivative.hessian[(2 + si) * width + (2 + sj)]
-                    + (si == sj ? 1.0 / x[si] : 0.0));
+                // Keep the ideal diagonal analytic and apply residual curvature before trace fractions multiply.
+                const double h_xx = phase_amount_value * (x[si]
+                    * (x[sj] * derivative.hessian[(2 + si) * width + (2 + sj)]))
+                    + (si == sj ? phase_amount_value * x[si] : 0.0);
                 put(layout.x[i], layout.x[j],
-                    x[si] * x[sj] * h_xx + x[si] * h_xv[i] * dv_j
+                    h_xx + x[si] * h_xv[i] * dv_j
                     + dv_i * h_xv[j] * x[sj] + dv_i * physical_vv * dv_j
                     + (si == sj ? phase_amount_value * mu[i] * x[si]
                                       + physical_v_gradient * dv_i : 0.0));
