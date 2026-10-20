@@ -1068,6 +1068,7 @@ static EquilibriumResult run_driver_once(
                 const double after = maximum_abs(compiled.trace_moiety_relative(at_candidate, rows_after));
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
+                    || (after < defect && after <= row_tolerance)
                     || after < (extension && !trial_recovery ? ratio : 1.0) * defect;
                 if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
                     after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,

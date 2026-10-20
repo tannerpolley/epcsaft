@@ -118,8 +118,10 @@ finite coordinates, the physical-coordinate primal box and distinct,
 non-disappeared seed topology before preparing iterations, and full numerical
 Jacobian rank and finite corrections before trials. It reuses the actual
 Ipopt bounds with the amount chart converted to physical mol and the existing
-four-ulp composition snap. Only this attempt permits a trial already meeting
-the caller's raw-row criterion past the previous-contraction-ratio test.
+four-ulp composition snap. At #545 this exception applied only to the free-amount
+Newton attempt. #670 extends ordinary polish admission to strictly decreasing
+proposals that reach the caller's tolerance, as defined in ALG-EQUILIBRIUM; the
+existing Newton final-correction rules remain unchanged.
 The exact CppAD Jacobian, full-pivot LU, damping and iteration/correction
 limits, compulsory full correction and fresh classified criterion remain.
 
