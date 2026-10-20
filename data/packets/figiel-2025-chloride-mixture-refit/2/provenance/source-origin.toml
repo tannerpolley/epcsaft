@@ -52,7 +52,7 @@ sha256 = "9bf1e28c02aa0921a752eab8ce710510b4b8cbac5ac327b19944e1587ea6bf48"
 source_id = "input-7"
 role = "Retained source, declaration or native numerical result"
 retained_path = "analyses/2026-lithium-chloride-refit/results/cation-mixing/checks.json"
-sha256 = "25fbb59456a3e29bf37df59d5a3e4724a4e421bfa198cd460d03c43306b37c6b"
+sha256 = "16f50c21952eb8c157c29247df2e3b1909e34b416c75fadcdb9309938e297f6a"
 
 [[sources]]
 source_id = "input-8"
