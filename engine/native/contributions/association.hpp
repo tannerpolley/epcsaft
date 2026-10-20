@@ -328,7 +328,7 @@ inline std::vector<double> solve_site_fractions(
                 for (std::size_t a = 0; a < sites; ++a) {
                     if (step[a] < 0.0)
                         alpha = std::min(alpha, policy::ASSOCIATION_BOUNDARY_FRACTION.value * fractions[a] / -step[a]);
-                    else if (step[a] > 0.0)
+                    else if (step[a] > 0.0 && fractions[a] + step[a] > 1.0)
                         alpha = std::min(alpha, (1.0 - fractions[a]) / step[a]);
                 }
                 const double current = iteration == 0 ? residual_infinity_norm(fractions) : residual_norm;
