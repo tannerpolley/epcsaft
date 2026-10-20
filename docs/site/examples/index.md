@@ -1,49 +1,44 @@
 # Examples
 
-The eleven selected notebooks are being prepared. To run them, use a repository
-checkout with its prepared Engine environment and canonical packet inputs.
-The wheel alone does not contain those inputs.
+These notebooks read canonical inputs from a repository checkout and execute
+with its prepared Engine environment. The wheel alone does not contain the
+packet inputs. Run `nice -n 10 bash tools/build-docs.sh` from the repository root
+to execute every example freshly and build this site. See the
+[installation guide](../installation.md) for setup and the
+[optional process tools](../contributing.md#optional-process-example-tools)
+for the IDAES settler.
 
-## Parameters and a water state
+Each notebook identifies its sources, conditions, units, numerical comparisons
+and claim limits. Numerical verification checks equations, balances or retained
+reference calculations. The halite example includes a physical comparison;
+the propane fit is calibration against the observations used in that fit.
 
-Planned notebook: `parameters-and-water-state.ipynb`.
+```{toctree}
+:maxdepth: 1
 
-## Methane caloric properties
+parameters-and-water-state
+methane-caloric-properties
+methane-ethane-phase-equilibrium
+aqueous-nacl-activity
+halite-solubility
+ammonia-synthesis-equilibrium
+water-isobutanol-discovery
+water-isobutanol-solved-state-actions
+propane-parameter-estimation
+methane-asl-properties
+idaes-two-liquid-settler
+```
 
-Planned notebook: `methane-caloric-properties.ipynb`.
+## Download the original notebooks
 
-## Methane–ethane phase equilibrium
-
-Planned notebook: `methane-ethane-phase-equilibrium.ipynb`.
-
-## Aqueous NaCl activity
-
-Planned notebook: `aqueous-nacl-activity.ipynb`.
-
-## Halite solubility
-
-Planned notebook: `halite-solubility.ipynb`.
-
-## Ammonia synthesis equilibrium
-
-Planned notebook: `ammonia-synthesis-equilibrium.ipynb`.
-
-## Water–isobutanol phase discovery
-
-Planned notebook: `water-isobutanol-discovery.ipynb`.
-
-## Water–isobutanol solved-state actions
-
-Planned notebook: `water-isobutanol-solved-state-actions.ipynb`.
-
-## Propane parameter estimation
-
-Planned notebook: `propane-parameter-estimation.ipynb`.
-
-## Methane ASL properties
-
-Planned notebook: `methane-asl-properties.ipynb`.
-
-## IDAES two-liquid settler
-
-Planned notebook: `idaes-two-liquid-settler.ipynb`.
+- {download}`Parameters and a water state <parameters-and-water-state.ipynb>`
+- {download}`Methane caloric properties <methane-caloric-properties.ipynb>`
+- {download}`Methane–ethane phase equilibrium <methane-ethane-phase-equilibrium.ipynb>`
+- {download}`Aqueous NaCl activity <aqueous-nacl-activity.ipynb>`
+- {download}`Halite solubility <halite-solubility.ipynb>`
+- {download}`Ammonia synthesis equilibrium <ammonia-synthesis-equilibrium.ipynb>`
+- {download}`Water–isobutanol phase discovery <water-isobutanol-discovery.ipynb>`
+- {download}`Water–isobutanol solved-state actions <water-isobutanol-solved-state-actions.ipynb>`
+- {download}`Propane parameter estimation <propane-parameter-estimation.ipynb>`
+- {download}`Methane ASL properties <methane-asl-properties.ipynb>`
+- {download}`IDAES two-liquid settler <idaes-two-liquid-settler.ipynb>`
