@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""Remove finished task worktrees and their branches (owner, 2026-10-20).
+
+Usage: tools/prune-worktrees [--min-hours N] [--archive-unmerged] [--dry-run]
+The global post-merge hook runs it after main is updated. A linked worktree is finished when its HEAD is on
+origin/main, no open pull request uses its branch, no process has its working directory inside it and it is
+at least N hours old (default 2; a new worktree still sits on a main commit). tools/archive-worktree keeps
+its ignored evidence and refuses dirty or still-written worktrees. Merged branches without a worktree are
+deleted locally and on origin. Unmerged branches are only listed; with --archive-unmerged, one whose issue
+is closed becomes a pushed archive/<branch> tag first.
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+TOOLS = os.path.dirname(os.path.realpath(__file__))
+
+
+def run(*args, check=True):
+    return subprocess.run(args, cwd=TOOLS, check=check, capture_output=True, text=True).stdout.strip()
+
+
+def succeeds(*args):
+    return subprocess.run(args, cwd=TOOLS, capture_output=True).returncode == 0
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--min-hours", type=float, default=2.0)
+    parser.add_argument("--archive-unmerged", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    options = parser.parse_args()
+    run("git", "fetch", "--quiet", "--prune", "origin")
+    run("git", "worktree", "prune")
+    try:
+        prs = json.loads(run("gh", "pr", "list", "--state", "open", "--limit", "500", "--json", "headRefName"))
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        sys.exit("prune-worktrees: open pull requests unknown (gh failed); nothing removed")
+    open_heads = {pr["headRefName"] for pr in prs}
+    live = set()
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        try:
+            live.add(os.path.realpath(os.readlink(f"/proc/{pid}/cwd")))
+        except OSError:
+            pass
+
+    def merged(revision):
+        return succeeds("git", "merge-base", "--is-ancestor", revision, "origin/main")
+
+    def archivable(name):
+        """--archive-unmerged applies only when the work's issue is closed."""
+        issue = re.search(r"(?:issue-|t3code/)(\d+)", name or "")
+        return bool(options.archive_unmerged and issue and run(
+            "gh", "issue", "view", issue[1], "--json", "state", "-q", ".state", check=False) == "CLOSED")
+
+    def archive_tag(name, revision):
+        if options.dry_run:
+            print(f"would tag archive/{name}")
+        else:
+            if not succeeds("git", "rev-parse", "--quiet", "--verify", f"refs/tags/archive/{name}"):
+                run("git", "tag", f"archive/{name}", revision)
+            run("git", "push", "--quiet", "origin", f"refs/tags/archive/{name}")
+
+    entries = []  # [(path, head, branch)], main checkout first
+    for record in filter(None, run("git", "worktree", "list", "--porcelain").split("\n\n")):
+        fields = dict(line.partition(" ")[::2] for line in record.splitlines())
+        entries.append((os.path.realpath(fields["worktree"]), fields.get("HEAD", ""),
+                        fields.get("branch", "").removeprefix("refs/heads/") or None))
+    checked_out = {branch for _, _, branch in entries if branch}
+    for path, head, branch in sorted(entries[1:], key=lambda entry: -len(entry[0])):  # nested baselines first
+        created = os.stat(os.path.join(run("git", "-C", path, "rev-parse", "--absolute-git-dir"), "commondir"))
+        unmerged = not merged(head)
+        reason = ("live" if any(p == path or p.startswith(path + os.sep) for p in live) else
+                  "open PR" if branch in open_heads else
+                  "unmerged" if unmerged and not archivable(branch or os.path.basename(path)) else
+                  "new" if time.time() - created.st_mtime < options.min_hours * 3600 else None)
+        if reason:
+            print(f"kept {path} ({reason})")
+            continue
+        if unmerged:
+            archive_tag(branch or os.path.basename(path), head)
+        name = f"{os.path.basename(path)}-{head[:8]}"
+        if options.dry_run:
+            print(f"would archive and remove {path}")
+            checked_out.discard(branch)
+        elif subprocess.run([sys.executable, os.path.join(TOOLS, "archive-worktree"), path, name]).returncode == 0:
+            checked_out.discard(branch)
+    for branch in run("git", "for-each-ref", "--format=%(refname:short)", "refs/heads/").split():
+        if branch == "main" or branch in checked_out or branch in open_heads:
+            continue
+        if not merged(branch):
+            if not archivable(branch):
+                print(f"kept branch {branch} (unmerged)")
+                continue
+            archive_tag(branch, branch)
+        if options.dry_run:
+            print(f"would delete branch {branch}")
+            continue
+        run("git", "branch", "-D", branch)
+        if succeeds("git", "ls-remote", "--exit-code", "--heads", "origin", branch):
+            run("git", "push", "--quiet", "origin", "--delete", branch)
+        print(f"deleted branch {branch}")
+    run("git", "worktree", "prune")
+
+
+if __name__ == "__main__":
+    main()

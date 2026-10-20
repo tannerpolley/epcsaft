@@ -99,3 +99,13 @@ The lead checks reviewer findings against source and evidence; a build,
 readiness label or reviewer opinion is not numerical acceptance. When a
 capability claim changes, rewrite the issue body's current state and update
 repository evidence together.
+
+## Closeout
+
+Every `git pull` on main runs `tools/prune-worktrees` through the global
+post-merge hook (owner, 2026-10-20). A task worktree whose HEAD is on
+`origin/main`, with no open pull request, no process inside it and at least
+two hours old, is archived with `tools/archive-worktree` and removed with its
+local and remote branch. Unmerged branches are kept and listed;
+`tools/prune-worktrees --archive-unmerged` first tags those whose issue is
+closed as `archive/<branch>`.
