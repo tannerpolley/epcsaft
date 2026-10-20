@@ -2061,15 +2061,27 @@ RowSeries CompiledSystem::row_series(
                 unit[*component] = 1.0;
                 directions.push_back(unit);
             }
-            const auto energy = model->residual_energy_action(
-                prepared.temperature, prepared.volume[phase], prepared.composition[phase], directions);
+            // Central inputs are fixed by the prepared state; preserve raw direction bits and shape.
+            std::string key(reinterpret_cast<const char*>(&phase), sizeof(phase));
+            for (const auto& direction : directions) {
+                const auto size = direction.size();
+                key.append(reinterpret_cast<const char*>(&size), sizeof(size));
+                key.append(reinterpret_cast<const char*>(direction.data()), size * sizeof(double));
+            }
+            const auto found = prepared.energy_actions.find(key);
+            const bool reused = found != prepared.energy_actions.end();
+            const auto& energy = reused ? found->second : prepared.energy_actions.emplace(
+                std::move(key), model->residual_energy_action(prepared.temperature,
+                    prepared.volume[phase], prepared.composition[phase], directions)).first->second;
             result.maximum_energy_order = std::max(result.maximum_energy_order, directions.size());
             auto& total = result.energy_diagnostics;
-            total.forward_sweeps += energy.diagnostics.forward_sweeps;
-            total.directional_paths += energy.diagnostics.directional_paths;
-            total.site_solves += energy.diagnostics.site_solves;
-            total.site_factorizations += energy.diagnostics.site_factorizations;
-            total.recordings += energy.diagnostics.recordings;
+            if (!reused) {
+                total.forward_sweeps += energy.diagnostics.forward_sweeps;
+                total.directional_paths += energy.diagnostics.directional_paths;
+                total.site_solves += energy.diagnostics.site_solves;
+                total.site_factorizations += energy.diagnostics.site_factorizations;
+                total.recordings += energy.diagnostics.recordings;
+            }
             total.site_rank = energy.diagnostics.site_rank;
             total.site_pivot_ratio = std::max(total.site_pivot_ratio, energy.diagnostics.site_pivot_ratio);
             total.association_residual = std::max(total.association_residual, energy.diagnostics.association_residual);
