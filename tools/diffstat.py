@@ -98,7 +98,10 @@ def cpp_lines(source: str) -> int:
         if re.match(r'(?:u8|u|U|L)?R"', text[i:]):
             raise ValueError("invalid C++ raw-string delimiter")
         # A header-name is one token even if it contains comment-like text.
-        if text[i] == "<" and re.match(r"^\s*#\s*(?:include|include_next|import)\s*$", prefix):
+        if text[i] == "<" and re.search(
+            r"(?:^\s*(?:#|%:)\s*(?:include|include_next|import)\s*|\b__has_include(?:_next)?\s*\(\s*)$",
+            prefix,
+        ):
             end = text.find(">", i + 1)
             if end < 0 or "\n" in text[i:end]:
                 raise ValueError("unterminated C++ header name")
@@ -256,6 +259,12 @@ int inactive;
 '''
     if cpp_lines(cpp_fixture) != 13:
         raise AssertionError("C++ literals, headers, comments or continuations counted incorrectly")
+    for source, expected in (
+        ("#if __has_include(<missing/*header>)\nint a;\nint b;\n#endif\n// */\nint c;\n", 5),
+        ("%:include <path/*header>\nint a;\nint b;\n// */\nint c;\n", 4),
+    ):
+        if cpp_lines(source) != expected:
+            raise AssertionError("C++ header-name contents hid executable lines")
     for invalid in ('/* open', '"open', 'R"tag(open', 'R"bad delimiter(x)bad delimiter"', "`"):
         try:
             cpp_lines(invalid)
