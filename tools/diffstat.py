@@ -4,7 +4,7 @@
     tools/diffstat.py --budgets        # current full runtime tree; a ceiling above or below its band fails
 """
 from __future__ import annotations
-import io, re, shutil, sys
+import ast, bisect, io, re, shutil, sys, tokenize
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
@@ -27,8 +27,110 @@ def budget_state(count: int, ceiling: int, layer_sum: int | None = None) -> str:
     return "ok"
 
 
+def python_lines(source: str) -> int:
+    """Mask actual docstring byte spans, then count lines occupied by executable tokens."""
+    tree = ast.parse(source)
+    lines = source.encode("utf-8").split(b"\n")
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and node.body:
+            first = node.body[0]
+            if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+                for number in range(first.lineno, first.end_lineno + 1):
+                    line = lines[number - 1]
+                    start = first.col_offset if number == first.lineno else 0
+                    end = first.end_col_offset if number == first.end_lineno else len(line)
+                    lines[number - 1] = line[:start] + b" " * (end - start) + line[end:]
+    layout = {tokenize.COMMENT, tokenize.NL, tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT,
+              tokenize.ENDMARKER, tokenize.ENCODING}
+    occupied = set()
+    for token in tokenize.generate_tokens(io.StringIO(b"\n".join(lines).decode("utf-8")).readline):
+        if token.type == tokenize.ERRORTOKEN and not token.string.isspace():
+            raise ValueError(f"unrecognised Python token at {token.start}")
+        if token.type not in layout and token.string.strip():
+            occupied.update(range(token.start[0], token.end[0] + 1))
+    return len(occupied)
+
+
+def cpp_lines(source: str) -> int:
+    """Scan preprocessing tokens after line splicing; raw-string data keeps its original bytes."""
+    chars, positions, line_numbers = [], [], []
+    number = 1
+    for match in re.finditer(r"\\\r?\n|[\s\S]", source):
+        value = match[0]
+        if not value.startswith("\\") or not value.endswith("\n"):
+            chars.append(value)
+            positions.append(match.start())
+            line_numbers.append(number)
+        number += value.count("\n")
+    text = "".join(chars)
+    occupied = set()
+    i = 0
+    prefix = ""
+    while i < len(text):
+        start = i
+        if text.startswith("//", i):
+            end = text.find("\n", i + 2)
+            i = len(text) if end < 0 else end
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0:
+                raise ValueError("unterminated C++ comment")
+            i = end + 2
+            continue
+        if text[i].isspace():
+            prefix = "" if text[i] == "\n" else prefix + " "
+            i += 1
+            continue
+        raw = re.match(r'(?:u8|u|U|L)?R"([^ ()\\\t\r\n]{0,16})\(', text[i:])
+        if raw:
+            # Translation-phase splicing is reverted within a raw-string payload.
+            opening = positions[i + raw.end() - 1]
+            closing = ")" + raw[1] + '"'
+            end = source.find(closing, opening + 1)
+            if end < 0:
+                raise ValueError("unterminated C++ raw string")
+            end += len(closing)
+            occupied.update(range(line_numbers[i], line_numbers[i] + source[positions[i]:end].count("\n") + 1))
+            i = bisect.bisect_left(positions, end)
+            prefix = ""
+            continue
+        if re.match(r'(?:u8|u|U|L)?R"', text[i:]):
+            raise ValueError("invalid C++ raw-string delimiter")
+        # A header-name is one token even if it contains comment-like text.
+        if text[i] == "<" and re.match(r"^\s*#\s*(?:include|include_next|import)\s*$", prefix):
+            end = text.find(">", i + 1)
+            if end < 0 or "\n" in text[i:end]:
+                raise ValueError("unterminated C++ header name")
+            i = end + 1
+        elif text[i] in "\"'":
+            quote = text[i]
+            i += 1
+            while i < len(text) and text[i] != quote:
+                if text[i] in "\r\n":
+                    raise ValueError("newline in C++ literal")
+                i += 2 if text[i] == "\\" else 1
+            if i >= len(text):
+                raise ValueError("unterminated C++ literal")
+            i += 1
+        elif text[i].isdigit() or (text[i] == "." and text[i + 1:i + 2].isdigit()):
+            # Preprocessing numbers include exponent signs and C++ digit separators.
+            token = re.match(r"(?:[eEpP][+-]|[\w.]|'[\w])+", text[i:])
+            i += len(token[0])
+        elif text[i].isalpha() or text[i] == "_":
+            token = re.match(r"\w+", text[i:])
+            i += len(token[0])
+        elif text[i] in "{}[]();:?.~!+-*/%<>=&|^,#":
+            i += 1
+        else:
+            raise ValueError(f"unrecognised C++ input on line {line_numbers[i]}")
+        occupied.update(line_numbers[start:i])
+        prefix += text[start:i]
+    return len(occupied)
+
+
 def formatted_lines(path: Path) -> int:
-    """Physical lines of the file as the pinned formatter would lay it out; the file is not changed."""
+    """Executable formatted lines; source formatting and formatter-disable refusals remain unchanged."""
     import subprocess
     source = path.read_bytes()
     # Newline only: splitlines() also breaks at form feeds and would split a directive the formatter honors.
@@ -50,7 +152,8 @@ def formatted_lines(path: Path) -> int:
     done = subprocess.run(command, input=source, capture_output=True, check=False)
     if done.returncode:
         raise ValueError(f"cannot format {path} for counting: {done.stderr.decode(errors='replace').strip()}")
-    return len(done.stdout.decode("utf-8").splitlines())
+    formatted = done.stdout.decode("utf-8")
+    return python_lines(formatted) if path.suffix in {".py", ".pyx", ".pxd"} else cpp_lines(formatted)
 
 
 def code_budgets(root=None) -> int:
@@ -113,6 +216,53 @@ def budget_self_check() -> None:
     import contextlib
     import tempfile
     import json
+    python_fixture = '''"""module doc"""; x = "# data"
+# comment
+class C:
+    """class doc"""
+    field = "kept"
+    "attribute prose counts"
+    def f(self):
+        """sync doc"""
+        return "kept"
+async def f():
+    """async doc"""
+    return "kept"
+x = """data
+
+# literal data"""
+'''
+    if python_lines(python_fixture) != 11 or python_lines('"é"; x = 1\n') != 1:
+        raise AssertionError("Python docstring spans or executable string data counted incorrectly")
+    cpp_fixture = r'''// line comment
+/* block
+comment */ int x; // beside code
+const auto s = u8R"tag(// literal
+
+/* data */ \
+)tag";
+const char *q = "escaped \" // data";
+auto c = '\''; auto n = 1'000;
+#include /* note */ <path//header>
+// spliced \
+still a comment
+/\
+* spliced block */
+#define X \
+    42 /* note */
+#if 0
+int inactive;
+#endif
+'''
+    if cpp_lines(cpp_fixture) != 13:
+        raise AssertionError("C++ literals, headers, comments or continuations counted incorrectly")
+    for invalid in ('/* open', '"open', 'R"tag(open', 'R"bad delimiter(x)bad delimiter"', "`"):
+        try:
+            cpp_lines(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"unrecognised C++ source escaped refusal: {invalid!r}")
     layers = ["contributions", "properties", "equilibrium", "regression", "surface", "bindings"]
     for count, ceiling, fails in ((1000, 1000, False), (1000, 1010, False), (1000, 1011, True), (1001, 1000, True)):
         if (budget_state(count, ceiling) != "ok") != fails:  # exactly one band of headroom passes
