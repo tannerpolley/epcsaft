@@ -578,7 +578,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     EquilibriumResult audit;
                     try {
                         trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
-                            scope, &trial.raw_coordinates, &audit);
+                            scope, &trial.raw_coordinates, &audit, nullptr, false, {}, false, true);
                     } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
                     trial.message = trial.optimizer.message;

@@ -54,6 +54,65 @@ void check_trace_ion_curvature() {
     }
 }
 
+// #663: manufactured stationary vapor with two independent ionic composition directions.
+void check_trial_refinement() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto source = properties_support::nine_species();
+    auto p = properties_support::parameters(4);
+    const std::vector<std::size_t> kept{0, 3, 4, 6};
+    const auto take = [&](const auto& values) {
+        auto result = values; result.clear();
+        for (auto i : kept) result.push_back(values.at(i));
+        return result;
+    };
+    p.segment_count = take(source.segment_count); p.sigma_constant = take(source.sigma_constant);
+    p.sigma_term_component = {0, 0}; p.sigma_term_amplitude = source.sigma_term_amplitude;
+    p.sigma_term_exponent = source.sigma_term_exponent;
+    p.dispersion_energy_over_k = take(source.dispersion_energy_over_k);
+    p.molar_mass_kg_per_mol = take(source.molar_mass_kg_per_mol); p.charge_number = take(source.charge_number);
+    p.packing_diameter_angstrom = take(source.packing_diameter_angstrom);
+    p.debye_huckel_diameter_angstrom = take(source.debye_huckel_diameter_angstrom);
+    p.born_diameter_angstrom = take(source.born_diameter_angstrom); p.solvation_factor = take(source.solvation_factor);
+    p.relative_permittivity = take(source.relative_permittivity);
+    p.ion_suppression_coefficient = take(source.ion_suppression_coefficient); p.electrolyte_form = source.electrolyte_form;
+    p.ionic_dispersion = source.ionic_dispersion; p.ionic_region_relative_permittivity = source.ionic_region_relative_permittivity;
+    for (std::size_t i = 0; i < 4; ++i) for (std::size_t j = 0; j < 4; ++j)
+        p.k_ij[i * 4 + j] = source.k_ij[kept[i] * 9 + kept[j]];
+    p.site_component = {0, 0}; p.site_multiplicity = {1, 1}; p.association_active = {0, 1, 1, 0};
+    p.association_energy_over_k = {0, 2425.7, 2425.7, 0}; p.association_volume = {0, .04509, .04509, 0};
+    p.permittivity_form = PermittivityForm::DensityTemperature;
+    p.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0, 0.0};
+    p.dielectric_temperature_k = {1403.0, 0.0, 0.0, 0.0};
+    const HelmholtzModel model(p);
+    const double temperature = 298.15, pressure = 1000.0, a = 1e-30, b = 1e-230;
+    const std::vector<double> target{1.0 - 2.0 * a - 3.0 * b, a + 2.0 * b, a, b}, seed{.99, .006, .002, .002};
+    auto phase = equilibrium_support::phase("L", PhaseKind::Liquid); phase.support = {0, 1, 2, 3};
+    const auto root = solve_density(model, temperature, pressure, target, DensityBranch::Vapor, std::nullopt);
+    const auto derivative = model.evaluate(temperature, 1.0 / root.molar_density, target, DerivativeOrder::IsothermalPhaseHessian);
+    std::vector<double> shift(4);
+    for (std::size_t i = 0; i < 4; ++i) shift[i] = -std::log(target[i] * root.molar_density) - derivative.gradient[2 + i];
+    std::vector<std::vector<double>> transform;
+    const auto trial = compile_stability_trial(model, temperature, pressure, phase, seed, shift, transform);
+    const auto start = solve_density(model, temperature, pressure, seed, DensityBranch::Vapor, std::nullopt);
+    auto point = trial.generic_point();
+    for (std::size_t i = 0; i < 4; ++i) point[i] = std::log(seed[i]);
+    point[4] = 1.0; point[5] = std::log(model.packing_fraction_coefficient(temperature, seed) * start.molar_density);
+    std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
+    core::Capture capture(true); core::Scope scope("trial-refinement");
+    std::vector<double> attempt;
+    const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, false, {}, false, true);
+    const auto raw = trial.prepare(attempt, true);
+    const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number);
+    const auto inputs = recording_support::fields({recording_support::field("composition", composition),
+        recording_support::field("iterations", result.iterations), recording_support::field("evaluations", result.evaluations)});
+    tpd_compare("trial-refinement/stationarity", result.convergence.residual, 0.0, 1e-10, inputs);
+    tpd_compare("trial-refinement/charge", std::inner_product(composition.begin(), composition.end(), p.charge_number.begin(), 0.0), 0.0, 1e-12, inputs);
+    tpd_compare("trial-refinement/normalization", std::accumulate(composition.begin(), composition.end(), 0.0), 1.0, 1e-12, inputs);
+    for (double x : composition) CHECK(std::isfinite(x) && x > 0.0);
+    CHECK(result.success);
+}
+
 void check_phase_removal_inventory() {
     using namespace epcsaft::equilibrium;
     // Gross/Sadowski Table 2 and k_ij=0, gross-2001-methane-ethane/3 packet.
