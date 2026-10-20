@@ -65,6 +65,7 @@ enum class ParameterFamily {
     BornCDielectric, IonicRegionRelativePermittivity,
     KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
     DielectricVolume, DielectricTemperature,  // Schreckenberg d_V (m3/mol) and d_T (K) of a neutral solvent
+    CationPairMixing, CationTripleMixing,
     TemperatureLawCoefficient,  // a_p or s of a declared temperature law, by coefficient slot
 };
 constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::TemperatureLawCoefficient) + 1;
@@ -94,6 +95,8 @@ auto family_values(ParameterSet& parameters, ParameterFamily family, std::size_t
     case ParameterFamily::DielectricVolume: return view(parameters.dielectric_volume_m3_per_mol);
     case ParameterFamily::DielectricTemperature: return view(parameters.dielectric_temperature_k);
     case ParameterFamily::TemperatureLawCoefficient: return view(parameters.temperature_law_coefficient);
+    case ParameterFamily::CationPairMixing: return view(parameters.cation_pair_mixing);
+    case ParameterFamily::CationTripleMixing: return view(parameters.cation_triple_mixing);
     }
     throw std::invalid_argument("invalid parameter family");
 }
@@ -201,6 +204,7 @@ struct HelmholtzTape final {
                 contributions.hard_chain + contributions.dispersion
                 + contributions.debye_huckel + contributions.born + potential
                 + contributions.dipolar));
+            if (!parameters.cation_mixing.empty()) dependent.back() += total * contributions.cation_mixing;
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
         if (!ideal_correlations.empty()) {

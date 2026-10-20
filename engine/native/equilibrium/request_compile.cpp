@@ -1337,8 +1337,12 @@ static CompiledSystem compile_with_basis(
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
-    const Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+    Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
         jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
+    for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
+        const double norm = matrix.col(column).cwiseAbs().maxCoeff();
+        if (norm > 0.0) matrix.col(column) /= norm;
+    }
     compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
     compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;

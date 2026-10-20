@@ -75,6 +75,7 @@ struct FixedParameters {
     std::vector<int> charge_number;
     std::vector<int> molecular_ion;  // 1: an ion keeping the neutral short-range terms (#641); empty means none
     std::vector<double> solvation_factor;
+    std::vector<std::array<int, 4>> cation_mixing;  // solvent, unordered cations, common anion
     double born_c_shell = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;
     core::Declared<IonicDispersion> ionic_dispersion;
@@ -97,9 +98,11 @@ struct FixedParameters {
     std::vector<double> quadrupole_count;
 
     std::vector<int> form_identity() const {
-        return {electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,
+        std::vector<int> result = {electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,
                 ionic_dispersion.declared() ? static_cast<int>(ionic_dispersion.require("dispersion")) : 0,
                 permittivity_form.declared() ? static_cast<int>(permittivity_form.require("permittivity")) : 0};
+        for (const auto& record : cation_mixing) result.insert(result.end(), record.begin(), record.end());
+        return result;
     }
 
 };
@@ -125,6 +128,8 @@ struct ParameterRecord final : FixedParameters {
     std::vector<Scalar> dielectric_volume_m3_per_mol;
     std::vector<Scalar> dielectric_temperature_k;
     std::vector<Scalar> temperature_law_coefficient;
+    std::vector<Scalar> cation_pair_mixing;
+    std::vector<Scalar> cation_triple_mixing;
 
     std::size_t component_count() const { return segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }

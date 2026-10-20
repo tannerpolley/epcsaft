@@ -1208,6 +1208,23 @@ void check_e2_solve() {
             && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
         solve_inputs(renamed, renamed_result));
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    auto ethane_bubble = equilibrium_support::flash(1);
+    ethane_bubble.phases = {equilibrium_support::phase("L", PhaseKind::Liquid),
+                           equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0))};
+    ethane_bubble.temperature.value = 108.6365;
+    ethane_bubble.pressure = FreeValue::variable(1.0e5);
+    const auto ethane_compiled = epcsaft::equilibrium::compile_problem(ethane, ethane_bubble);
+    const auto ethane_result = epcsaft::equilibrium::solve_equilibrium(ethane, ethane_bubble);
+    recording_support::compare("e2-6/ethane-bubble", "row_residual", "1", largest_row(ethane_result), 0.0,
+        recording_support::fields({solve_inputs(ethane_bubble, ethane_result),
+            recording_support::field("pressure_Pa", epcsaft::core::optional_number(ethane_result.pressure)),
+            recording_support::field("jacobian_rank", ethane_compiled.jacobian_rank),
+            recording_support::field("generic_nullity", ethane_compiled.generic_nullity)}),
+        "Relationship", "equilibrium-residual", "the ethane bubble declaration has full rank and solves at 108.6365 K",
+        "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
+        ethane_compiled.jacobian_rank == 7 && ethane_compiled.generic_nullity == 0 && ethane_result.success
+            && ethane_result.has_state() && largest_row(ethane_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
+        "e2-6-solve", "ethane-bubble", "|r|", "T,feed,pins", "|r|\\leq10^{-10}", "case");
     auto vapor = equilibrium_support::flash(1);
     vapor.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
     vapor.temperature.value = 320.0;

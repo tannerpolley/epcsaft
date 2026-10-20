@@ -1270,7 +1270,11 @@ by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
 floor-limited state may miss the request and keeps its state with a warning.
-A structurally square declaration whose generic-point Jacobian loses rank
+A declaration's generic-point Jacobian is tested with Eigen full-pivot LU after
+dividing each nonzero column by its infinity norm; zero columns remain zero.
+The default relative pivot threshold is unchanged. This removes dependence on
+free-variable units up to floating-point rounding, without rescaling equations.
+A structurally square declaration whose normalized Jacobian loses rank
 returns `NOT_RUN` with `Stop::infeasible`, an unmeasured residual, no
 criterion and the row, unknown, rank and nullity counts, before any start or
 optimizer work. Within one solve the driver prepares each distinct callback
@@ -2474,6 +2478,13 @@ across calls. Driven T/P is required, and higher apparent-Cp actions are refused
 An unavailable outer action preserves an independently available Cp value.
 
 ## ALG-FIT
+
+The optional `cation_pair_mixing` and `cation_triple_mixing` scalar families
+use the affine chart with target `None` and their declared empty-or-one slots.
+The common Helmholtz tape owns their exact columns, including at zero
+coefficients and on an absent-cation face. Native construction owns topology,
+units and coefficient admission; no observation-level activity correction is
+applied. EqID `cation_pair_triple_mixing_helmholtz` states the liquid domain.
 
 A caller-declared Gaussian measurement-error model augments the existing
 Ceres least-squares fit with standardized physical input corrections (EqIDs

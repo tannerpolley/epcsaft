@@ -101,7 +101,7 @@ void register_thermal_inputs(nb::module_& module) {
         EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
             DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
             DispersionEnergyOverK, Kij, Lij, AssociationEnergyOverK, AssociationVolume, KijReciprocalTemperatureSlope,
-            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient);
+            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient, CationPairMixing, CationTripleMixing);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     nb::class_<ActiveParameter>(module, "ActiveParameter")
         .def(nb::init<ParameterFamily, std::vector<std::size_t>>(), nb::arg("family"), nb::arg("indices"))
@@ -179,7 +179,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_VALUES(epcsaft::ThermochemistryStatus, MissingRecord, Available, OutsideInterval, Nonfinite);
     nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
-        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar,
+        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
             // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
             residual_chemical_potential_over_rt, component_property_status,

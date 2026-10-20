@@ -2139,16 +2139,34 @@ $$
 c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 $$
 
+## `cation_pair_triple_mixing_helmholtz`
+
+- Section: Residual Helmholtz energy
+- Status: Exact derivation
+- Source: Solvent-mass integration of the constant short-range terms in Song et al. (2010), §2, p. 1287, Eqs. (1), (2), (10-1), (10-2), Zotero W3AX2GHK; #658 design D1–D7.
+- Description: One declared neutral solvent s, distinct cations i and j and common anion k; M_s is kg/mol, W is kg solvent, theta is kg/mol and psi is kg²/mol². The reduced molar contribution is Delta a^r = F/N, with N = sum n.
+- Change note: Optional aqueous liquid correction at 298.15 K and 1 bar; coefficients are constant in temperature. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients.
+
+$$
+F=\frac{\Delta A^r}{RT}
+=\frac{2\theta n_i n_j}{W}+\frac{\psi n_i n_j n_k}{W^2},\quad
+W=M_s n_s>0,\quad m_l=\frac{n_l}{W},\qquad
+\Delta a^r=\frac{2\theta x_i x_j}{M_s x_s}
++\frac{\psi x_i x_j x_k}{(M_s x_s)^2},\quad
+\Delta P=0,\qquad
+\Delta\Phi=\frac{2m_im_j}{\sum_{l\ne s}m_l}(\theta+\psi m_k).
+$$
+
 ## `residual_helmholtz`
 
 - Section: Residual Helmholtz energy
 - Status: Implementation convention
 - Source: [Gross2001], PC-SAFT residual decomposition extended by admitted electrolyte terms
-- Description: Sum of every active residual Helmholtz contribution; $a^{dd}$ only when the optional polar family is declared.
+- Description: Sum of every active residual Helmholtz contribution; $a^{dd}$ only when the optional polar family is declared, and $a^{mix}$ only with `cation_mixing`.
 - Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 
 $$
-a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}+a^{dd}.
+a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}+a^{dd}+a^{mix}.
 $$
 
 ## `residual_internal_energy`

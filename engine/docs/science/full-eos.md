@@ -842,6 +842,18 @@ establishes global equilibrium.
 
 ## 12. Domain and rejection rules
 
+The optional `cation_mixing` declaration adds the empirical solvent-mass
+pair/triple term in EqID `cation_pair_triple_mixing_helmholtz`. It names one
+neutral solvent, two distinct cations and one common anion, with both constant
+coefficients supplied explicitly. The retained model admits one neutral solvent
+and one anion and requires positive solvent mass. Omitting either cation from
+a component selection omits the term; a zero amount in a retained component set
+keeps its insertion derivatives. With no declaration, arithmetic is unchanged.
+Its scientific domain is aqueous liquid at 298.15 K and 1 bar; the #658 Yao
+calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
+mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
+In particular, it has no ideal-gas residual limit at fixed composition.
+
 Finite temperature bounds attached to the selected source records are
 intersected by the resolver and enforced for every topology. A record whose
 source domain is explicitly unknown contributes no invented numerical bound.

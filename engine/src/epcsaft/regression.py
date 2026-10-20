@@ -35,6 +35,8 @@ _FAMILIES = {
     "dielectric_volume": _core.ParameterFamily.DielectricVolume,  # m3/mol; an L/mol coordinate takes coefficient 1e-3
     "dielectric_temperature": _core.ParameterFamily.DielectricTemperature,
     "temperature_law_coefficient": _core.ParameterFamily.TemperatureLawCoefficient,  # target: the coefficient identity
+    "cation_pair_mixing": _core.ParameterFamily.CationPairMixing,
+    "cation_triple_mixing": _core.ParameterFamily.CationTripleMixing,
 }
 _PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}
@@ -95,7 +97,7 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
     if family not in _FAMILIES:
         raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
-    if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
+    if family in ("born_c_dielectric", "ionic_region_relative_permittivity") or family.startswith("cation_"):
         if target is not None:
             raise ParameterError(f"{family} is global and takes no component target")
         return [0]

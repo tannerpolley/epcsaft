@@ -143,8 +143,10 @@ public:
             for (const auto& x : site_series) sites_out->insert(sites_out->end(), x.c.begin(), x.c.begin() + N);
         }
         const auto potential = detail::stationary_association(contributions.association, composition_, parameters_, residuals);
-        return total_ * (contributions.hard_chain + contributions.dispersion + contributions.debye_huckel
+        auto result = total_ * (contributions.hard_chain + contributions.dispersion + contributions.debye_huckel
                          + contributions.born + potential + contributions.dipolar);
+        if (!parameters_.cation_mixing.empty()) result += total_ * contributions.cation_mixing;
+        return result;
     }
 
 private:
