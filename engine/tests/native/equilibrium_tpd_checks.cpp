@@ -116,8 +116,8 @@ void check_stability_amount_correction() {
             recording_support::field("representation_energy", representation_energy)});
         const auto& quantities = report.present_phases[0];
         tpd_compare(id + "/correction", quantities.at("correction_l1_mol"), correction, 1e-12 * correction, inputs, "mol");
-        tpd_compare(id + "/energy", quantities.at("feasibility_estimate_over_rt"), energy, 1e-12 * energy, inputs);
-        tpd_compare(id + "/donor-energy", report.trials[0].quantities.at("feasibility_error_estimate_over_rt"), energy, 1e-12 * energy, inputs);
+        tpd_compare(id + "/energy", quantities.at("feasibility_estimate_over_rt"), energy, 1e-12 * energy, inputs, "mol");
+        tpd_compare(id + "/donor-energy", report.trials[0].quantities.at("feasibility_error_estimate_over_rt"), energy, 1e-12 * energy, inputs, "mol");
         auto coordinates = parent.coordinates;
         std::copy(report.candidate_coordinates.begin(), report.candidate_coordinates.end(), coordinates.begin());
         const auto final = compiled.prepare(coordinates);
