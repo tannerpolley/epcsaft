@@ -32,6 +32,7 @@ analyses/2026-reactive-caloric-actions/results/slice4/*.tsv whitespace=-blank-at
 
 # Named-release evidence keeps the producer's original CSV/TSV bytes.
 analyses/*/results/main-8298c602/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-tpd-phase-discovery/results/main-8298c602-ionic-qualification/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 analyses/2026-addition-enthalpy-fitting/results/main-8298c602-columns.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification.tsv -text whitespace=-blank-at-eol
 # Raw comparator logs retain trailing blanks and their final empty line.
