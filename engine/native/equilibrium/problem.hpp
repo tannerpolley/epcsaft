@@ -256,6 +256,7 @@ struct PhasePoint final {
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.
     mutable std::optional<StandardTerm> parameter_standard;
+    mutable std::map<std::string, ResidualEnergyAction> energy_actions;
 };
 
 // Taylor series of one phase along a path: point[k] is the k-th coefficient of the phase as
