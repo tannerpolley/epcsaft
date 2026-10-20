@@ -379,7 +379,7 @@ def build_parameters(document: ParameterDocument) -> Parameters:
     """
     ...
 def prepare_thermochemistry(record: ThermochemistryRecord, source_gas_constant: float) -> ThermochemistryRecord:
-    """Convert source ideal-gas coefficients to the Engine gas-constant convention.
+    """Convert source NASA9 coefficients to the Engine gas-constant convention.
 
     Parameters
     ----------
@@ -395,7 +395,7 @@ def prepare_thermochemistry(record: ThermochemistryRecord, source_gas_constant: 
 
     Notes
     -----
-    NASA coefficients and entropy pressure transfers follow the native thermochemistry owner; this operation does not fit or invent species calorics.
+    Every interval must contain NASA9; other ideal forms are refused by this preparation operation. Each coefficient is multiplied by source_gas_constant/GAS_CONSTANT_J_PER_MOL_K. Intervals and source pressures remain unchanged; no entropy pressure transfer or parameter fit occurs here.
     """
     ...
 def fitted_document(start: ParameterDocument, fitted: Parameters) -> ParameterDocument:
@@ -1117,7 +1117,7 @@ class PropertyActionDiagnostics:
     site_solves: int
     """Number of association linear solves."""
     site_pivot_ratio: float
-    """Dimensionless association factorization pivot ratio."""
+    """Dimensionless ratio of largest to smallest absolute association factorization pivot."""
     association_residual: float
     """Dimensionless association mass-action residual magnitude."""
     pressure_density_derivative: float
@@ -1391,7 +1391,9 @@ class DensityDiagnostics:
     evaluation_order: DerivativeOrder
     """Derivative order used to test finite evaluability."""
     finite_domain: Optional[DensityDiagnosticPoint]
-    """Refined finite-domain boundary point, or None if no such search was requested or retained."""
+    """Refined finite-domain boundary point, or None if no such search was requested or retained.
+    Only its density bounds, stopping cause and availability cause are defined.
+    """
     geometric_cap: float
     """Packing-derived upper density bound in mol/m^3; not proof of finite evaluability below it."""
     declared_crossings: int
@@ -1715,8 +1717,8 @@ class FeedKind:
     Amounts: FeedKind
     """Absolute component amounts in mol."""
     MassFractions: FeedKind
-    """Dimensionless component mass fractions; converted with declared molar masses to the native
-    molar feed basis.
+    """Dimensionless component mass fractions on a one-kg mixture basis; divided by molar masses in
+    kg/mol to obtain native molar amounts.
     """
     Molalities: FeedKind
     """Solute amounts in mol/kg of declared solvent; solvent fractions and solvent_mass_kg supply
@@ -1862,7 +1864,7 @@ class FeedSpec:
     """Basis selecting the interpretation and native conversion of values."""
     values: list[float]
     """Length n in component_ids order: mol for Amounts, dimensionless for mole/mass fractions, or
-    solvent mole fractions plus solute mol/kg solvent for Molalities.
+    relative solvent molar amounts plus solute mol/kg solvent for Molalities.
     """
     solvent: list[int]
     """Solvent component indices for a molality feed; non-solvent entries of values are solute
@@ -3439,7 +3441,7 @@ def solve_equilibrium(
     ...
 
 class InfiniteDilutionReference:
-    """Two-ion infinite-dilution reference at declared temperature and pressure.
+    """Ionic infinite-dilution reference and optional same-T/P pure-solvent reference.
 
     Notes
     -----
@@ -3452,10 +3454,12 @@ class InfiniteDilutionReference:
     individual columns are None when their limiting admission fails.
     """
     parameter_convergence_error: list[float]
-    """Length a, maximum two-ion terminal-pair derivative change in inverse parameter units."""
+    """Length a of dimensionless maximum two-ion terminal-pair derivative changes multiplied by
+    each native parameter scale; used for independent column admission.
+    """
     log_fugacity: tuple[float, float]
-    """Dimensionless reference log fugacities in (cation, anion) order, using the native density
-    standard.
+    """Extrapolated dimensionless ln fugacity coefficients in (cation, anion) order; solvent-only
+    references carry no ionic limit.
     """
     molality: float
     """Retained reference molality in mol/kg solvent; this finite rung is not an exact
@@ -3464,7 +3468,7 @@ class InfiniteDilutionReference:
     convergence_error: float
     """Dimensionless terminal change of the reference log fugacities."""
     pure_solvent_log_fugacity: Optional[float]
-    """Same-T/P pure-solvent log fugacity, dimensionless, or None when unavailable."""
+    """Same-T/P pure-solvent ln fugacity coefficient, dimensionless, or None when unavailable."""
     pure_solvent_state: Optional[State]
     """Same-T/P pure-solvent liquid state, or None when unavailable."""
     solvent_status: PropertyActionStatus
@@ -3701,361 +3705,1340 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
     ...
 
 class ObservationKind:
+    """Measured or source-reported quantity supplied to native parameter estimation.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+
+    See ALG-FIT and engine/docs/regression/science/pure-saturation-regression.md for observation algebra, bases and admission. Parameter fitting is calibration, not independent physical validation.
+    """
     MeanIonicActivityCoefficient: ObservationKind
+    """Dimensionless mean ionic activity coefficient on the declared molality scale."""
     OsmoticCoefficient: ObservationKind
+    """Dimensionless single-solvent practical osmotic coefficient of the formula salt."""
     MixtureOsmoticCoefficient: ObservationKind
+    """Dimensionless practical osmotic coefficient -ln(a_w)/(M_w*sum(m_j)) for a full
+    electroneutral liquid composition and one solvent.
+    """
     SolvationGibbsEnergy: ObservationKind
+    """Single-ion infinite-dilution solvation Gibbs energy, J/mol on the native reference
+    convention.
+    """
     TransferGibbsEnergy: ObservationKind
+    """Single-ion transfer Gibbs energy, solvent B minus reference solvent A, J/mol on the matched
+    convention.
+    """
     BulkRelativePermittivity: ObservationKind
+    """Dimensionless bulk relative permittivity, or a dimensionless two-state ratio when a
+    reference composition is declared.
+    """
     LogEquilibriumConstant: ObservationKind
+    """Natural logarithm of the named source K at fixed problem temperature, dimensionless; no
+    equilibrium solve or reference transfer.
+    """
     IsobaricHeatCapacity: ObservationKind
+    """Total homogeneous molar Cp at fixed composition, J/(mol K)."""
     EquilibriumIsobaricHeatCapacity: ObservationKind
+    """Reacting equilibrium isobaric heat capacity per feed mole, J/(mol-feed K)."""
     Density: ObservationKind
+    """Pressure-closed molar density in mol/m^3, or mass density in kg/m^3 with mass_basis."""
     PhaseDensity: ObservationKind
+    """Selected equilibrium phase density in mol/m^3, or kg/m^3 with mass_basis."""
     EquilibriumPressure: ObservationKind
+    """Solved bubble/dew/saturation pressure in Pa."""
     EquilibriumTemperature: ObservationKind
+    """Solved bubble/dew/saturation temperature in K."""
     PhaseMoleFraction: ObservationKind
+    """Sum of selected component mole fractions in one phase, dimensionless."""
     PhaseFraction: ObservationKind
+    """Selected phase amount divided by the sum of solved fluid-phase amounts, dimensionless; not
+    divided by feed_total.
+    """
     PartialPressure: ObservationKind
+    """Solved system pressure times the selected phase mole-fraction sum, Pa."""
     PhaseAmountRatio: ObservationKind
+    """Selected numerator component amount divided by selected denominator amount, dimensionless;
+    denominator must be nonzero.
+    """
     AdditionEnthalpy: ObservationKind
+    """Endpoint extensive-enthalpy difference less added-feed enthalpy, divided by added feed mol,
+    J/mol of total added feed; negative is exothermic.
+    """
 
 class ResidualForm:
+    """Dimensionless residual formed from a prediction and its observation.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Difference: ResidualForm
+    """(prediction-observed)/scale, with positive scale in the observation unit."""
     LogRatio: ResidualForm
+    """ln(prediction/observed); both arguments must be positive, and scale is unused."""
 
 class ObservationStatus:
+    """Availability or refusal cause of an observation row.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     NotEvaluated: ObservationStatus
+    """This row was skipped or evaluation stopped before reaching it."""
     ReferenceUnavailable: ObservationStatus
+    """A required reference value or limiting column is unavailable."""
     ThermochemistryUnavailable: ObservationStatus
+    """Required caloric data are absent, outside their interval or nonfinite."""
     Available: ObservationStatus
+    """Requested prediction or derivative is available."""
     DensityUnavailable: ObservationStatus
+    """The declared pressure-closed density was refused."""
     CentralSolveUnavailable: ObservationStatus
+    """No admitted central equilibrium state is available."""
     TopologyEvent: ObservationStatus
+    """A phase disappeared or phases coalesced, so the declared observation is unavailable."""
     MissingMolarMass: ObservationStatus
+    """Mass conversion requires an occupied-species molar mass that is missing or nonpositive."""
     NonpositiveLogArgument: ObservationStatus
+    """A logarithmic prediction/residual requires a positive argument."""
     ActionUnavailable: ObservationStatus
+    """A required exact native action was refused."""
     Nonfinite: ObservationStatus
+    """A required prediction, residual or column is nonfinite."""
     InadmissibleTrial: ObservationStatus
+    """Native admission or evaluation raised at this trial; the original explanation is retained."""
 
 class Observation:
+    """Inputs, reported value and residual convention for one fitting row.
+
+    Notes
+    -----
+    Only the fields consumed by kind define its observation. A failed prediction is unavailable with a cause, never a successful zero residual. Endpoint reaction/reference identities and component balances must match for AdditionEnthalpy.
+    """
     ion_indices: tuple[int, int]
+    """Two component indices in (cation, anion) order for the formula-salt reference."""
     stoichiometry: tuple[int, int]
+    """Two positive ion counts per formula unit in (cation, anion) order, with zero net formula
+    charge.
+    """
     molality: float
+    """Formula-unit salt concentration in mol/kg solvent for formula-salt observations."""
     reference_composition: list[float]
+    """Optional length-n reference solvent composition, dimensionless in component order; used for
+    transfer A or a relative-permittivity denominator.
+    """
     reaction: str
+    """Named source reaction for LogEquilibriumConstant, matched within problem.reactions."""
     kind: ObservationKind
+    """Observation quantity, unit and native consumer; see ObservationKind."""
     temperature: float
+    """Pressure-closed or feed-state temperature in K; equilibrium observations use
+    problem.temperature instead.
+    """
     pressure: float
+    """Pressure-closed or added-feed-state pressure in Pa; equilibrium observations use
+    problem.pressure instead.
+    """
     composition: list[float]
+    """Length n, normalized dimensionless composition in component order; electrolyte kinds
+    interpret it as the declared solvent or full mixture as specified by kind.
+    """
     branch: DensityBranch
+    """Density branch for a pressure-closed state or added-feed state."""
     problem: EquilibriumProblem
+    """Declared equilibrium specification, or initial endpoint for AdditionEnthalpy; also owns the
+    named source law for ln K observations.
+    """
     final_problem: EquilibriumProblem
+    """Final equilibrium endpoint for AdditionEnthalpy; unused by single-endpoint kinds."""
     feed_amount: float
+    """Positive added-feed amount in mol for AdditionEnthalpy."""
     phase: int
+    """Selected declared fluid-phase index."""
     species: list[int]
+    """Nonempty selected component-index set within the phase support; mole-fraction and
+    partial-pressure kinds sum the set.
+    """
     denominator_phase: int
+    """Denominator fluid-phase index for PhaseAmountRatio."""
     denominator_species: list[int]
+    """Nonempty denominator component-index set for PhaseAmountRatio."""
     mass_basis: bool
+    """For Density/PhaseDensity, request kg/m^3 rather than mol/m^3 through declared molar masses."""
     observed: float
+    """Reported measured/source value in the selected prediction unit; not a residual."""
     form: ResidualForm
+    """Dimensionless residual transformation."""
     scale: float
+    """Positive Difference nondimensionalization scale in the observation unit; not an uncertainty
+    unless explicitly declared as such by the measurement model.
+    """
 
 class Prediction:
+    """One native observation prediction with physical units and failure evidence."""
     solver_options: list[dict[str, Any]]
+    """Effective named numerical settings and provenance."""
     value: Optional[float]
+    """Predicted physical quantity in unit, or None with status/message."""
     unit: str
+    """Physical unit of the predicted observation."""
     status: ObservationStatus
+    """Availability or specific refusal cause."""
     message: str
+    """Native explanation, including the failing state/reference when relevant."""
     residual: Optional[float]
+    """Unweighted dimensionless residual in the declared ResidualForm, or None when unavailable."""
     convergence: Optional[Convergence]
+    """Consumed equilibrium/density convergence record, or None without one."""
     branch: Optional[DensityBranch]
+    """Resolved density branch, or None without pressure-closure branch evidence; Unspecified is
+    not a phase classification.
+    """
     stable_root_count: Optional[int]
+    """Mechanically stable root count if established, otherwise None."""
     requested_tolerance_met: Optional[bool]
+    """Whether a retained central solve meets the caller criterion, or None without that evidence."""
 
 class PredictionGradient:
+    """Exact first partials of one physical prediction.
+
+    Notes
+    -----
+    These are prediction columns, not residual or weighted columns. A missing derivative is not a numerical zero.
+    """
     value: list[float]
+    """Physical prediction partials in model active-parameter order, with requested
+    reaction-coordinate columns where the consumer supplies them; unit divided by each native
+    coefficient unit. Empty on refusal.
+    """
     status: ObservationStatus
+    """Availability or blocking native action cause."""
     message: str
+    """Derivative refusal explanation, possibly empty."""
 
 class ReactionCoefficient:
+    """Source reaction coordinate and its physical unit.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     A: ReactionCoefficient
+    """Natural-log constant coefficient a, dimensionless."""
     B: ReactionCoefficient
+    """Reciprocal-temperature coefficient b, K."""
     C: ReactionCoefficient
+    """Log-temperature coefficient c, dimensionless."""
     D: ReactionCoefficient
+    """Linear-temperature coefficient d, 1/K."""
     EnthalpyShift: ReactionCoefficient
+    """Source reaction enthalpy increment in J/mol, with a required pivot temperature; preserves ln
+    K at the pivot.
+    """
 
 class ReactionCoordinate:
+    """Named source coefficient or enthalpy-shift coordinate.
+
+    Notes
+    -----
+    Plain assignments precede an enthalpy-shift addition on a fresh observation copy. Duplicate assignments and two shifts on one reaction are refused. Sequence starts and minimax do not admit EnthalpyShift; see ALG-FIT.
+    """
     name: str
+    """Reaction name shared by every matching observation/source law."""
     coefficient: ReactionCoefficient
+    """Selected a/b/c/d coefficient or pivoted enthalpy increment."""
     pivot_temperature: float
+    """Positive pivot in K within the source interval, required for EnthalpyShift; otherwise
+    unused.
+    """
 
 class CoordinateTarget:
+    """One native EOS target of an affine optimizer coordinate."""
     family: ParameterFamily
+    """Native parameter family, physical meaning and unit."""
     indices: list[int]
+    """Native storage slots tied to the target; same flattened-slot convention as ActiveParameter."""
     coefficient: float
+    """Multiplier mapping base coordinate q to this target; units are target units divided by q
+    units, so cross-family targets need not share a unit.
+    """
 
 class Coordinate:
+    """Affine physical coordinate q = origin + scale*v.
+
+    Notes
+    -----
+    q uses the reaction-coefficient unit or the units declared by its EOS target map. Optimizer v is dimensionless. Native admission owns tied-slot consistency, target conflicts and valid bounds; see affine_parameter_coordinate_map in engine/docs/equations.md.
+    """
     targets: list[CoordinateTarget]
+    """Ordered EOS targets, each equal to coefficient*q; empty for a reaction coordinate."""
     reaction: Optional[ReactionCoordinate]
+    """Optional named source coordinate; mutually exclusive with EOS targets."""
     origin: float
+    """Physical base value of q at dimensionless optimizer v=0, in q units."""
     scale: float
+    """Positive finite affine scale in q units per dimensionless optimizer increment."""
     lower: float
+    """Inclusive lower physical bound on q, in q units; may be negative infinity when undeclared."""
     upper: float
+    """Inclusive upper physical bound on q, in q units; may be positive infinity when undeclared."""
 
 class CoordinateSet:
+    """Ordered affine parameter coordinates for native estimation.
+
+    Notes
+    -----
+    Physical rows are EOS targets in coordinate/target order, then held Born diameters where evaluated, then reaction rows. ActiveParameter lists contain EOS rows only; reaction coordinates are separate.
+    """
     coordinates: list[Coordinate]
-    def active(self) -> list[ActiveParameter]: ...
-    def tie(self) -> list[int]: ...
-    def start(self, parameters: Parameters, observations: list[Observation] = ..., thermochemistry: Optional[ThermochemistryRecord] = ...) -> list[float]: ...
+    """Optimizer coordinates in declaration order; this order owns all optimizer columns."""
+    def active(self) -> list[ActiveParameter]:
+        """Read EOS physical derivative directions from the coordinate declarations.
+
+        Returns
+        -------
+        list[ActiveParameter]
+            One ActiveParameter per declared EOS target, in coordinate/target order; excludes reaction coordinates and unevaluated holds.
+        """
+        ...
+    def tie(self) -> list[int]:
+        """Read the physical-row to optimizer-coordinate membership.
+
+        Returns
+        -------
+        list[int]
+            Optimizer-coordinate index per physical EOS/reaction row in native physical-row order; held rows arise only during evaluation.
+        """
+        ...
+    def start(self, parameters: Parameters, observations: list[Observation] = ..., thermochemistry: Optional[ThermochemistryRecord] = ...) -> list[float]:
+        """Read dimensionless optimizer starts from current physical parameters and source laws.
+
+        Parameters
+        ----------
+        parameters : Parameters
+            Admitted native EOS parameters.
+        observations : list[Observation]
+            Optional observation/source declarations needed to identify named reaction coordinates.
+        thermochemistry : Optional[ThermochemistryRecord]
+            Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+
+        Returns
+        -------
+        list[float]
+            Length u optimizer vector in coordinate declaration order.
+
+        Notes
+        -----
+        Tied slots must agree; invalid or conflicting reaction sources are refused. This reads a start and performs no fit.
+        """
+        ...
 
 class FitControls:
+    """Native estimator tolerances, budgets and state-group workers.
+
+    Notes
+    -----
+    Least squares uses Ceres with exact native columns. Minimax uses its explicit request and native Ipopt controls; no failed check silently selects it. See ALG-FIT.
+    """
     solver_options: list[dict[str, Any]]
+    """Effective named numerical settings, including criterion provenance."""
     function_tolerance: float
+    """Dimensionless Ceres relative cost-change tolerance; zero selects the named source default."""
     gradient_tolerance: float
+    """Ceres projected-gradient criterion in normalized optimizer/objective coordinates; zero
+    selects its named default.
+    """
     parameter_tolerance: float
+    """Dimensionless Ceres optimizer-step criterion; zero selects its named default."""
     maximum_iterations: int
+    """Required positive iteration limit, a count."""
     maximum_elapsed_time_seconds: float
+    """Required positive elapsed-time budget in seconds."""
     workers: int
+    """Requested native state-group process count including the caller; zero selects hardware
+    concurrency, bounded by eligible groups. Minimax/point readers and active trace capture use
+    one process.
+    """
     def __init__(self, *, maximum_iterations: int, maximum_elapsed_time_seconds: float, function_tolerance: float = 0.0,
-                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0, workers: int = 0, solver_options: Mapping[str, float] | None = None) -> None: ...
+                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0, workers: int = 0, solver_options: Mapping[str, float] | None = None) -> None:
+        """Initialize FitControls from the declared inputs.
+
+        Parameters
+        ----------
+        maximum_iterations : int
+            Initial value of FitControls.maximum_iterations; see its attribute description for units and ordering.
+        maximum_elapsed_time_seconds : float
+            Initial value of FitControls.maximum_elapsed_time_seconds; see its attribute description for units and ordering.
+        function_tolerance : float
+            Initial value of FitControls.function_tolerance; see its attribute description for units and ordering.
+        gradient_tolerance : float
+            Initial value of FitControls.gradient_tolerance; see its attribute description for units and ordering.
+        parameter_tolerance : float
+            Initial value of FitControls.parameter_tolerance; see its attribute description for units and ordering.
+        workers : int
+            Initial value of FitControls.workers; see its attribute description for units and ordering.
+        solver_options : Mapping[str, float] | None
+            Initial value of FitControls.solver_options; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class TrialFailure:
+    """Retained refusal at one optimizer trial."""
     trial: int
+    """Native trial counter."""
     observation: int
+    """Zero-based failing observation row; the observation count itself denotes a request/model
+    exception without a specific row.
+    """
     optimizer: list[float]
+    """Dimensionless optimizer point, including active measurement corrections where declared."""
     status: ObservationStatus
+    """Typed native refusal cause."""
     message: str
+    """Original native explanation; not replaced by an apparent zero residual."""
     jacobian: bool
+    """Whether the refusal occurred while derivative columns were requested."""
 
 class FitCovariance:
+    """Local least-squares covariance and rank evidence.
+
+    Notes
+    -----
+    The unscaled matrix is the inverse local weighted normal matrix; apply variance_factor only under the stated unknown-common-variance assumption. No covariance is claimed for unfinished, rank-deficient, active-bound or minimax estimates. Model discrepancy and physical validation are outside this local estimate.
+    """
     left_vectors: list[float]
+    """Optional flattened row-major thin left singular vectors (M, min(M,U)) of the complete
+    objective Jacobian; objective_rows labels rows. Empty unless requested and evaluated.
+    """
     right_vectors: list[float]
+    """Optional flattened row-major thin right singular vectors (U, min(M,U)); U includes active
+    input corrections, and columns pair with singular_values. Empty unless requested and
+    evaluated.
+    """
     projected_gradient_norm: float
+    """Maximum absolute projected objective-gradient component in native normalized optimizer
+    coordinates; may be nonfinite when unavailable.
+    """
     status: str
+    """Covariance availability: available, not_converged, rank_deficient, active_bound, unavailable
+    or minimax_unavailable.
+    """
     assumption: str
+    """Explicit local linearization/error assumptions; these limit interpretation of any returned
+    covariance.
+    """
     rank: int
+    """Numerical rank of the complete weighted/whitened objective Jacobian, a count."""
     singular_values: list[float]
+    """Descending singular values of the complete objective Jacobian, length min(M,U), in
+    normalized residual/optimizer units.
+    """
     objective_rows: list[int]
+    """Positive-weight observation row indices followed by observation_count+input_column labels
+    for measurement penalties.
+    """
     active_bounds: list[int]
+    """Indices of complete optimizer coordinates lying within the native bound-activity distance."""
     optimizer: list[float]
+    """Flattened symmetric (u, u) model-coordinate covariance block after eliminating input
+    corrections; native column-major storage (symmetry gives the same flat order as row-major).
+    Empty unless available.
+    """
     physical: list[float]
+    """Flattened symmetric (r, r) covariance D*optimizer*D^T in physical-row order; units are
+    products of physical-row units. Empty unless available.
+    """
     variance_factor: Optional[float]
+    """Optional sum(weight*r^2)/(objective_row_count-rank) for an unknown common residual variance;
+    absent with known measurement sigmas/covariance or insufficient degrees of freedom.
+    """
 
 class MinimaxRequest:
-    targets: list[int]
-    group_scales: list[float]
-    q: float
-    tolerance: float
-    activity_distance: float
-    margin: float
-    def __init__(self) -> None: ...
-class MinimaxRow:
-    kind: str
-    row: int
-    group: int
-    metric: CheckMetric
-    sign: float
-    threshold: float
-    scale: float
-    auxiliary: int | None
-    members: list[int]
-class MinimaxResult:
-    availability: str
-    application_status: str
-    solver_status: str
-    linear_solver: str
-    feasible: bool
-    stationary: bool
-    t: float
-    target_maximum: float
-    gap: float
-    primal: float
-    stationarity: float
-    dual_sign: float
-    complementarity: float
-    point: list[float]
-    lower: list[float]
-    upper: list[float]
-    values: list[float]
-    physical_values: list[float]
-    jacobian: list[float]
-    multipliers: list[float]
-    physical_multipliers: list[float]
-    z_lower: list[float]
-    z_upper: list[float]
-    physical_z_lower: list[float]
-    physical_z_upper: list[float]
-    lower_distances: list[float]
-    upper_distances: list[float]
-    hold_multipliers: list[float]
-    full_stationarity: list[float]
-    root_errors: list[float]
-    slack_groups: list[int]
-    slack_rows: list[int]
-    active_lower: list[int]
-    active_upper: list[int]
-    hold_causes: list[str]
-    rows: list[MinimaxRow]
-    frozen_checks: list[CheckResult]
-class MeasuredInputKind:
-    Temperature: MeasuredInputKind
-    Pressure: MeasuredInputKind
-    MoleFraction: MeasuredInputKind
-    Molality: MeasuredInputKind
-class MeasuredInput:
-    def __init__(self) -> None: ...
-    kind: MeasuredInputKind
-    species: int
-    sigma: float
-    lower: float
-    upper: float
-    unit: str
-class MeasurementGroup:
-    def __init__(self) -> None: ...
-    rows: list[int]
-    inputs: list[MeasuredInput]
-    dependent_species: list[int]
-    feed_total_mol: float
-class MeasurementUncertainty:
-    def __init__(self) -> None: ...
-    groups: list[MeasurementGroup]
-    output_sigma: list[float]
-    covariance: list[float] | None
-    correlation: list[float] | None
-class InputReconciliation:
-    values: list[float]
-    corrections: list[float]
-    penalties: list[float]
-    jacobian: list[float]
-    row_groups: list[int]
-    column_groups: list[int]
-    column_inputs: list[int]
-    output_cost: float
-    input_cost: float
-class FitResult:
-    solver_options: list[dict[str, Any]]
-    reconciliation: InputReconciliation | None
-    minimax: MinimaxResult | None
-    chart: EvaluatedCoordinates
-    checks: list[CheckResult]
-    acceptance: str
-    optimizer: list[float]
-    status: str
-    message: str
-    usable: bool
-    # Native chart order: one value per target of each non-reaction coordinate (declaration order), then each held
-    # Born diameter, then each reaction coordinate. Entry k < len(chart.active) is the value of chart.active[k].
-    physical: list[float]
-    parameters: Parameters
-    predictions: list[float]  # per observation, in the observation's unit
-    residuals: list[float]
-    weighted_residuals: list[float]
-    physical_jacobian: list[float]
-    optimizer_jacobian: list[float]
-    statuses: list[ObservationStatus]
-    failures: list[TrialFailure]
-    iterations: int
-    residual_evaluations: int
-    jacobian_evaluations: int
-    trial_failures: int
-    iteration_seconds: list[float]
-    iteration_costs: list[float]
-    initial_cost: float
-    final_cost: float
-    covariance: FitCovariance
+    """Explicit constrained estimate of the largest absolute decadic target error.
 
-def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
-def differentiate(model: HelmholtzModel, observation: Observation) -> PredictionGradient: ...
+    Notes
+    -----
+    This selects the native constrained estimator explicitly. It supplies exact first columns and limited-memory curvature, not a parameter Hessian or global optimum certificate. See ALG-FIT, Guarded minimax.
+    """
+    targets: list[int]
+    """Unique observation-row indices with positive log-ratio arguments; their maximum absolute
+    log10 error is minimized.
+    """
+    group_scales: list[float]
+    """One positive constraint scale per check group, in that group's error unit; report-only
+    groups remain omitted from trial constraints.
+    """
+    q: float
+    """Positive epigraph scale in log10 decades; the minimized dimensionless objective is t/q."""
+    tolerance: float
+    """Positive dimensionless tolerance for scaled feasibility and first-order stationarity
+    diagnostics.
+    """
+    activity_distance: float
+    """Positive dimensionless normalized distance used to identify active variable bounds."""
+    margin: float
+    """Positive dimensionless initial interior margin; epigraph starts at target maximum + margin*q
+    and slacks at absolute error + margin*group scale.
+    """
+    def __init__(self) -> None:
+        """Initialize MinimaxRequest from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
+class MinimaxRow:
+    """One scaled inequality of the native minimax problem."""
+    kind: str
+    """Native inequality role: target, maximum, link or mean."""
+    row: int
+    """Observation index for a scalar error row; unused for a mean-group row."""
+    group: int
+    """Check-group index; target rows use the number of check groups as a sentinel."""
+    metric: CheckMetric
+    """Absolute-difference or absolute-log10-ratio error convention."""
+    sign: float
+    """Dimensionless +1 or -1 for paired signed error inequalities; zero where unused."""
+    threshold: float
+    """Frozen physical error threshold in the metric's units."""
+    scale: float
+    """Positive physical row scale in the same units as the inequality."""
+    auxiliary: int | None
+    """Epigraph/slack point index subtracted by this row, or None for no such auxiliary."""
+    members: list[int]
+    """Point indices of mean-group slacks; empty for a scalar row."""
+class MinimaxResult:
+    """Candidate inequalities, multipliers and local first-order diagnostics.
+
+    Notes
+    -----
+    Availability, optimizer termination, feasibility, stationarity and final check acceptance are distinct. Local infeasibility is not proof of global infeasibility. Point evaluation supplies no optimization certificate; minimax supplies no covariance. See ALG-FIT.
+    """
+    availability: str
+    """Whether complete candidate values and derivative diagnostics were evaluated; not an
+    optimality claim.
+    """
+    application_status: str
+    """Native application-level termination or point-reader outcome."""
+    solver_status: str
+    """Ipopt optimizer termination name; separate from feasibility and stationarity."""
+    linear_solver: str
+    """Actual native Ipopt linear-solver name."""
+    feasible: bool
+    """Whether recomputed scaled primal/bound violations meet the declared tolerance."""
+    stationary: bool
+    """Whether stationarity, dual-sign and complementarity residuals meet the declared tolerance;
+    separate from feasibility.
+    """
+    t: float
+    """Nonnegative physical epigraph in log10 decades."""
+    target_maximum: float
+    """Maximum actual absolute target log10 error, in decades."""
+    gap: float
+    """t minus target_maximum, in decades."""
+    primal: float
+    """Maximum scaled inequality or bound violation, dimensionless."""
+    stationarity: float
+    """Maximum absolute stationarity residual of the t/q objective in the native point coordinates."""
+    dual_sign: float
+    """Maximum wrong-sign inequality/bound multiplier violation for the scaled objective."""
+    complementarity: float
+    """Maximum scaled multiplier-times-constraint or bound-distance residual."""
+    point: list[float]
+    """Full point: dimensionless model optimizer coordinates, physical t in decades, then physical
+    group slacks in declaration order.
+    """
+    lower: list[float]
+    """Per-point lower bounds in each point entry's units."""
+    upper: list[float]
+    """Per-point upper bounds in each point entry's units; may include infinity."""
+    values: list[float]
+    """Length m of dimensionless scaled inequalities c=C/scale, rows order, feasible when <=0."""
+    physical_values: list[float]
+    """Length m of unscaled inequalities C in each row's error unit."""
+    jacobian: list[float]
+    """Flattened row-major (m, v) scaled-inequality Jacobian, v=len(point); column units are
+    inverse point-entry units.
+    """
+    multipliers: list[float]
+    """Scaled-objective inequality multipliers lambda, rows order."""
+    physical_multipliers: list[float]
+    """Physical-objective inequality multipliers q*lambda/row.scale, decades per row-error unit."""
+    z_lower: list[float]
+    """Lower-bound multipliers for t/q, point order, inverse point-entry units."""
+    z_upper: list[float]
+    """Upper-bound multipliers for t/q, point order, inverse point-entry units."""
+    physical_z_lower: list[float]
+    """Physical-objective lower-bound multipliers q*z_lower, decades per point-entry unit."""
+    physical_z_upper: list[float]
+    """Physical-objective upper-bound multipliers q*z_upper, decades per point-entry unit."""
+    lower_distances: list[float]
+    """Dimensionless point-minus-lower distances divided by the declared variable scales."""
+    upper_distances: list[float]
+    """Dimensionless upper-minus-point distances divided by the declared variable scales."""
+    hold_multipliers: list[float]
+    """Reconstructed physical-objective multiplier per hydration hold, decades/(J/mol); nonfinite
+    for an unavailable full-space reconstruction.
+    """
+    full_stationarity: list[float]
+    """Physical-objective stationarity in independent optimizer order followed by held-diameter
+    rows; units are decades per corresponding optimizer/diameter unit.
+    """
+    root_errors: list[float]
+    """Local dimensionless inequality error estimate from held-root diameter uncertainty, one per
+    inequality; not an enclosure.
+    """
+    slack_groups: list[int]
+    """Check-group index per mean-error slack, in slack declaration order."""
+    slack_rows: list[int]
+    """Observation-row index per mean-error slack, same order as slack_groups."""
+    active_lower: list[int]
+    """Point indices near their lower bounds under activity_distance."""
+    active_upper: list[int]
+    """Point indices near their upper bounds under activity_distance."""
+    hold_causes: list[str]
+    """Full-space multiplier availability explanation per hold."""
+    rows: list[MinimaxRow]
+    """Inequality identities/scales in values and Jacobian row order."""
+    frozen_checks: list[CheckResult]
+    """Check reports fixing baseline thresholds before optimization."""
+class MeasuredInputKind:
+    """Physical input whose reported uncertainty is declared.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
+    Temperature: MeasuredInputKind
+    """Absolute temperature, K."""
+    Pressure: MeasuredInputKind
+    """Pressure, Pa."""
+    MoleFraction: MeasuredInputKind
+    """Independent component mole fraction, dimensionless."""
+    Molality: MeasuredInputKind
+    """Formula-unit molality, mol/kg solvent."""
+class MeasuredInput:
+    """One bounded physical input and its known standard uncertainty."""
+    def __init__(self) -> None:
+        """Initialize MeasuredInput from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
+    kind: MeasuredInputKind
+    """Input quantity and its required physical unit."""
+    species: int
+    """Component index for MoleFraction; unused for other input kinds."""
+    sigma: float
+    """Nonnegative known standard deviation in unit; zero eliminates this correction coordinate."""
+    lower: float
+    """Inclusive lower physical input bound in unit, not a standardized correction."""
+    upper: float
+    """Inclusive upper physical input bound in unit."""
+    unit: str
+    """Explicit input unit admitted for kind; no basis is inferred from a bare magnitude."""
+class MeasurementGroup:
+    """Rows sharing the same measured physical inputs.
+
+    Notes
+    -----
+    Unsupported observation/input combinations, overlapping groups and nonphysical input boxes are refused. See declared-measurement-uncertainty in the native parameter-estimation formulation.
+    """
+    def __init__(self) -> None:
+        """Initialize MeasurementGroup from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
+    rows: list[int]
+    """Observation-row indices sharing this explicitly declared measurement; equal state values
+    alone do not establish sharing.
+    """
+    inputs: list[MeasuredInput]
+    """Measured inputs in declared order; positive-sigma inputs become standardized correction
+    columns.
+    """
+    dependent_species: list[int]
+    """Component indices reconstructed by the admitted normalization/charge chart; not independent
+    measurement coordinates.
+    """
+    feed_total_mol: float
+    """Required positive total feed mol for an equilibrium feed chart; fixes the extensive basis
+    while fractions move.
+    """
+class MeasurementUncertainty:
+    """Known output/input Gaussian measurement-error declaration.
+
+    Notes
+    -----
+    The matrix must be finite, symmetric under the native criterion and positive definite; correlations have unit diagonal. Native admission never repairs, jitters or pseudo-inverts it. Whitened residuals use one retained Cholesky factor. See errors_in_variables_objective in engine/docs/equations.md.
+    """
+    def __init__(self) -> None:
+        """Initialize MeasurementUncertainty from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
+    groups: list[MeasurementGroup]
+    """Explicit shared-input measurement groups in declaration order."""
+    output_sigma: list[float]
+    """Known positive output standard deviations in observation order and each observation's
+    physical unit; Difference residuals and unit positive relative weights are required.
+    """
+    covariance: list[float] | None
+    """Optional flattened row-major (M, M) known physical covariance: positive-weight outputs in
+    row order, then positive-sigma inputs in group/input order. Entry units are products of the
+    corresponding physical units.
+    """
+    correlation: list[float] | None
+    """Optional flattened row-major (M, M) dimensionless known correlation in the same order;
+    mutually exclusive with covariance.
+    """
+class InputReconciliation:
+    """Candidate physical input corrections and their objective contribution.
+
+    Notes
+    -----
+    Reconciled inputs and parameters are fitted candidates. Final checks at the original measured inputs retain a distinct meaning from reconciled-input predictions.
+    """
+    values: list[float]
+    """Reconciled positive-sigma input values in group/input-column order, with each
+    MeasuredInput.unit.
+    """
+    corrections: list[float]
+    """Dimensionless standardized physical corrections (value-measured)/sigma, in input-column
+    order; these remain unwhitened under a declared matrix.
+    """
+    penalties: list[float]
+    """Squared standardized input residuals, or squared whitened input components with a matrix, in
+    input-column order.
+    """
+    jacobian: list[float]
+    """Flattened row-major (observation_count+input_count, complete_optimizer_count) standardized
+    objective Jacobian; whitened under a declared matrix.
+    """
+    row_groups: list[int]
+    """Measurement-group identity per output row followed by each input penalty row; native
+    sentinel denotes an ungrouped output.
+    """
+    column_groups: list[int]
+    """Measurement-group index per active positive-sigma input column."""
+    column_inputs: list[int]
+    """Within-group MeasuredInput index per active input column."""
+    output_cost: float
+    """Half the squared standardized/whitened output residual norm, dimensionless."""
+    input_cost: float
+    """Half the squared input residual norm, dimensionless; with joint covariance it is conditional
+    on the outputs.
+    """
+class FitResult:
+    """Native parameter-estimation candidate, objective and local evidence.
+
+    Notes
+    -----
+    Only positive-weight objective rows enter least-squares trial values/rank/variance. Zero-weight rows receive final reporting and checks. Fitted parameters are candidates; neither convergence nor covariance proves independent physical validation. See ALG-FIT.
+    """
+    solver_options: list[dict[str, Any]]
+    """Effective named numerical settings and provenance."""
+    reconciliation: InputReconciliation | None
+    """Candidate input corrections and standardized objective evidence, or None without a declared
+    measurement model.
+    """
+    minimax: MinimaxResult | None
+    """Constrained-estimator evidence, or None for least squares."""
+    chart: EvaluatedCoordinates
+    """Evaluated physical parameter chart, holds and completed reaction laws at the candidate."""
+    checks: list[CheckResult]
+    """Final native check reports at stored candidate parameters, without resolving a hydration
+    hold.
+    """
+    acceptance: str
+    """Native check acceptance classification, separate from optimizer termination and usable."""
+    optimizer: list[float]
+    """Dimensionless model coordinates in declaration order; fitted input corrections are published
+    separately in reconciliation.corrections.
+    """
+    status: str
+    """Native estimator termination classification; a finite candidate can be usable after reaching
+    a limit.
+    """
+    message: str
+    """Estimator conclusion and failure explanation."""
+    usable: bool
+    """Whether a finite candidate point with values was published; does not establish convergence,
+    check acceptance or physical validity.
+    """
+    physical: list[float]
+    """Physical rows in chart order: EOS targets, held Born diameters, then reaction coordinates.
+    The first len(chart.active) entries match chart.active; units vary by row.
+    """
+    parameters: Parameters
+    """Stored candidate native EOS parameters, including resolved held diameters."""
+    predictions: list[float]
+    """Length N of physical predictions in observation order, each ObservationKind unit; inspect
+    statuses for unavailable entries.
+    """
+    residuals: list[float]
+    """Length N of unweighted dimensionless residuals in the declared form; statuses retain
+    missing-row causes.
+    """
+    weighted_residuals: list[float]
+    """Length N of least-squares output objective residuals sqrt(weight)*residual, whitened when
+    declared; input penalties are published separately in reconciliation. Excluded rows are zero
+    and unavailable rows are not successful zeros.
+    """
+    physical_jacobian: list[float]
+    """Flattened row-major (N, r) physical prediction partials in observation/physical-row order;
+    row units divided by physical-coordinate units.
+    """
+    optimizer_jacobian: list[float]
+    """Least squares: row-major weighted/whitened output residual columns (N, u) for model
+    coordinates only; complete input/penalty columns are in reconciliation.jacobian. Minimax:
+    raw prediction columns in model optimizer order, not Ceres weighted columns.
+    """
+    statuses: list[ObservationStatus]
+    """One observation availability cause per row, including NotEvaluated after skipped/failed
+    evaluation.
+    """
+    failures: list[TrialFailure]
+    """Rejected native trials with original cause and optimizer point."""
+    iterations: int
+    """Estimator iteration count."""
+    residual_evaluations: int
+    """Number of residual evaluations."""
+    jacobian_evaluations: int
+    """Number of exact Jacobian evaluations."""
+    trial_failures: int
+    """Number of rejected native trial evaluations."""
+    iteration_seconds: list[float]
+    """Per-Ceres-iteration elapsed timing in seconds; entry zero is the starting iteration."""
+    iteration_costs: list[float]
+    """Per-Ceres-iteration dimensionless half squared weighted residual norm; entry zero is the
+    start.
+    """
+    initial_cost: float
+    """Least-squares starting cost 0.5*sum(weight*r^2), extended for measurement errors; NaN for
+    minimax. Failed evaluations may leave zero, which is meaningful only with status/usable.
+    """
+    final_cost: float
+    """Least-squares final cost in the same convention as initial_cost; NaN for minimax. A zero
+    after refusal is not evidence of a perfect fit.
+    """
+    covariance: FitCovariance
+    """Local least-squares uncertainty/rank evidence with explicit availability and assumptions;
+    unavailable for minimax.
+    """
+
+def predict(model: HelmholtzModel, observation: Observation) -> Prediction:
+    """Evaluate one declared physical observation natively.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    observation : Observation
+        Reported quantity, physical inputs and declared residual convention.
+
+    Returns
+    -------
+    Prediction
+        Prediction with physical unit, unweighted residual and independent refusal evidence.
+
+    Notes
+    -----
+    Native validation precedes state/reference/equilibrium evaluation. A failed physical state is unavailable, not a zero prediction or residual.
+    """
+    ...
+def differentiate(model: HelmholtzModel, observation: Observation) -> PredictionGradient:
+    """Evaluate exact first columns of one declared physical prediction.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    observation : Observation
+        Physical row to evaluate and differentiate.
+
+    Returns
+    -------
+    PredictionGradient
+        PredictionGradient in active native coordinate order, or an empty gradient with cause.
+
+    Notes
+    -----
+    Columns are prediction partials, not weighted residual columns. The native property/reference/solved-state owner supplies them.
+    """
+    ...
 def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord], coordinates: Sequence[Coordinate],
         observations: Sequence[Observation], weights: Sequence[float], controls: FitControls, holds: Sequence[HydrationHold] = ...,
         checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
         starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
         seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...,
-        uncertainty: MeasurementUncertainty | None = ...) -> Union[FitResult, list[FitResult]]: ...
+        uncertainty: MeasurementUncertainty | None = ...) -> Union[FitResult, list[FitResult]]:
+    """Estimate bounded parameters with native least squares or explicitly requested minimax.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Admitted native EOS parameters.
+    thermochemistry : Optional[ThermochemistryRecord]
+        Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+    coordinates : Sequence[Coordinate]
+        Ordered affine physical parameter/source coordinates.
+    observations : Sequence[Observation]
+        Ordered reported quantities with physical inputs, source conventions and residual forms.
+    weights : Sequence[float]
+        Nonnegative relative row weights; empty means all one. Least-squares residuals are sqrt(weight)*r; zero-weight rows are final reports. Known measurement models require unit positive weights.
+    controls : FitControls
+        Required iteration/elapsed budgets and named native tolerances.
+    holds : Sequence[HydrationHold]
+        Ordered dependent Born-diameter constraints, resolved by exact native held-row solves.
+    checks : Sequence[CheckGroup]
+        Declared final error groups; these do not silently change the estimator.
+    baseline : Parameters | None
+        Optional separately stored source parameters used to freeze baseline check thresholds.
+    singular_vectors : bool
+        Request local objective-Jacobian singular vectors in the returned covariance evidence.
+    starts : Optional[Sequence[Sequence[float]]]
+        Optional ordered dimensionless model optimizer starts; None requests a single start. Sequence mode has shared budgets and refuses unsupported coordinate/measurement forms.
+    iterations : Optional[int]
+        Optional shared sequence iteration budget; None uses controls.maximum_iterations.
+    seconds : Optional[float]
+        Optional shared sequence wall-time budget in seconds; None uses controls.maximum_elapsed_time_seconds.
+    minimax : MinimaxRequest | None
+        Explicit constrained-estimation request; None selects Ceres least squares.
+    uncertainty : MeasurementUncertainty | None
+        Optional known Gaussian physical measurement-error declaration, including shared input corrections and optional covariance.
+
+    Returns
+    -------
+    Union[FitResult, list[FitResult]]
+        One FitResult, or ordered list for explicit sequence starts; each retains its own termination, checks and availability.
+
+    Notes
+    -----
+    Ceres uses exact native columns. Minimax has distinct local feasibility/stationarity evidence and no covariance. Failed trials retain their original cause; returned candidates remain calibration results, not physical validation. See ALG-FIT.
+    """
+    ...
 
 class CheckMetric:
+    """Error convention for native parameter-estimation checks.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     AbsoluteDifference: CheckMetric
+    """Absolute prediction-minus-observation difference in the observation unit; the retained
+    signed error is prediction-observation.
+    """
     AbsoluteLog10Ratio: CheckMetric
+    """Absolute log10(prediction/observation), in decades; both arguments must be positive, and
+    retained row errors keep their sign.
+    """
 
 class HydrationHold:
-    def __init__(self) -> None: ...
+    """Eliminate one Born diameter by holding a single-ion solvation target.
+
+    Notes
+    -----
+    Both inner criteria apply. The dependent derivative is formed from the exact held-row slope; a failed hold is not substituted by a fixed guessed diameter. See dependent_born_diameter_derivative in engine/docs/equations.md.
+    """
+    def __init__(self) -> None:
+        """Initialize HydrationHold from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
     reference: Observation
+    """SolvationGibbsEnergy observation defining the target in observed, J/mol."""
     lower: float
+    """Lower Born-diameter bracket in angstrom."""
     upper: float
+    """Upper Born-diameter bracket in angstrom."""
     energy_tolerance: float
+    """Positive target energy-residual criterion in J/mol."""
     diameter_tolerance: float
+    """Positive achieved diameter-uncertainty criterion in angstrom."""
     maximum_iterations: int
+    """Positive inner safeguarded-Newton iteration limit."""
 
 class HoldResult:
+    """Held-diameter residual and exact implicit derivatives."""
     energy_error: float
+    """Signed held solvation-energy residual in J/mol."""
     correction: float
+    """Magnitude of the last Newton correction abs(H/H_d), angstrom."""
     uncertainty: float
+    """Achieved diameter uncertainty min(correction, bracket width), angstrom; a local numerical
+    estimate.
+    """
     derivative: float
+    """Held-row partial H_d in J/(mol angstrom)."""
     parameter_derivative: list[float]
+    """Held energy-row partials in evaluated physical-row order; units J/mol divided by each row's
+    native unit.
+    """
     iterations: int
+    """Inner safeguarded-Newton iteration count."""
 
 class EvaluatedCoordinates:
+    """Mapped candidate parameters, dependent diameters and reaction laws."""
     reaction_laws: dict[str, ReactionLogPolynomial]
+    """Completed native ln K(T) laws keyed by reaction name; replay these laws without applying the
+    fitted coordinates again.
+    """
     parameters: Parameters
+    """Native EOS parameters after affine mapping and held-diameter resolution."""
     active: list[ActiveParameter]
+    """EOS physical-row ActiveParameters, independent targets followed by held Born diameters;
+    reaction rows are not ActiveParameters.
+    """
     physical: list[float]
+    """Physical target values in EOS-target, held-diameter, then reaction order, with each row's
+    native unit.
+    """
     map: list[float]
+    """Flattened row-major (r, u) exact D=d(physical)/d(model optimizer), including holds and
+    target multipliers; row units per dimensionless optimizer increment.
+    """
     holds: list[HoldResult]
+    """HoldResult per declared hold in input order."""
 
 class CheckGroup:
-    def __init__(self) -> None: ...
+    """Declared final error group and optional fixed or baseline thresholds.
+
+    Notes
+    -----
+    Checks re-evaluate stored parameters at the original observations without resolving hydration holds. A failed group is not proof that no feasible fit exists.
+    """
+    def __init__(self) -> None:
+        """Initialize CheckGroup from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
     name: str
+    """Caller check-group identity."""
     rows: list[int]
+    """Observation indices in the group, in declared reporting order."""
     metric: CheckMetric
+    """Absolute-difference or absolute-decades error convention."""
     maximum: float | None
+    """Optional maximum-error threshold in the metric unit."""
     mean: float | None
+    """Optional arithmetic mean-absolute-error threshold in the metric unit."""
     baseline: bool
+    """Freeze thresholds from the separately supplied baseline parameter set under the native check
+    rules.
+    """
     report_only: bool
+    """Report failures without changing candidate acceptance; omitted from minimax trial
+    constraints.
+    """
 
 class CheckResult:
+    """Signed row errors and absolute-error group statistics."""
     name: str
+    """Declared check-group identity."""
     unit: str
+    """Metric unit: physical observation unit for Difference or log10 decades for ratio errors."""
     status: str
+    """Native availability and threshold outcome; unavailable rows remain explicit."""
     rows: list[int]
+    """Observation indices in reporting order."""
     failed_rows: list[int]
+    """Observation indices whose final check evaluation was unavailable or whose absolute error
+    exceeded the maximum threshold; a mean-only failure need not identify an individual row.
+    """
     errors: list[float]
+    """Signed physical differences or signed log10 ratios, corresponding to rows; group statistics
+    use absolute values.
+    """
     slopes: list[float]
+    """Signed-error derivative with respect to prediction: 1 for Difference or
+    1/(prediction*ln(10)) for log10 ratio; inverse prediction units for the latter.
+    """
     maximum: float
+    """Maximum retained absolute error in unit; interpret only with status, since an unavailable
+    row need not replace a partial maximum.
+    """
     mean: float
+    """Arithmetic mean absolute error in unit; interpret only with status and failed_rows."""
     argmax: int
+    """Observation-row index attaining the maximum absolute error; meaningful only for an available
+    group.
+    """
     maximum_threshold: float | None
+    """Effective maximum threshold in unit, or None without one."""
     mean_threshold: float | None
+    """Effective mean threshold in unit, or None without one."""
     baseline_maximum: float
+    """Frozen baseline maximum absolute error in unit; native binding returns None when no baseline
+    value exists.
+    """
     baseline_mean: float
+    """Frozen baseline mean absolute error in unit; native binding returns None when no baseline
+    value exists.
+    """
     report_only: bool
+    """Whether this group's failure is excluded from acceptance decisions."""
 
-def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ..., solver_options: Mapping[str, float] | None = None) -> EvaluatedCoordinates: ...
-def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ..., solver_options: Mapping[str, float] | None = None) -> list[CheckResult]: ...
+def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ..., solver_options: Mapping[str, float] | None = None) -> EvaluatedCoordinates:
+    """Map one optimizer point and solve its declared dependent diameters.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Admitted native EOS parameters.
+    set : CoordinateSet
+        Ordered native CoordinateSet.
+    optimizer : Sequence[float]
+        Length u of dimensionless model coordinates.
+    holds : Sequence[HydrationHold]
+        Ordered hydration holds, each with a declared bracket and two numerical criteria.
+    thermochemistry : ThermochemistryRecord | None
+        Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+    solver_options : Mapping[str, float] | None
+        Optional mapping of admitted named numerical settings; None uses source defaults.
+
+    Returns
+    -------
+    EvaluatedCoordinates
+        EvaluatedCoordinates including physical target order, exact map and completed reaction laws.
+
+    Notes
+    -----
+    The exact map includes target coefficients and implicit held-diameter derivatives; failed inner admission is not replaced by a guessed value.
+    """
+    ...
+def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ..., solver_options: Mapping[str, float] | None = None) -> list[CheckResult]:
+    """Re-evaluate final check groups at stored physical parameters.
+
+    Parameters
+    ----------
+    stored : Parameters
+        Stored native parameter set; held diameters are consumed as stored, not resolved again.
+    observations : Sequence[Observation]
+        Original declared physical observations.
+    checks : Sequence[CheckGroup]
+        Ordered final check groups.
+    baseline : Parameters | None
+        Optional stored source parameters for native baseline threshold rules.
+    solver_options : Mapping[str, float] | None
+        Optional mapping of admitted named numerical settings; None uses source defaults.
+
+    Returns
+    -------
+    list[CheckResult]
+        CheckResult list in check-group order, preserving unavailable rows.
+
+    Notes
+    -----
+    This is a point check and does not fit parameters. Report-only failures are retained independently of acceptance.
+    """
+    ...
 
 def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float],
-    thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> list[Observation]: ...
+    thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> list[Observation]:
+    """Construct observation values at a declared native parameter point with signed errors.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Admitted native EOS parameters.
+    coordinates : Sequence[Coordinate]
+        Ordered affine physical coordinate declarations.
+    optimizer : Sequence[float]
+        Dimensionless model point in coordinate order.
+    holds : Sequence[HydrationHold]
+        Ordered native hydration holds.
+    observations : Sequence[Observation]
+        Template observations supplying physical states and source conventions.
+    errors : Sequence[float]
+        One signed physical difference or signed log10 error per observation in native check-error convention, not an uncertainty.
+    thermochemistry : Optional[ThermochemistryRecord]
+        Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+    solver_options : Mapping[str, float] | None
+        Optional mapping of admitted named numerical settings; None uses source defaults.
+
+    Returns
+    -------
+    list[Observation]
+        Fresh Observation list in input order with manufactured reported values.
+
+    Notes
+    -----
+    This makes numerical recovery cases, not new measurements or physical validation. Native code evaluates the point before changing observation values.
+    """
+    ...
 
 class ObservationEvaluation:
+    """Native point predictions, exact columns and optional measurement evidence.
+
+    Notes
+    -----
+    For Difference, dr/dv=(dy/dv)/scale; for LogRatio, dr/dv=(dy/dv)/prediction. These point-reader prediction columns must not be confused with weighted Ceres residual columns. See ALG-FIT.
+    """
     solver_options: list[dict[str, Any]]
+    """Effective named numerical settings and provenance."""
     reconciliation: InputReconciliation | None
+    """Standardized candidate input corrections and complete objective columns, or None without a
+    measurement declaration.
+    """
     state_densities: list[list[float]]
+    """Ragged per-observation density evidence in mol/m^3 when retained for uncertainty evaluation:
+    central state/declared phases first, then reference ladder and pure-solvent states where
+    present; otherwise empty.
+    """
     reference_values: list[list[float]]
+    """Ragged per-observation dimensionless reference ln fugacity coefficients in cation/anion
+    order, followed by pure-solvent ln fugacity coefficient when present; otherwise empty.
+    """
     predictions: list[float]
+    """Length N of physical predictions in observation order; units depend on ObservationKind and
+    statuses retain refusals.
+    """
     gradient: list[float]
+    """Flattened row-major (N, r) exact raw physical prediction partials, observation/physical-row
+    order; prediction units per native physical-row unit.
+    """
     optimizer_gradient: list[float]
+    """Flattened row-major prediction columns in model optimizer order, including physical
+    input-motion columns when declared; prediction units per dimensionless optimizer increment.
+    """
     residual_optimizer_gradient: list[float]
+    """Unit-weight dimensionless residual columns in optimizer order; with uncertainty, the
+    complete standardized and optionally whitened objective columns including input penalties.
+    """
     chart: EvaluatedCoordinates
+    """Evaluated physical coordinate map, held diameters and completed reaction laws."""
     statuses: list[ObservationStatus]
+    """One availability or refusal cause per observation in input order."""
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation],
     thermochemistry: Optional[ThermochemistryRecord] = None,
-    uncertainty: MeasurementUncertainty | None = ..., solver_options: Mapping[str, float] | None = None) -> ObservationEvaluation: ...
+    uncertainty: MeasurementUncertainty | None = ..., solver_options: Mapping[str, float] | None = None) -> ObservationEvaluation:
+    """Evaluate declared predictions and exact point columns without optimizing.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Admitted native EOS parameters.
+    coordinates : Sequence[Coordinate]
+        Ordered affine physical parameter/source coordinates.
+    optimizer : Sequence[float]
+        Dimensionless model coordinates, extended by standardized input corrections when declared.
+    holds : Sequence[HydrationHold]
+        Ordered native hydration holds.
+    observations : Sequence[Observation]
+        Ordered physical observation declarations.
+    thermochemistry : Optional[ThermochemistryRecord]
+        Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+    uncertainty : MeasurementUncertainty | None
+        Optional known measurement-error model for shared input corrections and whitening.
+    solver_options : Mapping[str, float] | None
+        Optional mapping of admitted named numerical settings; None uses source defaults.
+
+    Returns
+    -------
+    ObservationEvaluation
+        ObservationEvaluation with physical and optimizer prediction columns and unit-weight residual columns.
+
+    Notes
+    -----
+    No optimizer success is inferred from point evaluation. Raw prediction columns and standardized/whitened residual columns have distinct meanings.
+    """
+    ...
 def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
-    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> FitResult: ...
+    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> FitResult:
+    """Evaluate the native minimax rows at the declared starting point without optimizing.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Admitted native EOS parameters.
+    coordinates : Sequence[Coordinate]
+        Ordered affine physical coordinates supported by minimax.
+    optimizer : Sequence[float]
+        Dimensionless model optimizer point.
+    holds : Sequence[HydrationHold]
+        Ordered native hydration holds.
+    observations : Sequence[Observation]
+        Ordered physical observations.
+    checks : Sequence[CheckGroup]
+        Declared final/error guard groups.
+    baseline : Parameters | None
+        Optional source parameter set for frozen check thresholds.
+    minimax : MinimaxRequest
+        Explicit positive epigraph, row-scale and feasibility controls.
+    thermochemistry : Optional[ThermochemistryRecord]
+        Optional species thermal records in component order; absence leaves ideal/total consumers unavailable.
+    solver_options : Mapping[str, float] | None
+        Optional mapping of admitted named numerical settings; None uses source defaults.
+
+    Returns
+    -------
+    FitResult
+        FitResult with minimax row values/columns and frozen checks; no optimization or stationarity certificate.
+
+    Notes
+    -----
+    The native point reader shares the constrained estimator row algebra and retains its local availability limits.
+    """
+    ...
 def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
-    stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
+    stoichiometry: tuple[int, int], molality: float) -> list[float]:
+    """Convert one charge-neutral salt formula molality into explicit mole fractions.
+
+    Parameters
+    ----------
+    solvent_fractions : Sequence[float]
+        Length n of normalized, charge-neutral solvent mole fractions in component_ids order; no formula ions are inserted here.
+    parameters : Parameters
+        Admitted native EOS parameters.
+    ion_indices : tuple[int, int]
+        Two component indices in (cation, anion) order.
+    stoichiometry : tuple[int, int]
+        Two positive formula-unit ion counts in (cation, anion) order; the resulting formula must be charge neutral.
+    molality : float
+        Nonnegative formula-unit concentration in mol/kg declared solvent.
+
+    Returns
+    -------
+    list[float]
+        Length n normalized dimensionless mole fractions in component_ids order.
+
+    Notes
+    -----
+    Uses declared solvent molar masses and positive ion counts; formula molality is mol salt/kg solvent. The native owner enforces solvent and formula electroneutrality. See formula_unit_composition in engine/docs/equations.md.
+    """
+    ...
 
 class EquilibriumStart:
     """One seed for the same thermodynamic declaration.
@@ -4202,4 +5185,21 @@ def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem,
     """
     ...
 
-def reaction_log10_reciprocal(law: ReactionLogPolynomial) -> list[float]: ...
+def reaction_log10_reciprocal(law: ReactionLogPolynomial) -> list[float]:
+    """Convert a natural-log reaction law to a decadic reciprocal-temperature form.
+
+    Parameters
+    ----------
+    law : ReactionLogPolynomial
+        Native ln K=a+b/T+c*ln(T/Tref)+d*T source correlation.
+
+    Returns
+    -------
+    list[float]
+        Three coefficients [A, B, C] of -log10 K = A/T + B + C*T, in K, dimensionless and 1/K.
+
+    Notes
+    -----
+    Returns [-b/ln(10), -a/ln(10), -d/ln(10)]. A nonzero logarithmic coefficient c is refused; no refit, standard-state change or validity-range extension is performed.
+    """
+    ...
