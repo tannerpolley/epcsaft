@@ -1678,518 +1678,1765 @@ class HelmholtzModel:
         ...
 
 class PhaseKind:
+    """Declared fluid phase branch.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Liquid: PhaseKind
+    """Liquid-side density branch; not proof of global stability."""
     Vapor: PhaseKind
+    """Vapor-side density branch; not proof of global stability."""
 
 class AmountKind:
+    """Whether a phase amount is solved or prescribed.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Free: AmountKind
+    """Phase amount is an unknown."""
     Pinned: AmountKind
+    """Phase amount is fixed as a fraction of the resolved feed amount; zero declares an incipient
+    phase.
+    """
 
 class FeedKind:
+    """Physical basis used to interpret the feed values.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     MoleFractions: FeedKind
+    """Dimensionless component mole fractions, giving a one-mole total feed basis."""
     Amounts: FeedKind
+    """Absolute component amounts in mol."""
     MassFractions: FeedKind
+    """Dimensionless component mass fractions; converted with declared molar masses to the native
+    molar feed basis.
+    """
     Molalities: FeedKind
+    """Solute amounts in mol/kg of declared solvent; solvent fractions and solvent_mass_kg supply
+    the absolute basis.
+    """
 
 class AmountSpec:
+    """Free phase amount or prescribed feed-relative fraction."""
     kind: AmountKind
+    """Whether to solve the amount or pin its feed-relative fraction."""
     fraction: float
-    def __init__(self) -> None: ...
+    """Dimensionless pinned amount divided by resolved total feed mol; ignored for a free amount.
+    Zero denotes an incipient phase.
+    """
+    def __init__(self) -> None:
+        """Initialize AmountSpec from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
     @staticmethod
-    def free() -> AmountSpec: ...
+    def free() -> AmountSpec:
+        """Declare a solved phase amount.
+
+        Returns
+        -------
+        AmountSpec
+            Free AmountSpec; no fixed amount fraction.
+        """
+        ...
     @staticmethod
-    def pinned(value: float) -> AmountSpec: ...
+    def pinned(value: float) -> AmountSpec:
+        """Declare a feed-relative pinned phase amount.
+
+        Parameters
+        ----------
+        value : float
+            Dimensionless phase amount divided by resolved total feed mol.
+
+        Returns
+        -------
+        AmountSpec
+            Pinned AmountSpec; zero declares an incipient phase.
+        """
+        ...
 
 class FreeValue:
+    """Fixed intensive value or solved intensive with an optional seed."""
     free: bool
+    """True when the intensive is solved rather than held fixed."""
     value: float
-    def __init__(self) -> None: ...
+    """Fixed value or declared initial guess; K for temperature and Pa for pressure. A missing
+    variable guess is retained natively, not a physical zero.
+    """
+    def __init__(self) -> None:
+        """Initialize FreeValue from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
     @staticmethod
-    def fixed(value: float) -> FreeValue: ...
+    def fixed(value: float) -> FreeValue:
+        """Declare a fixed temperature or pressure.
+
+        Parameters
+        ----------
+        value : float
+            Positive temperature in K or pressure in Pa, according to its consuming field.
+
+        Returns
+        -------
+        FreeValue
+            Fixed FreeValue.
+        """
+        ...
     @staticmethod
-    def variable(guess: Optional[float] = None) -> FreeValue: ...
+    def variable(guess: Optional[float] = None) -> FreeValue:
+        """Declare a solved intensive and optional seed.
+
+        Parameters
+        ----------
+        guess : Optional[float]
+            Optional positive temperature in K or pressure in Pa; None requests native initialization.
+
+        Returns
+        -------
+        FreeValue
+            Variable FreeValue retaining whether a guess was supplied.
+        """
+        ...
 
 class PhaseSpec:
+    """One declared fluid phase, support and initialization.
+
+    Notes
+    -----
+    Support and charge admission are owned by compile_problem. A seed supplies no new thermodynamic constraints.
+    """
     name: str
+    """Caller phase label; it does not select a physical model."""
     kind: PhaseKind
+    """Declared liquid or vapor density branch."""
     support: list[int]
+    """Ordered component indices allowed in this phase; an explicit support cannot acquire extra
+    components.
+    """
     support_declared: bool
+    """Whether support is explicit; an omitted support may be completed, while a declared empty
+    support is rejected.
+    """
     amount: AmountSpec
+    """Free amount or dimensionless feed-relative pinned fraction."""
     composition_guess: list[float]
+    """Dimensionless full-component mole-fraction seed, length n, or empty for native
+    initialization; restricted to the admitted support.
+    """
     packing_guess: Optional[float]
-    def __init__(self) -> None: ...
+    """Optional dimensionless packing-fraction seed, not a density in mol/m^3."""
+    def __init__(self) -> None:
+        """Initialize PhaseSpec from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class FeedSpec:
+    """Feed declaration with explicit amount or composition basis.
+
+    Notes
+    -----
+    Native conversion enforces normalization, required molar masses and electroneutrality. Amounts remain absolute; mole fractions establish a one-mole feed.
+    """
     kind: FeedKind
+    """Basis selecting the interpretation and native conversion of values."""
     values: list[float]
+    """Length n in component_ids order: mol for Amounts, dimensionless for mole/mass fractions, or
+    solvent mole fractions plus solute mol/kg solvent for Molalities.
+    """
     solvent: list[int]
+    """Solvent component indices for a molality feed; non-solvent entries of values are solute
+    molalities.
+    """
     solvent_mass_kg: float
-    def __init__(self) -> None: ...
+    """Positive solvent mass in kg setting the absolute scale of a molality feed; not a total
+    mixture mass.
+    """
+    def __init__(self) -> None:
+        """Initialize FeedSpec from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class SpeciesReference:
+    """Species standard selected for a neutral reaction reference.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     InfiniteDilution: SpeciesReference
+    """Solute at infinite dilution in the declared solvent and dilution path."""
     PureLiquid: SpeciesReference
+    """Pure-component liquid reference at the source pressure."""
     PureGas: SpeciesReference
+    """Pure-component vapor reference at the source pressure."""
 
 class NeutralReferenceDeclaration:
+    """Solvent and charge-neutral dilution path for source-standard transfer.
+
+    Notes
+    -----
+    Mixed pure-species overrides require the admitted raw mole-fraction source basis. See ALG-REFERENCE in engine/docs/science/algorithms.md.
+    """
     solvent_index: Optional[int]
+    """Index of the single pure neutral solvent, or None before declaration."""
     solute_molality_ratios: list[float]
+    """Length n of dimensionless all-solute molality ratios in component_ids order; solvent entry
+    is zero and the solute path is charge neutral.
+    """
     standard_molality_mol_per_kg: float
+    """Positive source standard molality in mol/kg solvent."""
     species_reference: list[SpeciesReference]
-    def __init__(self) -> None: ...
+    """Optional length-n map in component_ids order; empty retains the default solvent liquid and
+    solute infinite-dilution references.
+    """
+    def __init__(self) -> None:
+        """Initialize NeutralReferenceDeclaration from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class ReferenceSourceBasis:
+    """Declared activity convention of a source equilibrium constant.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     CommonMolalityInfiniteDilution: ReferenceSourceBasis
+    """Common standard molality with solute infinite-dilution references; solvent-mass conversion
+    is applied once.
+    """
     RawMoleFractionInfiniteDilution: ReferenceSourceBasis
+    """Raw mole-fraction reference convention; its basis terms cancel in the native
+    density-standard conversion.
+    """
 
 class NeutralReferenceStatus:
+    """Availability or refusal cause of a source-reference calculation.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Available: NeutralReferenceStatus
+    """Requested reference quantity is available."""
     InvalidDeclaration: NeutralReferenceStatus
+    """The solvent, path or reference declaration is inadmissible."""
     NonNeutralDeclaration: NeutralReferenceStatus
+    """The solvent or solute dilution path violates charge neutrality."""
     UnsupportedSourceBasis: NeutralReferenceStatus
+    """The requested source/species reference combination is unsupported."""
     FreeTemperature: NeutralReferenceStatus
+    """This reference consumer does not admit the requested free-temperature declaration."""
     FreePressure: NeutralReferenceStatus
+    """This reference consumer does not admit the requested free-pressure declaration."""
     DensityUnavailable: NeutralReferenceStatus
+    """A required reference density could not be resolved."""
     BranchChange: NeutralReferenceStatus
+    """The reference path did not retain its declared density branch."""
     Nonfinite: NeutralReferenceStatus
+    """A reference quantity is nonfinite."""
     TerminalChangeExceeded: NeutralReferenceStatus
+    """Consecutive terminal reference estimates differ beyond the admitted criterion."""
 
 class NeutralReferenceReactionDiagnostic:
+    """Reference transfer for one declared reaction."""
     solver_options: list[dict[str, Any]]
+    """Effective named numerical settings and provenance."""
     reaction_index: int
+    """Zero-based reaction index in the declaration."""
     terminal_contraction: Optional[float]
+    """Dimensionless terminal reaction contraction used for standard-state transfer, or None when
+    unavailable.
+    """
     observed_terminal_change: Optional[float]
+    """Dimensionless change between consecutive terminal extrapolations, or None when unavailable;
+    a local numerical estimate, not a universal error bound.
+    """
     terminal_contraction_pressure_derivative: Optional[float]
+    """First partial of the contraction with respect to source pressure, 1/Pa, or None when
+    unavailable.
+    """
     terminal_contraction_pressure_second_derivative: Optional[float]
+    """Second source-pressure partial, 1/Pa^2, or None when unavailable."""
     reference_pressure_pa: float
+    """Resolved source reference pressure in Pa."""
     status: NeutralReferenceStatus
+    """Reference availability or specific refusal cause."""
     message: str
+    """Native explanation retaining the failing reference calculation."""
 
 class ReactionReference:
+    """Source activity basis and pressure of a reaction constant."""
     source_basis: ReferenceSourceBasis
+    """Declared source convention used for native standard-state transfer."""
     reference_pressure_pa: Optional[float]
+    """Fixed source pressure in Pa, or None to use current system pressure; it does not silently
+    become a fixed standard.
+    """
     def __init__(self, source_basis: ReferenceSourceBasis,
-                 reference_pressure_pa: Optional[float] = None) -> None: ...
+                 reference_pressure_pa: Optional[float] = None) -> None:
+        """Initialize ReactionReference from the declared inputs.
+
+        Parameters
+        ----------
+        source_basis : ReferenceSourceBasis
+            Initial value of ReactionReference.source_basis; see its attribute description for units and ordering.
+        reference_pressure_pa : Optional[float]
+            Initial value of ReactionReference.reference_pressure_pa; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class ReactionSpec:
+    """One stoichiometric reaction and exactly one thermodynamic target.
+
+    Notes
+    -----
+    No target silently overrides another. A scalar isothermal constant supplies no temperature derivative. See reaction_affinity and reaction_standard_state_conversion in engine/docs/equations.md.
+    """
     name: str
+    """Reaction identity used for source matching and diagnostics."""
     stoichiometry: list[float]
+    """Length n in component_ids order, products positive and reactants negative; dimensionless
+    stoichiometric numbers.
+    """
     equilibrium_constant: Optional[float]
+    """Optional positive dimensionless K on the native standard; mutually exclusive with affinity
+    and correlation.
+    """
     affinity_j_per_mol: Optional[float]
+    """Optional reaction affinity target in J/mol of reaction; mutually exclusive with K and
+    correlation.
+    """
     correlation: Optional[ReactionLogPolynomial]
+    """Optional source ln K(T) law with interval and standard identity; mutually exclusive with
+    scalar targets.
+    """
     reference: Optional[ReactionReference]
-    def __init__(self) -> None: ...
+    """Optional explicit source-reference declaration; requires the problem's neutral_reference."""
+    def __init__(self) -> None:
+        """Initialize ReactionSpec from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class SolidSpec:
+    """Pure stoichiometric solid in equilibrium with declared fluid species.
+
+    Notes
+    -----
+    Native classification retains solid amount and saturation-index complementarity. See solid_standard_gibbs, solid_saturation_index and solid_amount_complementarity in engine/docs/equations.md.
+    """
     name: str
+    """Solid identity used for declaration and diagnostics."""
     stoichiometry: list[float]
+    """Length n of dissolution numbers for solid -> sum(nu_i A_i), in component_ids order;
+    dimensionless and charge neutral.
+    """
     equilibrium_constant: Optional[float]
+    """Optional positive dimensionless dissolution K; exactly one of this and correlation is
+    required.
+    """
     correlation: Optional[ReactionLogPolynomial]
+    """Optional source ln K(T) law on an explicit standard and interval."""
     reference: Optional[ReactionReference]
+    """Source convention and pressure used for native solid-standard conversion."""
     molar_volume_m3_per_mol: float
+    """Solid molar volume in m^3/mol for its pressure correction."""
     amount: AmountSpec
-    def __init__(self) -> None: ...
+    """Free solid amount or Pinned(0) absent solid; other pinned fractions are not admitted."""
+    def __init__(self) -> None:
+        """Initialize SolidSpec from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class StabilityOptions:
+    """Finite declared trial search for a tangent-plane descent witness.
+
+    Notes
+    -----
+    A finite search with no resolved descent is not a global stability certificate. See ALG-STABILITY in engine/docs/science/algorithms.md.
+    """
     evaluate_supplied_trials: bool
+    """Evaluate supplied trial points directly rather than optimizing their compositions."""
     trials: Optional[list[PhaseSpec]]
+    """Explicit trial phases, or None for the admitted default supports and seeds; an empty list
+    remains an explicit declaration.
+    """
     declaration_budget: Optional[int]
+    """Optional count limiting candidate topology declarations."""
     trial_budget: Optional[int]
+    """Optional count limiting trial searches."""
     standard_uncertainty_over_rt: list[float]
-    def __init__(self) -> None: ...
+    """Optional length-n dimensionless species-standard uncertainty estimates in component order."""
+    def __init__(self) -> None:
+        """Initialize StabilityOptions from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class StabilityTrial:
+    """One tangent-plane trial, numerical diagnostics and finite-split evidence."""
     phase: PhaseSpec
+    """Declared trial phase and support."""
     seed: str
+    """Native seed label, not an additional physical constraint."""
     evidence: str
+    """Native classification of the observed trial evidence."""
     message: str
+    """Trial explanation, including unresolved or refused work."""
     optimizer: EquilibriumResult
+    """Retained trial solve and numerical evidence; a solve success alone does not prove descent."""
     raw_coordinates: list[float]
+    """Native trial chart coordinates in its compiled order; dimensionless logarithms and scaled
+    coordinates are not mole fractions.
+    """
     raw_residuals: list[float]
+    """Defining-row residuals in the trial's native row normalization."""
     composition: list[float]
+    """Length n, normalized dimensionless trial mole fractions in component order when
+    reconstructed; otherwise empty.
+    """
     split_coordinates: list[float]
+    """Full candidate chart coordinates for the retained finite split, or empty without one."""
     basis: list[list[float]]
+    """Ragged rows of the conserved trial basis in native row order; coefficients are
+    dimensionless.
+    """
     row_transformation: list[list[float]]
+    """Rows mapping the native trial constraints into the retained basis; dimensionless matrix in
+    producer order.
+    """
     quantities: dict[str, float]
+    """Named trial quantities; physical units are encoded by each native key and no shared unit
+    applies. Error estimates are local, not enclosures.
+    """
     split_checks: list[dict[str, float]]
+    """Finite donor/split comparisons in trial order; each dictionary retains named values and
+    units in its keys.
+    """
     donor: Optional[int]
+    """Candidate donor phase index, or None without an admitted donor."""
     resolved_descent: bool
+    """True only when a finite descent witness exceeds its numerical uncertainty; not a global
+    search result.
+    """
 
 class StabilityReport:
+    """Finite tangent-plane trial evidence for one candidate."""
     completed: bool
+    """Whether the declared finite search completed; does not certify global stability."""
     message: str
+    """Search conclusion and any stopping limitation."""
     trials: list[StabilityTrial]
+    """Trial records in attempted order, including failed or unresolved trials."""
     candidate_coordinates: list[float]
+    """Retained central candidate in its compiled coordinate order."""
     standard_over_rt: list[float]
+    """Length n of species standard Gibbs terms divided by RT, dimensionless, in component order."""
     plane_over_rt: list[float]
+    """Length n of the tangent-plane coefficients divided by RT, dimensionless, in component order."""
     present_phases: list[dict[str, float]]
+    """Named present-phase consistency quantities per phase; units follow native dictionary keys."""
     work: dict[str, float]
+    """Named numerical-work counts and timing; units follow keys rather than a common thermodynamic
+    unit.
+    """
 
 class DiscoveryRecord:
+    """Retained candidate topology and the finite discovery sequence.
+
+    Notes
+    -----
+    Discovery changes declared topology only through admitted finite witnesses and work limits. It does not supply a global equilibrium certificate.
+    """
     declaration: EquilibriumProblem
+    """Final phase declaration; its phase order owns the returned candidate arrays."""
     candidate: EquilibriumResult
+    """Retained candidate and its numerical evidence."""
     rounds: list[StabilityReport]
+    """Stability reports in discovery-round order."""
     declarations: list[EquilibriumResult]
+    """Attempted candidate solves in retained attempt order."""
     declaration_roles: list[str]
+    """Role label per retained declaration attempt."""
     declaration_attempt_coordinates: list[list[float]]
+    """Native attempted coordinates per declaration; preserved even when no state was admitted."""
     work: dict[str, float]
+    """Named accumulated work counts and timing; units follow keys."""
 
 
-def cooling_onset(compiled: CompiledSystem) -> tuple[EquilibriumResult, list[StabilityReport]]: ...
+def cooling_onset(compiled: CompiledSystem) -> tuple[EquilibriumResult, list[StabilityReport]]:
+    """Run the native cooling-onset search for an admitted compiled declaration.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+
+    Returns
+    -------
+    tuple[EquilibriumResult, list[StabilityReport]]
+        Tuple of the retained EquilibriumResult and ordered StabilityReports.
+
+    Notes
+    -----
+    The native ALG-EQUILIBRIUM cooling-onset consumer owns eligible declarations, step selection and refusal. Reports retain the finite stability-search limits; no kinetic onset or global certificate is implied.
+    """
+    ...
 
 def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
-                   options: StabilityOptions = ...) -> StabilityReport: ...
+                   options: StabilityOptions = ...) -> StabilityReport:
+    """Search declared tangent-plane trials around an admitted candidate.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+    central : EquilibriumResult
+        Admitted candidate from the same compiled declaration.
+    options : StabilityOptions
+        Explicit finite trial supports, seeds and work limits.
+
+    Returns
+    -------
+    StabilityReport
+        StabilityReport with finite-search evidence, work and unresolved causes.
+
+    Notes
+    -----
+    Resolved descent is a finite witness. No witness after a finite search is not a global stability proof; see ALG-STABILITY.
+    """
+    ...
 
 class CriticalDeclaration:
+    """Seed for the neutral critical-equation candidate.
+
+    Notes
+    -----
+    The admitted critical cell has one free neutral phase with free T and P. A critical-equation root is not a stability certificate.
+    """
     density_guess_mol_per_m3: float
+    """Positive molar-density guess in mol/m^3."""
     mode_guess: list[float]
-    def __init__(self) -> None: ...
+    """Optional unnormalized amount-perturbation vector in component order; empty selects the
+    lowest seed mode.
+    """
+    def __init__(self) -> None:
+        """Initialize CriticalDeclaration from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class EnvelopeCoordinate:
+    """Dimensionless local coordinate selecting an envelope condition.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     LogTemperature: EnvelopeCoordinate
+    """ln(T/(1 K))."""
     LogPressure: EnvelopeCoordinate
+    """ln(P/(1 Pa))."""
     LogK: EnvelopeCoordinate
+    """ln(x_incipient[k])-ln(x_feed[k]) for the selected component."""
 
 class EnvelopeCondition:
+    """One local equation used to trace an incipient phase envelope."""
     kind: EnvelopeCoordinate
+    """Logarithmic local coordinate of the condition."""
     component: int
+    """Component index used by LogK; ignored for LogTemperature and LogPressure."""
     target: float
-    def __init__(self) -> None: ...
+    """Dimensionless target value of the selected logarithmic coordinate."""
+    def __init__(self) -> None:
+        """Initialize EnvelopeCondition from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class CriticalRecord:
+    """Spectrum and conditioning of a critical-equation candidate.
+
+    Notes
+    -----
+    These diagnostics support a local critical-equation candidate; they certify no global phase stability. See critical_equations in engine/docs/equations.md.
+    """
     eigenvalues: list[float]
+    """Dimensionless eigenvalues of the native scaled stability matrix M, in eigensolver order."""
     mode: list[float]
+    """Critical mode vector in native component/support order, dimensionless after normalization."""
     cubic: float
+    """Native dimensionless cubic-form contraction along the mode."""
     zero_band: float
+    """Dimensionless numerical zero band used to interpret the spectrum."""
     condition_estimate: float
+    """Dimensionless augmented defining-Jacobian condition estimate."""
     backward_error: float
+    """Dimensionless numerical backward-error estimate."""
     rank: int
+    """Numerical rank of the augmented defining Jacobian, a count."""
 
 class EquilibriumProblem:
+    """Declared fluid/reaction/solid equilibrium and extensive constraints.
+
+    Notes
+    -----
+    Native compilation owns support, conservation, charge, rank and specification admission. Extensive constraints require the consumed species calorics; missing calorics are not inferred from an isothermal constant. See ALG-EQUILIBRIUM.
+    """
     @property
-    def solver_options(self) -> list[dict[str, Any]]: ...
+    def solver_options(self) -> list[dict[str, Any]]:
+        """Read or set effective named numerical solver settings.
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            Named settings with values and provenance when read; None on assignment.
+        """
+        ...
     @solver_options.setter
-    def solver_options(self, value: Mapping[str, float] | None) -> None: ...
+    def solver_options(self, value: Mapping[str, float] | None) -> None:
+        """Read or set effective named numerical solver settings.
+
+        Parameters
+        ----------
+        value : Mapping[str, float] | None
+            Optional mapping of admitted numerical setting names to values; None selects defaults.
+
+        Returns
+        -------
+        None
+            Named settings with values and provenance when read; None on assignment.
+        """
+        ...
     discovery: Optional[StabilityOptions]
+    """Optional finite stability/discovery request; None retains the declared topology solve."""
     phases: list[PhaseSpec]
+    """Fluid phase declarations in the order used by every phase array."""
     temperature: FreeValue
+    """Fixed or free absolute temperature, K."""
     pressure: FreeValue
+    """Fixed or free system pressure, Pa."""
     feed: FeedSpec
+    """Feed values with an explicit molar, mass or solvent-molality basis."""
     reactions: list[ReactionSpec]
+    """Ordered reaction declarations and source targets."""
     standard_gibbs_j_per_mol: list[float]
+    """Optional length-n supplied species Gibbs standards, J/mol in component_ids order; not
+    independent of conflicting reaction targets.
+    """
     topology_declared: bool
+    """Whether the supplied phase topology is declared for the solve."""
     row_tolerance: float
+    """Requested dimensionless native row-residual criterion; numerical floor admission is reported
+    separately.
+    """
     enthalpy_j: float | None
+    """Optional extensive enthalpy specification in J on the absolute feed basis; not J/mol."""
     entropy_j_per_k: float | None
+    """Optional extensive entropy specification in J/K on the absolute feed basis; not J/(mol K)."""
     critical: Optional[CriticalDeclaration]
+    """Optional neutral critical-equation declaration."""
     envelope: Optional[EnvelopeCondition]
+    """Optional incipient envelope condition."""
     azeotrope: bool
+    """Request the admitted binary bubble/dew azeotrope condition; feed composition is its seed."""
     neutral_reference: Optional[NeutralReferenceDeclaration]
+    """Optional explicit solvent/path declaration for source-standard transfers."""
     solids: list[SolidSpec]
-    def __init__(self) -> None: ...
+    """Solid declarations in the order used by solid_amounts and solid_affinity_decades."""
+    def __init__(self) -> None:
+        """Initialize EquilibriumProblem from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class InventoryBound:
+    """Conservation-only upper-bound evidence for one species.
+
+    Notes
+    -----
+    These bounds use conservation and nonnegative amounts only. They do not prove phase equilibrium or stability.
+    """
     species: int
+    """Component index in component_ids order."""
     status: str
+    """Native classification of the bound and its witness; not a thermodynamic equilibrium result."""
     termination: str
+    """Linear-program termination explanation."""
     maximum: Optional[float]
+    """Maximum species amount in mol, or dimensionless mole fraction when fraction=True; None when
+    unresolved or unbounded.
+    """
     feed_normalized_amount: Optional[float]
+    """Dimensionless maximum amount divided by feed_total for amount bounds; None for a fraction
+    bound or unavailable result.
+    """
     log_fraction: Optional[float]
+    """Natural log of a positive maximum mole fraction, dimensionless; None for zero, amount mode
+    or unavailable result.
+    """
     balance_residual: float
+    """Conservation residual magnitude on the native feed-normalized linear-program chart,
+    dimensionless.
+    """
     normalization_residual: float
+    """Dimensionless fractional-chart normalization residual."""
     lower_bound_residual: float
+    """Dimensionless lower-bound violation in the normalized linear program."""
     witness: list[float]
+    """Linear-program witness in native column order; fraction mode includes its normalization
+    variable, not just component molar amounts.
+    """
     amounts_mol: list[float]
+    """Finite reconstructed component amounts in mol, component_ids order, when available;
+    otherwise empty.
+    """
     finite_witness: list[float]
+    """Witness of the finite-feasibility check in native normalized column order, or empty without
+    an optimal finite witness.
+    """
     limiting: bool
+    """Whether the result is a limiting bound rather than an attained finite witness."""
     supported: bool
+    """Whether the finite inventory can support this species."""
     floor: float
+    """Caller-declared dimensionless inventory support floor."""
     lp_error: float
+    """Dimensionless native linear-program error estimate; may be nonfinite if unresolved."""
     finite_residual: float
+    """Dimensionless maximum finite-witness feasibility residual; may be nonfinite if unresolved."""
     feasibility_termination: str
+    """Termination explanation for the finite-witness calculation."""
 
 def inventory_bounds(compiled: CompiledSystem, species: Sequence[int], fraction: bool,
-                     floor: float) -> list[InventoryBound]: ...
+                     floor: float) -> list[InventoryBound]:
+    """Bound species inventory using conservation and nonnegativity.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+    species : Sequence[int]
+        Ordered component indices whose inventory bounds are requested.
+    fraction : bool
+        True requests dimensionless mole-fraction bounds; False requests absolute mol bounds.
+    floor : float
+        Positive dimensionless native support floor used in witness admission.
+
+    Returns
+    -------
+    list[InventoryBound]
+        One InventoryBound per requested species, preserving input order.
+
+    Notes
+    -----
+    This calculation has no thermodynamic objective and supplies no phase-stability result.
+    """
+    ...
 
 class RowKind:
+    """Physical equation represented by a compiled equilibrium row.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Chemical: RowKind
+    """Chemical-potential stationarity, normalized by RT."""
     Pressure: RowKind
+    """Pressure equality in the native dimensionless row normalization."""
     Moiety: RowKind
+    """Conserved moiety balance normalized on the feed basis."""
     Electro: RowKind
+    """Per-phase electroneutrality, dimensionless charge-number contraction."""
     Normalization: RowKind
+    """Phase mole-fraction normalization, dimensionless."""
     Enthalpy: RowKind
+    """Extensive enthalpy specification in its native dimensionless normalization."""
     Entropy: RowKind
+    """Extensive entropy specification in its native dimensionless normalization."""
     CriticalMode: RowKind
+    """Critical-mode null-vector equation, native dimensionless normalization."""
     CriticalNormalization: RowKind
+    """Critical-mode normalization, dimensionless."""
     CriticalCubic: RowKind
+    """Critical cubic-form condition, native dimensionless normalization."""
     EnvelopeCondition: RowKind
+    """Selected dimensionless logarithmic envelope condition."""
     AzeotropeCondition: RowKind
+    """Binary azeotrope composition equality, dimensionless."""
     SolidAffinity: RowKind
+    """Solid saturation/complementarity classification row, native dimensionless normalization."""
 
 class Row:
+    """Identity of a defining or classification equation."""
     kind: RowKind
+    """Physical equation family."""
     phase: int
+    """Zero-based declared phase index where applicable; not meaningful for a system-wide row."""
     index: int
+    """Family-specific component, conserved-balance, mode or solid ordinal; not a common species
+    index for all rows.
+    """
     eqid: str
+    """Canonical equation-registry identity owning the row's mathematical definition."""
 
 class PointEvaluation:
+    """Defining rows, objective and numerical floor at a compiled point."""
     values: list[float]
+    """Length m of native dimensionless defining-row residuals in CompiledSystem.rows order."""
     objective: float
+    """Native dimensionless equilibrium objective; a value alone does not establish equilibrium."""
     floor: float
+    """Dimensionless estimated residual floor at this point."""
 
 class CompiledSystem:
+    """Admitted equilibrium chart and exact defining-equation readers.
+
+    Notes
+    -----
+    The model must outlive this compiled object. The full point has d = primal_size + rank + charge_row_count entries: per-phase log compositions, a free physical amount and log packing, followed by mode/free-intensive coordinates where present, then dimensionless multipliers. Physical free amounts use mol; free temperature and pressure coordinates use K and Pa. See ALG-EQUILIBRIUM and equilibrium/formulation.md.
+    """
     rows: list[Row]
+    """Ordered defining/classification rows; this order owns residual and Jacobian rows."""
     pinned_count: int
+    """Number of pinned fluid phases."""
     free_intensive_count: int
+    """Number of solved temperature/pressure coordinates."""
     rank: int
+    """Rank of the independent conserved-moiety basis, a count."""
     charge_row_count: int
+    """Number of per-phase charge constraints."""
     primal_size: int
+    """Number of primal state coordinates before conserved/electrical multipliers."""
     generic_nullity: int
+    """Nullity measured at the generic seed; not a guarantee of rank at a solution."""
     feed_total: float
+    """Total resolved feed amount in mol; one mol for MoleFractions."""
     has_ions: bool
+    """Whether the admitted model contains charged species."""
     has_reaction: bool
+    """Whether reaction declarations are present."""
     conserves_total_moles: bool
+    """Whether the admitted stoichiometry conserves total molar amount."""
     jacobian_rank: int
+    """Defining-Jacobian rank measured at the generic point."""
     removed_species: list[int]
-    def generic_point(self) -> list[float]: ...
-    def evaluate(self, point: Sequence[float]) -> PointEvaluation: ...
-    def jacobian(self, point: Sequence[float]) -> list[float]: ...
-    def lever_jacobian(self, point: Sequence[float]) -> list[float]: ...
-    def objective_gradient(self, point: Sequence[float]) -> list[float]: ...
-    def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
+    """Component indices eliminated by exact inventory/support restrictions."""
+    def generic_point(self) -> list[float]:
+        """Construct the native generic chart seed.
+
+        Returns
+        -------
+        list[float]
+            Full point of length d in the compiled chart; a seed, not an equilibrium result.
+        """
+        ...
+    def evaluate(self, point: Sequence[float]) -> PointEvaluation:
+        """Evaluate native defining rows at a full chart point.
+
+        Parameters
+        ----------
+        point : Sequence[float]
+            Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+
+        Returns
+        -------
+        PointEvaluation
+            PointEvaluation with m defining residuals, objective and floor.
+        """
+        ...
+    def jacobian(self, point: Sequence[float]) -> list[float]:
+        """Differentiate defining rows with respect to the full chart.
+
+        Parameters
+        ----------
+        point : Sequence[float]
+            Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+
+        Returns
+        -------
+        list[float]
+            Flattened row-major (m, d) Jacobian; rows follow rows and columns follow the full point.
+        """
+        ...
+    def lever_jacobian(self, point: Sequence[float]) -> list[float]:
+        """Differentiate defining rows with respect to external physical controls.
+
+        Parameters
+        ----------
+        point : Sequence[float]
+            Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+
+        Returns
+        -------
+        list[float]
+            Flattened row-major (m, 2+n+a) matrix in [T, P, feed amounts, active parameters] order; each column is row units per K, Pa, mol or native parameter unit.
+
+        Notes
+        -----
+        A free T/P uses its solved state coordinate; the corresponding external control is unused. Source-reference lever requests retain native refusal limits. See ALG-ACTIONS.
+        """
+        ...
+    def objective_gradient(self, point: Sequence[float]) -> list[float]:
+        """Differentiate the native equilibrium objective.
+
+        Parameters
+        ----------
+        point : Sequence[float]
+            Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+
+        Returns
+        -------
+        list[float]
+            Length d in full-point order; objective units divided by each chart coordinate unit.
+        """
+        ...
+    def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]:
+        """Evaluate exact native Lagrangian curvature.
+
+        Parameters
+        ----------
+        point : Sequence[float]
+            Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+        constraint_multipliers : Sequence[float]
+            Optional optimizer constraint multipliers in native constraint order; empty requests the default curvature.
+
+        Returns
+        -------
+        list[float]
+            Flattened row-major (d, d) Hessian in full-point order, with native objective/constraint normalization.
+        """
+        ...
 
 class EquilibriumResult:
+    """Solved phases and numerical evidence on the declared feed basis.
+
+    Notes
+    -----
+    For discovery, discovery.declaration.phases owns the final phase ordering. Temperature/pressure are None and physical state lists are empty after a refused solve. Diagnostics can survive without a state. See ALG-EQUILIBRIUM; a successful local solve is not a global stability or physical-validation claim.
+    """
     solver_settings: dict[str, float]
+    """Effective named Ipopt settings; units and meanings follow the named solver option."""
     diagnostic_options_file: str
+    """Native diagnostic options-file path, or an empty string without one."""
     linear_solver: str
+    """Actual Ipopt linear solver name; empty when no Ipopt solve ran."""
     solver_options: list[dict[str, Any]]
-    """Solved phases in declared order (with Discover(): discovery.declaration.phases). Units: K, Pa, mol, mol/m^3.
-    Per-phase-per-component lists are phase-major: entry p*n + i is phase p, component i of component_ids
-    (n components). State lists are empty and temperature and pressure are None when success is False."""
+    """Effective named Engine numerical settings and provenance."""
     discovery: Optional[DiscoveryRecord]
+    """Finite discovery sequence, or None for an ordinary declared solve."""
     neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
+    """Reference-transfer evidence in declared reaction order where consumed."""
     success: bool
+    """Whether the native solve admitted a state; does not establish global equilibrium or physical
+    validation.
+    """
     message: str
+    """Native conclusion and refusal explanation."""
     solver_status: str
-    temperature: Optional[float]  # K; None without a state
-    pressure: Optional[float]  # Pa; None without a state
-    amounts: list[float]  # phase amounts in mol on the feed's basis (1 mol total for MoleFractions), per phase
-    mole_fractions: list[float]  # phase-major, n per phase
-    molar_densities: list[float]  # mol/m^3, per phase
-    packing_fractions: list[float]  # per phase
+    """Optimizer termination name; separate from residual and topology admission."""
+    temperature: Optional[float]
+    """Resolved temperature in K, or None without an admitted state."""
+    pressure: Optional[float]
+    """Resolved pressure in Pa, or None without an admitted state."""
+    amounts: list[float]
+    """Length p of fluid phase amounts in mol on the feed basis, in declaration order; empty
+    without a state.
+    """
+    mole_fractions: list[float]
+    """Flattened row-major (p, n) dimensionless mole fractions; entry phase*n+component, empty
+    without a state.
+    """
+    molar_densities: list[float]
+    """Length p of phase molar densities in mol/m^3, empty without a state."""
+    packing_fractions: list[float]
+    """Length p of dimensionless packing fractions, empty without a state."""
     multipliers: list[float]
+    """Dimensionless conserved-moiety and electrical multipliers in compiled order."""
     constraint_multipliers: list[float]
+    """Optimizer constraint multipliers in the solver's constraint order; not a synonym for species
+    chemical potentials.
+    """
     residuals: list[float]
+    """Native dimensionless unclassified rows in rows order."""
     classified_residuals: list[float]
+    """Dimensionless rows actually used for admission, including free-amount weighting and
+    trace-inventory normalization where applicable.
+    """
     coordinates: list[float]
+    """Full native state chart including multipliers; follows the compiled point order and is not a
+    flat physical composition array.
+    """
     phase_count: int
+    """Number p of declared fluid phases."""
     iterations: int
+    """Iterations including retained seed sub-solves where the producer accumulates them."""
     evaluations: int
+    """Native equilibrium evaluation count."""
     hessian_calls: int
+    """Exact Hessian evaluation count."""
     objective: float
+    """Native dimensionless equilibrium objective at the retained candidate."""
     reduced_hessian_minimum: float
+    """Minimum eigenvalue of the native reduced Hessian; local curvature evidence, not a global
+    certificate.
+    """
     convergence: Convergence
+    """Residual, effective criterion, floor and stopping evidence."""
     rows: list[Row]
+    """Equation identities in residual order."""
     unknown_count: int
+    """Full state-chart dimension including multipliers."""
     jacobian_rank: int
+    """Reported defining-Jacobian rank."""
     generic_nullity: int
+    """Nullity of the generic compiled chart."""
     requested_tolerance_met: Optional[bool]
+    """Whether the finite final residual meets the caller criterion, or None without a finite final
+    residual; floor convergence need not be True.
+    """
     topology_event: TopologyEvent
+    """First vanished free phase, otherwise first coincident pair, when detected."""
     topology_phase: Optional[int]
+    """Index of the vanished phase, or None without this event."""
     topology_pair: Optional[tuple[int, int]]
+    """Declared phase-index pair for coalescence, or None without this event."""
     critical: Optional[CriticalRecord]
-    solid_amounts: list[float]  # mol, per declared solid
-    solid_affinity_decades: list[float]  # SI_s in decades, per declared solid
-    def phase_mole_fractions(self, phase: int) -> list[float]: ...  # one declared phase, component_ids order
+    """Critical-equation diagnostics, or None outside a retained critical candidate."""
+    solid_amounts: list[float]
+    """Amount in mol per declared solid, declaration order; empty without retained solid values."""
+    solid_affinity_decades: list[float]
+    """Saturation index in log10 decades per declared solid; interpreted with solid amount and
+    complementarity.
+    """
+    def phase_mole_fractions(self, phase: int) -> list[float]:
+        """Read one declared fluid phase composition.
+
+        Parameters
+        ----------
+        phase : int
+            Zero-based phase ordinal in the result declaration; invalid indices are refused.
+
+        Returns
+        -------
+        list[float]
+            Length n of dimensionless mole fractions in component_ids order.
+        """
+        ...
 
 class TopologyEvent:
+    """Candidate topology change detected by the native solve.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     None_: TopologyEvent
+    """No vanished-phase or coincident-phase event detected."""
     PhaseDisappeared: TopologyEvent
+    """First vanished free phase in declaration order."""
     PhasesCoalesced: TopologyEvent
+    """First coincident pair in lexicographic phase-index order, if no free phase vanished."""
 
 class ContinuationStop:
+    """Terminal condition of a declared continuation or envelope trace.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     reached_target: ContinuationStop
+    """Ordinary path reached its target."""
     initial_failure: ContinuationStop
+    """No admitted starting state."""
     invalid_path: ContinuationStop
+    """Path declarations or controls are inadmissible."""
     singular_jacobian: ContinuationStop
+    """Required defining Jacobian is singular."""
     branch_lost: ContinuationStop
+    """The declared density branch was lost."""
     phase_disappeared: ContinuationStop
+    """A free phase vanished."""
     phases_coalesced: ContinuationStop
+    """Two declared phases became coincident."""
     left_domain: ContinuationStop
+    """The path left an admitted physical/source domain."""
     infeasible: ContinuationStop
+    """A corrector could not satisfy the declared constraints; no global infeasibility proof."""
     nonfinite: ContinuationStop
+    """A required path value is nonfinite."""
     stalled: ContinuationStop
+    """The corrector or path stopped making admitted progress."""
     step_too_small: ContinuationStop
+    """A halved retry step fell below minimum_step."""
     budget_exhausted: ContinuationStop
+    """A step/work/retry budget was exhausted."""
     critical_endpoint: ContinuationStop
+    """Envelope tracing reached its declared critical stopping condition."""
 
 class ContinuationOptions:
-    """Ordinary path: steps are fractions of the start-to-target path; a rejected step halves and a step never
-    grows, so initial_step is the largest step. Envelope mode (Problem.envelope set) ignores initial_step and
-    the target problem: an ordinary step is at most envelope_max_log_step (log-coordinate units), the step after
-    an accepted one is sized from the measured predictor density error, and a rejected ordinary step (branch-window
-    miss, or a corrector that ends on coincident phases) halves; a rejected critical-point crossing, closing step or
-    terminal failure ends the trace at once with the states accepted so far. It needs envelope_straddle > 0,
-    2 * envelope_straddle <= envelope_max_log_step and T and P guesses through Free(guess). Both modes stop with
-    budget_exhausted after more than max_retries_per_step consecutive rejections of retryable steps (reason in
-    cause_stop and cause_message) and with step_too_small when the halved step falls below minimum_step."""
+    """Step and retry controls for continuation and phase envelopes.
+
+    Notes
+    -----
+    Envelope mode ignores the target problem and initial_step. It requires T/P guesses. After an accepted envelope step the predictor density error sizes the next step; retryable ordinary rejection halves it. A failed critical crossing, closing step or terminal refusal ends the trace with accepted states retained. See ALG-EQUILIBRIUM.
+    """
     initial_step: float
+    """Largest dimensionless fraction of the ordinary start-to-target path; rejected steps halve
+    and accepted ordinary steps never grow. Ignored for envelope tracing.
+    """
     minimum_step: float
+    """Positive minimum step in the active path coordinate; a smaller halved step stops the trace."""
     max_steps: int
+    """Maximum number of continuation steps, a count."""
     max_retries_per_step: int
+    """Maximum consecutive retryable rejections; exceeding it stops with budget_exhausted and
+    preserves the cause.
+    """
     envelope_max_log_step: float
+    """Maximum dimensionless envelope log-coordinate increment; bounds ordinary envelope steps."""
     envelope_straddle: float
+    """Positive near-critical absolute log-K straddle threshold; requires 2*envelope_straddle <=
+    envelope_max_log_step.
+    """
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self) -> None:
+        """Initialize ContinuationOptions from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
     @overload
     def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int,
-                 envelope_max_log_step: float = 0.0, envelope_straddle: float = 0.0) -> None: ...
+                 envelope_max_log_step: float = 0.0, envelope_straddle: float = 0.0) -> None:
+        """Initialize ContinuationOptions from the declared inputs.
+
+        Parameters
+        ----------
+        initial_step : float
+            Initial value of ContinuationOptions.initial_step; see its attribute description for units and ordering.
+        minimum_step : float
+            Initial value of ContinuationOptions.minimum_step; see its attribute description for units and ordering.
+        max_steps : int
+            Initial value of ContinuationOptions.max_steps; see its attribute description for units and ordering.
+        max_retries_per_step : int
+            Initial value of ContinuationOptions.max_retries_per_step; see its attribute description for units and ordering.
+        envelope_max_log_step : float
+            Initial value of ContinuationOptions.envelope_max_log_step; see its attribute description for units and ordering.
+        envelope_straddle : float
+            Initial value of ContinuationOptions.envelope_straddle; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class ContinuationRequest:
+    """Start, target and physical parameter endpoints of a native trace."""
     start_problem: EquilibriumProblem
+    """Starting physical declaration; an envelope condition selects envelope tracing."""
     target_problem: EquilibriumProblem
+    """Ordinary-path endpoint; ignored in envelope mode."""
     start_result: Optional[EquilibriumResult]
+    """Optional admitted starting result on the same declaration, or None to solve the start."""
     options: ContinuationOptions
+    """Declared steps, retry limits and envelope controls."""
     parameter_targets: Sequence[float]
-    def __init__(self) -> None: ...
+    """Physical endpoint values in model active-parameter order, with each family's native units;
+    empty means no parameter path.
+    """
+    def __init__(self) -> None:
+        """Initialize ContinuationRequest from the declared inputs.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class ContinuationResult:
+    """Accepted states, work and terminal cause of a continuation."""
     success: bool
+    """Whether the trace completed its declared success condition; inspect stop and retained
+    states.
+    """
     message: str
+    """Trace conclusion or terminal refusal explanation."""
     stop: ContinuationStop
-    path_values: list[float]  # per state: path fraction, or in envelope mode the conditions[k] target (ln T, ln P or ln K)
+    """Terminal continuation condition."""
+    path_values: list[float]
+    """One dimensionless path fraction per accepted ordinary state, or the envelope condition
+    target per accepted envelope state.
+    """
     parameter_values: list[list[float]]
+    """One physical active-parameter vector per accepted state, in model active order and family
+    units.
+    """
     states: list[EquilibriumResult]
+    """Accepted EquilibriumResults in path order; retained on later failure."""
     reached_path: float
+    """Last accepted ordinary path fraction or envelope condition target, dimensionless."""
     attempted_path: Optional[float]
+    """Last attempted path fraction/target, or None without an attempted step."""
     event_phase: Optional[int]
+    """Vanished phase index, or None without this topology event."""
     event_pair: Optional[tuple[int, int]]
+    """Coalesced phase-index pair, or None without this event."""
     attempts: int
+    """Number of attempted corrector steps."""
     accepted_steps: int
+    """Number of accepted continuation steps."""
     retries: int
+    """Number of rejected retry attempts."""
     last_result: Optional[EquilibriumResult]
+    """Last corrector result, possibly refused, or None without a retained attempt."""
     cause_stop: Optional[ContinuationStop]
+    """Underlying retry/terminal stop, or None when no distinct cause is retained."""
     cause_convergence: Optional[Convergence]
+    """Underlying corrector convergence evidence, or None without a record."""
     cause_message: Optional[str]
+    """Underlying refusal explanation, or None without a distinct cause."""
     conditions: list[EnvelopeCondition]
+    """Envelope condition per accepted envelope state; empty for ordinary continuation."""
     critical_points: list[EquilibriumResult]
+    """Critical-equation candidate results in encounter order, not globally validated critical
+    points.
+    """
     critical_seeds: list[list[float]]
+    """Per-candidate [ln(T/(1 K)), ln(P/(1 Pa)), ln(rho/(1 mol/m^3))] seeds, dimensionless."""
 
-def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult: ...
+def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult:
+    """Trace a declared equilibrium path or incipient phase envelope.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    request : ContinuationRequest
+        Start/target declarations, physical parameter endpoints and explicit continuation controls.
+
+    Returns
+    -------
+    ContinuationResult
+        ContinuationResult retaining accepted states and the terminal cause.
+
+    Notes
+    -----
+    Ordinary continuation follows the start-to-target path; an envelope start selects the native envelope controller and ignores the target declaration.
+    """
+    ...
 
 class SolvedStateObservableKind:
+    """Quantity extracted from the admitted equilibrium state.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Temperature: SolvedStateObservableKind
+    """System temperature, K."""
     Pressure: SolvedStateObservableKind
+    """System pressure, Pa."""
     PhaseAmount: SolvedStateObservableKind
+    """Fluid phase amount, mol on the absolute feed basis."""
     PhaseComponentAmount: SolvedStateObservableKind
+    """Component amount in one phase, mol."""
     PhaseMoleFraction: SolvedStateObservableKind
+    """Component mole fraction in one phase, dimensionless."""
     PhaseVolume: SolvedStateObservableKind
+    """Fluid phase volume, m^3."""
     PhaseMolarDensity: SolvedStateObservableKind
+    """Fluid molar density, mol/m^3."""
     PhasePackingFraction: SolvedStateObservableKind
+    """Phase packing fraction, dimensionless."""
     PhasePressure: SolvedStateObservableKind
+    """EOS phase pressure, Pa."""
     PhaseResidualChemicalPotentialOverRt: SolvedStateObservableKind
+    """Component residual chemical potential divided by RT, dimensionless."""
     PhaseProperty: SolvedStateObservableKind
+    """Selected homogeneous molar property in PropertyObservable units; log fugacity is not
+    admitted by this solved-state consumer.
+    """
     PhaseLogActivity: SolvedStateObservableKind
+    """ln[(rho*x_i/(1 mol/m^3))*exp(mu_res_i/(RT))], dimensionless on EOS_STANDARD_STATE_ID;
+    excludes an added source-standard term.
+    """
     PhaseGibbsMolarVolume: SolvedStateObservableKind
+    """Gibbs-conjugate phase molar volume, m^3/mol; includes admitted source-standard pressure
+    dependence.
+    """
     SystemEnthalpy: SolvedStateObservableKind
+    """Extensive system enthalpy, J on the absolute feed basis."""
     EquilibriumIsobaricHeatCapacity: SolvedStateObservableKind
+    """Reacting equilibrium isobaric heat capacity normalized by feed mol, J/(mol K); not
+    frozen-composition Cp.
+    """
     SolidAmount: SolvedStateObservableKind
+    """Solid amount in mol; phase selects the solid ordinal."""
     SolidSaturationIndex: SolvedStateObservableKind
+    """Solid saturation index in log10 decades; phase selects the solid ordinal."""
 
 class SolvedStateObservable:
+    """Observable with declared phase/component selection."""
     kind: SolvedStateObservableKind
+    """Quantity and unit selected; see SolvedStateObservableKind."""
     phase: int
+    """Fluid phase ordinal, or solid ordinal for SolidAmount/SolidSaturationIndex; ignored for a
+    system quantity.
+    """
     component: int
+    """Component index for component observables; ignored otherwise."""
     property: PropertyObservable
+    """Molar property selection when kind is PhaseProperty; ignored for other kinds."""
     def __init__(self, kind: SolvedStateObservableKind, phase: int = 0, component: int = 0,
-                 property: PropertyObservable = ...) -> None: ...
+                 property: PropertyObservable = ...) -> None:
+        """Initialize SolvedStateObservable from the declared inputs.
+
+        Parameters
+        ----------
+        kind : SolvedStateObservableKind
+            Initial value of SolvedStateObservable.kind; see its attribute description for units and ordering.
+        phase : int
+            Initial value of SolvedStateObservable.phase; see its attribute description for units and ordering.
+        component : int
+            Initial value of SolvedStateObservable.component; see its attribute description for units and ordering.
+        property : PropertyObservable
+            Initial value of SolvedStateObservable.property; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class SolvedStateActionDirection:
+    """Physical external increments for an implicit equilibrium action.
+
+    Notes
+    -----
+    Every path variable is dimensionless, so first and mixed contractions retain observable units. Directions do not authorize differentiation through a support, topology or source-interval change.
+    """
     temperature_k: float
+    """External temperature increment in K; must be zero when temperature is solved."""
     pressure_pa: float
+    """External pressure increment in Pa; must be zero when pressure is solved."""
     feed_amounts_mol: list[float]
+    """Length n of feed-amount increments in mol, component order; not mole-fraction increments."""
     active_parameters: list[float]
+    """Physical parameter increments in model active order, each family's native units."""
     reaction_coefficients: list[list[float]]
+    """One [da, db, dc, dd] vector per declared reaction law, or empty for no source motion; units
+    are 1, K, 1 and 1/K, evaluated along the temperature path.
+    """
     enthalpy_j: float
+    """Increment of the extensive enthalpy target in J."""
     entropy_j_per_k: float
+    """Increment of the extensive entropy target in J/K."""
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
                  active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...,
-                 enthalpy_j: float = ..., entropy_j_per_k: float = ...) -> None: ...
+                 enthalpy_j: float = ..., entropy_j_per_k: float = ...) -> None:
+        """Initialize SolvedStateActionDirection from the declared inputs.
+
+        Parameters
+        ----------
+        temperature_k : float
+            Initial value of SolvedStateActionDirection.temperature_k; see its attribute description for units and ordering.
+        pressure_pa : float
+            Initial value of SolvedStateActionDirection.pressure_pa; see its attribute description for units and ordering.
+        feed_amounts_mol : Sequence[float]
+            Initial value of SolvedStateActionDirection.feed_amounts_mol; see its attribute description for units and ordering.
+        active_parameters : Sequence[float]
+            Initial value of SolvedStateActionDirection.active_parameters; see its attribute description for units and ordering.
+        reaction_coefficients : Sequence[Sequence[float]]
+            Initial value of SolvedStateActionDirection.reaction_coefficients; see its attribute description for units and ordering.
+        enthalpy_j : float
+            Initial value of SolvedStateActionDirection.enthalpy_j; see its attribute description for units and ordering.
+        entropy_j_per_k : float
+            Initial value of SolvedStateActionDirection.entropy_j_per_k; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class SolvedStateActionRequest:
+    """Observables and ordered directions for one implicit mixed action.
+
+    Notes
+    -----
+    solved_state_first_actions is the separate batching operation for independent first directions. Availability depends on the selected energy order, reference terms and branch regularity; see ALG-ACTIONS.
+    """
     observables: list[SolvedStateObservable]
+    """Ordered quantity selections; each result follows this order."""
     directions: list[SolvedStateActionDirection]
+    """Ordered physical increments for the mixed contraction, not independent first-order batches."""
     def __init__(self, observables: Sequence[SolvedStateObservable],
-                 directions: Sequence[SolvedStateActionDirection]) -> None: ...
+                 directions: Sequence[SolvedStateActionDirection]) -> None:
+        """Initialize SolvedStateActionRequest from the declared inputs.
+
+        Parameters
+        ----------
+        observables : Sequence[SolvedStateObservable]
+            Initial value of SolvedStateActionRequest.observables; see its attribute description for units and ordering.
+        directions : Sequence[SolvedStateActionDirection]
+            Initial value of SolvedStateActionRequest.directions; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class SolvedStateActionStatus:
+    """Availability or refusal cause for an implicit solved-state action.
+
+    Notes
+    -----
+    Native enum name/value properties follow the module convention in epcsaft._core.
+    """
     Available: SolvedStateActionStatus
+    """Requested quantity is available on the admitted branch."""
     CentralSolveUnavailable: SolvedStateActionStatus
+    """No admitted central equilibrium state is available."""
     DefiningEquationsNotSatisfied: SolvedStateActionStatus
+    """The central defining-row residual fails action admission."""
     PhaseBoundaryNotDifferentiable: SolvedStateActionStatus
+    """A vanished-phase boundary does not admit the requested local derivative."""
     NonuniqueCoalescedPhases: SolvedStateActionStatus
+    """Coincident phase labels make the requested derivative nonunique."""
     RankDeficient: SolvedStateActionStatus
+    """The defining Jacobian lacks full required rank."""
     NonfiniteJacobian: SolvedStateActionStatus
+    """A required defining-Jacobian entry is nonfinite."""
     LinearSolveResidual: SolvedStateActionStatus
+    """The implicit linear solve fails its residual criterion."""
     SupportChange: SolvedStateActionStatus
+    """Requested derivative leaves the admitted composition support or meets a singular insertion."""
     IonicInsertion: SolvedStateActionStatus
+    """Requested charged insertion is unavailable on an ion-free support."""
     EnergyOrderUnavailable: SolvedStateActionStatus
+    """The requested action needs an energy order not supplied by this consumer."""
     DensityUnavailable: SolvedStateActionStatus
+    """A required pressure-closed density is unavailable."""
     PressureSingular: SolvedStateActionStatus
+    """The pressure-density slope does not admit the requested implicit action."""
     AssociationSingular: SolvedStateActionStatus
+    """The implicit association-site Jacobian is singular."""
     AssociationIllConditioned: SolvedStateActionStatus
+    """Association-site conditioning fails the declared criterion."""
     AssociationResidual: SolvedStateActionStatus
+    """The association residual does not meet its admission criterion."""
     MissingThermochemistry: SolvedStateActionStatus
+    """Required species thermochemistry is absent."""
     ReferenceUnavailable: SolvedStateActionStatus
+    """A consumed source-reference value or derivative is unavailable."""
     OutsideInterval: SolvedStateActionStatus
+    """Temperature lies outside a required source interval."""
     ThermalBoundary: SolvedStateActionStatus
+    """Requested thermal derivative crosses an unqualified source-interval endpoint."""
     CentralPropertyUnavailable: SolvedStateActionStatus
+    """The central observable is unavailable."""
     Nonfinite: SolvedStateActionStatus
+    """A required value or derivative is nonfinite."""
     IllConditioned: SolvedStateActionStatus
+    """The defining system fails the declared conditioning criterion."""
 
 class SolvedStateActionResult:
+    """Central observable and admitted mixed implicit contraction."""
     observable: SolvedStateObservable
+    """Requested quantity and phase/component selection."""
     unit: str
+    """Physical unit shared by value and action; path variables are dimensionless."""
     order: int
+    """Number of contracted directions, a derivative-order count."""
     value: Optional[float]
+    """Central observable in unit, or None if unavailable; may survive an unavailable outer action."""
     action: Optional[float]
+    """Mixed contraction in unit, or None with the status cause."""
     status: SolvedStateActionStatus
+    """Availability or specific refusal cause."""
     property_diagnostics: Optional[PropertyActionDiagnostics]
+    """Consumed homogeneous-property work/conditioning, or None when none is retained."""
     diagnostic_message: Optional[str]
+    """Specific native action/reference refusal explanation, or None without one."""
 
 class SolvedStateActionDiagnostics:
+    """Defining-equation conditioning and shared implicit work."""
     equation_count: int
+    """Number of defining equations."""
     state_dimension: int
+    """Number of full compiled state coordinates."""
     maximum_energy_order: int
+    """Maximum required Helmholtz derivative order."""
     state_factorizations: int
+    """Number of shared defining-Jacobian factorizations."""
     linear_solves: int
+    """Number of implicit linear solves."""
     rank: Optional[int]
+    """Numerical defining-Jacobian rank, or None without an admitted factorization."""
     condition_estimate: Optional[float]
+    """Dimensionless condition estimate, or None when unavailable."""
     maximum_linear_residual: Optional[float]
+    """Maximum dimensionless normalized implicit linear residual, or None without a solve."""
     central_residual: Optional[float]
+    """Dimensionless central defining-row residual, or None without a retained evaluation."""
     central_floor: Optional[float]
+    """Dimensionless estimated central residual floor, or None without an estimate."""
 
 class SolvedStateActionBatch:
+    """Ordered solved-state actions sharing one prepared center."""
     results: list[SolvedStateActionResult]
+    """Per-observable results in request order, each with its own cause and units."""
     diagnostics: SolvedStateActionDiagnostics
+    """Shared defining-equation work and conditioning."""
 
 def solved_state_actions(compiled: CompiledSystem, central: EquilibriumResult,
-                         request: SolvedStateActionRequest) -> SolvedStateActionBatch: ...
+                         request: SolvedStateActionRequest) -> SolvedStateActionBatch:
+    """Contract implicit equilibrium derivatives on one admitted branch.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+    central : EquilibriumResult
+        Admitted result from the same compiled declaration.
+    request : SolvedStateActionRequest
+        Ordered observables and physical mixed directions.
+
+    Returns
+    -------
+    SolvedStateActionBatch
+        SolvedStateActionBatch in observable order with per-action availability.
+
+    Notes
+    -----
+    Contractions use dimensionless path variables and retain observable units. This operation does not reinterpret mixed directions as independent first-action batches. See ALG-ACTIONS.
+    """
+    ...
 def solved_state_first_actions(compiled: CompiledSystem, central: EquilibriumResult,
                                observables: Sequence[SolvedStateObservable],
-                               directions: Sequence[SolvedStateActionDirection]) -> list[SolvedStateActionBatch]: ...
-def linear_solver() -> str: ...
-def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
+                               directions: Sequence[SolvedStateActionDirection]) -> list[SolvedStateActionBatch]:
+    """Evaluate independent first directions at one shared solved center.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+    central : EquilibriumResult
+        Admitted result from the same compiled declaration.
+    observables : Sequence[SolvedStateObservable]
+        Ordered solved-state quantity selections.
+    directions : Sequence[SolvedStateActionDirection]
+        Independent physical first directions; these are separate columns, not one mixed contraction.
+
+    Returns
+    -------
+    list[SolvedStateActionBatch]
+        One SolvedStateActionBatch per direction in input order.
+    """
+    ...
+def linear_solver() -> str:
+    """Read the compiled native equilibrium linear-solver selection.
+
+    Returns
+    -------
+    str
+        Linear solver name; a result.linear_solver separately records an actual solve.
+    """
+    ...
+def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem:
+    """Admit and compile the physical equilibrium declaration.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    problem : EquilibriumProblem
+        Native physical declaration with ordered phases, feed, reactions, solids and constraints.
+
+    Returns
+    -------
+    CompiledSystem
+        CompiledSystem with rows, native chart and structural rank evidence.
+
+    Notes
+    -----
+    Invalid support, units, charge, rank or constraint combinations are refused before solving. Keep model alive while the compiled object is used.
+    """
+    ...
 def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationOptions, feed_offset: Sequence[float],
                            feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
-                           identity_component: int, minimum_gap: float) -> str: ...
-def property_asl_record(model: Any) -> str: ...
-def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
+                           identity_component: int, minimum_gap: float) -> str:
+    """Serialize the admitted two-liquid equilibrium and affine feed map for ASL.
+
+    Parameters
+    ----------
+    model : Any
+        Model declaration exposing its source parameter document.
+    problem : Any
+        Fixed-T/P two-free-liquid declaration with explicit supports and absolute molar feed.
+    continuation : ContinuationOptions
+        Declared continuation controls for the adapter.
+    feed_offset : Sequence[float]
+        Length n of absolute feed offsets in mol.
+    feed_matrix : Sequence[Sequence[float]]
+        Row-major (n, k) affine coefficients mapping controls into feed mol; units are mol per caller control unit.
+    anchor_controls : Sequence[float]
+        Length k of nonnegative anchor controls in the caller-declared units.
+    identity_component : int
+        Component index used to preserve two-phase identity.
+    minimum_gap : float
+        Positive dimensionless mole-fraction separation required for that identity.
+
+    Returns
+    -------
+    str
+        Native record string for the equilibrium ASL adapter.
+
+    Notes
+    -----
+    The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
+    """
+    ...
+def property_asl_record(model: Any) -> str:
+    """Serialize a declared model for native ASL property callbacks.
+
+    Parameters
+    ----------
+    model : Any
+        Python model/declaration exposing the source parameter document, thermochemistry and numerical options consumed by the native record writer.
+
+    Returns
+    -------
+    str
+        Native record string containing the parameter and thermochemistry declarations.
+
+    Notes
+    -----
+    Serialization supplies no state prediction. The native ASL adapter owns subsequent values and exact derivatives.
+    """
+    ...
+def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]:
+    """Solve the native implicit first-sensitivity equations.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Admitted native compiled system; its HelmholtzModel must remain alive.
+    point : Sequence[float]
+        Full native point in compiled chart order, length d including multipliers; not a flattened physical composition.
+    lever : Sequence[float]
+        Length 2+n+a of physical increments in [T (K), P (Pa), feed (mol), active parameter] order, optionally extended by [da, db, dc, dd] per reaction and extensive H (J), S (J/K) increments.
+
+    Returns
+    -------
+    list[float]
+        Length d of state-coordinate actions, or an empty list when the defining solve is singular or not admitted.
+
+    Notes
+    -----
+    Solves J dy = -F_controls dcontrols using exact native columns. An empty result is unavailable sensitivity, not a zero derivative.
+    """
+    ...
 def solve_equilibrium(
     model: HelmholtzModel,
     problem: EquilibriumProblem,
     start: Optional[EquilibriumResult] = ...,
-) -> EquilibriumResult: ...
+) -> EquilibriumResult:
+    """Solve the declared equilibrium problem natively.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    problem : EquilibriumProblem
+        Native physical declaration; phase order owns result arrays.
+    start : Optional[EquilibriumResult]
+        Optional compatible admitted result used only as a seed.
+
+    Returns
+    -------
+    EquilibriumResult
+        EquilibriumResult with admitted physical state or retained refusal diagnostics.
+
+    Notes
+    -----
+    Uses the native equilibrium driver, exact derivatives and declared numerical settings. A returned success is local numerical admission; global stability requires separate evidence. See ALG-EQUILIBRIUM.
+    """
+    ...
 
 class InfiniteDilutionReference:
     """Two-ion infinite-dilution reference at declared temperature and pressure.
@@ -2811,38 +4058,148 @@ def formula_composition(solvent_fractions: Sequence[float], parameters: Paramete
     stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
 
 class EquilibriumStart:
+    """One seed for the same thermodynamic declaration.
+
+    Notes
+    -----
+    Seeds carry no thermodynamic constraints. Native admission rejects incompatible or conflicting seed representations.
+    """
     coordinates: list[float]
+    """Optional full native compiled coordinate vector, including multipliers; empty selects
+    physical seed construction.
+    """
     amounts: list[float]
+    """Optional fluid-phase amount guesses in mol, phase order; empty leaves them unspecified."""
     compositions: list[list[float]]
+    """Optional (p, n) mole-fraction guesses, phase then component order; empty leaves them
+    unspecified.
+    """
     packing_fractions: list[Optional[float]]
+    """Optional per-phase dimensionless packing guesses; each None leaves that phase unspecified."""
     temperature: Optional[float]
+    """Optional positive temperature guess in K for a free temperature."""
     pressure: Optional[float]
+    """Optional positive pressure guess in Pa for a free pressure."""
     previous: Optional[EquilibriumResult]
+    """Optional previous EquilibriumResult supplying a compatible starting state; not a replacement
+    physical declaration.
+    """
     def __init__(self, *, coordinates: Sequence[float] = ..., amounts: Sequence[float] = ...,
                  compositions: Sequence[Sequence[float]] = ..., packing_fractions: Sequence[Optional[float]] = ...,
                  temperature: Optional[float] = None, pressure: Optional[float] = None,
-                 previous: Optional[EquilibriumResult] = None) -> None: ...
+                 previous: Optional[EquilibriumResult] = None) -> None:
+        """Initialize EquilibriumStart from the declared inputs.
+
+        Parameters
+        ----------
+        coordinates : Sequence[float]
+            Initial value of EquilibriumStart.coordinates; see its attribute description for units and ordering.
+        amounts : Sequence[float]
+            Initial value of EquilibriumStart.amounts; see its attribute description for units and ordering.
+        compositions : Sequence[Sequence[float]]
+            Initial value of EquilibriumStart.compositions; see its attribute description for units and ordering.
+        packing_fractions : Sequence[Optional[float]]
+            Initial value of EquilibriumStart.packing_fractions; see its attribute description for units and ordering.
+        temperature : Optional[float]
+            Initial value of EquilibriumStart.temperature; see its attribute description for units and ordering.
+        pressure : Optional[float]
+            Initial value of EquilibriumStart.pressure; see its attribute description for units and ordering.
+        previous : Optional[EquilibriumResult]
+            Initial value of EquilibriumStart.previous; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class EquilibriumWorkLimits:
+    """Shared and per-attempt budgets for declared equilibrium starts.
+
+    Notes
+    -----
+    None leaves that limit undeclared. Limits are checked by the native driver; a callback/evaluation in progress can overrun the elapsed deadline.
+    """
     attempts: Optional[int]
+    """Optional maximum attempted-start count."""
     iterations: Optional[int]
+    """Optional shared iteration budget across attempts and seed sub-solves."""
     attempt_iterations: Optional[int]
+    """Optional maximum iterations within one attempt."""
     seconds: Optional[float]
+    """Optional total elapsed-time budget in seconds."""
     attempt_seconds: Optional[float]
+    """Optional per-attempt elapsed-time budget in seconds."""
     def __init__(self, *, attempts: Optional[int] = None, iterations: Optional[int] = None,
                  attempt_iterations: Optional[int] = None, seconds: Optional[float] = None,
-                 attempt_seconds: Optional[float] = None) -> None: ...
+                 attempt_seconds: Optional[float] = None) -> None:
+        """Initialize EquilibriumWorkLimits from the declared inputs.
+
+        Parameters
+        ----------
+        attempts : Optional[int]
+            Initial value of EquilibriumWorkLimits.attempts; see its attribute description for units and ordering.
+        iterations : Optional[int]
+            Initial value of EquilibriumWorkLimits.iterations; see its attribute description for units and ordering.
+        attempt_iterations : Optional[int]
+            Initial value of EquilibriumWorkLimits.attempt_iterations; see its attribute description for units and ordering.
+        seconds : Optional[float]
+            Initial value of EquilibriumWorkLimits.seconds; see its attribute description for units and ordering.
+        attempt_seconds : Optional[float]
+            Initial value of EquilibriumWorkLimits.attempt_seconds; see its attribute description for units and ordering.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
 
 class EquilibriumStartsResult:
+    """Ordered start outcomes and actual budget use."""
     selected: Optional[int]
+    """Selected start index, or None when no result was admitted."""
     results: list[Optional[EquilibriumResult]]
+    """One optional result per declared start in input order; None preserves an unrun/refused
+    attempt with causes.
+    """
     causes: list[str]
+    """Explanation per start, including why an attempt was not run."""
     attempt_seconds: list[float]
+    """Elapsed seconds per declared start."""
     iterations: int
+    """Total consumed iterations across attempts."""
     seconds: float
+    """Total elapsed wall time in seconds."""
     overrun_seconds: float
+    """Elapsed deadline overrun in seconds, reported rather than hidden."""
     budget_exhausted: bool
+    """Whether a declared shared work limit was exhausted."""
 
-def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem, starts: list[EquilibriumStart], limits: EquilibriumWorkLimits) -> EquilibriumStartsResult: ...
+def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem, starts: list[EquilibriumStart], limits: EquilibriumWorkLimits) -> EquilibriumStartsResult:
+    """Evaluate declared seeds under shared native work limits.
+
+    Parameters
+    ----------
+    model : HelmholtzModel
+        Native Helmholtz model with declared parameters, active coordinates and optional thermochemistry.
+    problem : EquilibriumProblem
+        One thermodynamic declaration shared by every seed.
+    starts : list[EquilibriumStart]
+        Ordered native seeds; none selects new physical inputs.
+    limits : EquilibriumWorkLimits
+        Declared shared and per-attempt work limits.
+
+    Returns
+    -------
+    EquilibriumStartsResult
+        EquilibriumStartsResult preserving input order, unrun causes and selected-result identity.
+
+    Notes
+    -----
+    All attempts use the same native solve and stopping admission. A finite seed search is not proof of global equilibrium.
+    """
+    ...
 
 def reaction_log10_reciprocal(law: ReactionLogPolynomial) -> list[float]: ...
