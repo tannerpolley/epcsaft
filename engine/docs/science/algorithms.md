@@ -1174,8 +1174,7 @@ callback coordinates, stops the solve with a named error, and a compile-time
 check refuses another Ipopt release, which must requalify the rule (3.14's
 `get_curr_iterate` returns iterates, not these relaxed bounds).
 
-Ipopt measures each free phase amount of a Gibbs minimization in units of its own start
-amount (#243): it works in $y_p=n_p/S_p$ with
+The primary Ipopt attempt measures each free phase amount of a Gibbs minimization in units of its own start amount (#243): it works in $y_p=n_p/S_p$ with
 $S_p=\max(n_p^0,\epsilon_N N_{\mathrm{feed}})$, $\epsilon_N=$`PHASE_DISAPPEARANCE_AMOUNT`$=10^{-8}$,
 fixed for one solve after every start owner has run; every other coordinate keeps unit one,
 and feasibility cells keep physical coordinates. The callbacks return $S\nabla f$, $J S$ and
@@ -1200,6 +1199,8 @@ nonfinite at path 0.6075). The floor is homogeneous in the feed, so the iteratio
 under positive feed scaling except for the $\max(1,N_{\mathrm{feed}})$ dual-tolerance clip
 below 1 mol and Ipopt's absolute `compl_inf_tol`. C3 still refuses its vanished vapor; its
 convergence category is now `stalled` instead of `converged_to_floor`.
+
+For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work and both causes on failure, including exceptions; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.

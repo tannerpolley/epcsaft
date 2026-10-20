@@ -96,7 +96,14 @@ EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false,
-    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false
+    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, bool* retry_eligible = nullptr
+);
+// One physical-mol attempt; null restart rebuilds the original declaration, otherwise coordinates are immutable.
+EquilibriumResult recover_physical_amounts(
+    const CompiledSystem& compiled, EquilibriumResult result, bool eligible, core::Scope& scope,
+    const std::vector<double>* restart = nullptr, const DriverLimits* limits = nullptr,
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, bool admit_density = false,
+    std::size_t* declarations = nullptr, std::size_t declaration_budget = 0, bool* invoked = nullptr
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
@@ -104,7 +111,7 @@ EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
     const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr,
-    std::shared_ptr<const OptimizerState> warm = {}
+    std::shared_ptr<const OptimizerState> warm = {}, EquilibriumResult* audit = nullptr
 );
 
 // Declared seeds carry no thermodynamic declarations: all share the one problem.
@@ -218,7 +225,7 @@ SensitivityInfo inspect_sensitivity(
 class GibbsMinimizer final : public Ipopt::TNLP {
 public:
     GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
-                   core::Scope* scope = nullptr, const DriverLimits* limits = nullptr);
+                   core::Scope* scope = nullptr, const DriverLimits* limits = nullptr, bool physical_amounts = false);
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;

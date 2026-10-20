@@ -82,6 +82,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-20, #692 (owner approval): shared physical-mol recovery has an allowance of +120 net / 166 gross formatted Equilibrium lines against `31460744`, with zero growth in every other runtime layer. Equilibrium **10,582 → 10,794**, the count 10,687 plus its rounded-up 1% band of 107 under rule 1. Total count **29,172** remains under the unchanged **29,191** ceiling. One recovery beside `run_driver` owns eligibility, invocation, admission and work/cause retention across ordinary solves, discovery, start sets and continuation.
+
 - 2026-10-19, #664 after merging main `6385f895` (#663): the full amount-weighted stability correction and stored-update/representation accounting use +40 net / 56 gross formatted Equilibrium lines against both the original `4bf2378a` base and the post-#663 baseline, within the lead allowance of 42 net / 60 gross. The merged count is 29,029; Equilibrium is 10,544 / 10,582. The total remains below main's 29,191 ceiling, so rule 1 needs no further raise. All layer ceilings remain unchanged; #663 growth is recorded separately below.
 
 - 2026-10-19, #663 after merging main `5aa2d3cb` (#658/#661): the approved Equilibrium allowance is +60 net / 100 gross formatted runtime lines; the change uses +22 net / 40 gross. The merged count is 28,989, seven above the previous total ceiling of 28,982. Under rule 1 the total ceiling rises to 29,191: min(28,989 + rounded-up 1% band 290, layer-ceiling sum 29,191). Equilibrium is 10,504 / 10,582; all layer ceilings remain unchanged.

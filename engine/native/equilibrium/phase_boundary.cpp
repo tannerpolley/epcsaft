@@ -642,7 +642,10 @@ Attempt admit_result(
         result.topology_pair = topology.pair;
         return refuse(stop_of(result, outcome.terminal), "supplied state fails the candidate topology predicate");
     }
-    const auto branches = check_density_branches(model, compiled, result, anchors, initial, scope);
+    BranchCheck branches;
+    try { branches = check_density_branches(model, compiled, result, anchors, initial, scope); }
+    catch (const std::exception& error) { branches.message = error.what(); }
+    if (!branches.accepted) branches.message += "; driver: " + result.message;
     outcome.accepted = branches.accepted;
     outcome.terminal = branches.terminal;
     outcome.message = branches.message;
@@ -985,11 +988,24 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         else seed_problem.temperature = FreeValue::fixed(compiled.seed_temperature());
         const auto source = compile_problem(*compiled.model, seed_problem);
         // The seed alone stops at its own budget; a seed without a state is discarded either way (#579).
+        auto seed_initial = boundary_start(source, true, limits, stages);
         DriverLimits budget = limits ? *limits : DriverLimits{std::numeric_limits<std::size_t>::max(), std::chrono::steady_clock::time_point::max()};
         budget.iterations = std::min(budget.iterations, budget.consumed + static_cast<std::size_t>(policy::EQUILIBRIUM_CALORIC_SEED_ITERATIONS.value));
-        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits, stages), nullptr, &budget);
-        if (limits) limits->consumed = budget.consumed;
+        auto seed = structural_result(source, scope);
+        std::exception_ptr failure;
+        try {
+            seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, seed_initial, nullptr, &budget, {}, &seed);
+        } catch (...) {
+            failure = std::current_exception();
+        }
+        if (limits) {
+            limits->consumed = budget.consumed;
+            limits->evaluations = budget.evaluations;
+            limits->hessian_calls = budget.hessian_calls;
+            limits->exhausted = budget.exhausted;
+        }
         if (stages) stages->add(seed);
+        if (failure) std::rethrow_exception(failure);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
         const auto inside = [&](double t) {  // every declared species' caloric record admits t
             for (const auto& phase : compiled.problem.phases)

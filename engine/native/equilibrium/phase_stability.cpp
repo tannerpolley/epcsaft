@@ -889,18 +889,31 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         core::Scope scope("phase_discovery_declaration");
         EquilibriumResult audit = structural_result(c, scope);
         bool invoked = false;
+        const auto before = calls;
+        std::vector<double> retry_attempt;
         try {
             if (seed.empty()) seed = boundary_start(c);
             else seed = add_multipliers(c, seed);
             invoked = true;
-            result = run_driver(model, c, std::move(seed), audit, scope, &attempt, &audit);
-            if (result.success) {
+            bool eligible = false;
+            result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, false, {}, false, false, &eligible);
+            auto retried = audit;
+            (void)recover_physical_amounts(c, result, eligible, scope, &seed, nullptr,
+                &retry_attempt, &retried, true, &calls, budget, &invoked);
+            if (calls != before) {
+                record->declarations.push_back(result); record->declaration_roles.push_back(role);
+                record->declaration_attempt_coordinates.push_back(attempt);
+                count_driver(record->work, result, "declaration_invocations");
+                result = std::move(retried);
+                if (!retry_attempt.empty()) attempt = retry_attempt;
+            }
+            if (result.success && calls == before) {
                 const auto branch = check_density_branches(model, c, result, {}, true, scope);
                 if (!branch.accepted) { result.success = false; result.message = branch.message; clear_state(result); }
             }
         } catch (const std::exception& error) { result = audit; result.message = error.what(); }
-        record->declarations.push_back(result); record->declaration_roles.push_back(role);
-        record->declaration_attempt_coordinates.push_back(attempt);
+        record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
+        record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
         if (invoked) count_driver(record->work, result, "declaration_invocations");
         else ++record->work["declaration_initialization_failures"];
         return result;
