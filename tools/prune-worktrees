@@ -85,7 +85,10 @@ def main():
                 "--delete", branch)
         elif remote:
             print(f"kept remote {branch}: its tip {remote[0][:8]} is not on origin/main")
-        run("git", "branch", "-D", branch)
+        if f"branch refs/heads/{branch}\0" in run("git", "worktree", "list", "--porcelain", "-z"):
+            print(f"kept branch {branch} (checked out)")
+            return
+        run("git", "update-ref", "--no-deref", "-d", f"refs/heads/{branch}", tip)
         print(f"deleted branch {branch}")
 
     entries = {}  # path -> (head, branch)
