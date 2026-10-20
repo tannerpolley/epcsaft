@@ -82,6 +82,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-19, #664 (lead allowance: Equilibrium 42 net / 60 gross runtime lines, total rule 1 authorized): the full amount-weighted stability correction and stored-update/representation accounting add 40 net / 56 gross formatted Equilibrium lines against `4bf2378a`. Equilibrium is 10,519 / 10,582; total is 29,004. Raise only the total from 28,982 to **29,191**, min(count 29,004 + band 291, layer-ceiling sum 29,191). All layer ceilings stay unchanged.
+
 - 2026-10-19, #658: lead-approved 220 gross / +180 net allowance. Contributions rises from 1,424 to 1,451, Surface from 791 to 814 and Python from 2,421 to 2,473: each exceeded ceiling becomes its measured count plus the rounded-up 1% band. The measured counts are 1,436, 805 and 2,448; total is 28,962. The total ceiling stays 28,982. Other ceilings are unchanged.
 
 - 2026-10-19, #652 (lead allowance under the owner's 2026-10-17 delegation: Equilibrium 90 gross / 80 net, plus parameter Regression 1 gross / 0 net for `PhaseSpec` worker serialization): after delivered-review R1 and merging main `45713fae0` (#648), the consumed declared trace-guess cap uses 54 gross / +47 net Equilibrium and 1 gross / 0 net parameter Regression. Equilibrium is 10,477; the lead approved **10,475 → 10,582**, exactly count plus its 105-line band, through the delegated worker's native budget question on 2026-10-19. Total 28,839 remains below 28,982; parameter Regression is 3,962 / 4,000. The one seeding owner excludes declaration guesses replaced by valid previous phases and preserves supplied and calculated provenance through native fit workers.

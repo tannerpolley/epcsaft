@@ -54,6 +54,91 @@ void check_trace_ion_curvature() {
     }
 }
 
+// #664: manufactured isomerisation; one-row closed form for ALG-STABILITY amount correction.
+void check_stability_amount_correction() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::neutral_binary());
+    constexpr double temperature = 180.0, pressure = 1e5, chemical_scale = 7.0;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}}) {
+        const std::vector<double> x{fraction, 1.0 - fraction};
+        const auto root = solve_density(model, temperature, pressure, x, DensityBranch::Liquid, std::nullopt);
+        const double volume = 1.0 / root.molar_density;
+        const auto derivative = model.evaluate(temperature, volume, x, DerivativeOrder::IsothermalPhaseHessian);
+        auto problem = equilibrium_support::flash(2);
+        problem.temperature = FreeValue::fixed(temperature); problem.feed.values = {0.5 * scale, 0.5 * scale};
+        for (std::size_t i = 0; i < 2; ++i)
+            problem.standard_gibbs_j_per_mol.push_back(rt * (chemical_scale - std::log(x[i] / volume) - derivative.gradient[2 + i]));
+        ReactionSpec reaction; reaction.name = "isomerisation"; reaction.stoichiometry = {1.0, -1.0};
+        reaction.affinity_j_per_mol = problem.standard_gibbs_j_per_mol[0] - problem.standard_gibbs_j_per_mol[1];
+        problem.reactions = {reaction};
+        problem.phases[0].composition_guess = x;
+        problem.phases[0].packing_guess = model.packing_fraction_coefficient(temperature, x) / volume;
+        auto compiled = compile_problem(model, problem);
+        const auto parent = solve_compiled(compiled); CHECK(parent.success);
+        const auto at = compiled.prepare(parent.coordinates);
+        const auto independent = model.evaluate(temperature, at.volume[0], at.composition[0], DerivativeOrder::IsothermalPhaseHessian);
+        std::array<double, 2> amount{}, mu{}, intended{}, stored{};
+        double rhs = compiled.balance[0];
+        const std::string id = "stability-amount-correction/" + recording_support::number(fraction);
+        for (std::size_t i = 0; i < 2; ++i) {
+            amount[i] = at.amount[0] * at.composition[0][i];
+            rhs -= compiled.B[0][i] * amount[i];
+            mu[i] = std::log(at.composition[0][i] / at.volume[0]) + independent.gradient[2 + i]
+                + problem.standard_gibbs_j_per_mol[i] / rt;
+            tpd_compare(id + "/chemical-scale/" + std::to_string(i), mu[i], chemical_scale, 1e-10);
+        }
+        // Extended arithmetic and the scalar closed form are independent of Eigen's decomposition.
+        const long double denominator = static_cast<long double>(amount[0]) * amount[0]
+            + static_cast<long double>(amount[1]) * amount[1];
+        for (std::size_t i = 0; i < 2; ++i) {
+            intended[i] = static_cast<double>(static_cast<long double>(amount[i]) * amount[i]
+                * (rhs / compiled.B[0][0]) / denominator);
+            stored[i] = amount[i] + intended[i];
+        }
+        const double total = stored[0] + stored[1];
+        double correction = 0.0, energy = 0.0, representation_energy = 0.0;
+        for (std::size_t i = 0; i < 2; ++i) {
+            const double physical = total * (stored[i] / total);
+            const double logged = total * std::exp(std::log(stored[i] / total));
+            const double applied = stored[i] - amount[i];
+            const double representation = std::abs(physical - stored[i]) + std::abs(logged - physical);
+            correction += std::abs(applied) + representation;
+            energy += (std::abs(applied) + std::abs(intended[i] - applied) + representation) * std::abs(mu[i]);
+            representation_energy += representation * std::abs(mu[i]);
+        }
+        StabilityOptions options; options.evaluate_supplied_trials = true;
+        auto trial = problem.phases[0]; trial.composition_guess = {0.5, 0.5}; options.trials = {trial};
+        const auto report = stability_test(compiled, parent, options);
+        CHECK(report.completed && report.trials.size() == 1 && energy > 0.0);
+        const auto inputs = recording_support::fields({recording_support::field("rhs_mol", rhs),
+            recording_support::field("representation_energy", representation_energy)});
+        const auto& quantities = report.present_phases[0];
+        tpd_compare(id + "/correction", quantities.at("correction_l1_mol"), correction, 1e-12 * correction, inputs, "mol");
+        tpd_compare(id + "/energy", quantities.at("feasibility_estimate_over_rt"), energy, 1e-12 * energy, inputs);
+        tpd_compare(id + "/donor-energy", report.trials[0].quantities.at("feasibility_error_estimate_over_rt"), energy, 1e-12 * energy, inputs);
+        auto coordinates = parent.coordinates;
+        std::copy(report.candidate_coordinates.begin(), report.candidate_coordinates.end(), coordinates.begin());
+        const auto final = compiled.prepare(coordinates);
+        CHECK(final.amount[0] > 0.0 && final.composition[0][0] > 0.0 && final.composition[0][1] > 0.0);
+        const auto rows = compiled.evaluate(coordinates);
+        for (std::size_t k = 0; k < rows.values.size(); ++k)
+            if (compiled.rows[k].kind != RowKind::Chemical && compiled.rows[k].kind != RowKind::Pressure)
+                tpd_compare(id + "/feasibility/" + std::to_string(k), rows.values[k], 0.0, 1e-12);
+        if (fraction == 1e-17) {
+            // Positive supported amounts cannot sum to this deliberately impossible target.
+            compiled.balance[0] = -1.0;
+            auto impossible = parent; impossible.residuals = compiled.evaluate(parent.coordinates).values;
+            bool refused = false;
+            try { (void)stability_test(compiled, impossible, options); }
+            catch (const std::invalid_argument&) { refused = true; }
+            tpd_compare(id + "/impossible-target", refused ? 1.0 : 0.0, 1.0, 0.0,
+                recording_support::fields({recording_support::field("target_mol", -1.0)}));
+        }
+    }
+}
+
 void check_phase_removal_inventory() {
     using namespace epcsaft::equilibrium;
     // Gross/Sadowski Table 2 and k_ij=0, gross-2001-methane-ethane/3 packet.

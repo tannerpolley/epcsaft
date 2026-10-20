@@ -232,27 +232,39 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         for (auto i : c.problem.phases[p].support) cells.emplace_back(p, i);
     Eigen::MatrixXd J = Eigen::MatrixXd::Zero(c.rank + at.amount.size(), cells.size());
     Eigen::VectorXd rhs = Eigen::VectorXd::Zero(J.rows());
+    Eigen::VectorXd amount(cells.size()), mu(cells.size());
     for (std::size_t k = 0; k < c.rank; ++k) rhs(k) = c.balance[k];
     const auto& z = c.model->parameters().charge_number;
     for (std::size_t j = 0; j < cells.size(); ++j) {
         const auto [p, i] = cells[j];
         for (std::size_t k = 0; k < c.rank; ++k) J(k, j) = c.B[k][i];
         J(c.rank + p, j) = z[i];
+        amount(j) = at.amount[p] * at.composition[p][i];
+        mu(j) = std::log(at.composition[p][i] / at.volume[p])
+            + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i];
         rhs -= J.col(j) * at.amount[p] * at.composition[p][i];
     }
-    const Eigen::VectorXd delta = J.completeOrthogonalDecomposition().solve(rhs);
-    if (!delta.allFinite() || (J * delta - rhs).lpNorm<Eigen::Infinity>() > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
+    Eigen::MatrixXd weighted = J * amount.asDiagonal();
+    Eigen::VectorXd scaled_rhs = rhs;
+    for (Eigen::Index k = 0; k < weighted.rows(); ++k) {
+        const double scale = weighted.row(k).cwiseAbs().maxCoeff();
+        if (scale > 0.0) { weighted.row(k) /= scale; scaled_rhs(k) /= scale; }
+    }
+    const Eigen::VectorXd intended = amount.cwiseProduct(weighted.completeOrthogonalDecomposition().solve(scaled_rhs));
+    if (!intended.allFinite())
         throw std::invalid_argument("stability amount correction rank/consistency failure");
+    Eigen::VectorXd applied(cells.size());
     std::vector<std::vector<double>> inventory(at.amount.size(), std::vector<double>(c.n_feed.size(), 0.0));
     for (std::size_t j = 0; j < cells.size(); ++j) {
         const auto [p, i] = cells[j];
-        inventory[p][i] = at.amount[p] * at.composition[p][i] + delta(j);
-        if (!(inventory[p][i] > 0.0)) throw std::invalid_argument("stability correction destroys positive support");
-        const double mu = std::log(at.composition[p][i] / at.volume[p])
-            + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i];
-        candidate.feasibility_estimate += std::abs(delta(j) * mu);
-        candidate.correction_norm += std::abs(delta(j));
+        inventory[p][i] = amount(j) + intended(j);
+        if (!(inventory[p][i] > 0.0) || !std::isfinite(inventory[p][i])) throw std::invalid_argument("stability correction destroys positive support");
+        applied(j) = inventory[p][i] - amount(j);
+        candidate.feasibility_estimate += (std::abs(applied(j)) + std::abs(intended(j) - applied(j))) * std::abs(mu(j));
+        candidate.correction_norm += std::abs(applied(j));
     }
+    if ((J * applied - rhs).lpNorm<Eigen::Infinity>() > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
+        throw std::invalid_argument("stability amount correction rank/consistency failure");
     report.candidate_coordinates.clear();
     for (std::size_t p = 0; p < at.amount.size(); ++p) {
         if (at.amount[p] > 0.0) {
@@ -261,15 +273,17 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         }
         auto q = phase_energy(*c.model, at.temperature, at.pressure, at.volume[p], at.composition[p],
             report.standard_over_rt, report.work, &at.derivative[p]);
-        double normalization = -1.0, charge = 0.0, potential = 0.0, residual = 0.0;
+        double normalization = -1.0, charge = 0.0, potential = 0.0, residual = 0.0, log_normalization = -1.0, log_charge = 0.0;
         for (auto i : c.problem.phases[p].support) {
             normalization += at.composition[p][i]; charge += z[i] * at.composition[p][i];
             potential += at.composition[p][i] * report.plane_over_rt[i];
             residual += at.composition[p][i] * (std::log(at.composition[p][i] / at.volume[p])
                 + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i] - report.plane_over_rt[i]);
             report.candidate_coordinates.push_back(std::log(at.composition[p][i]));
+            const double logged = std::exp(report.candidate_coordinates.back());
+            log_normalization += logged; log_charge += z[i] * logged;
         }
-        if (std::abs(normalization) > policy::COMPOSITION_SUM_TOLERANCE.value || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value)
+        if (std::max({std::abs(normalization), std::abs(charge), std::abs(log_normalization), std::abs(log_charge)}) > policy::COMPOSITION_SUM_TOLERANCE.value)
             throw std::invalid_argument("stability candidate arithmetic feasibility failure");
         report.candidate_coordinates.push_back(at.amount[p]);
         report.candidate_coordinates.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature,
@@ -278,9 +292,27 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         q["chemical_plus_electric_contraction"] = residual;
         q["present_identity_defect_over_rt"] = q["tpd_over_rt"] - present_phase_residual_distance(residual, q.at("pressure_row"));
         q["normalization_residual"] = normalization; q["charge_residual"] = charge;
+        candidate.quantities.push_back(std::move(q));
+    }
+    Eigen::VectorXd represented_rhs = Eigen::VectorXd::Zero(J.rows());
+    for (std::size_t k = 0; k < c.rank; ++k) represented_rhs(k) = c.balance[k];
+    Eigen::VectorXd logged_rhs = represented_rhs;
+    for (std::size_t j = 0; j < cells.size(); ++j) {
+        const auto [p, i] = cells[j];
+        const double represented = at.amount[p] * at.composition[p][i];
+        const double logged = at.amount[p] * std::exp(std::log(at.composition[p][i]));
+        if (!(represented > 0.0) || !(logged > 0.0)) throw std::invalid_argument("stability correction destroys positive support");
+        represented_rhs -= J.col(j) * represented; logged_rhs -= J.col(j) * logged;
+        const double displacement = std::abs(represented - inventory[p][i]) + std::abs(logged - represented);
+        candidate.correction_norm += displacement;
+        candidate.feasibility_estimate += displacement * std::abs(mu(j));
+    }
+    if (!represented_rhs.allFinite() || !logged_rhs.allFinite()
+        || std::max(represented_rhs.lpNorm<Eigen::Infinity>(), logged_rhs.lpNorm<Eigen::Infinity>()) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
+        throw std::invalid_argument("stability candidate arithmetic feasibility failure");
+    for (auto& q : candidate.quantities) {
         q["correction_l1_mol"] = candidate.correction_norm;
         q["feasibility_estimate_over_rt"] = candidate.feasibility_estimate;
-        candidate.quantities.push_back(std::move(q));
     }
     report.present_phases = candidate.quantities;
     return candidate;
