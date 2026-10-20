@@ -269,7 +269,15 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
             if (r.status == "optimal") {
                 auto x = lp.getSolution().col_value;
                 if (fraction) x[n] /= tau_scale;
-                if (!diagnose(r, x)) r.status = "numerical_failure";
+                if (!fraction && !diagnose(r, x)) {
+                    r.witness.clear();
+                    r.balance_residual = r.normalization_residual = r.lower_bound_residual = NAN;
+                    r.status = lp.clearSolver() == HighsStatus::kError ? "numerical_failure" : run();
+                    r.termination = lp.modelStatusToString(lp.getModelStatus());
+                    r.lp_error = lp.getInfo().max_primal_infeasibility;
+                    if (r.status == "optimal") x = lp.getSolution().col_value;
+                }
+                if (r.status != "optimal" || !diagnose(r, x)) r.status = "numerical_failure";
                 else {
                     r.maximum = x[i] * (fraction ? 1.0 : c.feed_total);
                     if (fraction && x[i] > 0.0) r.log_fraction = std::log(x[i]);
