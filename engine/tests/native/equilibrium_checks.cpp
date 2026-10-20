@@ -30,6 +30,7 @@ void check_phase_removal_inventory();
 void check_tangent_plane_curvature();
 void check_tangent_plane_admission();
 void check_trace_ion_curvature();
+void check_trial_refinement();
 void check_normalized_reaction_affinity();
 void check_reacting_liquid_split();
 void check_declared_reacting_liquid_split();
@@ -81,6 +82,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
+        {{"native.equilibrium.trial-refinement", "trial-refinement", "Automatic_fast"}, check_trial_refinement},
         {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},
         {{"native.equilibrium.reacting-liquid-split", "TPD", "Automatic_fast"}, check_reacting_liquid_split},
         {{"native.equilibrium.declared-reacting-liquid-split", "TPD", "Automatic_fast"}, check_declared_reacting_liquid_split},

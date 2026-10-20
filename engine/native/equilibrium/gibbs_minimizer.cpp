@@ -795,7 +795,7 @@ static EquilibriumResult run_driver_once(
     const HelmholtzModel& model, const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
-    std::shared_ptr<const OptimizerState> warm, bool predicted, bool* initialized_warm = nullptr
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, bool* initialized_warm = nullptr
 ) {
     const double row_tolerance = declared.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
@@ -944,6 +944,8 @@ static EquilibriumResult run_driver_once(
         // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
         double best_raw = scope.diagnostics_on() ? maximum_abs(compiled.trace_moiety_relative(at, rows_before)) : 0.0;
         double ratio = 1.0;
+        bool trial_recovery = false;
+        double trial_scale = 1.0;
         const bool detailed = scope.diagnostics_on();
         std::size_t final_step = 0;
         bool stopped = false;
@@ -975,7 +977,7 @@ static EquilibriumResult run_driver_once(
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
             if (free_amount_newton && lu.rank() != n) { stop("Jacobian rank"); break; }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
-            if (free_amount_newton && !delta.allFinite()) { stop("nonfinite direction"); break; }
+            if ((free_amount_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
             bool positive = true;
             for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
@@ -1029,17 +1031,20 @@ static EquilibriumResult run_driver_once(
             });
             if (correction_stop && !final_correction) { stop("scaled correction"); break; }
 
-            bool accepted = false;
+            bool accepted = false, representable = false;
             // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
-            for (const double alpha : {1.0, 0.5, 0.25}) {
+            for (const double damping : {1.0, 0.5, 0.25}) {
+                const double alpha = (trial_recovery ? trial_scale : 1.0) * damping;
                 if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;
                 if (expired()) { stop("elapsed budget"); break; }
                 std::vector<double> candidate = full;
                 for (Eigen::Index i = 0; i < n; ++i)
                     candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
+                representable = representable || candidate != full;
+                if (trial_recovery && candidate == full) continue;
                 if (free_amount_newton && !inside_box(candidate)) {
                     if (detailed) scope.probe("polish_trial_bounds", candidate, static_cast<std::uint32_t>(step));
                     continue;
@@ -1063,14 +1068,15 @@ static EquilibriumResult run_driver_once(
                 const double after = maximum_abs(compiled.trace_moiety_relative(at_candidate, rows_after));
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
-                    || after < (extension ? ratio : 1.0) * defect;
+                    || after < (extension && !trial_recovery ? ratio : 1.0) * defect;
                 if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
                     after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,
                     static_cast<double>(trial_index)}, step,
-                    final_correction ? "final correction" : admit ? "raw_contraction" : extension ? "extension ratio" : "raw noncontraction");
+                    final_correction ? "final correction" : admit ? "raw_contraction" : extension && !trial_recovery ? "extension ratio" : "raw noncontraction");
                 else scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
                 if (!admit) continue;
+                if (trial_recovery) trial_scale = std::min(1.0, 2.0 * alpha);
                 if (!final_correction) ratio = after / defect;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
@@ -1083,7 +1089,15 @@ static EquilibriumResult run_driver_once(
                 accepted = true;
                 break;
             }
-            if (!accepted) { stop("no accepted trial"); break; }
+            if (!accepted) {
+                if (expired()) { stop("elapsed budget"); break; }
+                if (refine_trial && !representable) { stop("no representable progress"); break; }
+                if (trial_recovery) trial_scale *= 0.125;
+                else if (refine_trial && best_classified > row_tolerance) {
+                    trial_recovery = true;
+                    scope.probe("trial_recovery_begin", {defect, classified_before}, step);
+                } else { stop("no accepted trial"); break; }
+            }
             if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) { capped = true; stop("iteration cap"); }
             if (final_correction) { corrected = true; stop("final correction"); break; }
         }
@@ -1334,9 +1348,9 @@ EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
-    std::shared_ptr<const OptimizerState> warm, bool predicted
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial
 ) {
-    if (!warm || newton) return run_driver_once(model, compiled, std::move(initial), std::move(result), scope, attempt, audit, limits, newton, {}, predicted);
+    if (!warm || newton) return run_driver_once(model, compiled, std::move(initial), std::move(result), scope, attempt, audit, limits, newton, {}, predicted, refine_trial);
     DriverLimits shared = limits ? *limits : DriverLimits{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
         std::chrono::steady_clock::time_point::max()};
     const auto* work = limits ? limits : &shared;
@@ -1344,14 +1358,14 @@ EquilibriumResult run_driver(
     bool initialized = false;
     try {
         core::Scope warm_scope("equilibrium_warm_attempt");
-        tried = run_driver_once(model, compiled, initial, result, warm_scope, attempt, &tried, work, false, warm, predicted, &initialized);
+        tried = run_driver_once(model, compiled, initial, result, warm_scope, attempt, &tried, work, false, warm, predicted, refine_trial, &initialized);
         if (!initialized) return tried;
         if (tried.success) return tried;
     } catch (const std::exception& error) { scope.probe("warm_failed", {}, 0, error.what()); }
     scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
     if (audit) *audit = tried;
     core::Scope cold_scope("equilibrium_cold_fallback");
-    auto cold = run_driver_once(model, compiled, std::move(initial), result, cold_scope, attempt, audit, work, false, {}, predicted);
+    auto cold = run_driver_once(model, compiled, std::move(initial), result, cold_scope, attempt, audit, work, false, {}, predicted, refine_trial);
     StageWork stages; stages.add(tried); stages.report(cold);
     if (audit) *audit = cold;
     return cold;
