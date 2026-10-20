@@ -29,3 +29,11 @@ data/packets/el-guendouzi-2004-licl-nacl-observations/*/observations/*.csv -text
 # Empty terminal TSV fields retain their tab delimiters.
 analyses/2026-reactive-caloric-actions/results/main-2026-10-06/*.tsv whitespace=-blank-at-eol
 analyses/2026-reactive-caloric-actions/results/slice4/*.tsv whitespace=-blank-at-eol
+
+# Named-release evidence keeps the producer's original CSV/TSV bytes.
+analyses/*/results/main-8298c602/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-addition-enthalpy-fitting/results/main-8298c602-columns.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification.tsv -text whitespace=-blank-at-eol
+# Raw comparator logs retain trailing blanks and their final empty line.
+analyses/2026-tpd-phase-discovery/results/main-8298c602/feos.log whitespace=-blank-at-eol,-blank-at-eof
+analyses/2026-tpd-phase-discovery/results/main-8298c602/initial-output-failure/feos.log whitespace=-blank-at-eol,-blank-at-eof
