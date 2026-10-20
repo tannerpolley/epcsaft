@@ -318,7 +318,7 @@ const int native_image = open_image(reinterpret_cast<const void*>(&interrupted))
 // Every member of a request aggregate in declaration order, named by position: the structured binding stops
 // compiling when a member is added or removed, so a worker's request cannot silently omit one.
 #define FIELDS(T, ...) auto fields(T& item) { auto& [__VA_ARGS__] = item; return std::tie(__VA_ARGS__); }
-FIELDS(FixedParameters, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G)
+FIELDS(FixedParameters, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)
@@ -346,12 +346,13 @@ auto fields(equilibrium::EquilibriumProblem& item) {
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {
-    static_assert(sizeof(Parameters) == sizeof(FixedParameters) + 2 * sizeof(double) + 15 * sizeof(std::vector<double>));
+    static_assert(sizeof(Parameters) == sizeof(FixedParameters) + 2 * sizeof(double) + 17 * sizeof(std::vector<double>));
     return std::tuple_cat(fields(static_cast<FixedParameters&>(v)), std::tie(v.ionic_region_relative_permittivity,
         v.born_c_dielectric, v.packing_diameter_angstrom, v.debye_huckel_diameter_angstrom, v.born_diameter_angstrom,
         v.ion_suppression_coefficient, v.segment_count, v.sigma_constant, v.dispersion_energy_over_k, v.k_ij,
         v.k_ij_reciprocal_temperature_slope, v.l_ij, v.association_energy_over_k, v.association_volume,
-        v.dielectric_volume_m3_per_mol, v.dielectric_temperature_k, v.temperature_law_coefficient));
+        v.dielectric_volume_m3_per_mol, v.dielectric_temperature_k, v.temperature_law_coefficient,
+        v.cation_pair_mixing, v.cation_triple_mixing));
 }
 
 // Whole values in one message, written or read in memory: trivially copyable bytes; a size, then the elements of

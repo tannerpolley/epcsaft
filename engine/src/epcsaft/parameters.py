@@ -11,7 +11,7 @@ ParameterError = _core.ParameterError
 # Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
 _KEYS = {*"schema schema_version components correlations pairs model_families model_coefficients topology".split(),
          *"document_id document_version purpose sources domains materialization".split(),
-         *"reaction_correlations empirical_density_correction".split()}
+         *"reaction_correlations empirical_density_correction cation_mixing".split()}
 
 
 def _mapping(value: object, name: str) -> Mapping[str, object]:
@@ -103,6 +103,28 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
 
 
+def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> dict[str, Any] | None:
+    if "cation_mixing" not in document:
+        return None
+    record = dict(_mapping(document["cation_mixing"], "cation_mixing"))
+    names = [record.get("solvent"), *_array(record.get("cations"), "cations"), record.get("anion")]
+    available = {c["component_id"] for c in document["components"]}
+    if (
+        set(record) != {"solvent", "cations", "anion", "coefficients"}
+        or len(names) != 4
+        or len(_array(record.get("coefficients"), "cation_mixing coefficients")) != 2
+        or any(not isinstance(n, str) or n not in available for n in names)
+        or len(set(names)) != 4
+    ):
+        raise ParameterError("cation_mixing requires four distinct known participants and two coefficients")
+    record["cations"] = sorted(cast(list[str], names[1:3]))
+    if not set(names[1:3]) <= set(selected):
+        return None
+    if not set(names) <= set(selected):
+        raise ParameterError("cation_mixing selection omits its solvent or anion")
+    return record
+
+
 def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[str]]], *,
                        k_ij: Mapping[tuple[str, str], float] | None = None,
                        l_ij: Mapping[tuple[str, str], float] | None = None) -> dict[str, object]:
@@ -116,6 +138,13 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         document = json.loads((Path(root) / packet / "parameters" / "parameters.json").read_text())
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1 or set(document) - _KEYS:
             raise _core.ParameterError(f"{packet} is not a schema 1 parameter document the Engine reads")
+        mixing = _cation_mixing(document, [name for _, ids in packets for name in ids])
+        if mixing is not None:
+            if not {mixing["solvent"], *mixing["cations"], mixing["anion"]} <= set(names):
+                raise ParameterError("cation_mixing must come from one complete source selection")
+            if merged.get("cation_mixing", mixing) != mixing:
+                raise ParameterError("conflicting cation_mixing declarations")
+            merged["cation_mixing"] = mixing
         chosen = set(names)
         if missing := sorted(chosen - {c["component_id"] for c in document["components"]}):
             raise _core.ParameterError(f"{packet} has no component {missing[0]}")
@@ -225,6 +254,13 @@ class Parameters:
         positions = {item: index for index, item in enumerate(selected_ids)}
         entries: list[_core.ParameterEntry] = []
         laws: dict[str, tuple[int, Mapping[str, object]]] = {}
+        if mixing := _cation_mixing(document, selected):
+            indices = [positions[name] for name in (mixing["solvent"], *mixing["cations"], mixing["anion"])]
+            for value in _array(mixing["coefficients"], "cation_mixing coefficients"):
+                item = _mapping(value, "cation_mixing coefficient")
+                if set(item) != {"identity", "family", "value"} or item.get("family") not in ("cation_pair_mixing", "cation_triple_mixing") or set(_mapping(item.get("value"), "cation_mixing value")) != {"magnitude", "unit"}:
+                    raise ParameterError("cation_mixing needs pair and triple coefficients")
+                entries.append(_entry(item["identity"], cast(str, item["family"]), indices, item["value"], "cation_mixing"))
         # Document families keep their native field name unless renamed here.
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
         coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",

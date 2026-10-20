@@ -347,6 +347,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "figiel-2025-chloride-mixture-refit",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/2",
+      "packet_fingerprint": "04b31504a339f0cfc2c67ddde57aa802acfe9cc6ce4c3811d214178a9b63c795",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "yao-1992-licl-mgcl2-observations",
       "packet_version": "1",
       "packet_path": "data/packets/yao-1992-licl-mgcl2-observations/1",

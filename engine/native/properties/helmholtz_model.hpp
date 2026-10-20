@@ -20,6 +20,7 @@ namespace epcsaft {
 
 using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
+void validate_cation_mixing(const Parameters& parameters);
 
 // PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
 // Phase Hessians differentiate only V, positive amounts and (unless isothermal) T; other
@@ -160,6 +161,7 @@ struct State final {
     double debye_huckel = 0.0;
     double born = 0.0;
     double dipolar = 0.0;
+    double cation_mixing = 0.0;
     double bulk_relative_permittivity = 0.0;
     double residual_helmholtz = 0.0;
     double compressibility_factor = 0.0;

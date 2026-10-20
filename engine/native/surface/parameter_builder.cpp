@@ -1,7 +1,7 @@
 #include "surface/parameter_builder.hpp"
 
 #include "core/trace.hpp"
-#include "properties/helmholtz_tape.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include <algorithm>
 #include <array>
@@ -40,6 +40,8 @@ bool symmetric_field(const std::string& field) {
 
 Index canonical_index(const ParameterEntry& entry) {
     Index result = entry.index;
+    if (entry.field.rfind("cation_", 0) == 0 && result.size() == 4 && result[1] > result[2])
+        std::swap(result[1], result[2]);
     if (symmetric_field(entry.field) && result.size() == 2 && result[0] > result[1]) {
         std::swap(result[0], result[1]);
     }
@@ -67,7 +69,8 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         return 1.0;
     } else if (expected == "molar volume" && entry.unit == "liter / mole") {
         return 1.0e-3;
-    } else if ((expected == "debye" || expected == "debye ** 2" || expected == "debye * angstrom" || expected == "angstrom ** 3")
+    } else if ((expected == "debye" || expected == "debye ** 2" || expected == "debye * angstrom" || expected == "angstrom ** 3"
+                || expected == "kilogram / mole" || expected == "kilogram ** 2 / mole ** 2")
                && entry.unit == expected) {
         return 1.0;
     }
@@ -233,6 +236,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::tuple<std::string, Index>> seen;
     std::set<std::pair<std::string, std::size_t>> component_fields;
     std::set<std::string> scalar_fields;
+    std::set<std::string> mixing_identities;
     double ion_fraction_suppression = 0.0;
     std::vector<Rule> rules;
     std::set<std::pair<std::size_t, std::size_t>> no_cross;
@@ -277,7 +281,21 @@ Parameters build_parameters(const ParameterDocument& document) {
         const auto key = std::make_tuple(owned.field, canonical_index(owned));
         if (!seen.emplace(key).second) reject("duplicate " + where(entry));
         double factor = 1.0;
-        if (entry.field == "molar_mass") {
+        if (entry.field == "cation_pair_mixing" || entry.field == "cation_triple_mixing") {
+            require_index(entry, 4, "solvent/cation/cation/anion indices");
+            std::array<int, 4> topology{};
+            const auto indices = canonical_index(entry);
+            for (std::size_t r = 0; r < 4; ++r) {
+                if (indices[r] >= components) reject("cation mixing index for " + where(entry));
+                topology[r] = static_cast<int>(indices[r]);
+            }
+            if (entry.identity.empty() || !mixing_identities.insert(entry.identity).second) reject("cation mixing identity");
+            if (result.cation_mixing.empty()) result.cation_mixing.push_back(topology);
+            if (result.cation_mixing.front() != topology) reject("conflicting cation mixing topology");
+            const bool pair = entry.field == "cation_pair_mixing";
+            auto& values = pair ? result.cation_pair_mixing : result.cation_triple_mixing;
+            values.push_back(entry.magnitude * unit_factor(entry, pair ? "kilogram / mole" : "kilogram ** 2 / mole ** 2"));
+        } else if (entry.field == "molar_mass") {
             factor = unit_factor(entry, "molar mass");
             const auto i = component_index(entry, components);
             component_fields.emplace(entry.field, i);
@@ -602,6 +620,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.ionic_dispersion = {};
         result.permittivity_form = {};
     }
+    validate_cation_mixing(result);
     return result;
 }
 
@@ -627,7 +646,7 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
         "dispersion_energy_over_k", "k_ij", "l_ij", "association_energy_over_k", "association_volume", "born_diameter",
         "debye_huckel_diameter", "packing_diameter", "ion_suppression_coefficient", "born_c_dielectric",
         "ionic_region_relative_permittivity", "k_ij_reciprocal_temperature_slope", "dielectric_volume",
-        "dielectric_temperature", "temperature_law_coefficient"});  // ParameterFamily order
+        "dielectric_temperature", "cation_pair_mixing", "cation_triple_mixing", "temperature_law_coefficient"});  // ParameterFamily order
     const Parameters base = build_parameters(start);
     const auto charged = std::find_if(base.charge_number.begin(), base.charge_number.end(), [](int z) { return z != 0; });
     ParameterDocument result = start;
@@ -635,6 +654,7 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
     const auto& laws = base.temperature_law_coefficient_identity;  // a law term's slot is its identity's position
     for (auto& entry : result.entries) {
         std::size_t k = entry.index.empty() ? 0 : entry.index[0];
+        if (entry.field == "cation_pair_mixing" || entry.field == "cation_triple_mixing") k = 0;
         if (entry.index.size() == 2)  // a site pair or a component pair
             k = k * (entry.field.rfind("association_", 0) == 0 ? start.site_component.size() : start.component_ids.size()) + entry.index[1];
         // The builder spreads the scalar suppression coefficient over the charged slots.
