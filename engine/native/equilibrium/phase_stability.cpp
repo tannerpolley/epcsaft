@@ -448,6 +448,10 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     q["arithmetic_error_estimate_over_rt"] = arithmetic;
     if (options.evaluate_supplied_trials) { trial.evidence = "evaluated"; return; }
     trial.evidence = "indeterminate";
+    if (std::isfinite(slope) && std::isfinite(uncertainty) && uncertainty >= 0.0 && slope >= -uncertainty) {
+        trial.evidence = "no_resolved_descent";
+        return;
+    }
     if (!descent_resolved(q.at("tpd_over_rt"), slope, uncertainty)) return;
     const auto& z = c.model->parameters().charge_number;
     double beta = capacity / 2.0;

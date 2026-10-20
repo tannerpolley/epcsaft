@@ -47,7 +47,13 @@ cost diagnostics; they never determine a thermodynamic or solver decision.
 - **D9/D10:** finite conserved descent with propagated estimated uncertainty is
   numerical evidence, distinct from a proved instability witness requiring
   justified total bounds. Finite no-witness search never certifies global
-  stability. This is the sole ADR for these method choices.
+  stability. `no_resolved_descent` records absence of numerically resolved
+  descent for an admitted trial under the finite-search policy in ALG-STABILITY,
+  including a slope whose sign is unresolved by its estimated error. It does not
+  establish the exact slope or plane sign, optimizer convergence, or global
+  stability. A whole-search no-witness conclusion requires no resolved descending
+  trial and retains every unresolved cause. This is the sole ADR for these
+  method choices.
 
 Normalized reacting trials are search compositions; mole-changing reactions
 need not have zero affinity there. Full added declarations restore original

@@ -459,6 +459,23 @@ void check_tangent_plane_admission() {
     parameters.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
     parameters.dielectric_temperature_k = {1403.0, 0.0, 0.0};
     const epcsaft::HelmholtzModel model(parameters);
+    // #675: the admitted aqueous near-pure trial retains its unresolved slope and error.
+    auto aqueous = equilibrium_support::flash(3); aqueous.feed.values = {0.98, 0.01, 0.01};
+    aqueous.temperature = FreeValue::fixed(298.15); aqueous.pressure = FreeValue::fixed(1000.0);
+    aqueous.solver_options.values[epcsaft::policy::row] = 1e-10;
+    const auto aqueous_system = compile_problem(model, aqueous);
+    const auto aqueous_state = solve_compiled(aqueous_system); CHECK(aqueous_state.success);
+    const auto aqueous_report = stability_test(aqueous_system, aqueous_state);
+    const auto near_pure = std::find_if(aqueous_report.trials.begin(), aqueous_report.trials.end(), [](const auto& trial) {
+        return trial.seed == "near-pure-0" && trial.phase.support.size() == 3;
+    });
+    CHECK(near_pure != aqueous_report.trials.end());
+    CHECK(near_pure->evidence == "no_resolved_descent" && !near_pure->resolved_descent);
+    const auto& aqueous_q = near_pure->quantities;
+    CHECK(std::isfinite(aqueous_q.at("tpd_over_rt")) && aqueous_q.at("tpd_over_rt") < 0.0);
+    CHECK(std::isfinite(aqueous_q.at("donor_slope_over_rt")) && std::isfinite(aqueous_q.at("descent_error_estimate_over_rt")));
+    CHECK(aqueous_q.at("descent_error_estimate_over_rt") >= 0.0
+        && aqueous_q.at("donor_slope_over_rt") >= -aqueous_q.at("descent_error_estimate_over_rt"));
     const std::vector<double> raw{0.98, 0.0100000001, 0.0099999999};
     const auto rebuilt = reconstruct_trial_composition(raw, {0, 1, 2}, parameters.charge_number);
     auto off_normalized = raw; for (double& amount : off_normalized) amount *= 1.001;
