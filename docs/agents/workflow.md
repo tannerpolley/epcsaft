@@ -99,3 +99,16 @@ The lead checks reviewer findings against source and evidence; a build,
 readiness label or reviewer opinion is not numerical acceptance. When a
 capability claim changes, rewrite the issue body's current state and update
 repository evidence together.
+
+## Closeout
+
+After each merge, and in a regular sweep, the lead runs
+`tools/prune-worktrees WORKTREE ...` (owner, 2026-10-20), naming each task
+worktree whose agent task is terminal with no queued turn and whose pull request
+is merged or issue closed. The tool refuses a worktree with a process inside it
+or an open pull request, archives the rest through `tools/archive-worktree`, and
+deletes their local branches and any remote branch whose tip is on
+`origin/main`. Unmerged branches are kept unless `--archive-unmerged` is given
+and their issue is closed; they are then first tagged `archive/<branch>` on the
+exact commit. `--dry-run` plans without changing anything. Gate source
+checkouts under `build/pr-gates/` are left to `tools/check-pr-native`.
