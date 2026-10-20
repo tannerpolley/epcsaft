@@ -1,3 +1,12 @@
+"""Declare feed, phase and reaction inputs for the single native equilibrium driver.
+
+Temperatures are K, pressure Pa, fluid amounts mol, and total energy
+constraints J or J/K. Pinned phase amounts are fractions of the compiled
+feed molar total, not absolute mol. Mapping keys are ordered into model
+component order; unknown species are refused. Declarations do not solve
+thermodynamic equations until compiled or evaluated by the native driver.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -17,16 +26,96 @@ class _Model(_Species, Protocol):
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
+    """Declare a free temperature, pressure or phase amount.
+
+    Attributes
+    ----------
+    guess : float or None
+        Initial temperature in K or pressure in Pa when used for a free
+        intensive. ``None`` leaves that guess absent. Phase-amount conversion
+        ignores this field and requests a native free amount.
+
+    Notes
+    -----
+    A free phase amount is solved in mol; a ``Free`` intensive uses the unit
+    of its enclosing ``Problem`` field. Physical admissibility is checked by
+    the native compiler, not this dataclass.
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Free
+    >>> Free(300.0).guess
+    300.0
+    >>> Free().guess is None
+    True
+    """
+
     guess: float | None = None
 
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Pinned:
+    """Pin a phase amount to a fraction of the compiled feed molar total.
+
+    Attributes
+    ----------
+    value : float
+        Dimensionless fraction, admitted from zero to one for fluids.
+        ``Pinned(0.0)`` declares an incipient fluid or an absent solid;
+        solid declarations admit only the zero pin.
+
+    Notes
+    -----
+    The native compiler forms the pinned molar amount as this fraction times
+    the compiled feed total in mol. This dataclass performs no range check.
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Pinned
+    >>> Pinned(0.25).value
+    0.25
+    """
+
     value: float
 
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Phase:
+    """Declare one liquid or vapor phase and its species support.
+
+    Attributes
+    ----------
+    name : str
+        Phase identifier used by observations and returned phase order.
+    support : sequence of str or None
+        Species with phase coordinates; omitted support is completed natively.
+        Vapor completion excludes charged species. An explicit empty support
+        or a vapor support containing a charged species is refused at compile.
+    amount : Free or Pinned
+        Free amount solved in mol, or pinned fraction of compiled feed mol.
+        Default is ``Free()``; its ``guess`` is not transported for amounts.
+    kind : {'liquid', 'vapor'} or None
+        Required physical branch when compiled; ``None`` is refused then.
+    composition_guess : sequence or mapping
+        Dimensionless mole-fraction guess in declared support's native component
+        order; mappings are reordered and omitted supported species get zero.
+    packing_guess : float or None
+        Dimensionless initial packing fraction; ``None`` leaves it absent.
+
+    Notes
+    -----
+    Sequences/mappings are copied at declaration. Native support, charge,
+    branch and start admission follow ALG-EQUILIBRIUM. Declaring a branch does
+    not establish its existence or global stability.
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Phase
+    >>> phase = Phase('L', kind='liquid', support=['water'])
+    >>> phase.support
+    ('water',)
+    """
+
     name: str
     _: KW_ONLY
     support: Sequence[str] | None = None
@@ -44,6 +133,28 @@ class Phase:
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
 class Discover:
+    """Request finite native phase discovery instead of a fixed phase list.
+
+    Attributes
+    ----------
+    trials : sequence of Phase or None
+        Trial phase declarations. ``None`` selects native defaults;
+        a supplied sequence is copied and retains its support/branch choices.
+    declaration_budget : int or None
+        Maximum number of declaration-solve attempts, including recovery
+        attempts; this is not a phase-count limit. None uses native policy.
+    trial_budget : int or None
+        Native limit on trial solves; ``None`` uses native policy.
+
+    Notes
+    -----
+    Problem sets topology_declared false for discovery. Use solve_equilibrium
+    at fixed positive T (K) and P (Pa), without solids; compile_problem requires
+    declared phases. Free intensives and discovery with solids are refused.
+    A finite search without a resolved descending split is not a global stability
+    certificate; inspect diagnostics and exhausted budgets (ALG-STABILITY).
+    """
+
     trials: Sequence[Phase] | None = None
     declaration_budget: int | None = None
     trial_budget: int | None = None
@@ -54,6 +165,30 @@ class Discover:
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Feed:
+    """Declare feed values and their physical basis before native conversion.
+
+    Attributes
+    ----------
+    basis : FeedKind
+        Native amounts, mole fractions, mass fractions or molalities choice.
+    values : mapping of str to float
+        Species values: mol for amounts; dimensionless for mole or mass
+        fractions; mol/kg solvent for solutes on the molality basis, with
+        relative solvent mol amounts. Missing model species
+        map to zero. Values are not copied by this dataclass.
+    solvent_mass_kg : float or None
+        Positive total solvent mass in kg for the molality basis; otherwise
+        unused by the convenience constructors.
+    solvent : sequence of str
+        Solvent identifiers for molality conversion, copied to a tuple.
+
+    Notes
+    -----
+    Prefer the four basis-specific subclasses. Native conversion checks finite
+    nonnegative inputs and composition sums. Fractions are admitted within the
+    native sum tolerance, without silent renormalization.
+    """
+
     basis: _core.FeedKind
     values: Mapping[str, float]
     _: KW_ONLY
@@ -65,21 +200,132 @@ class Feed:
 
 
 class MoleFractions(Feed):
+    """Declare a feed by species mole fractions.
+
+    Parameters
+    ----------
+    values : mapping of str to float
+        Dimensionless species mole fractions; missing species are zero.
+
+    Notes
+    -----
+    Native conversion uses a one-mol feed basis and requires the sum to be one
+    within the composition tolerance; it does not renormalize.
+    The inherited ``Feed`` attributes retain the supplied basis and values.
+    Physical input validation occurs at native compilation.
+    """
+
     def __init__(self, values: Mapping[str, float]) -> None:
+        """Initialize the mole fractions feed declaration.
+
+        Parameters
+        ----------
+        values : mapping of str to float
+            Feed values on the basis documented by ``MoleFractions``.
+
+        Notes
+        -----
+        No equilibrium calculation occurs here; native feed admission is deferred
+        until compilation. See the class for units and normalization.
+        """
         super().__init__(_core.FeedKind.MoleFractions, values, solvent_mass_kg=None)
 
 
 class Amounts(Feed):
+    """Declare an extensive feed in species mol.
+
+    Parameters
+    ----------
+    values : mapping of str to float
+        Nonnegative total species amounts in mol; missing species are zero.
+
+    Notes
+    -----
+    The native feed total is the sum of the declared species mol. Reaction
+    balances and phase amounts use this extensive basis.
+    The inherited ``Feed`` attributes retain the supplied basis and values.
+    Physical input validation occurs at native compilation.
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Amounts
+    >>> Amounts({'water': 2.0}).values['water']
+    2.0
+    """
+
     def __init__(self, values: Mapping[str, float]) -> None:
+        """Initialize the amounts feed declaration.
+
+        Parameters
+        ----------
+        values : mapping of str to float
+            Feed values on the basis documented by ``Amounts``.
+
+        Notes
+        -----
+        No equilibrium calculation occurs here; native feed admission is deferred
+        until compilation. See the class for units and normalization.
+        """
         super().__init__(_core.FeedKind.Amounts, values, solvent_mass_kg=None)
 
 
 class MassFractions(Feed):
+    """Declare a feed by species mass fractions.
+
+    Parameters
+    ----------
+    values : mapping of str to float
+        Dimensionless species mass fractions; missing species are zero.
+
+    Notes
+    -----
+    Native conversion divides by component molar masses (kg/mol) on a one-kg feed basis;
+    the resulting mol amounts are not normalized to one mol. Input mass fractions must sum to one
+    within the composition tolerance.
+    The inherited ``Feed`` attributes retain the supplied basis and values.
+    Physical input validation occurs at native compilation.
+    """
+
     def __init__(self, values: Mapping[str, float]) -> None:
+        """Initialize the mass fractions feed declaration.
+
+        Parameters
+        ----------
+        values : mapping of str to float
+            Feed values on the basis documented by ``MassFractions``.
+
+        Notes
+        -----
+        No equilibrium calculation occurs here; native feed admission is deferred
+        until compilation. See the class for units and normalization.
+        """
         super().__init__(_core.FeedKind.MassFractions, values, solvent_mass_kg=None)
 
 
 class Molalities(Feed):
+    """Declare solute molalities and a solvent mass basis.
+
+    Parameters
+    ----------
+    values : mapping of str to float
+        Solute molalities in mol/kg solvent; supplied solvent entries are
+        relative solvent amounts in mol. Missing species are zero.
+    solvent : sequence of str
+        Solvent identifiers for native conversion.
+    solvent_mass_kg : float
+        Positive total solvent mass in kg.
+
+    Notes
+    -----
+    Native conversion uses the solvent mass (kg) and component molar masses
+    (kg/mol). Solute molality times total solvent kg gives solute mol; solvent
+    amounts are rescaled to the declared solvent mass. A single omitted solvent
+    amount is inferred from its molar mass; omitted mixed-solvent ratios are
+    refused.
+    The inherited ``Feed`` attributes retain the supplied basis and values.
+    Physical input validation occurs at native compilation.
+    """
+
     def __init__(
         self,
         values: Mapping[str, float],
@@ -87,16 +333,72 @@ class Molalities(Feed):
         solvent: Sequence[str],
         solvent_mass_kg: float,
     ) -> None:
+        """Initialize the molalities feed declaration.
+
+        Parameters
+        ----------
+        values : mapping of str to float
+            Feed values on the basis documented by ``Molalities``.
+        solvent : sequence of str
+            Solvent identifiers for native conversion.
+        solvent_mass_kg : float
+            Positive total solvent mass in kg.
+
+        Notes
+        -----
+        No equilibrium calculation occurs here; native feed admission is deferred
+        until compilation. See the class for units and normalization.
+        """
         super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
 
 
 class NeutralReference:
-    """Pure neutral solvent and an explicit charge-neutral molality dilution path."""
+    """Declare a pure neutral solvent and a charge-neutral molality dilution path.
+
+    Attributes
+    ----------
+    solvent : str
+        Pure neutral solvent component identifier.
+    solute_molality_ratios : mapping of str to float
+        Dimensionless solute molality ratios defining the neutral dilution path,
+        copied at construction. Native admission requires a finite positive ratio
+        for every non-solvent model component and zero for the solvent. Omitted
+        species map to zero, so omitting a non-solvent component is refused.
+    standard_molality_mol_per_kg : float
+        Positive standard molality in mol/kg solvent.
+    species_reference : mapping of str to SpeciesReference
+        Copied per-species standard choices. If nonempty, unspecified species
+        default to infinite dilution and the solvent defaults to pure liquid.
+
+    Notes
+    -----
+    Native reference admission checks charge neutrality, support, positive
+    standard molality and branch realizability. This is a standard-state
+    conversion declaration, not new fitted thermochemistry (ALG-REFERENCE).
+    """
     __slots__ = ("solvent", "solute_molality_ratios", "standard_molality_mol_per_kg", "species_reference")
 
     def __init__(self, *, solvent: str, solute_molality_ratios: Mapping[str, float],
                  standard_molality_mol_per_kg: float,
                  species_reference: Mapping[str, _core.SpeciesReference] | None = None) -> None:
+        """Copy a neutral-solvent reference declaration.
+
+        Parameters
+        ----------
+        solvent : str
+            Identifier of the pure neutral solvent.
+        solute_molality_ratios : mapping of str to float
+            Dimensionless neutral dilution-path ratios.
+        standard_molality_mol_per_kg : float
+            Standard molality in mol/kg solvent.
+        species_reference : mapping of str to SpeciesReference, optional
+            Explicit species standards; omitted mapping is empty.
+
+        Notes
+        -----
+        Field meanings and native admission requirements are given by the class.
+        Construction copies mappings without evaluating a dilution limit.
+        """
         self.solvent = solvent
         self.solute_molality_ratios = dict(solute_molality_ratios)
         self.standard_molality_mol_per_kg = standard_molality_mol_per_kg
@@ -118,7 +420,44 @@ class NeutralReference:
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Reaction:
-    """Exactly one target; source-basis correlations also require an explicit reference."""
+    """Declare one stoichiometric reaction with exactly one target.
+
+    Attributes
+    ----------
+    stoichiometry : mapping of str to float
+        Dimensionless signed coefficients: products positive, reactants
+        negative. Missing species are zero, in model component order.
+    equilibrium_constant : float or None
+        Positive dimensionless K, not ln K or log10 K; absent when using another
+        target. Without a source reference it uses the EOS density standard.
+    name : str
+        Reaction identifier for named reaction fitting; default is empty.
+    affinity_j_per_mol : float or None
+        Standard reaction affinity target in J/mol of reaction as written;
+        native standard-energy constraint equals this value (``-RT ln K``).
+    correlation : ReactionLogPolynomial or None
+        Natural-log K(T) law; temperature in K, with its declared valid range
+        and standard-state identifier.
+    reference : ReactionReference or None
+        Explicit source basis and reference pressure in Pa for source-basis K
+        or correlations; no implicit molality/pressure conversion is inferred.
+
+    Notes
+    -----
+    Construction raises ``ParameterError`` unless exactly one of K, affinity
+    and correlation is supplied. Native compilation checks stoichiometry,
+    reference consistency and source applicability. The EOS activity is
+    ``(rho*x_i / (1 mol/m³))*exp(mu_res_i/(RT))``; K is the product of these
+    activities raised to signed stoichiometric coefficients (ALG-EQUILIBRIUM).
+    A fixed K alone does not supply arbitrary thermal derivatives.
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Reaction
+    >>> reaction = Reaction({'A': -1.0, 'B': 1.0}, equilibrium_constant=2.0)
+    >>> reaction.equilibrium_constant
+    2.0
+    """
     stoichiometry: Mapping[str, float]
     _: KW_ONLY
     equilibrium_constant: float | None = None
@@ -135,7 +474,34 @@ class Reaction:
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Solid:
-    """Pure stoichiometric solid S -> sum formula; one source constant, its reference at the source pressure."""
+    """Declare a pure stoichiometric solid dissolving into fluid species.
+
+    Attributes
+    ----------
+    name : str
+        Solid identifier.
+    formula : mapping of str to float
+        Dimensionless dissolution coefficients for ``S -> sum_i nu_i A_i``;
+        dissolved formula must be charge-neutral.
+    reference : ReactionReference
+        Source constant basis with reference pressure in Pa.
+    molar_volume_m3_per_mol : float
+        Positive pure-solid molar volume in m³/mol of formula units.
+    equilibrium_constant : float or None
+        Positive dimensionless source dissolution K, not its logarithm;
+        supply exactly one of this and ``correlation``.
+    correlation : ReactionLogPolynomial or None
+        Source natural-log K(T) law with temperature in K and valid interval.
+    amount : Free or Pinned
+        Free solid amount solved in mol of formula units, or ``Pinned(0.0)``
+        for the absent-solid condition; other pins are refused natively.
+
+    Notes
+    -----
+    Native compilation owns source-reference conversion, molar-volume pressure
+    correction and solid complementarity. No solid-solution or kinetic model is
+    declared here (ALG-EQUILIBRIUM, pure stoichiometric solids).
+    """
     name: str
     _: KW_ONLY
     formula: Mapping[str, float]
@@ -172,6 +538,66 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
 class Problem:
+    """Declare the physical specification for the one native equilibrium driver.
+
+    Attributes
+    ----------
+    phases : sequence of Phase or Discover
+        Ordered fluid phases, or a finite phase-discovery request.
+    T : float or Free
+        Fixed temperature in K or a free temperature declaration with K guess.
+    P : float or Free
+        Fixed pressure in Pa or a free pressure declaration with Pa guess.
+    feed : Feed
+        Species inventory with explicit amounts/fractions/molality basis.
+    reactions : sequence of Reaction
+        Stoichiometric reaction declarations, empty for nonreacting fluids.
+    standard_gibbs_j_per_mol : sequence of float
+        Species standard Gibbs energies in J/mol, in component order; empty
+        leaves native standard-reference completion to supplied inputs.
+    topology_declared : bool or None
+        Whether the phase topology is declared; ``None`` defaults true.
+        ``Discover`` always sets this false.
+    row_tolerance : float or None
+        Dimensionless tolerance for native scaled equation rows; ``None`` keeps
+        the native policy. It is not a physical uncertainty estimate.
+    solver_options : mapping of str to float or None
+        Native tolerances and work limits with the units of each named option.
+    enthalpy_j : float or None
+        Total extensive enthalpy constraint in J, on the compiled feed basis.
+    entropy_j_per_k : float or None
+        Total extensive entropy constraint in J/K, on the compiled feed basis.
+    neutral_reference : NeutralReference or None
+        Source standard-state conversion declaration.
+    critical : CriticalDeclaration or None
+        Critical-equation seed, including density in mol/m³; a solved necessary
+        condition is not a stability certificate or unique critical point.
+    envelope : EnvelopeCondition or None
+        Local envelope equation using natural-log temperature, pressure or
+        incipient/feed mole-fraction ratio with native dimensionless references.
+    azeotrope : bool
+        Request native azeotrope conditions; default false.
+    solids : sequence of Solid
+        Ordered pure stoichiometric solid declarations; default empty.
+
+    Notes
+    -----
+    The constructor copies phase/reaction/solid sequences and standard energies.
+    Native compilation checks support, charge, conserved inventory, number and
+    rank of equations, reference consistency and admitted caloric constraints.
+    All root finds, equilibrium iterations and continuation are native.
+    Returned diagnostics, not an optimizer stop alone, establish numerical
+    closure (ALG-EQUILIBRIUM and ALG-TERMINATION).
+
+    Examples
+    --------
+    >>> from epcsaft.equilibrium import Amounts, Phase, Problem
+    >>> problem = Problem(phases=[Phase('L', kind='liquid')], T=300.0,
+    ...                   P=100000.0, feed=Amounts({'water': 1.0}))
+    >>> problem.T, problem.P
+    (300.0, 100000.0)
+    """
+
     phases: Sequence[Phase] | Discover = ()
     T: float | Free
     P: float | Free
@@ -258,6 +684,37 @@ class Problem:
 
 
 def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
+    """Convert named problem fields into a Python equilibrium declaration.
+
+    Parameters
+    ----------
+    mapping : mapping of str to object
+        ``T`` in K, ``P`` in Pa, phase records, feed basis/values and optional
+        reactions, standard Gibbs energies (J/mol), topology, row tolerance,
+        solver options, neutral reference, total enthalpy (J) or entropy (J/K).
+        Intensives can be scalars, ``{'value': ...}`` or free/guess mappings.
+        Phase pins use dimensionless feed fractions.
+
+    Returns
+    -------
+    problem : Problem
+        Declaration only; no equilibrium solve has occurred.
+
+    Raises
+    ------
+    ParameterError
+        Unknown top-level key, missing intensive, invalid phase amount, feed
+        basis, record structure, reaction target or reference basis.
+    ValueError
+        A requested numeric mapping value cannot be converted to float.
+
+    Notes
+    -----
+    ``phases='discover'`` or a ``Discover`` object requests discovery. This
+    mapping reader does not accept the direct ``Problem`` fields ``critical``,
+    ``envelope``, ``azeotrope`` or ``solids``. Unknown species and physical
+    constraints are checked when the declaration is compiled with a model.
+    """
     allowed = {
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
         "row_tolerance", "solver_options", "neutral_reference", "enthalpy_j", "entropy_j_per_k",
@@ -420,12 +877,71 @@ def solve_equilibrium(
     problem: Problem | _core.EquilibriumProblem,
     start: _core.EquilibriumResult | None = None,
 ) -> _core.EquilibriumResult:
+    """Solve a declared phase/reaction problem in the native driver.
+
+    Parameters
+    ----------
+    model : Mixture or Pure
+        Fluid model whose component order names every declared species.
+    problem : Problem or _core.EquilibriumProblem
+        Physical specification, with T in K, P in Pa and declared feed basis.
+    start : EquilibriumResult, optional
+        Prior native result supplying a start; branch/layout admission remains
+        native and is not bypassed by a supplied result.
+
+    Returns
+    -------
+    result : EquilibriumResult
+        Temperature in K, pressure in Pa, phase amounts in mol and
+        dimensionless mole fractions in declared phase/component order, with
+        achieved residuals, stop causes and availability diagnostics.
+
+    Raises
+    ------
+    ParameterError
+        Python species/phase mapping or native physical input admission fails.
+    DeclarationError
+        Native supports, structure, constraints or reference standards conflict.
+
+    Notes
+    -----
+    Numerical nonconvergence retains native diagnostics. A fixed phase list is
+    not a global stability certificate; discovery is a bounded native search
+    (ALG-EQUILIBRIUM and ALG-STABILITY).
+    """
     native = problem._native(model) if isinstance(problem, Problem) else problem
     return _core.solve_equilibrium(model._model, native, start)
 
 
 def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
-    """Compile once for solved-state actions; the result keeps the native model alive."""
+    """Compile a physical equilibrium declaration for reuse and exact actions.
+
+    Parameters
+    ----------
+    model : Mixture or Pure
+        Fluid model whose component order names every declared species.
+    problem : Problem or _core.EquilibriumProblem
+        Physical specification, with T in K, P in Pa and declared feed basis.
+
+    Returns
+    -------
+    system : CompiledSystem
+        Native balances, supports, coordinates and equation rows; keeps the
+        native model alive for solved-state derivative actions.
+
+    Raises
+    ------
+    ParameterError
+        Python species/phase mapping or native physical input admission fails.
+    DeclarationError
+        Native supports, structure, constraints or reference standards conflict.
+
+    Notes
+    -----
+    Numerical nonconvergence retains native diagnostics. A fixed phase list is
+    not a global stability certificate; discovery is a bounded native search
+    (ALG-EQUILIBRIUM and ALG-STABILITY).
+    """
     native = problem._native(model) if isinstance(problem, Problem) else problem
     return _core.compile_problem(model._model, native)
 
@@ -445,6 +961,43 @@ def continue_equilibrium(
     *,
     parameter_targets: Sequence[float] | None = None,
 ) -> _core.ContinuationResult:
+    """Continue between physical equilibrium declarations using native correctors.
+
+    Parameters
+    ----------
+    model : Mixture or Pure
+        Fluid model with fixed component/site order.
+    start, target : Problem
+        Endpoint declarations. Temperature uses K, pressure Pa, feed amounts
+        mol, and total caloric constraints J or J/K where supplied.
+    options : Continuation
+        Declared path step controls, tolerances and work budgets.
+    start_result : EquilibriumResult, optional
+        Previously solved starting endpoint.
+    parameter_targets : sequence of float, optional
+        Target values in the model's active-parameter order and native family
+        units; ``None`` supplies an empty parameter-target sequence.
+
+    Returns
+    -------
+    result : ContinuationResult
+        Accepted path steps and last solved state, with reached dimensionless
+        path coordinate, stop cause and diagnostics. Incomplete paths remain
+        incomplete even when the last accepted point is available.
+
+    Raises
+    ------
+    ParameterError
+        Species/phase mapping or physical path inputs are inadmissible.
+    DeclarationError
+        Endpoint supports, equations or reference declarations are incompatible.
+
+    Notes
+    -----
+    Prediction, corrector solves, step rejection and work limits are native.
+    Inspect ``success``, ``stop`` and ``reached_path`` before treating a returned
+    state as the requested endpoint (ALG-EQUILIBRIUM).
+    """
     request = _core.ContinuationRequest()
     request.start_problem = start._native(model)
     request.target_problem = target._native(model)
@@ -455,6 +1008,30 @@ def continue_equilibrium(
 
 
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+    """Declare an isothermal bubble point with free pressure.
+
+    Parameters
+    ----------
+    liquid : Phase
+        Existing liquid phase declaration, retaining its support and amount.
+    T : float
+        Fixed absolute temperature in K.
+    feed : Feed
+        Feed declaration with explicit amounts/fractions/molality basis.
+    reactions : sequence of Reaction, optional
+        Reaction declarations; ``None`` means no reactions.
+
+    Returns
+    -------
+    problem : Problem
+        Original liquid phase plus incipient vapor pinned at zero mol,
+        with pressure free in Pa. Incipient phase name is V.
+
+    Notes
+    -----
+    No equilibrium calculation is performed. Native compilation/solve checks
+    admitted phase kinds, supports, reactions and boundary existence.
+    """
     reactions = () if reactions is None else reactions
     return Problem(
         phases=[liquid, Phase("V", kind="vapor", amount=Pinned(0.0))],
@@ -466,6 +1043,30 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
 
 
 def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+    """Declare an isothermal dew point with free pressure.
+
+    Parameters
+    ----------
+    vapor : Phase
+        Existing vapor phase declaration, retaining its support and amount.
+    T : float
+        Fixed absolute temperature in K.
+    feed : Feed
+        Feed declaration with explicit amounts/fractions/molality basis.
+    reactions : sequence of Reaction, optional
+        Reaction declarations; ``None`` means no reactions.
+
+    Returns
+    -------
+    problem : Problem
+        Original vapor phase plus incipient liquid pinned at zero mol,
+        with pressure free in Pa. Incipient phase name is L.
+
+    Notes
+    -----
+    No equilibrium calculation is performed. Native compilation/solve checks
+    admitted phase kinds, supports, reactions and boundary existence.
+    """
     reactions = () if reactions is None else reactions
     return Problem(
         phases=[Phase("L", kind="liquid", amount=Pinned(0.0)), vapor],
@@ -478,4 +1079,36 @@ def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reactio
 
 def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_core.EquilibriumStart],
                              limits: _core.EquilibriumWorkLimits) -> _core.EquilibriumStartsResult:
+    """Run declared starts under shared native equilibrium work limits.
+
+    Parameters
+    ----------
+    model : Mixture or Pure
+        Fluid model whose component order defines the inputs.
+    problem : Problem
+        Physical declaration: temperature K, pressure Pa, feed on its stated basis.
+    starts : sequence of EquilibriumStart
+        Ordered native starts, with temperature K, pressure Pa, physical amounts
+        mol and dimensionless compositions/packing fractions where supplied.
+    limits : EquilibriumWorkLimits
+        Attempt/iteration limits and wall-time budgets in s.
+
+    Returns
+    -------
+    result : EquilibriumStartsResult
+        Per-attempt results, causes and consumed work, with an optional selected
+        result. Selection does not establish global stability or uniqueness.
+
+    Raises
+    ------
+    ParameterError
+        Python mapping or native start/work-limit admission fails.
+    DeclarationError
+        The physical declaration is refused before start attempts.
+
+    Notes
+    -----
+    The native owner enforces shared work limits and retains exhausted-budget
+    causes rather than silently retrying without a bound (ALG-EQUILIBRIUM).
+    """
     return _core.solve_equilibrium_starts(model._model, problem._native(model), list(starts), limits)

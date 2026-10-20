@@ -1,3 +1,14 @@
+"""Declare fluid models and read native thermodynamic results.
+
+Temperatures are in K, pressures in Pa and molar densities in mol/m³.
+Caloric state energies use J/mol; residual Helmholtz energies divided by RT
+are dimensionless. Equilibrium amounts use mol.
+Dimensionless logarithms use the natural logarithm unless named ``log10``.
+``Mixture`` and ``Pure`` own state evaluation; ``equilibrium`` declares
+phase and reaction problems, and ``regression`` declares parameter estimation.
+Native result types and exceptions are re-exported from ``_core``.
+"""
+
 from pathlib import Path
 
 from . import _core
@@ -61,9 +72,30 @@ setattr(_core.EquilibriumResult, "phase_mole_fractions", _phase_mole_fractions)
 
 
 def provenance() -> tuple[Path, str] | tuple[str, bool]:
-    """Identify the running Engine: a wheel install's file path and SHA-256 (its direct_url.json), or
-    for the editable install the commit and whether engine/ is clean, with no uncommitted or untracked
-    files (the import rebuilt the extension from that tree)."""
+    """Identify the installed Engine and the source used by its editable build.
+
+    Returns
+    -------
+    identity : tuple
+        For an editable install, the Git commit string and a Boolean stating
+        whether ``engine/`` has no uncommitted or untracked files. For a wheel,
+        its local ``Path`` and the SHA-256 digest of the wheel's current bytes.
+
+    Raises
+    ------
+    FileNotFoundError
+        A wheel was not installed from a local file, or that file no longer exists.
+    importlib.metadata.PackageNotFoundError
+        The ``epcsaft`` distribution metadata is unavailable.
+    subprocess.CalledProcessError
+        Git cannot read the editable checkout's commit or working tree.
+
+    Notes
+    -----
+    The import rebuilds the editable extension when needed. This identity does
+    not establish numerical agreement or physical validity. Wheel identity is
+    read from ``direct_url.json``; malformed JSON and file read errors propagate.
+    """
     import hashlib
     import json
     import subprocess

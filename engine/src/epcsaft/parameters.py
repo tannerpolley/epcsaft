@@ -1,3 +1,11 @@
+"""Read named, unit-bearing physical parameter declarations.
+
+``parameter_document`` selects and combines retained packet records;
+``Parameters.from_mapping`` maps declared names and units into the native
+parameter owner (ALG-PARAMETERS). Source values, model choices and units
+remain explicit. Selecting components does not fit or validate parameters.
+"""
+
 from __future__ import annotations
 
 import json
@@ -128,7 +136,44 @@ def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> dict
 def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[str]]], *,
                        k_ij: Mapping[tuple[str, str], float] | None = None,
                        l_ij: Mapping[tuple[str, str], float] | None = None) -> dict[str, object]:
-    """One parameter document from (packet id/version, component names) under root; set pairs replace old ones."""
+    """Combine selected packet components into one parameter document.
+
+    Parameters
+    ----------
+    root : str or pathlib.Path
+        Packet root containing ``<packet>/parameters/parameters.json``.
+    packets : sequence of tuple
+        (Packet identifier/version, component identifiers) in output order.
+    k_ij : mapping of tuple of str to float, optional
+        Dimensionless unlike dispersion-energy corrections. Each supplied
+        value replaces that pair's constant and temperature-law declarations.
+    l_ij : mapping of tuple of str to float, optional
+        Dimensionless unlike diameter corrections, replacing existing values.
+
+    Returns
+    -------
+    document : dict
+        Version-1 ``epcsaft.parameters`` declaration with retained source/domain
+        materialization records. Unit-bearing scalar values keep their units.
+
+    Raises
+    ------
+    ParameterError
+        A packet form is unsupported, a selected component is absent, model
+        choices/coefficients conflict, cation mixing is incompletely selected,
+        or an override does not name two distinct selected components.
+    OSError
+        A packet file cannot be read.
+    json.JSONDecodeError
+        A packet contains invalid JSON; missing required keys raise ``KeyError``.
+
+    Notes
+    -----
+    Only records wholly within each packet's component selection are retained.
+    A component with no association sites can join the general-site model;
+    other conflicting model choices are refused. Duplicate components are
+    refused later by ``Parameters.from_mapping``, not by this merge function.
+    """
     merged: dict[str, Any] = {"schema": "epcsaft.parameters", "schema_version": 1, "components": [], "correlations": [],
                               "pairs": [], "model_coefficients": None, "materialization": [],
                               "topology": {"sites": [], "edges": [], "no_cross_association": []}}
@@ -190,6 +235,25 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
 
 
 class Parameters:
+    """Keep ordered component names beside their native physical parameter record.
+
+    Attributes
+    ----------
+    component_ids : tuple of str
+        Component order for all native input and output arrays.
+    site_ids : tuple of tuple of str
+        Association sites in native order, each (component identifier, site name).
+    molar_masses : tuple of float
+        Component molar masses in kg/mol, in component_ids order, read from
+        the native parameter record.
+
+    Notes
+    -----
+    Prefer ``from_json``, ``from_packets`` or ``from_mapping`` for unit-bearing
+    source records. The direct constructor only associates names with an
+    existing native record; it does not read a source document.
+    """
+
     __slots__ = ("component_ids", "site_ids", "_native", "_document")
 
     component_ids: tuple[str, ...]
@@ -202,6 +266,22 @@ class Parameters:
         component_ids: tuple[str, ...],
         site_ids: tuple[tuple[str, str], ...],
     ) -> None:
+        """Associate an existing native record with ordered component and site names.
+
+        Parameters
+        ----------
+        native : _core.Parameters
+            Native physical parameters, already expressed in their native units.
+        component_ids : tuple of str
+            Component order matching ``native``.
+        site_ids : tuple of tuple of str
+            (Component, site) order matching native association coordinates.
+
+        Notes
+        -----
+        This constructor assigns the inputs without validating their agreement.
+        It retains no source document for later property/ASL serialization.
+        """
         self._native = native
         self._document: _core.ParameterDocument | str | None = None
         self.component_ids = component_ids
@@ -209,22 +289,117 @@ class Parameters:
 
     @property
     def molar_masses(self) -> tuple[float, ...]:  # kg/mol, component_ids order, read from the native record
+        """Read the native component molar masses.
+
+        Returns
+        -------
+        masses : tuple of float
+            Field documented with its unit and order in ``Parameters`` Attributes.
+        """
         return tuple(self._native.molar_masses)
 
     @classmethod
     def from_json(cls, path: str | Path, *, components: Sequence[str] | None = None) -> Parameters:
+        """Read a parameter JSON file and apply native parameter admission.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Version-1 parameter document; each physical scalar declares its unit.
+        components : sequence of str, optional
+            Selected component identifiers in desired order; default is file order.
+
+        Returns
+        -------
+        parameters : epcsaft.parameters.Parameters
+            Ordered names, native physical values and retained parameter document.
+
+        Raises
+        ------
+        ParameterError
+            The document or selection is refused by ``from_mapping``.
+        OSError
+            The file cannot be read.
+        json.JSONDecodeError
+            The file contains invalid JSON.
+        """
         return cls.from_mapping(cast(Mapping[str, object], json.loads(Path(path).read_text())), components=components)
 
     @classmethod
     def from_packets(cls, root: str | Path, packets: Sequence[tuple[str, Sequence[str]]], *,
                      k_ij: Mapping[tuple[str, str], float] | None = None,
                      l_ij: Mapping[tuple[str, str], float] | None = None) -> Parameters:
+        """Load a native parameter set from selected source packets.
+
+        Parameters
+        ----------
+        root : str or pathlib.Path
+            Root used by ``parameter_document``.
+        packets : sequence of tuple
+            (Packet identifier/version, ordered component identifiers).
+        k_ij : mapping of tuple of str to float, optional
+            Dimensionless unlike dispersion corrections replacing source pair laws.
+        l_ij : mapping of tuple of str to float, optional
+            Dimensionless unlike diameter corrections replacing source pair laws.
+
+        Returns
+        -------
+        parameters : epcsaft.parameters.Parameters
+            Admitted native values with names in packet/component selection order.
+
+        Raises
+        ------
+        ParameterError
+            Packet combination or the resulting parameter declaration is refused.
+        OSError
+            A source packet is unreadable.
+        json.JSONDecodeError
+            A packet contains invalid JSON.
+
+        Notes
+        -----
+        Packet combination follows ``parameter_document``; no fitting or adoption
+        of undeclared unlike interactions is performed here.
+        """
         return cls.from_mapping(parameter_document(root, packets, k_ij=k_ij, l_ij=l_ij))
 
     @classmethod
     def from_mapping(
         cls, mapping: Mapping[str, object], *, components: Sequence[str] | None = None
     ) -> Parameters:
+        """Map a unit-bearing parameter document into native physical parameters.
+
+        Parameters
+        ----------
+        mapping : mapping of str to object
+            ``epcsaft.parameters`` version 1: components, model choices, correlations,
+            pair coefficients and association topology. Scalars carry magnitude and
+            unit; temperature intervals use K, molar masses kg/mol, and native
+            segment/Born diameters Å. Unit conversion is owned by native admission.
+        components : sequence of str, optional
+            Unique selected identifiers in output order; default is document order.
+
+        Returns
+        -------
+        parameters : epcsaft.parameters.Parameters
+            Admitted native record, ordered component/site names and source document.
+
+        Raises
+        ------
+        ParameterError
+            Unsupported document form, unread fields, duplicate/unknown identifiers,
+            invalid units or physical values, unsupported correlations, conflicting
+            parameter identities, model choices, pairs or association topology.
+        KeyError
+            A required nested record field is missing.
+
+        Notes
+        -----
+        Only the declared selection is materialized; complete participants are
+        required for retained cation-mixing terms. Correlations and general-site
+        edges retain named identities. Native ``build_parameters`` owns the
+        physical domain, units and admitted model families (ALG-PARAMETERS).
+        """
         document = _mapping(mapping, "parameter document")
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1:
             raise _core.ParameterError("unsupported parameter document schema")
