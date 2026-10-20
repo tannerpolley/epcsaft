@@ -100,7 +100,9 @@ def key_solves(wheels, head):
     runs = []
     for path in wheels.glob("key-solves-*/summary.json"):
         try:
-            runs.append((path.parent.name.rsplit("-", 1)[1], json.loads(path.read_text()), path))
+            summary = json.loads(path.read_text())
+            if "cases" in summary:  # error records hold no timings
+                runs.append((path.parent.name.rsplit("-", 1)[1], summary, path))
         except (OSError, ValueError, IndexError):
             continue
     if not runs:
