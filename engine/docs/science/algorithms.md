@@ -1872,13 +1872,33 @@ lost positivity/support, invalid T/P, packing or association domain. Record
 actual normalization/charge defects and rounding scales; ionic defects must
 meet the 1e-12 criterion. Never fabricate a species floor to admit a point.
 
-For candidate balance/phase-charge defects solve the local linear equality
-correction in supported **amount** variables using existing native algebra.
-For trials use normalization/charge rows. Reject rank loss or incompatible
-corrections, enforce positive support/domain and reevaluate before descent.
-Keep the nearby corrected candidate separate from the public result. Residuals,
-correction norm and the energy-gradient contraction estimate feasibility error;
-arithmetic equality roundoff remains explicit.
+For candidate balance/phase-charge defects let $m^0$ contain supported amounts
+in mol, $J$ contain the conserved-moiety and phase-charge coefficients, and
+$r=t-Jm^0$ for target $t=(b,0)$. Use one amount-weighted linear correction:
+
+$$
+D=\operatorname{diag}(m^0),\qquad a_k=\max_j|(JD)_{kj}|,\qquad
+h=(SJD)^+Sr,\quad \delta=Dh,\quad m^1=\operatorname{fl}(m^0+\delta),
+$$
+
+where $S_{kk}=1/a_k$ for nonzero rows and 1 for zero rows. Divide each row
+and its right-hand side directly by $a_k$; the existing complete orthogonal
+decomposition handles redundant and zero charge rows. No squared inventories,
+step shortening, iteration or backtracking is used. Attempt the full correction
+even below tolerance; refuse nonfinite or nonpositive supported amounts and
+incompatible original rows. This is local numerical reconstruction of a declared
+parent, not a general constrained-feasibility solver.
+
+Reconstruct phase amounts/compositions and check original material rows,
+normalization and phase charge, including the reported log representation,
+with the existing material/charge criteria. A below-tolerance residual need not
+decrease strictly. Reevaluate physical energy before descent and keep this
+candidate separate from the public result. Record actual stored displacement,
+update rounding and physical/log representation changes using EqID:
+`tangent_plane_descent_uncertainty`; every present phase and donor receives the
+same final totals. For trials use normalization/charge rows and retain positive
+support/domain checks. A reconstruction refusal retains its numerical cause;
+it does not establish physical infeasibility.
 
 Use the full present-phase chemical/pressure identity (EqID:
 `present_phase_tangent_plane_identity`), not a chemical-residual-only threshold.
