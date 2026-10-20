@@ -158,6 +158,9 @@ class Mixture:
     uses the same calculations at dimensionless mole fraction ``x = (1,)``.
     Native construction copies parameter, thermochemistry and solver inputs;
     subsequent caller edits do not redefine the constructed native model.
+    An explicit x sequence needs one finite nonnegative entry per component and
+    a sum of one within native tolerance; an empty sequence is refused. State
+    and property-action requests also require electroneutrality.
     """
 
     __slots__ = ("_model", "component_ids", "parameters", "site_ids")
@@ -301,13 +304,17 @@ class Mixture:
         ------
         ParameterError
             Only one of ions/stoichiometry is given, identifiers are unknown,
-            or native reference/composition admission fails.
+            ionic reference/composition inputs are invalid, or native model
+            input admission, such as temperature or pressure, fails.
         EosError
-            A native reference state or dilution limit cannot be evaluated.
+            An ionic reference state or dilution limit cannot be evaluated.
 
         Notes
         -----
         The solvent-only path supports solvent activity and neutral Henry constants.
+        An inadmissible solvent composition or numerical density failure returns
+        a Reference with pure_solvent_log_fugacity set to None; its
+        solvent_activity result retains the native status and cause.
         The ionic path follows the native charge-neutral dilution ladder and
         convergence checks (ALG-REFERENCE). Input sequences are copied.
         """
@@ -349,16 +356,19 @@ class Mixture:
         observables : sequence of PropertyObservable
             Requested native properties in output order.
         directions : sequence of DensityActionDirection
-            Physical increments: temperature in K, rho in mol/m³,
-            composition dimensionless and parameters in their native family units.
+            One to three physical directions: temperature in K, rho in mol/m³,
+            composition dimensionless and parameters in native family units.
+            Each composition increment must have one entry per component; an
+            empty increment is refused. Supply an explicit zero vector when
+            composition is fixed.
 
         Returns
         -------
         batch : PropertyActionBatch
             Values and directional contractions in each observable's unit:
-            molar energy in J/mol, entropy/heat capacity in J/(mol K),
-            molar-volume slopes in m³/(mol K) or m³/(mol Pa), and natural ln(phi)
-            dimensionless on the pressure chart. Unavailable entries retain causes.
+            molar energy in J/mol and entropy/heat capacity in J/(mol K).
+            LogFugacityCoefficient requires pressure_actions. Unavailable entries
+            retain their native causes.
 
         Raises
         ------
@@ -401,8 +411,11 @@ class Mixture:
         observables : sequence of PropertyObservable
             Requested native properties in output order.
         directions : sequence of PressureActionDirection
-            Physical increments: temperature in K, P in Pa,
-            composition dimensionless and parameters in their native family units.
+            One to three physical directions: temperature in K, P in Pa,
+            composition dimensionless and parameters in native family units.
+            Each composition increment must have one entry per component; an
+            empty increment is refused. Supply an explicit zero vector when
+            composition is fixed.
         phase : {'liquid', 'vapor'}
             Branch retained by the pressure-closed derivative calculation.
         anchor : State, optional
@@ -412,9 +425,9 @@ class Mixture:
         -------
         batch : PropertyActionBatch
             Values and directional contractions in each observable's unit:
-            molar energy in J/mol, entropy/heat capacity in J/(mol K),
-            molar-volume slopes in m³/(mol K) or m³/(mol Pa), and natural ln(phi)
-            dimensionless on the pressure chart. Unavailable entries retain causes.
+            molar energy in J/mol, entropy/heat capacity in J/(mol K), and
+            dimensionless natural ln(phi), with one fugacity result per component
+            in component order. Unavailable entries retain their native causes.
 
         Raises
         ------
@@ -623,9 +636,9 @@ class Pure(Mixture):
         -------
         batch : PropertyActionBatch
             Values and directional contractions in each observable's unit:
-            molar energy in J/mol, entropy/heat capacity in J/(mol K),
-            molar-volume slopes in m³/(mol K) or m³/(mol Pa), and natural ln(phi)
-            dimensionless on the pressure chart. Unavailable entries retain causes.
+            molar energy in J/mol and entropy/heat capacity in J/(mol K).
+            LogFugacityCoefficient requires pressure_actions. Unavailable entries
+            retain their native causes.
 
         Raises
         ------
@@ -681,9 +694,9 @@ class Pure(Mixture):
         -------
         batch : PropertyActionBatch
             Values and directional contractions in each observable's unit:
-            molar energy in J/mol, entropy/heat capacity in J/(mol K),
-            molar-volume slopes in m³/(mol K) or m³/(mol Pa), and natural ln(phi)
-            dimensionless on the pressure chart. Unavailable entries retain causes.
+            molar energy in J/mol, entropy/heat capacity in J/(mol K), and
+            dimensionless natural ln(phi), with one fugacity result per component
+            in component order. Unavailable entries retain their native causes.
 
         Raises
         ------

@@ -80,11 +80,14 @@ def measured_input(parameters: Parameters, kind: str, *, sigma: float, bounds: t
         Measured input type; respective units are K, Pa, dimensionless and
         mol/kg solvent.
     sigma : float
-        Independent measurement standard deviation in the input's physical unit.
+        Measurement standard deviation in the input's physical unit. Native
+        fitting admits finite nonnegative values; zero fixes this input and
+        removes its fitted correction.
     bounds : tuple of float
         Lower and upper true-input bounds in the same unit.
     unit : str
-        Explicit unit label, checked by native measurement admission.
+        Exact native label: 'K', 'Pa', 'mol/mol' or 'mol/kg' for temperature,
+        pressure, mole fraction or molality, respectively.
     species : str, optional
         Required only for ``mole_fraction``; identifies its component.
 
@@ -101,8 +104,10 @@ def measured_input(parameters: Parameters, kind: str, *, sigma: float, bounds: t
 
     Notes
     -----
-    Physical bounds, uncertainty positivity and independent-error meaning are
-    checked by native admission when consumed by fitting (ALG-FIT).
+    Native fitting checks finite bounds, the physical domain and the measured
+    value's inclusion in its bounds. MeasurementUncertainty may declare a joint
+    covariance or correlation; without one, the measurement errors are treated
+    independently (ALG-FIT).
     """
     kinds = {"temperature": MeasuredInputKind.Temperature, "pressure": MeasuredInputKind.Pressure,
              "mole_fraction": MeasuredInputKind.MoleFraction, "molality": MeasuredInputKind.Molality}
@@ -659,17 +664,22 @@ def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequen
     Returns
     -------
     evaluation : PredictionGradient or ObservationEvaluation
-        For a model, exact columns per native active-parameter unit; for a
-        parameter set, physical/optimizer columns in observation order and
-        residual columns with unit observation weights. Values retain observation
-        units; residuals and dimensionless optimizer residual columns are
-        dimensionless. Unavailable derivatives retain their native causes.
+        For a model, prediction derivatives in active-parameter order, with
+        observation units per native parameter unit; inspect status/message for
+        unavailable derivatives. For a parameter set, gradient is row-major in
+        observation order, with physical columns ordered as independent EOS
+        targets, held Born diameters, then reaction coordinates. Optimizer columns
+        follow coordinate order; optimizer_gradient contains prediction columns
+        in observation units, and residual_optimizer_gradient contains
+        dimensionless residual columns at unit observation weights. This path
+        returns only a completed evaluation; unavailable rows raise ParameterError.
 
     Raises
     ------
     ParameterError
         Parameters lack coordinates/observations/optimizer, a model receives
-        multiple observations, or native physical admission fails.
+        multiple observations, native physical admission fails, or a requested
+        coordinate-aware prediction, chart, hold or derivative is unavailable.
 
     Notes
     -----
@@ -738,11 +748,13 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
     singular_vectors : bool, optional
         Request native singular vectors; default false.
     starts : sequence of sequence of float, optional
-        Dimensionless optimizer starts. When supplied, return one result per start.
+        Dimensionless optimizer starts, attempted in supplied order while shared
+        budgets remain. Reaction-enthalpy-shift coordinates are refused here.
     shared_iterations : int, optional
-        Shared iteration budget for declared starts.
+        Positive shared iteration budget; defaults to controls.maximum_iterations.
     shared_seconds : float, optional
-        Shared wall-time budget in s for declared starts.
+        Positive shared wall-time budget in s; defaults to
+        controls.maximum_elapsed_time_seconds.
     minimax : MinimaxRequest, optional
         Explicit guarded minimax request instead of ordinary least squares.
     uncertainty : MeasurementUncertainty, optional
@@ -752,13 +764,15 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
     -------
     result : FitResult or list of FitResult
         Fitted native parameters, physical/optimizer coordinates, costs,
-        diagnostics and any admitted local covariance; a list for supplied
-        starts. Stopping and usability must be inspected before consuming fits.
+        diagnostics and any admitted local covariance. Supplied starts return
+        one entry per attempted start, in input order; exhausted shared budgets
+        leave a shorter list. Inspect stopping and usability before use.
 
     Raises
     ------
     ParameterError
-        The required controls argument is omitted.
+        The required controls argument is omitted, solver options or shared
+        budgets are invalid, or starts are combined with a reaction-enthalpy shift.
 
     Notes
     -----
@@ -982,15 +996,16 @@ def evaluate_coordinates(parameters: Parameters, coordinates: Sequence[Coordinat
     Returns
     -------
     evaluation : EvaluatedCoordinates
-        Physical chart values in native parameter units and exact D columns
-        per dimensionless optimizer increment, including dependent holds.
-        Native causes accompany unavailable charts/derivatives.
+        Completed physical chart values in native parameter units and exact D
+        columns per dimensionless optimizer increment, including dependent holds.
+        No unavailable chart or derivative record is returned.
 
     Raises
     ------
     ParameterError
-        Native chart, optimizer dimensions, bounds or hold declarations fail
-        admission (ALG-FIT).
+        The chart, optimizer dimensions, bounds or hold declarations are invalid,
+        or a hold reference/action is unavailable, its root is not bracketed,
+        its derivative is singular, or its iteration budget is exhausted (ALG-FIT).
     """
     chart = CoordinateSet()
     chart.coordinates = list(coordinates)

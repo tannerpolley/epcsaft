@@ -141,15 +141,18 @@ class Discover:
         Trial phase declarations. ``None`` selects native defaults;
         a supplied sequence is copied and retains its support/branch choices.
     declaration_budget : int or None
-        Native limit on phase declarations; ``None`` uses native policy.
+        Maximum number of declaration-solve attempts, including recovery
+        attempts; this is not a phase-count limit. None uses native policy.
     trial_budget : int or None
         Native limit on trial solves; ``None`` uses native policy.
 
     Notes
     -----
-    ``Problem`` sets ``topology_declared`` false for discovery. A finite search
-    without a resolved descending split is not a global stability certificate;
-    inspect discovery diagnostics and exhausted budgets (ALG-STABILITY).
+    Problem sets topology_declared false for discovery. Use solve_equilibrium
+    at fixed positive T (K) and P (Pa), without solids; compile_problem requires
+    declared phases. Free intensives and discovery with solids are refused.
+    A finite search without a resolved descending split is not a global stability
+    certificate; inspect diagnostics and exhausted budgets (ALG-STABILITY).
     """
 
     trials: Sequence[Phase] | None = None
@@ -357,8 +360,10 @@ class NeutralReference:
     solvent : str
         Pure neutral solvent component identifier.
     solute_molality_ratios : mapping of str to float
-        Dimensionless solute molality ratios defining the neutral dilution path;
-        copied at construction. Omitted model species have ratio zero.
+        Dimensionless solute molality ratios defining the neutral dilution path,
+        copied at construction. Native admission requires a finite positive ratio
+        for every non-solvent model component and zero for the solvent. Omitted
+        species map to zero, so omitting a non-solvent component is refused.
     standard_molality_mol_per_kg : float
         Positive standard molality in mol/kg solvent.
     species_reference : mapping of str to SpeciesReference

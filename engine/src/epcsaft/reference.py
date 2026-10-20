@@ -183,7 +183,8 @@ class Reference:
         Parameters
         ----------
         molality : float
-            Formula molality in mol/kg of solvent at the stored T (K) and P (Pa).
+            Finite, strictly positive formula molality in mol/kg solvent at the
+            stored T (K) and P (Pa). Zero molality raises ParameterError.
 
         Returns
         -------
@@ -220,14 +221,17 @@ class Reference:
         -------
         activity : SolventActivity
             Dimensionless solvent fugacity relative to the pure-liquid reference
-            and the available practical osmotic coefficient.
+            and the practical osmotic coefficient when available. An unavailable
+            pure reference, zero solvent fraction or failed liquid-density solve
+            returns status/cause with unavailable values. Osmotic unavailability
+            has its own osmotic_cause and can coexist with available activity.
 
         Raises
         ------
         ParameterError
-            Composition or the required pure-solvent reference is inadmissible.
-        EosError
-            The native liquid evaluation fails.
+            With an available pure reference, the composition has the wrong
+            length, nonfinite or negative entries, or violates normalization
+            or charge balance.
 
         Notes
         -----
@@ -242,21 +246,23 @@ class Reference:
         Parameters
         ----------
         solutes : sequence of str
-            Neutral component identifiers, in desired output order.
+            Nonempty, distinct neutral component identifiers excluding the solvent.
+            Results are sorted by component index, regardless of this input order.
 
         Returns
         -------
         constants : list of HenryConstant
-            Native constants H_i^px = lim(f_i/x_i) in Pa, with dimensionless solute
-            mole fraction x_i and fugacity f_i in Pa; availability remains explicit.
+            H_i^px = lim(f_i/x_i) in Pa, sorted by component_index, with
+            dimensionless x_i and fugacity f_i in Pa. An ion-containing model or
+            failed reference evaluation returns unavailable entries with status
+            and message; inspect each henry_constant_px before use.
 
         Raises
         ------
         ParameterError
-            The reference contains ions, a solute name is unknown, or the native
-            declaration is not an admitted neutral pure-solvent reference.
-        EosError
-            The native dilution/reference evaluation fails.
+            This is an ionic Reference, a solute name is unknown, the solvent
+            composition is not pure, or the solute set is empty, repeated or
+            contains the solvent.
         """
         if self._ion_indices is not None:
             raise _core.ParameterError("NonNeutralDeclaration: Henry constants need a solvent-only reference")

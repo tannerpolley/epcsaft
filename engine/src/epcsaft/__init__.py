@@ -1,7 +1,8 @@
 """Declare fluid models and read native thermodynamic results.
 
 Temperatures are in K, pressures in Pa and molar densities in mol/m³.
-State energies are molar (J/mol); equilibrium amounts are total mol.
+Caloric state energies use J/mol; residual Helmholtz energies divided by RT
+are dimensionless. Equilibrium amounts use mol.
 Dimensionless logarithms use the natural logarithm unless named ``log10``.
 ``Mixture`` and ``Pure`` own state evaluation; ``equilibrium`` declares
 phase and reaction problems, and ``regression`` declares parameter estimation.
