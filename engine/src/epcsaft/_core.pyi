@@ -4801,11 +4801,11 @@ class CheckResult:
     """Effective maximum threshold in unit, or None without one."""
     mean_threshold: float | None
     """Effective mean threshold in unit, or None without one."""
-    baseline_maximum: float
+    baseline_maximum: float | None
     """Frozen baseline maximum absolute error in unit; native binding returns None when no baseline
     value exists.
     """
-    baseline_mean: float
+    baseline_mean: float | None
     """Frozen baseline mean absolute error in unit; native binding returns None when no baseline
     value exists.
     """
