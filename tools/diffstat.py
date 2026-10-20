@@ -46,7 +46,7 @@ def python_lines(source: str) -> int:
     for token in tokenize.generate_tokens(io.StringIO(b"\n".join(lines).decode("utf-8")).readline):
         if token.type == tokenize.ERRORTOKEN and not token.string.isspace():
             raise ValueError(f"unrecognised Python token at {token.start}")
-        if token.type not in layout and token.string.strip():
+        if token.type not in layout and not (token.type == tokenize.ERRORTOKEN and token.string.isspace()):
             occupied.update(range(token.start[0], token.end[0] + 1))
     return len(occupied)
 
@@ -232,7 +232,7 @@ x = """data
 
 # literal data"""
 '''
-    if python_lines(python_fixture) != 11 or python_lines('"é"; x = 1\n') != 1:
+    if python_lines(python_fixture) != 11 or python_lines('x = f"""\n\n"""\n') != 3 or python_lines('"é"; x = 1\n') != 1:
         raise AssertionError("Python docstring spans or executable string data counted incorrectly")
     cpp_fixture = r'''// line comment
 /* block

@@ -170,9 +170,42 @@ unequal or unreadable existing assets stop for owner diagnosis; the tool never
 deletes or replaces them. A different identity also stops without replacement.
 `build/wheels/main-current/` is updated after confirmed publication. The
 [downstream guide](downstream/README.md) owns authenticated download and file pins.
-There is no scientific CI/CD. `bash tools/check-all-container.sh` runs
+The documentation workflow builds the site and its examples; it does not run
+the scientific delivery gates. `bash tools/check-all-container.sh` runs
 `check-all.sh` on HEAD from a cold build in a digest-pinned `ubuntu:24.04`
 container, the system a hosted runner would use, at no GitHub minutes.
+
+Build the documentation with its optional documentation dependencies and the
+checkout's editable Engine:
+
+```bash
+nice -n 10 bash tools/build-docs.sh
+```
+
+The command reuses `tools/build-engine.sh`, forces every example notebook to
+execute in this checkout's `.venv`, and runs Sphinx HTML and cheap doctests with
+warnings treated as errors. It selects MUMPS with `EPCSAFT_HSL_LIBRARY` and
+`EPCSAFT_IPOPT_OPTIONS_FILE` unset. Outputs, logs and timing are under
+`build/docs/`; open `build/docs/html/index.html`. The gallery is initially an
+index; the notebook part of #695 supplies its eleven examples. No notebook
+execution cache substitutes for this gate.
+
+For process examples, the root environment already pins IDAES and Pyomo. Obtain
+the optional IDAES extensions 3.4.2 solver/library archives directly from
+[upstream](https://github.com/IDAES/idaes-ext/releases/tag/3.4.2).
+The documentation workflow checks their hashes and extracts them under the
+runner's temporary directory. Local process-example builds can set `IDAES_DATA`
+and `PYOMO_CONFIG_DIR` to an equivalent directory outside the checkout with the
+tools in its `bin/` subdirectory. The upstream Ipopt includes HSL, even when
+MUMPS is selected: retain upstream notices and keep executables, libraries,
+archives and their environment outside the repository, Engine builds, docs
+outputs, uploads and shared caches. Only rendered pages, original notebooks,
+figures, numerical records and text logs are uploaded. See the
+[acknowledgement](docs/site/contributing.md#optional-process-example-tools).
+
+Pages deployment requires a public repository, main and
+`DOCS_PAGES_ENABLED=true`; leave that variable unset until launch. The build
+and selected record uploads run while deployment is disabled.
 
 Run a canonical end-to-end workflow with:
 
