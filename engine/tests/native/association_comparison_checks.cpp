@@ -68,6 +68,46 @@ constexpr double SENSITIVITY_RESIDUAL_LIMIT = 1.0e-10;
 constexpr double SENSITIVITY_PROXY_LIMIT = 1.0e-8;
 constexpr double NEWTON_DEFECT_LIMIT = 1.0e-10;
 
+// #705: captured rejected trial at 298.15 K; density in mol/m^3, strengths in Angstrom^3.
+// The previous step bound exhausted 50 iterations at residual 5.480282894154698e-12.
+void association_unit_ceiling() {
+    constexpr double temperature = 298.15;
+    constexpr double density = 52992.32016447701;
+    const std::vector<double> mole_fractions = {
+        0.9967664629120051, 9.581789719163911e-29, 0.003232311646483076,
+        6.310494279431576e-07, 5.712187821800883e-10, 5.938208650913641e-07};
+    Parameters parameters;
+    parameters.site_component = {0, 0, 1, 1, 2, 2, 3, 3};
+    parameters.site_multiplicity = std::vector<int>(8, 1);
+    const std::vector<double> strength = {
+        0.0, 15964.491628191587, 0.0, 1986249.8013975348, 0.0, 4550137.1076187035, 0.0, 0.0,
+        15964.491628191587, 0.0, 1986249.8013975348, 0.0, 4550137.1076187035, 0.0, 0.0, 0.0,
+        0.0, 1986249.8013975348, 0.0, 286578809.8455787, 0.0, 633297185.5581268, 0.0, 61842.874171620366,
+        1986249.8013975348, 0.0, 286578809.8455787, 0.0, 633297185.5581268, 0.0, 61842.874171620366, 0.0,
+        0.0, 4550137.1076187035, 0.0, 633297185.5581268, 0.0, 1412151858.732317, 0.0, 0.0,
+        4550137.1076187035, 0.0, 633297185.5581268, 0.0, 1412151858.732317, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0, 0.0,
+    };
+    epcsaft::core::Convergence convergence;
+    const auto fractions = epcsaft::solve_site_fractions(temperature, density, mole_fractions,
+        parameters, {}, {}, &convergence, nullptr, &strength);
+    const auto residuals = epcsaft::association_residuals(density, mole_fractions,
+        parameters, fractions, strength);
+    double residual = 0.0;
+    for (double value : residuals) {
+        CHECK(std::isfinite(value));
+        residual = std::max(residual, std::abs(value));
+    }
+    const double tolerance = epcsaft::policy::SolverOptions{}.value(epcsaft::policy::association);
+    CHECK(residual <= tolerance);
+    CHECK(convergence.iterations <= epcsaft::policy::ASSOCIATION_MAX_ITERATIONS.value);
+    CHECK(std::all_of(fractions.begin(), fractions.end(),
+        [](double value) { return std::isfinite(value) && value > 0.0 && value <= 1.0; }));
+    std::printf("association unit ceiling: residual=%.17g tolerance=%.17g iterations=%zu\n",
+        residual, tolerance, convergence.iterations);
+}
+
 void cppad_error_handler(bool, int, const char*, const char*, const char* message) {
     throw std::runtime_error(std::string("CppAD error: ") + message);
 }
@@ -1426,6 +1466,7 @@ void association_comparison() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.association.comparison", "association-comparison"}, association_comparison}
+        {{"native.association.comparison", "association-comparison"}, association_comparison},
+        {{"native.association.unit-ceiling", "association-unit-ceiling"}, association_unit_ceiling}
     });
 }
