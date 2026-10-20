@@ -96,7 +96,7 @@ EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false,
-    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false
+    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.

@@ -923,7 +923,9 @@ rising ratio means the iterate lies outside it, so polishing stops. From a
 box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
 4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
 −1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
-need no further polishing. Each step must reduce the raw row maximum at a
+need no further polishing. Unfinished explicit stability trials alone may continue
+with the bounded adaptive damping in ALG-STABILITY; declared solves retain the
+contraction-ratio policy above. Each step must reduce the raw row maximum at a
 positive finite composition of every supported species; exact absence is the
 compiled support (#231). No composition cutoff applies, so the polish reaches
 positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
@@ -1268,7 +1270,11 @@ by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
 floor-limited state may miss the request and keeps its state with a warning.
-A structurally square declaration whose generic-point Jacobian loses rank
+A declaration's generic-point Jacobian is tested with Eigen full-pivot LU after
+dividing each nonzero column by its infinity norm; zero columns remain zero.
+The default relative pivot threshold is unchanged. This removes dependence on
+free-variable units up to floating-point rounding, without rescaling equations.
+A structurally square declaration whose normalized Jacobian loses rank
 returns `NOT_RUN` with `Stop::infeasible`, an unmeasured residual, no
 criterion and the row, unknown, rank and nullity counts, before any start or
 optimizer work. Within one solve the driver prepares each distinct callback
@@ -1705,6 +1711,33 @@ trial counts separately; no universal wall-time threshold is inferred.
 Explicit native searches own their work capture and pass its trace to the
 counting code. The trace reports work only; no solver decision reads the ambient
 trace. Declared calls retain their existing scopes and perform no trial work.
+
+### Unfinished optimized trials
+
+An ordinary explicit trial passes an internal refinement permission to the shared
+driver. It first uses ordinary polish unchanged. At a rejected correction, recovery
+starts only if the best classified point still exceeds the existing row criterion.
+A row-acceptable trial, including a curvature refusal, keeps its original result.
+Supplied-trial evaluation performs no optimization and grants no permission.
+
+Recovery continues the same exact-row Newton loop on the same supported problem,
+with fixed T/P and frozen standard/plane shift. It starts with damping scale $a=1$
+and tries at most $a,a/2,a/4$ per correction. A prepared proposal must strictly
+decrease the raw row maximum; the falling-ratio extension condition is suspended
+only within this recovery. After accepting damping $\alpha$, set
+$a=\min(1,2\alpha)$. If all three proposals fail, keep the current point and set
+$a=a/8$ for the next correction. Entering recovery and unsuccessful corrections
+consume slots in the original `EQUILIBRIUM_MAX_ITERATIONS` cap: at most 200
+corrections and 600 candidate proposals, without a new solve or reset of work.
+Existing deadline/evaluation limits, raw-row and correction stops remain; a
+nonfinite direction or no representable progress stops recovery with its cause.
+
+The shared driver keeps the best classified point and the unchanged final
+row/curvature admission. Reaching a cap confers no success; detailed diagnostics
+retain the cap or no-progress cause even if the best point passes final admission.
+The existing positive-support charge reconstruction and reevaluated finite descent
+then consume the returned raw point. Reconstruction does not revise optimizer
+success. This finite local refinement provides no global-stability certificate.
 
 ### Supplied trial points
 
