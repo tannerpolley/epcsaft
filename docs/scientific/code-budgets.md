@@ -82,6 +82,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-19, #664 after merging main `6385f895` (#663): the full amount-weighted stability correction and stored-update/representation accounting use +40 net / 56 gross formatted Equilibrium lines against both the original `4bf2378a` base and the post-#663 baseline, within the lead allowance of 42 net / 60 gross. The merged count is 29,029; Equilibrium is 10,544 / 10,582. The total remains below main's 29,191 ceiling, so rule 1 needs no further raise. All layer ceilings remain unchanged; #663 growth is recorded separately below.
+
 - 2026-10-19, #663 after merging main `5aa2d3cb` (#658/#661): the approved Equilibrium allowance is +60 net / 100 gross formatted runtime lines; the change uses +22 net / 40 gross. The merged count is 28,989, seven above the previous total ceiling of 28,982. Under rule 1 the total ceiling rises to 29,191: min(28,989 + rounded-up 1% band 290, layer-ceiling sum 29,191). Equilibrium is 10,504 / 10,582; all layer ceilings remain unchanged.
 
 - 2026-10-19, #658: lead-approved 220 gross / +180 net allowance. Contributions rises from 1,424 to 1,451, Surface from 791 to 814 and Python from 2,421 to 2,473: each exceeded ceiling becomes its measured count plus the rounded-up 1% band. The measured counts are 1,436, 805 and 2,448; total is 28,962. The total ceiling stays 28,982. Other ceilings are unchanged.
