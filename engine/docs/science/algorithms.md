@@ -1268,7 +1268,11 @@ by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
 floor-limited state may miss the request and keeps its state with a warning.
-A structurally square declaration whose generic-point Jacobian loses rank
+A declaration's generic-point Jacobian is tested with Eigen full-pivot LU after
+dividing each nonzero column by its infinity norm; zero columns remain zero.
+The default relative pivot threshold is unchanged. This removes dependence on
+free-variable units up to floating-point rounding, without rescaling equations.
+A structurally square declaration whose normalized Jacobian loses rank
 returns `NOT_RUN` with `Stop::infeasible`, an unmeasured residual, no
 criterion and the row, unknown, rank and nullity counts, before any start or
 optimizer work. Within one solve the driver prepares each distinct callback
