@@ -102,10 +102,13 @@ repository evidence together.
 
 ## Closeout
 
-Every `git pull` on main runs `tools/prune-worktrees` through the global
-post-merge hook (owner, 2026-10-20). A task worktree whose HEAD is on
-`origin/main`, with no open pull request, no process inside it and at least
-two hours old, is archived with `tools/archive-worktree` and removed with its
-local and remote branch. Unmerged branches are kept and listed;
-`tools/prune-worktrees --archive-unmerged` first tags those whose issue is
-closed as `archive/<branch>`.
+After each merge, and in a regular sweep, the lead runs
+`tools/prune-worktrees WORKTREE ...` (owner, 2026-10-20), naming each task
+worktree whose agent task is terminal with no queued turn and whose pull request
+is merged or issue closed. The tool refuses a worktree with a process inside it
+or an open pull request, archives the rest through `tools/archive-worktree`, and
+deletes their local branches and any remote branch whose tip is on
+`origin/main`. Unmerged branches are kept unless `--archive-unmerged` is given
+and their issue is closed; they are then first tagged `archive/<branch>` on the
+exact commit. `--dry-run` plans without changing anything. Gate source
+checkouts under `build/pr-gates/` are left to `tools/check-pr-native`.
