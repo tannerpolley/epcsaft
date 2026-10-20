@@ -13,6 +13,47 @@ void tpd_compare(const std::string& id, double value, double reference, double t
         "absolute", tolerance, 0.0, ok);
 }
 
+// #662: EqID system_gibbs_helmholtz_coordinates retains N*x_i ideal log-curvature at trace support.
+void check_trace_ion_curvature() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto parameters = properties_support::aqueous_electrolyte();
+    parameters.permittivity_form = PermittivityForm::DensityTemperature;
+    parameters.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    parameters.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+    const HelmholtzModel model(parameters);
+    auto phase = equilibrium_support::phase("L", PhaseKind::Liquid); phase.support = {0, 1, 2};
+    for (double q : {1e-170, 1e-230}) {
+        const std::vector<double> x{1.0 - 2.0 * q, q, q};
+        const auto root = solve_density(model, 298.15, 1000.0, x, DensityBranch::Vapor, std::nullopt);
+        const auto derivative = model.evaluate(298.15, 1.0 / root.molar_density, x, DerivativeOrder::IsothermalPhaseHessian);
+        std::vector<double> shift(3);
+        for (std::size_t i = 0; i < 3; ++i)
+            shift[i] = -std::log(x[i] * root.molar_density) - derivative.gradient[2 + i];
+        std::vector<std::vector<double>> transform;
+        const auto trial = compile_stability_trial(model, 298.15, 1000.0, phase, x, shift, transform);
+        auto point = trial.generic_point();
+        for (std::size_t i = 0; i < 3; ++i) point[i] = std::log(x[i]);
+        point[3] = 1.0;
+        point[4] = std::log(model.packing_fraction_coefficient(298.15, x) * root.molar_density);
+        std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
+        core::Capture capture(true);
+        core::Scope scope("trace-ion-curvature");
+        const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope);
+        const auto id = "trace-ion-curvature/" + recording_support::number(q);
+        const auto inputs = recording_support::fields({recording_support::field("q", q),
+            recording_support::field("residual", result.convergence.residual),
+            recording_support::field("iterations", result.iterations), recording_support::field("evaluations", result.evaluations),
+            recording_support::field("hessian_calls", result.hessian_calls)});
+        double minimum = std::numeric_limits<double>::quiet_NaN();
+        for (const auto& event : capture.trace().events)
+            if (std::string(event.name) == "reduced_hessian_equilibrated") minimum = event.values[0];
+        tpd_compare(id + "/minimum", minimum, 1.0, 1e-8, inputs);
+        tpd_compare(id + "/stationarity", result.convergence.residual, 0.0, 1e-10, inputs);
+        CHECK(result.success);
+    }
+}
+
 void check_phase_removal_inventory() {
     using namespace epcsaft::equilibrium;
     // Gross/Sadowski Table 2 and k_ij=0, gross-2001-methane-ethane/3 packet.
