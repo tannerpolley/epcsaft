@@ -923,7 +923,10 @@ rising ratio means the iterate lies outside it, so polishing stops. From a
 box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
 4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
 −1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
-need no further polishing. Unfinished explicit stability trials alone may continue
+need no further polishing. A strictly raw-residual-decreasing proposal that reaches
+the caller's raw-row criterion is admitted without the decreasing-ratio test (#670).
+Best-point selection, freshly classified rows and the solved-state action criterion
+remain independent checks. Unfinished explicit stability trials alone may continue
 with the bounded adaptive damping in ALG-STABILITY; declared solves retain the
 contraction-ratio policy above. Each step must reduce the raw row maximum at a
 positive finite composition of every supported species; exact absence is the

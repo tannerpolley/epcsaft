@@ -5,6 +5,7 @@
 namespace equilibrium_checks {
 void check_s1();
 void check_s2();
+void check_trace_reaction_balance();
 void check_s6();
 void check_s7();
 void check_c1_multiplier_scale();
@@ -112,6 +113,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "reactive-caloric-F6-N-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "reactive-caloric-F6-N-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
         {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
+        {{"native.equilibrium.trace-reaction-balance", "trace-reaction-balance", "Automatic_fast"}, check_trace_reaction_balance},
         {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},
         {{"native.equilibrium.s7", "S7", "Automatic_fast"}, check_s7},
         {{"native.equilibrium.c1-multipliers", "C1", "Automatic_fast"}, check_c1_multiplier_scale},

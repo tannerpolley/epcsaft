@@ -3,6 +3,50 @@
 
 namespace equilibrium_checks {
 
+// #670: manufactured 2A=B trace inventory, isolated from caloric actions.
+void check_trace_reaction_balance() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto parameters = properties_support::parameters(3);
+    const auto ethane = properties_support::ethane();
+    for (std::size_t i = 0; i < 3; ++i) {
+        parameters.segment_count[i] = ethane.segment_count[0];
+        parameters.sigma_constant[i] = ethane.sigma_constant[0];
+        parameters.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+        parameters.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+    }
+    parameters.dispersion_energy_over_k[2] = 150.0;
+    const HelmholtzModel model(parameters);
+    EquilibriumProblem problem;
+    problem.temperature = FreeValue::fixed(250.0);
+    problem.pressure = FreeValue::fixed(101325.0);
+    problem.feed.kind = FeedKind::Amounts;
+    problem.feed.values = {1.0, 1e-8, 0.0};
+    PhaseSpec liquid;
+    liquid.name = "L";
+    liquid.kind = PhaseKind::Liquid;
+    liquid.amount = AmountSpec::free();
+    liquid.support = {0, 1, 2};
+    liquid.support_declared = true;
+    problem.phases = {liquid};
+    problem.reactions = {{"2A=B", {0.0, -2.0, 1.0}, 0.01}};
+    const auto result = solve_equilibrium(model, problem);
+    const double residual = result.convergence.residual;
+    const auto inputs = recording_support::fields({recording_support::field("T_K", 250.0),
+        recording_support::field("P_Pa", 101325.0), recording_support::field("feed_mol", problem.feed.values),
+        recording_support::field("iterations", result.iterations), recording_support::field("evaluations", result.evaluations)});
+    recording_support::compare_custom("trace-reaction-balance/rows", "classified_residual", "1", residual, 0.0,
+        inputs, "Relationship", "ALG-EQUILIBRIUM", "Fresh classified rows meet the caller criterion",
+        "residual<=1e-10", residual <= 1e-10, "trace-reaction-balance");
+    CHECK(result.success);
+    CHECK(compile_problem(model, problem).classified_residual_norm(result.coordinates) <= 1e-10);
+    const double inventory = result.amounts[0] * (result.mole_fractions[1] + 2.0 * result.mole_fractions[2]);
+    recording_support::compare_custom("trace-reaction-balance/inventory", "conserved_amount", "mol", inventory, 1e-8,
+        inputs, "Relationship", "reaction-equilibrium", "The 2A=B conserved inventory meets 1e-10 relative",
+        "abs(inventory-1e-8)<=1e-18", std::abs(inventory - 1e-8) <= 1e-18, "trace-reaction-balance");
+    for (const double x : result.mole_fractions) CHECK(std::isfinite(x) && x > 0.0);
+}
+
 void verify_s1(const epcsaft::HelmholtzModel& model,
                const epcsaft::equilibrium::EquilibriumProblem& problem,
                const epcsaft::equilibrium::EquilibriumResult& result,
