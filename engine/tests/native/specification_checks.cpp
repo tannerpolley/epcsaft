@@ -1303,11 +1303,53 @@ void check_inventory_support() {
             "inventory", "structural", "maximum", "support", "n_2=0", "zero");
     }
 }
+
+void check_trace_inventory_witness() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    // #717 S3's water/ammonia inventory subproblem, with inert trace Li and Na.
+    auto parameters = properties_support::parameters(7);
+    std::fill(parameters.segment_count.begin(), parameters.segment_count.end(), 1.6069);
+    std::fill(parameters.sigma_constant.begin(), parameters.sigma_constant.end(), 3.5206);
+    std::fill(parameters.dispersion_energy_over_k.begin(), parameters.dispersion_energy_over_k.end(), 191.42);
+    std::fill(parameters.molar_mass_kg_per_mol.begin(), parameters.molar_mass_kg_per_mol.end(), 0.03007);
+    const HelmholtzModel model(parameters);
+    EquilibriumProblem problem;
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.pressure = FreeValue::fixed(101325.0);
+    problem.feed.kind = FeedKind::Amounts;
+    problem.feed.values = {55.50791769892174, 2.089181436265685e-7, 2.773272490012367,
+        6.627433285849546e-11, 8.230107589476124e-5, 5.704369091575686e-4, 8.399925272785547e-5};
+    PhaseSpec phase;
+    phase.kind = PhaseKind::Liquid;
+    phase.amount = AmountSpec::free();
+    phase.support = {0, 1, 2, 3, 4, 5, 6};
+    phase.support_declared = true;
+    problem.phases = {phase};
+    problem.reactions = {{"water", {-1, 0, 0, 1, 1, 0, 0}, 1.0},
+        {"ammonium", {0, 0, 0, 1, 0, 1, -1}, 1.0}};
+    const auto compiled = compile_problem(model, problem);
+    for (const auto& order : {std::vector<std::size_t>{0, 1, 2, 3, 4, 5, 6},
+             std::vector<std::size_t>{1, 0, 2, 3, 4, 5, 6}}) {
+        const auto bounds = inventory_bounds(compiled, order, false, 0.0);
+        const auto& li = *std::find_if(bounds.begin(), bounds.end(), [](const auto& r) { return r.species == 1; });
+        CHECK(li.status == "optimal" && li.maximum);
+        const double value = li.maximum.value_or(NAN), expected = problem.feed.values[1];
+        recording_support::compare_custom(("inventory/trace/" + std::to_string(order.front())).c_str(),
+            "maximum_Li", "mol", value, expected,
+            recording_support::field("feed_mol", problem.feed.values), "Relationship", "conserved-inventory",
+            "inert lithium cannot exceed its feed inventory", "relative<=1e-10",
+            std::abs(value / expected - 1.0) <= 1e-10, "inventory");
+        CHECK(std::max({li.balance_residual, li.normalization_residual, li.lower_bound_residual}) <= 1e-10);
+        CHECK(li.witness.size() == problem.feed.values.size());
+    }
+}
 }
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.specification.polish-solve", "Newton-solve"}, check_polish_solve_admission},
         {{"native.specification.inventory", "Inventory"}, check_inventory_support},
+        {{"native.specification.trace-inventory-witness", "trace-inventory-witness"}, check_trace_inventory_witness},
         {{"native.specification.c1", "C1"}, check_c1},
         {{"native.specification.c2", "C2"}, check_c2},
         {{"native.specification.c3", "C3"}, check_c3},
