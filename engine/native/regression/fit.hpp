@@ -216,6 +216,6 @@ using ObservationFunction = std::function<bool(const std::vector<double>&, bool,
 FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& point = {});
-void validate_fit_request(const FitRequest& request);
+void validate_fit_request(const FitRequest& request, bool optimizing = true);
 
 }  // namespace epcsaft::regression

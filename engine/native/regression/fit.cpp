@@ -1225,7 +1225,7 @@ void finish_checks(FitResult& result, const FitRequest& request, const std::vect
         if (!check.report_only && check.status != "pass" && result.acceptance != "unavailable") result.acceptance = check.status;
 }
 
-void validate_fit_request(const FitRequest& request) {
+void validate_fit_request(const FitRequest& request, bool optimizing) {
     const auto& set = request.coordinates;
     const auto n = request.observations.size();
     validate_checks(request);
@@ -1243,9 +1243,11 @@ void validate_fit_request(const FitRequest& request) {
     }
     const auto& controls = request.controls;
     (void)controls.solver_options.resolved({});
-    require(controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
-        && controls.maximum_elapsed_time_seconds > 0.0,
-        "controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
+    if (optimizing) {
+        require(controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
+            && controls.maximum_elapsed_time_seconds > 0.0,
+            "controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
+    }
 }
 
 FitResult fit(const FitRequest& request) {

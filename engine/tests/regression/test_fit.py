@@ -129,6 +129,40 @@ def test_point_reader_takes_the_fit_thermochemistry(evidence: Any) -> None:
     same(evidence, "point-reader/total-cp", read.predictions[0], fitted.predictions[0], atol=0.0, rtol=1e-10, T_K=300.0, P_Pa=1.0e5)
 
 
+def test_minimax_point_without_fit_budgets(evidence: Any) -> None:
+    """The aqueous gamma point in native minimax-consistency needs no optimizer budget (#753)."""
+    p = aqueous_electrolyte()
+    chart = [regression.coordinate(p, [("k_ij", ("s0", "s1"), 1)],
+                                  origin=-0.3, scale=0.2, bounds=(-1.0, 1.0))]
+    row = regression.electrolyte(p, "mean_ionic_activity_coefficient", 298.15, 1e5, {"s0": 1.0},
+        ions=("s1", "s2"), stoichiometry=(1, 1), molality=.1, observed=1.0, form="log_ratio")
+    guard = regression.CheckGroup()
+    guard.name, guard.rows, guard.maximum = "decades", [0], 1.0
+    guard.metric = regression.CheckMetric.AbsoluteLog10Ratio
+    spec = regression.MinimaxRequest()
+    spec.targets, spec.group_scales = [0], [1.0]
+    spec.q, spec.tolerance, spec.activity_distance, spec.margin = .02, 1e-10, 1e-6, .1
+    refused = regression.fit(p, chart, [row], checks=[guard], minimax=spec,
+                             controls=regression.FitControls(maximum_iterations=0, maximum_elapsed_time_seconds=0.0))
+    assert refused.status == "invalid_setup"
+    assert refused.message == "fit controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive"
+    result = _core.evaluate_minimax(p._native, chart, [0.0], [], [row], [guard], None, spec)
+    assert result.minimax is not None, result.message
+    m = result.minimax
+    assert m.availability == "values_only"
+    assert m.point[0] == 0.0 and len(m.point) == 2
+    assert m.lower == pytest.approx([-3.5, 0.0]) and m.upper == [6.5, math.inf]
+    assert len(m.rows) == len(m.values) == 4 and len(m.jacobian) == 8
+    assert [(item.kind, item.row) for item in m.rows] == [("target", 0)] * 2 + [("maximum", 0)] * 2
+    assert all(math.isfinite(value) for values in (m.point, m.values, m.jacobian) for value in values)
+    assert len(m.frozen_checks) == 1
+    frozen = m.frozen_checks[0]
+    assert (frozen.name, frozen.rows, frozen.maximum_threshold) == ("decades", [0], 1.0)
+    assert math.isfinite(frozen.maximum) and frozen.status == "pass"
+    evidence.observe("minimax/point-without-fit-budgets", point=m.point, lower=m.lower, upper=m.upper,
+        scaled_values=m.values, jacobian=m.jacobian, frozen_maximum=frozen.maximum)
+
+
 def test_addition_enthalpy_composes_its_endpoint_states(evidence: Any) -> None:
     """A nonreacting addition row equals (N_f h_f - N_i h_i)/n_add - h_feed read from the public states."""
     p = parameters((ETHANE, (30.07, 1.6069, 3.5206, 220.0)), pairs=[("k_ij", (0, 1), 0.0)])

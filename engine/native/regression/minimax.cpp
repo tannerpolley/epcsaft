@@ -22,8 +22,6 @@ public:
         require(u_ > 0 && start.size() == request.coordinates.coordinates.size(), "minimax start width");
         require(!spec_.targets.empty() && positive(spec_.q) && positive(spec_.tolerance)
             && positive(spec_.activity_distance) && positive(spec_.margin), "minimax controls");
-        require(request.controls.maximum_iterations > 0 && positive(request.controls.maximum_elapsed_time_seconds),
-            "minimax budgets: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
         require(frozen.size() == request.checks.size() && spec_.group_scales.size() == frozen.size(), "minimax groups/scales");
         std::tie(out.lower, out.upper) = request.coordinates.optimizer_bounds();
         out.point = start;
@@ -299,7 +297,7 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         for (const auto& coordinate : request.coordinates.coordinates)
             require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
                 "reaction enthalpy shift is not supported in minimax");
-        validate_fit_request(request);
+        validate_fit_request(request, !evaluation_point);
         const auto frozen = evaluate_checks(request, request.baseline.value_or(request.parameters));
         std::vector<std::size_t> selected = request.minimax->targets;
         for (const auto& group : request.checks) if (!group.report_only) selected.insert(selected.end(), group.rows.begin(), group.rows.end());
