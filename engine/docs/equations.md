@@ -1727,6 +1727,66 @@ $$
 \ln K_b=-\frac{\sum_i\nu_i\mu_i^{\circ,b}}{RT}.
 $$
 
+## `ideal_mole_fraction_reaction`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Source equation
+- Source: Nasrifar and Tafazzol (2010), DOI 10.1021/ie901181n, Eq. (11), Table 1 and section 6, pp.7621,7627; ideal activity assumption
+- Description: Dimensionless mole-fraction activities with standard fraction one; positive products stoichiometry and caller-declared constants on the ideal-mole-fraction basis. Pressure does not enter these liquid chemistry rows.
+- Change note: Specializes reaction_activity_quotient. ReactionLogPolynomial owns the temperature law; its finite positive logarithm reference is independent of its evaluation interval. No EOS density or infinite-dilution correction applies.
+
+$$
+a_i=x_i=\frac{n_i}{N},\quad N=\sum_i n_i,\qquad
+F_r=\sum_i\nu_{ir}\ln x_i-\ln K_r^x(T)=0.
+$$
+
+## `ideal_reaction_amount_coordinates`
+
+- Section: Equilibrium / Amount coordinates
+- Status: Exact derivation
+- Source: ideal_mole_fraction_reaction and material_balance; logarithm and exponential chain rules
+- Description: Log amounts scaled by positive feed mol, with independent conserved null-space rows. There are s coordinates and r+(s-r) equations; charge conservation follows from the neutral feed and charge-conserving reactions.
+- Change note: The feasibility objective is zero. No density, phase-amount, normalization or balance-dual coordinate is added. CppAD differentiates the same row expression for the existing Ipopt driver and exact-Jacobian polish.
+
+$$
+y_i=\ln(n_i/N_{\rm ref}),\quad N_{\rm ref}=N_{\rm feed},\quad
+\ln x_i=y_i-\operatorname{logsumexp}_j y_j,\qquad
+C_a=\sum_i B_{ai}e^{y_i}-b_a/N_{\rm ref},\quad B\nu=0,\quad b=Bn^0,
+\qquad
+\partial_j F_r=\nu_{jr}-\Delta\nu_r x_j,\quad
+\partial_{jk}F_r=-\Delta\nu_r(\delta_{jk}x_j-x_jx_k),\quad
+\partial_j C_a=B_{aj}e^{y_j},\quad\partial_{jk}C_a=\delta_{jk}B_{aj}e^{y_j}.
+$$
+
+## `mdea_reaction_conserved_amounts`
+
+- Section: Equilibrium / Reaction inventories
+- Status: Exact derivation
+- Source: Null space of Nasrifar and Tafazzol (2010), Eqs. (1)-(6), p.7621; hydronium stoichiometry
+- Description: Physical inventory checks for the caller-declared aqueous MDEA/CO2/H2S example. The Engine computes a general null-space basis, independent of these example species names.
+- Change note: Water equivalent includes hydronium. The paper's printed Eq. (12) omits it and does not conserve R1; these conserved equations do not reproduce that printed balance.
+
+$$
+W=n_w+n_{OH^-}+n_{H_3O^+}+n_{HCO_3^-}+n_{CO_3^{2-}},\quad
+M=n_{MDEA}+n_{MDEAH^+},\quad C=n_{CO_2}+n_{HCO_3^-}+n_{CO_3^{2-}},\quad
+S=n_{H_2S}+n_{HS^-}+n_{S^{2-}},\quad
+Z=n_{H_3O^+}+n_{MDEAH^+}-n_{OH^-}-n_{HCO_3^-}-2n_{CO_3^{2-}}-n_{HS^-}-2n_{S^{2-}}.
+$$
+
+## `effective_water_amounts`
+
+- Section: Equilibrium / Amount conversion
+- Status: Source equation
+- Source: Nasrifar and Tafazzol (2010), section 6, p.7627, effective-water passage
+- Description: Lump every charged species amount into declared neutral water, preserving every remaining free molecular species and the current true-species mole total. This molecular representation does not preserve every elemental inventory.
+- Change note: Native conversion requires this ideal model's criterion-meeting liquid result and a complete disjoint water/ion/molecular partition. It does not calculate molecular phase equilibrium or reproduce Figure 15.
+
+$$
+\widetilde n_w=n_w+\sum_{i\in I}n_i,\qquad
+\widetilde n_j=n_j\ (j\in J),\qquad
+\widetilde N=\widetilde n_w+\sum_{j\in J}\widetilde n_j=N.
+$$
+
 ## `reaction_standard_state_conversion`
 
 - Section: Equilibrium / Reaction standard states

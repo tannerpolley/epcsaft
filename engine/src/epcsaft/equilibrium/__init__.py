@@ -18,6 +18,8 @@ Examples
 from .. import _core
 from .problem import (
     Amounts,
+    IdealMoleFraction,
+    effective_water_amounts,
     Continuation,
     Discover,
     Feed,
@@ -67,6 +69,7 @@ SolvedStateActionStatus = _core.SolvedStateActionStatus
 SolvedStateObservable = _core.SolvedStateObservable
 SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
+IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = _core.IDEAL_MOLE_FRACTION_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
 asl_record = _core.equilibrium_asl_record
 cooling_onset = _core.cooling_onset
@@ -75,6 +78,9 @@ StabilityOptions = _core.StabilityOptions
 
 __all__ = (
     "Amounts",
+    "IdealMoleFraction",
+    "effective_water_amounts",
+    "IDEAL_MOLE_FRACTION_STANDARD_STATE_ID",
     "inventory_bounds",
     "InventoryBound",
     "cooling_onset",
