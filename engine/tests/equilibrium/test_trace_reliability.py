@@ -255,7 +255,7 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
               (0.35833495745174776, [0.39451311265799627, 0.03540471872289053,
                0.5695224773809328, 0.0002798456190902245, 0.0002798456190902245])]
     problem = Problem(T=293.15, P=1e5, feed=Amounts(dict(zip(names, [total * n for n in feed]))),
-                      phases=[Phase(f"L{p}", kind="liquid", amount=Free(total * n), composition_guess=x)
+                      phases=[Phase(f"L{p}", kind="liquid", amount=Free(), composition_guess=x)
                               for p, (n, x) in enumerate(starts)], row_tolerance=1e-10)
     compiled = compile_problem(model, problem)
     result = solve_equilibrium(model, problem)
