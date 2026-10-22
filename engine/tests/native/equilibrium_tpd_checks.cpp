@@ -612,14 +612,29 @@ void check_tangent_plane_admission() {
     catch (const epcsaft::core::DeclarationError& error) { cause = error.what(); }
     CHECK(cause.find("not numerically qualified") != std::string::npos);
     for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
-    {
+    for (bool referenced : {false, true}) {
+        auto omitted = charged; omitted.pressure = FreeValue::fixed(1e5); omitted.feed.values = {1.0, 1e-6, 1e-6};
+        if (referenced) {
+            ReactionSpec reaction; reaction.stoichiometry = {-1, 1, 1};
+            reaction.correlation = epcsaft::ReactionLogPolynomial{std::log(1e-8), 0, 0, 0, 298.15, 250, 350, "analytic-source"};
+            reaction.reference = epcsaft::ReactionReference{std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+            omitted.reactions = {reaction};
+            epcsaft::NeutralReferenceDeclaration reference; reference.solvent_index = 0;
+            reference.solute_molality_ratios = {0, 1, 1}; reference.standard_molality_mol_per_kg = 1;
+            omitted.source_reference = reference;
+        }
         epcsaft::core::Capture omitted_capture(true); std::string cause;
-        try { (void)compile_problem(model, charged); }
+        try { (void)compile_problem(model, omitted); }
         catch (const std::invalid_argument& error) { cause = error.what(); }
         CHECK(cause == "charged vapor cannot be the omitted-charge phase");
-        std::size_t eos_evaluations = 0;
-        for (const auto& span : omitted_capture.trace().spans) if (std::string(span.name) == "evaluate") ++eos_evaluations;
-        tpd_compare("charged-vapor/omitted-charge-phase/eos-evaluations", eos_evaluations, 0.0, 0.0);
+        std::size_t eos_evaluations = 0, density_solves = 0;
+        for (const auto& span : omitted_capture.trace().spans) {
+            eos_evaluations += std::string(span.name) == "evaluate";
+            density_solves += std::string(span.name) == "solve_density";
+        }
+        const auto id = std::string("charged-vapor/omitted-charge-phase/") + (referenced ? "referenced/" : "unreferenced/");
+        tpd_compare(id + "eos-evaluations", eos_evaluations, 0.0, 0.0);
+        tpd_compare(id + "density-solves", density_solves, 0.0, 0.0);
     }
     // A declared electrolyte bubble has ions absent from its first, neutral vapor phase.
     // Explicit trials must still seed their ionic support with strictly positive amounts.

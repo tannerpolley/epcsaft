@@ -1225,11 +1225,6 @@ static CompiledSystem compile_with_basis(
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = compiled.seed_temperature();
     const double pressure_guess = compiled.seed_pressure();
-    const auto central_reactions = central_reference_reactions(
-        model, request, temperature_guess, pressure_guess,
-        compiled.reference_diagnostics, false);
-    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
     if (request.temperature.free)
         if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
@@ -1324,7 +1319,6 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
-    admit_solids(compiled, covered);
     const auto& phases = compiled.problem.phases;
     const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
     compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
@@ -1368,6 +1362,12 @@ static CompiledSystem compile_with_basis(
             ++compiled.charge_row_count;
         }
     }
+    const auto central_reactions = central_reference_reactions(
+        model, request, temperature_guess, pressure_guess,
+        compiled.reference_diagnostics, false);
+    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
+    admit_solids(compiled, covered);
     for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)

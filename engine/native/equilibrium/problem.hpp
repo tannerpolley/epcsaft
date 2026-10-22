@@ -491,7 +491,6 @@ struct EquilibriumResult final {
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
     std::vector<Row> rows;
-    std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
     std::size_t generic_nullity = 0;
