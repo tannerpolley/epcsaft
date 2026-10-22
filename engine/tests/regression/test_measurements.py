@@ -14,7 +14,7 @@ def test_shared_measurement_transport_and_worker_equivalence(evidence: Any) -> N
     for i, (temperature, value) in enumerate(((300.0, 1.52), (320.0, 1.59), (340.0, 1.72))):
         problem = Problem(T=temperature, P=5e6, phases=[Phase("liquid", kind="liquid")],
             feed=Amounts({"s0": 0.5, "s1": 0.5}), reactions=[Reaction({"s0": -1.0, "s1": 1.0}, name="isomerisation",
-                correlation=ReactionLogPolynomial(0.0, 0.0, 0.0, 0.0045, 300.0, 250.0, 450.0, EOS_STANDARD_STATE_ID))])
+                correlation=ReactionLogPolynomial(0.0, 0.0, 0.0, 0.0045, 300.0, 250.0, 450.0, EOS_STANDARD_STATE_ID, e=900.0, f=1e-7))])
         row = reg.observation(p, "pressure", problem, observed=value, form="difference", scale=1.0, mass_basis=False)
         row.kind, row.reaction = reg.ObservationKind.LogEquilibriumConstant, "isomerisation"
         rows.append(row)
@@ -29,6 +29,7 @@ def test_shared_measurement_transport_and_worker_equivalence(evidence: Any) -> N
     assert a.usable and b.usable and a.status == b.status == "converged"
     assert a.reconciliation is not None and b.reconciliation is not None
     assert a.physical == b.physical and a.predictions == b.predictions and a.final_cost == b.final_cost
+    assert a.optimizer_jacobian == b.optimizer_jacobian
     assert a.reconciliation.values == b.reconciliation.values and a.reconciliation.jacobian == b.reconciliation.jacobian
     assert a.reconciliation.column_groups == b.reconciliation.column_groups == [0, 1, 2]
     assert a.reconciliation.column_inputs == b.reconciliation.column_inputs == [0, 0, 0]

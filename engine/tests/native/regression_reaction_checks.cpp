@@ -1546,6 +1546,15 @@ void check_reaction_enthalpy_shift() {
     try { (void)reaction_log10_reciprocal(*problem.reactions[0].correlation); }
     catch (const std::invalid_argument&) { refused=true; }
     CHECK(refused);
+    for (const auto member : {&ReactionLogPolynomial::e, &ReactionLogPolynomial::f}) {
+        auto changed = problem.reactions[1];
+        changed.correlation.value().*member = 1.0;
+        CHECK(!same_reaction(changed, problem.reactions[1]));
+        refused = false;
+        try { (void)reaction_log10_reciprocal(*changed.correlation); }
+        catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
+    }
     refused=false;
     try { (void)fit_sequence(request, {start}, 10, 10.0); } catch (const std::invalid_argument& e) { refused=std::string(e.what()).find("fit_sequence") != std::string::npos; }
     CHECK(refused);

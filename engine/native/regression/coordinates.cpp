@@ -40,7 +40,7 @@ std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate) {
 // EqID: reaction_constant_log10_reciprocal
 std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law) {
     core::Scope scope("reaction_log10_reciprocal");
-    require(law.c == 0.0 && std::isfinite(law.a) && std::isfinite(law.b) && std::isfinite(law.d), "law is not a finite negative log10 reciprocal polynomial");
+    require(law.c == 0.0 && law.e == 0.0 && law.f == 0.0 && std::isfinite(law.a) && std::isfinite(law.b) && std::isfinite(law.d), "law is not a finite negative log10 reciprocal polynomial");
     return {-law.b / std::log(10.0), -law.a / std::log(10.0), -law.d / std::log(10.0)};
 }
 

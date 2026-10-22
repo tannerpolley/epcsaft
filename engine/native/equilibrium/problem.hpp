@@ -111,7 +111,7 @@ struct SolidSpec final {
 inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
     const auto correlation = [](const auto& v) {
         return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
-                        v.temperature_max, v.standard_state_id);
+                        v.temperature_max, v.standard_state_id, v.e, v.f);
     };
     const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
     const auto optional_equal = [](const auto& a, const auto& b, const auto& fields) {

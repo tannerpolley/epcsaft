@@ -30,6 +30,7 @@ void validate_composition(const std::vector<double>& composition) {
 void validate_correlation(const ReactionLogPolynomial& correlation) {
     const bool finite = std::isfinite(correlation.a) && std::isfinite(correlation.b)
         && std::isfinite(correlation.c) && std::isfinite(correlation.d)
+        && std::isfinite(correlation.e) && std::isfinite(correlation.f)
         && std::isfinite(correlation.reference_temperature)
         && std::isfinite(correlation.temperature_min) && std::isfinite(correlation.temperature_max);
     if (!finite || correlation.reference_temperature <= 0.0 || correlation.temperature_min <= 0.0
