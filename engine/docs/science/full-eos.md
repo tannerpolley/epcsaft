@@ -845,14 +845,37 @@ establishes global equilibrium.
 The optional `cation_mixing` declaration adds the empirical solvent-mass
 pair/triple term in EqID `cation_pair_triple_mixing_helmholtz`. It names one
 neutral solvent, two distinct cations and one common anion, with both constant
-coefficients supplied explicitly. The retained model admits one neutral solvent
-and one anion and requires positive solvent mass. Omitting either cation from
+coefficients supplied explicitly. The term is evaluated in every phase on the
+molality basis of that declared neutral solvent, with positive solvent mass and
+exactly one anion. Other neutral components enter this contribution only through
+mole fractions and total-mole normalization; their masses are not added to the
+declared solvent mass. There is no phase selector or automatic deactivation in
+an organic phase. Omitting either cation from
 a component selection omits the term; a zero amount in a retained component set
 keeps its insertion derivatives. With no declaration, arithmetic is unchanged.
-Its scientific domain is aqueous liquid at 298.15 K and 1 bar; the #658 Yao
+The coefficients are qualified only for retained aqueous water/chloride-salt
+cases at 298.15 K and 1 bar; the #658 Yao
 calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
 mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
 In particular, it has no ideal-gas residual limit at fixed composition.
+Occupied additional neutrals and organic-phase effects are unqualified
+extrapolation. Water-free states and pure-organic reference states remain
+outside the evaluation domain. Other neutral components retain their existing
+effects on the other EOS contributions.
+
+For an **illustrative**, electroneutral organic-rich composition, take water
+$x_s=10^{-3}$, Li and Mg $x_i=x_j=10^{-6}$, chloride $x_k=3\times10^{-6}$,
+and the remainder neutral organic. Substituting $M_s=0.01801528$ kg/mol,
+$\theta=-0.2205$ kg/mol and $\psi=0.024$ kg²/mol² gives
+$\Delta a^r\simeq-2.426\times10^{-8}$, about $-6.0\times10^{-5}$ J/mol
+of phase at 298.15 K. The Li chemical-potential contribution is nevertheless
+$\Delta\mu_i/(RT)=2\theta m_j+\psi m_jm_k\simeq-0.02426$, about
+$-60$ J/mol of inserted Li or $-0.0105$ decade in its activity contribution.
+These rounded formula substitutions are neither an Engine run nor a predicted
+phase or physical validation. At fixed water molalities the molar energy scales
+with $x_s$ while ion chemical potentials stay finite. At fixed nonzero ion
+fractions the pair and triple terms instead grow as $x_s^{-1}$ and $x_s^{-2}$
+as $x_s\to0$; there is no universal small-organic-phase bound.
 
 Finite temperature bounds attached to the selected source records are
 intersected by the resolver and enforced for every topology. A record whose

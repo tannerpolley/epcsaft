@@ -2145,7 +2145,7 @@ $$
 - Status: Exact derivation
 - Source: Solvent-mass integration of the constant short-range terms in Song et al. (2010), §2, p. 1287, Eqs. (1), (2), (10-1), (10-2), Zotero W3AX2GHK; #658 design D1–D7.
 - Description: One declared neutral solvent s, distinct cations i and j and common anion k; M_s is kg/mol, W is kg solvent, theta is kg/mol and psi is kg²/mol². The reduced molar contribution is Delta a^r = F/N, with N = sum n.
-- Change note: Optional aqueous liquid correction at 298.15 K and 1 bar; coefficients are constant in temperature. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients.
+- Change note: Evaluated in every phase on the declared solvent's molality basis, with positive solvent mass and exactly one anion. Other neutral components enter this contribution only through mole fractions and total-mole normalization; their masses are not added to W. The constant coefficients are qualified only for retained aqueous water/chloride-salt cases at 298.15 K and 1 bar. Occupied additional neutrals and organic-phase effects are unqualified extrapolation, with no phase selector or automatic deactivation; water-free states remain outside the evaluation domain. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients. Full EOS §12 gives an illustrative organic-phase substitution and its limits.
 
 $$
 F=\frac{\Delta A^r}{RT}
