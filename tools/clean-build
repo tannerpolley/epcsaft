@@ -1,165 +1,56 @@
 #!/usr/bin/env python3
-"""Keep the main checkout's build/ small (owner, 2026-10-22: 83 GB was unacceptable).
+"""Expire old evidence archives in the main checkout's build/archive (owner, 2026-10-22: 83 GB was unacceptable).
 
 Usage: tools/clean-build [--dry-run]
-Run daily by the user timer epcsaft-clean-build.timer, and safe to run by hand. It removes only disposable bulk:
-- build/pr-gates/pr-N/<head> trees older than a day whose PR is not open. It first takes pr-N.lock, the lock
-  tools/check-pr-native holds for a whole run, and skips the PR while any run holds it;
-- build/archive files older than ARCHIVE_DAYS;
-- inside other build/ entries untouched for STALE_DAYS: virtual environments, Meson build trees, clean git
-  checkouts, and binary files (BULK suffixes) over BIG_BYTES.
-It keeps text records of any size, tool-owned working trees (KEEP), anything whose name carries the number of an
-open issue or PR, symlinks and everything behind them, and any tree a running process uses as its directory,
-executable, open file or mapped library. Removed git worktrees are unregistered by `git worktree prune`.
+Run daily by the user timer epcsaft-clean-build.timer. It deletes regular files directly in build/archive older
+than DAYS whose name carries no open issue or PR number; it never descends, follows a symlink or touches anything
+else. Gate trees need no sweep: tools/check-pr-native removes its own tree when each run ends.
 """
 import argparse
-import fcntl
 import json
 import os
 from pathlib import Path
 import re
-import shutil
+import stat
 import subprocess
 import sys
 import time
 
-# The main checkout owns build/, even when this copy of the tool runs from a task worktree.
-ROOT = Path(subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=Path(__file__).resolve().parent,
-                           check=True, capture_output=True, text=True).stdout.splitlines()[0].removeprefix("worktree "))
-BUILD = ROOT / "build"
-KEEP = {"archive", "pr-gates", "docs", "engine-meson", "wheels", "environment", "environment-wheel", "subprojects",
-        "test-results", "checks", "time-key-solves", "native-isolated", "native-drivers", "analysis-declarations",
-        "highs", "equilibrium-corpora"}
-BULK = {".so", ".o", ".a", ".data", ".old", ".whl", ".zst", ".gz", ".xz", ".tar", ".tgz", ".zip", ".perf", ".core"}
-DAY = 86400
-ARCHIVE_DAYS, STALE_DAYS, BIG_BYTES, WARN_BYTES = 3, 3, 10 * 2**20, 10 * 2**30
-
-
-def open_numbers(kind):
-    try:
-        out = subprocess.run(["gh", kind, "list", "--state", "open", "--limit", "1000", "--json", "number"],
-                             cwd=ROOT, check=True, capture_output=True, text=True).stdout
-        numbers = {item["number"] for item in json.loads(out)}
-    except (OSError, subprocess.CalledProcessError, ValueError):
-        sys.exit(f"clean-build: open {kind}s unknown (gh failed); nothing removed")
-    if len(numbers) >= 1000:
-        sys.exit(f"clean-build: open {kind} list may be truncated; nothing removed")
-    return numbers
-
-
-def stats(path):
-    """(bytes, newest mtime) of a file or tree, without following symlinks."""
-    found = [path.lstat()]
-    for d, _, files in os.walk(path):
-        for name in files:
-            try:
-                found.append((Path(d) / name).lstat())
-            except OSError:
-                pass
-    return sum(s.st_size for s in found[1:] or found), max(s.st_mtime for s in found)
-
-
-def in_use():
-    """Real paths every running process uses: directory, executable, open files and mapped files."""
-    used = set()
-    for pid in filter(str.isdigit, os.listdir("/proc")):
-        links = [f"/proc/{pid}/cwd", f"/proc/{pid}/exe"]
-        try:
-            links += [f"/proc/{pid}/fd/{fd}" for fd in os.listdir(f"/proc/{pid}/fd")]
-            used.update(line.split(None, 5)[5].strip() for line in open(f"/proc/{pid}/maps")
-                        if len(line.split(None, 5)) == 6 and line.split(None, 5)[5].startswith("/"))
-        except OSError:
-            pass
-        for link in links:
-            try:
-                used.add(os.readlink(link))
-            except OSError:
-                pass
-    return {Path(p.removesuffix(" (deleted)")) for p in used if p.startswith("/")}
+DAYS = 3
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     dry = parser.parse_args().dry_run
-    if BUILD.is_symlink() or Path(os.path.realpath(BUILD)) != BUILD:
-        sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
-    now = time.time()
-    protected = open_numbers("issue") | open_numbers("pr")
-    busy = {a for p in in_use() for a in (p, *p.parents)}
-    freed = 0
-
-    def for_open_work(name):
-        return any(int(token) in protected for token in re.findall(r"\d+", name))
-
-    def remove(path, why):
-        nonlocal freed
-        if Path(os.path.realpath(path.parent)) != path.parent or BUILD not in path.parents:
-            print(f"kept {path}: outside build/ or behind a symlink")
-            return
-        if path in busy:
-            print(f"kept {path.relative_to(ROOT)}: a running process uses it")
-            return
-        amount = stats(path)[0]
+    root = Path(subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=Path(__file__).resolve().parent,
+                               check=True, capture_output=True, text=True).stdout.splitlines()[0].removeprefix("worktree "))
+    archive = root / "build" / "archive"
+    if archive.is_symlink() or Path(os.path.realpath(archive)) != archive:
+        sys.exit("clean-build: build/archive is or lies behind a symlink; nothing removed")
+    protected = set()
+    for kind in ("issue", "pr"):
         try:
-            if not dry:
-                shutil.rmtree(path) if path.is_dir() and not path.is_symlink() else path.unlink()
-        except OSError as error:
-            print(f"failed to remove {path.relative_to(ROOT)}: {error}")
-            return
-        freed += amount
-        print(f"{'would remove' if dry else 'removed'} {path.relative_to(ROOT)} ({amount / 2**20:.0f} MiB): {why}")
-
-    gates = BUILD / "pr-gates"
-    for pr in sorted(p for p in gates.glob("pr-*") if p.is_dir() and not p.is_symlink()):
-        if for_open_work(pr.name):
+            out = subprocess.run(["gh", kind, "list", "--state", "open", "--limit", "1000", "--json", "number"],
+                                 cwd=root, check=True, capture_output=True, text=True).stdout
+            numbers = {item["number"] for item in json.loads(out)}
+        except (OSError, subprocess.CalledProcessError, ValueError):
+            sys.exit(f"clean-build: open {kind}s unknown (gh failed); nothing removed")
+        if len(numbers) >= 1000:
+            sys.exit(f"clean-build: open {kind} list may be truncated; nothing removed")
+        protected |= numbers
+    cutoff, freed = time.time() - DAYS * 86400, 0
+    for item in sorted(archive.iterdir()):
+        info = item.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_mtime > cutoff:
             continue
-        with open(gates / f"{pr.name}.lock", "a") as lock:  # held by tools/check-pr-native for a whole run
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                print(f"kept build/pr-gates/{pr.name}: a gate run holds its lock")
-                continue
-            for head in sorted(h for h in pr.iterdir() if h.is_dir() and not h.is_symlink()):
-                if now - stats(head)[1] > DAY:
-                    remove(head, "gate tree of a PR or candidate that is not open")
-            if not dry and not any(pr.iterdir()):
-                pr.rmdir()
-
-    for item in sorted((BUILD / "archive").iterdir()):
-        if not item.is_symlink() and now - item.lstat().st_mtime > ARCHIVE_DAYS * DAY and not for_open_work(item.name):
-            remove(item, f"archive older than {ARCHIVE_DAYS} days")
-
-    for entry in sorted(BUILD.iterdir()):
-        if entry.name in KEEP or entry.is_symlink() or for_open_work(entry.name):
+        if any(int(token) in protected for token in re.findall(r"\d+", item.name)):
             continue
-        if now - stats(entry)[1] < STALE_DAYS * DAY:
-            continue
-        if entry.is_file():
-            if entry.suffix in BULK and entry.stat().st_size > BIG_BYTES:
-                remove(entry, f"binary file over {BIG_BYTES >> 20} MiB")
-            continue
-        for d, dirs, files in os.walk(entry):
-            here = Path(d)
-            dirs[:] = [name for name in dirs if not for_open_work(name)]
-            names = set(files) | set(dirs)
-            status = subprocess.run(["git", "-C", str(here), "status", "--porcelain"], capture_output=True, text=True)
-            clean_checkout = ".git" in names and status.returncode == 0 and not status.stdout
-            if {"pyvenv.cfg", "build.ninja"} & names or clean_checkout:
-                remove(here, "virtual environment, Meson build tree or clean git checkout")
-                dirs[:] = []
-                continue
-            for name in files:
-                path = here / name
-                if path.suffix in BULK and not path.is_symlink() and path.stat().st_size > BIG_BYTES:
-                    remove(path, f"binary file over {BIG_BYTES >> 20} MiB")
-
-    if not dry:
-        subprocess.run(["git", "worktree", "prune"], cwd=ROOT, check=False)
-    total = stats(BUILD)[0]
-    print(f"{'would free' if dry else 'freed'} {freed / 2**30:.1f} GiB; build/ is {total / 2**30:.1f} GiB")
-    if total - (freed if dry else 0) > WARN_BYTES:
-        print(f"warning: build/ exceeds {WARN_BYTES >> 30} GiB after cleanup", file=sys.stderr)
+        if not dry:
+            item.unlink()
+        freed += info.st_size
+        print(f"{'would remove' if dry else 'removed'} build/archive/{item.name} ({info.st_size / 2**20:.0f} MiB)")
+    print(f"{'would free' if dry else 'freed'} {freed / 2**30:.1f} GiB")
 
 
 if __name__ == "__main__":
