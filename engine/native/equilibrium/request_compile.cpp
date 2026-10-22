@@ -1816,8 +1816,8 @@ std::vector<double> CompiledSystem::numerical_rows(
     const PhasePoint& prepared, std::vector<double> values, std::size_t width
 ) const {
     values = trace_moiety_relative(prepared, std::move(values), width);
-    const auto& z = model->parameters().charge_number;
     for (const auto& [row, phase] : log_charge_rows) {
+        const auto& z = model->parameters().charge_number;
         const auto& shape = prepared.shape[phase];
         const auto& support = problem.phases[phase].support;
         double logarithm[2];
