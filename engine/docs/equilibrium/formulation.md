@@ -69,6 +69,13 @@ and EqID: `material_balance`.
 
 One charge row can be omitted only for an ion-containing phase of nonzero
 amount when neutral feed, charge-conserving reactions and balances imply it.
+An explicit charged Vapor declaration that would select Vapor as the
+omitted-charge phase is refused with `charged vapor cannot be the omitted-charge phase`.
+Internal charged Vapor trials instead carry their directly constructed pure-charge
+balance. Their numerical log-charge representation is confined to Newton
+correction and classification (EqID `tangent_plane_trial_balance`); physical
+constraints and Ipopt derivatives are unchanged.
+
 A zero-amount phase does not carry that implication. All returned charged
 phases must satisfy electroneutrality. Support removes coordinates; explicitly
 empty support must not silently mean all species. A support unable to form a

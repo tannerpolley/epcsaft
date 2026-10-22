@@ -188,8 +188,12 @@ void check_trial_refinement() {
     std::vector<double> attempt;
     const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, false, {}, false, true);
     const auto raw = trial.prepare(attempt, true);
-    const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number);
+    const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number, phase.kind);
     const auto inputs = recording_support::fields({recording_support::field("composition", composition),
+        recording_support::field("target", target), recording_support::field("raw_coordinates", attempt),
+        recording_support::field("raw_rows", trial.evaluate_at(raw).values),
+        recording_support::field("numerical_rows", trial.numerical_rows(raw, trial.evaluate_at(raw).values)),
+        recording_support::field("cause", result.message),
         recording_support::field("iterations", result.iterations), recording_support::field("evaluations", result.evaluations)});
     tpd_compare("trial-refinement/stationarity", result.convergence.residual, 0.0, 1e-10, inputs);
     tpd_compare("trial-refinement/charge", std::inner_product(composition.begin(), composition.end(), p.charge_number.begin(), 0.0), 0.0, 1e-12, inputs);
@@ -608,6 +612,15 @@ void check_tangent_plane_admission() {
     catch (const epcsaft::core::DeclarationError& error) { cause = error.what(); }
     CHECK(cause.find("not numerically qualified") != std::string::npos);
     for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
+    {
+        epcsaft::core::Capture omitted_capture(true); std::string cause;
+        try { (void)compile_problem(model, charged); }
+        catch (const std::invalid_argument& error) { cause = error.what(); }
+        CHECK(cause == "charged vapor cannot be the omitted-charge phase");
+        std::size_t eos_evaluations = 0;
+        for (const auto& span : omitted_capture.trace().spans) if (std::string(span.name) == "evaluate") ++eos_evaluations;
+        tpd_compare("charged-vapor/omitted-charge-phase/eos-evaluations", eos_evaluations, 0.0, 0.0);
+    }
     // A declared electrolyte bubble has ions absent from its first, neutral vapor phase.
     // Explicit trials must still seed their ionic support with strictly positive amounts.
     auto bubble = problem;

@@ -1047,6 +1047,17 @@ Solved-state actions consume the same coordinates and rows. Declared starts,
 continuation correctors, stability trials and caloric seed sub-solves retain
 Ipopt alone.
 
+The #771 explicit charged density-temperature Vapor correction uses the log
+charge row and exact log-coordinate Jacobian in EqID `tangent_plane_trial_balance`.
+The same pair governs Newton correction, contraction, damping, best-point
+selection, stopping and the local forward estimate. Classification retains
+both the original physical criterion and the log-charge criterion. Endpoint
+physical and numerical ranks are recorded separately; full numerical rank is
+necessary on this path, including trial polishing. Ipopt callbacks, physical
+duals and solved-state derivative actions retain their physical equations.
+This representation does not qualify relative trace derivatives or guarantee
+that a separated seed recovers a manufactured Vapor solution.
+
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected
 point whose classified rows meet the caller criterion is accepted after any
@@ -1876,8 +1887,10 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the largest-entry positive/negative pivot correction follow EqID:
-`electroneutral_trial_reconstruction` with ties by index. Recompute molar volume
+and the Liquid largest-entry positive/negative pivot correction follow EqID:
+`electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
+Vapor trials retain common normalization and multiplicative charge repair in
+log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
 from reconstructed composition and the retained packing coordinate. Reject
 lost positivity/support, invalid T/P, packing or association domain. Record
 actual normalization/charge defects and rounding scales; ionic defects must
