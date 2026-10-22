@@ -4,6 +4,8 @@
 // one equilibrium_*_checks.cpp unit.
 namespace equilibrium_checks {
 void check_s1();
+void check_ideal_gas();
+void check_species_thermochemistry();
 void check_s2();
 void check_trace_reaction_balance();
 void check_s6();
@@ -69,6 +71,8 @@ void boundary(bool nonidentical, bool free_temperature, bool fixed);
 int main(int argc, char** argv) {
     using namespace equilibrium_checks;
     return recording_support::run(argc, argv, {
+        {{"native.equilibrium.species-thermochemistry", "species-thermochemistry", "Automatic_fast"}, check_species_thermochemistry},
+        {{"native.equilibrium.ideal-gas", "ideal-gas", "Automatic_fast"}, check_ideal_gas},
         {{"native.equilibrium.caloric-admission", "caloric-admission", "Automatic_fast"}, caloric_specification_checks::admission, "caloric-specification"},
         {{"native.equilibrium.caloric-actions", "caloric-actions", "Automatic_fast"}, caloric_specification_checks::actions, "caloric-specification"},
         {{"native.equilibrium.caloric-curvature", "caloric-curvature", "Automatic_fast"}, caloric_specification_checks::curvature, "caloric-specification"},

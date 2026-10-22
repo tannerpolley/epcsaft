@@ -193,7 +193,7 @@ struct HelmholtzTape final {
             const auto contributions = residual_helmholtz(
                 independent[0], density, composition, tape_parameters, sigma,
                 diameter, sites, electrolyte.debye_huckel, born);
-            const auto delta = association_delta_values(
+            const auto delta = parameters.ideal_gas ? std::vector<AD>{} : association_delta_values(
                 independent[0], density, composition, tape_parameters, sigma,
                 diameter, tape_parameters.association_energy_over_k,
                 tape_parameters.association_volume);

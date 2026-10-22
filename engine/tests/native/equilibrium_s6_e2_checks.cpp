@@ -1419,3 +1419,234 @@ void check_e2_reuse() {
 }
 
 }  // namespace equilibrium_checks
+
+namespace equilibrium_checks {
+void check_ideal_gas() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    Parameters parameters;
+    parameters.ideal_gas = true;
+    parameters.molar_mass_kg_per_mol = {0.02, 0.03};
+    parameters.charge_number = {0, 0};
+    ThermochemistryRecord record{100000.0, {}};
+    for (double cp : {30.0, 40.0}) record.component_intervals.push_back({{400, 1000, true, true,
+        {IdealPolynomial{{cp}, 600, 1000, 10}, 100000}}});
+    HelmholtzModel model(parameters, {}, record);
+    const double T = 600, P = 100000, rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    const auto state = model.state(T, P / rt, {0.25, 0.75});
+    CHECK(close_with_tolerance(state.pressure / P, 1, 1e-10));
+    CHECK(close_with_tolerance(state.pressure_density_derivative / rt, 1, 1e-10));
+    const auto residual = model.evaluate(T, rt / P, {0.25, 0.75}, DerivativeOrder::Hessian);
+    CHECK(residual.value == 0);
+    for (auto value : residual.gradient) CHECK(value == 0);
+    for (auto value : residual.hessian) CHECK(value == 0);
+    auto problem = equilibrium_support::flash(2);
+    problem.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
+    problem.temperature = FreeValue::fixed(T); problem.pressure = FreeValue::fixed(P);
+    problem.feed.values = {0.25, 0.75};
+    problem.solver_options.values[policy::row] = 1e-10;
+    const auto c = compile_problem(model, problem);
+    auto q = c.generic_point();
+    const auto layout = c.prepare(q).shape.front();
+    q[layout.x[0]] = std::log(0.2); q[layout.x[1]] = std::log(0.6);
+    CHECK(layout.amount.has_value());
+    q[*layout.amount] = 2;
+    const double v = 2 * rt / P;
+    q[layout.volume] = -std::log(v);
+    // No reactions or supplied standards: the compiler uses zero species standards even with thermal records.
+    const auto actual = c.evaluate(q);
+    const auto gradient = c.objective_gradient(q), hessian = c.hessian(q);
+    const auto n = q.size();
+    const auto jacobian = c.jacobian(q);
+    bool chemical_identity = true, chemical_difference = true;
+    for (std::size_t j = 0; j < 2; ++j) {
+        auto plus = q, minus = q;
+        constexpr double step = 1e-5;
+        plus[layout.x[j]] += step; minus[layout.x[j]] -= step;
+        const auto up = c.evaluate(plus).values, down = c.evaluate(minus).values;
+        for (std::size_t row = 0; row < c.rows.size(); ++row) if (c.rows[row].kind == RowKind::Chemical) {
+            const double value = jacobian[row * n + layout.x[j]];
+            const double identity = c.rows[row].index == j ? 1.0 : 0.0;
+            const double difference = (up[row] - down[row]) / (2 * step);
+            chemical_identity &= close_with_tolerance(value, identity, 1e-10);
+            chemical_difference &= close_with_tolerance(value, difference, 1e-10);
+            std::printf("coordinate,chemical-jacobian,i=%zu,j=%zu,actual=%.17g,reference=%.17g,central=%.17g\n",
+                c.rows[row].index, j, value, identity, difference);
+        }
+    }
+    const double expected = 2 * (0.2 * (std::log(0.2 / v) - 1) + 0.6 * (std::log(0.6 / v) - 1) + 2);
+    CHECK(close_with_tolerance(actual.objective, expected, 1e-10));
+    CHECK(close_with_tolerance(gradient[layout.volume], -2.4, 1e-10));
+    CHECK(close_with_tolerance(hessian[layout.volume * n + layout.volume], 4, 1e-10));
+    for (std::size_t i = 0; i < 2; ++i) {
+        const double x = i == 0 ? 0.2 : 0.6;
+        CHECK(close_with_tolerance(gradient[layout.x[i]], 2 * x * std::log(x / v), 1e-10));
+        CHECK(close_with_tolerance(hessian[layout.x[i] * n + layout.volume], 2 * x, 1e-10));
+        CHECK(close_with_tolerance(hessian[layout.x[i] * n + layout.x[i]], 2 * x * (std::log(x / v) + 1), 1e-10));
+        std::printf("coordinate,composition-gradient,i=%zu,actual=%.17g,reference=%.17g,error=%.17g\n",i,gradient[layout.x[i]],2*x*std::log(x/v),gradient[layout.x[i]]-2*x*std::log(x/v));
+        std::printf("coordinate,mixed-composition-volume,i=%zu,actual=%.17g,reference=%.17g,error=%.17g\n",i,hessian[layout.x[i]*n+layout.volume],2*x,hessian[layout.x[i]*n+layout.volume]-2*x);
+        std::printf("coordinate,composition-curvature,i=%zu,actual=%.17g,reference=%.17g,error=%.17g\n",i,hessian[layout.x[i]*n+layout.x[i]],2*x*(std::log(x/v)+1),hessian[layout.x[i]*n+layout.x[i]]-2*x*(std::log(x/v)+1));
+    }
+    std::printf("coordinate,objective,actual=%.17g,reference=%.17g,error=%.17g\n",actual.objective,expected,actual.objective-expected);
+    std::printf("coordinate,volume-gradient,actual=%.17g,reference=-2.4,error=%.17g\n",gradient[layout.volume],gradient[layout.volume]+2.4);
+    std::printf("coordinate,volume-curvature,actual=%.17g,reference=4,error=%.17g\n",hessian[layout.volume*n+layout.volume],hessian[layout.volume*n+layout.volume]-4);
+    const auto solved = solve_equilibrium(model, problem);
+    std::printf("ideal-gas,success=%d,cause=%s,P=%.17g,slope=%.17g,F=%.17g,q_gradient=%.17g,qq=%.17g\n",
+        solved.success, solved.message.c_str(), state.pressure, state.pressure_density_derivative,
+        actual.objective, gradient[layout.volume], hessian[layout.volume*n+layout.volume]);
+    CHECK(solved.success);
+    CHECK(solved.amounts.size() == 1);
+    CHECK(close_with_tolerance(solved.amounts[0], 1, 1e-10));
+    for (std::size_t i = 0; i < 2; ++i) CHECK(std::abs(solved.amounts[0] * solved.mole_fractions[i] - problem.feed.values[i]) <= 2e-9);
+    CHECK(!solved.residuals.empty());
+    for (auto row : solved.residuals) CHECK(std::abs(row) <= 1e-10);
+    auto target = problem;
+    target.pressure = FreeValue::fixed(101000);
+    const auto direct = solve_equilibrium(model, target);
+    const auto path = continue_equilibrium(model, {problem, target, solved, {0.25, 1e-6, 20, 4}, {}});
+    std::printf("ideal-continuation,success=%d,stop=%s,cause=%s,attempts=%zu,retries=%zu,accepted=%zu,reached=%.17g,message=%s\n",
+        path.success, continuation_stop_name(path.stop), path.cause_stop ? continuation_stop_name(*path.cause_stop) : "none",
+        path.attempts, path.retries, path.accepted_steps, path.reached_path, path.message.c_str());
+    CHECK(chemical_identity); CHECK(chemical_difference);
+    CHECK(direct.success && path.success && path.stop == ContinuationStop::reached_target);
+    CHECK(path.reached_path == 1 && path.states.size() > 1 && path.states.size() == path.path_values.size());
+    for (std::size_t k = 0; k < path.states.size(); ++k) {
+        const auto& point = path.states[k];
+        const double pressure = P + 1000 * path.path_values[k];
+        std::printf("ideal-continuation,path=%.17g,P=%.17g,rho=%.17g,reference=%.17g\n",
+            path.path_values[k], pressure, point.molar_densities[0], pressure / rt);
+        CHECK(close_with_tolerance(point.molar_densities[0], pressure / rt, 1e-10));
+        CHECK(!point.residuals.empty());
+        for (double row : point.residuals) CHECK(std::abs(row) <= 1e-10);
+        for (std::size_t i = 0; i < 2; ++i)
+            CHECK(std::abs(point.amounts[0] * point.mole_fractions[i] - problem.feed.values[i]) <= 2e-9);
+    }
+    CHECK(close_with_tolerance(path.states.back().molar_densities[0], direct.molar_densities[0], 1e-10));
+    bool refused = false;
+    try { stability_test(c, solved, {}); } catch (const std::invalid_argument& e) { refused = std::string(e.what()).find("ideal-gas") != std::string::npos; std::printf("refusal,stability,T=600,P=100000,cause=%s\n",e.what()); }
+    CHECK(refused);
+    problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
+    for (bool direct : {false, true}) {
+        refused = false;
+        try { if (direct) discover_phases(model, problem); else solve_equilibrium(model, problem); }
+        catch (const std::invalid_argument& e) { refused = std::string(e.what()).find("ideal-gas") != std::string::npos; std::printf("refusal,discovery,direct=%d,T=600,P=100000,cause=%s\n",direct,e.what()); }
+        CHECK(refused);
+    }
+}
+} // namespace equilibrium_checks
+
+namespace equilibrium_checks {
+void check_species_thermochemistry() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    Parameters p; p.ideal_gas = true; p.molar_mass_kg_per_mol = {0.092011, 0.0460055}; p.charge_number = {0, 0};
+    // NIST WebBook C10544726/C10102440, Gas Phase Heat Capacity (Shomate Equation), A-H rows.
+    ThermochemistryRecord r{100000, {{{500,1000,true,true, {IdealShomate{{34.05274,191.9845,-151.0575,44.39350,-0.158949,-8.893428,293.7724,9.078988},9078.988},100000}}},
+        {{298,1200,true,true, {IdealShomate{{16.10857,75.89525,-54.38740,14.30777,0.239423,26.17464,240.5386,33.09502},33095.02},100000}}}}};
+    const std::vector<double> nu = {-1,2};
+    auto problem = equilibrium_support::flash(2); problem.phases = {equilibrium_support::phase("V",PhaseKind::Vapor)};
+    problem.temperature = FreeValue::fixed(500); problem.pressure = FreeValue::fixed(100000); problem.feed.values = {1,0};
+    problem.reactions = {{"N2O4=2NO2",nu,{},{},{},{}}}; problem.solver_options.values[policy::row] = 1e-10;
+    HelmholtzModel model(p,{},r); const auto c = compile_problem(model,problem); const auto solved = solve_equilibrium(model,problem);
+    CHECK(solved.success); CHECK(!solved.residuals.empty());
+    for(auto v:solved.residuals) CHECK(std::abs(v)<=1e-10);
+    CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[0]-0.0013392705057121423)<=2e-9);
+    CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[1]-1.9973214589885757)<=2e-9);
+    const auto source = reaction_thermochemistry_density(r,nu,500);
+    CHECK(source.status==ThermochemistryStatus::Available);
+    CHECK(std::abs(source.pressure_gibbs+30375.9201906513)<=1e-6);
+    CHECK(source.k_pressure && std::abs(*source.k_pressure/1490.3509615073785-1)<=1e-10);
+    std::printf("species-target,T=500,G_P=%.17g,K_P=%.17g,G_rho=%.17g,n_N2O4=%.17g,n_NO2=%.17g,cause=%s\n",
+        source.pressure_gibbs,*source.k_pressure,source.gibbs,solved.amounts[0]*solved.mole_fractions[0],solved.amounts[0]*solved.mole_fractions[1],solved.message.c_str());
+    for(bool missing:{false,true}) {
+        auto unavailable = r; if(missing) unavailable.component_intervals[0].clear();
+        const double T = missing?500:499;
+        const auto value = reaction_thermochemistry_density(unavailable,nu,T);
+        CHECK(value.status==(missing?ThermochemistryStatus::MissingRecord:ThermochemistryStatus::OutsideInterval));
+        CHECK(!value.cause.empty()); CHECK(!value.k_pressure);
+        HelmholtzModel absent(p,{},unavailable); auto request = problem; request.temperature = FreeValue::fixed(T);
+        bool refused=false;try{compile_problem(absent,request);}catch(const std::invalid_argument&e){const std::string cause=e.what();refused=cause.find(value.cause)!=std::string::npos&&cause.find("N2O4=2NO2")!=std::string::npos;}
+        CHECK(refused); std::printf("unavailable,%s\n",value.cause.c_str());
+    }
+    const auto fourth=reference_calorics(c,500,100000,true,false,false,4), caloric_source=reference_calorics(c,500,100000,true,false,false,2);
+    CHECK(fourth.status==SolvedStateActionStatus::EnergyOrderUnavailable);
+    CHECK(caloric_source.status==SolvedStateActionStatus::ReferenceUnavailable);
+    std::printf("refusal,reference-calorics,order=4,T=500,P=100000,cause=%s\n",fourth.message.c_str());
+    std::printf("refusal,reference-calorics,order=2,T=500,P=100000,cause=%s\n",caloric_source.message.c_str());
+    for(auto kind:{SolvedStateObservableKind::SystemEnthalpy,SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity,SolvedStateObservableKind::PhaseGibbsMolarVolume}) {
+        SolvedStateActionRequest request{{{kind}},{{1,0,{0,0},{}}}};
+        const auto action = solved_state_actions(c,solved,request);
+        CHECK(action.results.size()==1&&action.results[0].status==SolvedStateActionStatus::EnergyOrderUnavailable);
+        std::printf("refusal,caloric,kind=%d,T=500,P=100000,cause=%s\n",int(kind),action.results[0].diagnostic_message.value_or("").c_str());
+    }
+    for(std::size_t family:{std::size_t(0),std::size_t(2)}) for(std::size_t kind=0;kind<5;++kind) {
+        SolvedStateObservable o; o.kind=SolvedStateObservableKind::PhaseProperty; o.property=property_observable(family,kind);
+        const SolvedStateActionRequest request{{o},{{1,0,{0,0},{}}}};
+        const auto action=solved_state_actions(c,solved,request);
+        CHECK(action.results[0].status==SolvedStateActionStatus::EnergyOrderUnavailable);
+        std::printf("refusal,phase-property,kind=%zu,T=500,P=100000,cause=%s\n",5*family+kind,action.results[0].diagnostic_message.value_or("").c_str());
+    }
+    for(bool trial:{false,true}) {
+        std::vector<std::vector<double>> basis;
+        bool refused=false;try{if(trial)compile_stability_trial(model,500,100000,problem.phases[0],c.n_feed,c.standard_gibbs,basis);else cooling_onset(c);}
+        catch(const std::invalid_argument&e){refused=std::string(e.what()).find("ideal-gas")!=std::string::npos;std::printf("refusal,phase-search,trial=%d,T=500,P=100000,cause=%s\n",trial,e.what());} CHECK(refused);
+    }
+    for(std::size_t excluded=0;excluded<11;++excluded) {
+        auto declaration=problem;
+        if(excluded==0) declaration.temperature=FreeValue::variable(500);
+        if(excluded==1) declaration.pressure=FreeValue::variable(100000);
+        if(excluded==2) declaration.enthalpy_j=0;
+        if(excluded==3) declaration.entropy_j_per_k=0;
+        if(excluded==4) declaration.solids.push_back({});
+        if(excluded==5) declaration.source_reference=NeutralReferenceDeclaration{};
+        if(excluded==6) declaration.critical=CriticalDeclaration{};
+        if(excluded==7) declaration.envelope=EnvelopeCondition{};
+        if(excluded==8) declaration.azeotrope=true;
+        if(excluded==9) declaration.phases.push_back(declaration.phases[0]);
+        if(excluded==10) declaration.phases[0].kind=PhaseKind::Liquid;
+        bool refused=false;try{compile_problem(model,declaration);}catch(const std::invalid_argument&e){refused=std::string(e.what()).find("ideal-gas")!=std::string::npos;std::printf("refusal,compiler,selection=%zu,T=500,P=100000,cause=%s\n",excluded,e.what());}
+        CHECK(refused);
+    }
+    HelmholtzModel nonideal(properties_support::neutral_binary(),{},r);
+    const auto nonideal_compiled=compile_problem(nonideal,problem);
+    CHECK(reference_calorics(nonideal_compiled,500,100000,true,false,false,2).status==SolvedStateActionStatus::ReferenceUnavailable);
+    const auto nonideal_solved=solve_equilibrium(nonideal,problem); CHECK(nonideal_solved.success);
+    const auto deferred=solved_state_actions(nonideal_compiled,nonideal_solved,
+        {{{SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity}},{{1,0,{0,0},{}}}});
+    CHECK(deferred.results[0].status==SolvedStateActionStatus::ReferenceUnavailable);
+    CHECK(deferred.diagnostics.state_factorizations==0&&deferred.diagnostics.maximum_energy_order==0);
+    std::printf("refusal,nonideal-species-caloric,T=500,P=100000,cause=%s\n",deferred.results[0].diagnostic_message.value_or("").c_str());
+    for(bool entropy:{false,true}) {
+        auto caloric=problem;if(entropy)caloric.entropy_j_per_k=0;else caloric.enthalpy_j=0;
+        bool refused=false;try{compile_problem(nonideal,caloric);}catch(const std::invalid_argument&e){refused=std::string(e.what()).find("species-derived")!=std::string::npos;}CHECK(refused);
+    }
+    // Manufactured linear-Cp reference, independently integrated and differentiated.
+    ThermochemistryRecord linear{100000,{}};
+    linear.component_intervals={{{400,1000,true,true,{IdealPolynomial{{30,0.01},600,1000,10},100000}}},
+                               {{400,1000,true,true,{IdealPolynomial{{40,0.03},600,5000,30},100000}}}};
+    const double T=750,R=GAS_CONSTANT_J_PER_MOL_K,dt=T-600,L=std::log(R*T/100000);
+    const double h=9000+50*dt+0.025*dt*dt,s=50+20*std::log(T/600)+0.05*dt,cp=50+0.05*dt;
+    const std::array<double,4> expected={h-T*s+R*T*L,-s+R*(L+1),-cp/T+R/T,cp/(T*T)-0.05/T-R/(T*T)};
+    const auto actual=reaction_thermochemistry_density(linear,nu,T);
+    const auto targets=reaction_target_series(T,problem.reactions,3,&linear);
+    HelmholtzModel manufactured(p,{},linear);auto request=problem;request.temperature=FreeValue::fixed(T);
+    const auto compiled=compile_problem(manufactured,request); const auto point=compiled.generic_point(); const auto prepared=compiled.prepare(point);
+    std::vector<std::vector<double>> fixed(4,std::vector<double>(point.size(),0.0)); fixed[0]=point;
+    std::vector<double> thermal_control(compiled.control_width(),0.0); thermal_control[0]=1;
+    const auto reduced=compiled.row_series(prepared,fixed,thermal_control,3);
+    const std::array<double,4> reference_reduced={expected[0]/(R*T),expected[1]/(R*T)-expected[0]/(R*T*T),
+        expected[2]/(R*T)-2*expected[1]/(R*T*T)+2*expected[0]/(R*T*T*T),
+        expected[3]/(R*T)-3*expected[2]/(R*T*T)+6*expected[1]/(R*T*T*T)-6*expected[0]/(R*T*T*T*T)};
+    for(std::size_t k=0;k<4;++k) {
+        const double scale=std::pow(T,k)/(R*T);
+        CHECK(close_with_tolerance(scale*actual.gibbs_derivatives[k],scale*expected[k],1e-10));
+        CHECK(close_with_tolerance(scale*targets[k][0],scale*expected[k],1e-10));
+        double mapped=0; const double factorial=k<2?1:k==2?2:6;
+        for(std::size_t row=0;row<compiled.rows.size();++row) if(compiled.rows[row].kind==RowKind::Chemical)
+            mapped+=nu[compiled.rows[row].index]*factorial*reduced.rows[k][row];
+        if(k==0) for(std::size_t i=0;i<nu.size();++i) mapped-=nu[i]*std::log(prepared.composition[0][i]/prepared.volume[0]);
+        CHECK(close_with_tolerance(std::pow(T,k)*mapped,std::pow(T,k)*reference_reduced[k],1e-10));
+        std::printf("thermal-derivative,%zu,actual=%.17g,reference=%.17g,scaled_error=%.17g,reduced=%.17g,reduced_reference=%.17g,reduced_scaled_error=%.17g\n",k,actual.gibbs_derivatives[k],expected[k],scale*(actual.gibbs_derivatives[k]-expected[k]),mapped,reference_reduced[k],std::pow(T,k)*(mapped-reference_reduced[k]));
+    }
+}
+} // namespace equilibrium_checks

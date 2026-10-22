@@ -95,11 +95,12 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
                     check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
                     check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
+                    check(!reaction.uses_species_thermochemistry(), "K fixed by species thermochemistry");
                     check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
                     if (shift) check(reaction.correlation && target.pivot_temperature >= reaction.correlation->temperature_min
                         && target.pivot_temperature <= reaction.correlation->temperature_max, "enthalpy shift pivot outside correlation interval");
-                    check(reaction.reference || !thermochemistry || !reaction_thermochemistry_density(*thermochemistry,
-                          reaction.stoichiometry, problem.temperature.value), "K fixed by thermochemistry");
+                    check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
+                          reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
                     if (prior) {
                         check(same_reaction(*prior, reaction), "tied declarations or starts disagree");
                         if (reaction.reference) {

@@ -211,6 +211,7 @@ Scalar packing_fraction_from_geometry(
     const ParameterSet& parameters,
     const std::vector<Fixed>& diameter
 ) {
+    if (parameters.ideal_gas) return Scalar(0);
     Fixed moment = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         moment += mole_fractions[component]
@@ -419,6 +420,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const Scalar& debye_huckel,
     const Scalar& born
 ) {
+    if (parameters.ideal_gas) return {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;

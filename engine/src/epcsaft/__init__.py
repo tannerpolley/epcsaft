@@ -45,6 +45,9 @@ from .eos import (
 from .parameters import ParameterError, Parameters
 from .reference import Activity, Reference, SolventActivity
 
+ReactionThermochemistry = _core.ReactionThermochemistry
+reaction_thermochemistry_density = _core.reaction_thermochemistry_density
+
 trace = _core.Capture
 Stop = _core.Stop
 Convergence = _core.Convergence
@@ -150,6 +153,8 @@ __all__ = (
     "ThermochemistryPacket",
     "ThermochemistryRecord",
     "ThermochemistryStatus",
+    "ReactionThermochemistry",
+    "reaction_thermochemistry_density",
     "provenance",
     "tolerances",
     "trace",
