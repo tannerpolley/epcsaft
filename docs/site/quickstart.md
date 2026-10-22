@@ -65,7 +65,8 @@ a declared solve does not perform an implicit stability search.
 
 ## Read a rejected declaration
 
-A reaction needs exactly one equilibrium target. Omitting it is an error.
+A reaction accepts at most one explicit equilibrium target. Omitting it selects
+species thermochemistry; supplying two targets is an error.
 This small example runs as a documentation doctest and checks the declaration
 exception before a thermodynamic solve:
 
@@ -73,10 +74,10 @@ exception before a thermodynamic solve:
 >>> from epcsaft import ParameterError
 >>> from epcsaft.equilibrium import Reaction
 >>> try:
-...     Reaction({"A": -1.0, "B": 1.0})
+...     Reaction({"A": -1.0, "B": 1.0}, equilibrium_constant=1.0, affinity_j_per_mol=0.0)
 ... except ParameterError as error:
 ...     print(error)
-reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation
+reaction target must be at most one of equilibrium_constant or affinity_j_per_mol or correlation
 ```
 
 For failures after admission, retain the returned cause and residuals; see
