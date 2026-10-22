@@ -1028,19 +1028,53 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality,
-    const InfiniteDilutionReference& reference, std::optional<double> finite_density
+    const InfiniteDilutionReference& reference, std::optional<double> finite_density,
+    const std::optional<std::vector<double>>& finite_solute_molalities
 ) {
     core::Scope scope("electrolyte_activity");
     if (reference.model && reference.molality == 0.0) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
     if (!(reference.solver_options == model.solver_options()))
         throw std::invalid_argument("electrolyte reference solver options do not match the model");
-    const auto composition = formula_composition(
+    auto composition = formula_composition(
         solvent_fractions,
         model.parameters(),
         ion_indices,
         stoichiometry,
         molality
     );
+    std::optional<double> solute_ratio;
+    if (finite_solute_molalities) {
+        const auto& m = *finite_solute_molalities;
+        const auto& parameters = model.parameters();
+        if (m.size() != composition.size()
+            || std::count(solvent_fractions.begin(), solvent_fractions.end(), 1.0) != 1)
+            throw std::invalid_argument("full solute molalities require one pure solvent and one entry per component");
+        if (reference.model != &model || reference.temperature != temperature || reference.pressure != pressure
+            || reference.solvent_fractions != solvent_fractions)
+            throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
+        const auto solvent = std::size_t(std::max_element(solvent_fractions.begin(), solvent_fractions.end()) - solvent_fractions.begin());
+        if (parameters.charge_number[solvent] != 0 || m[solvent] != 0.0)
+            throw std::invalid_argument("full solute molalities require an uncharged solvent with zero solute molality");
+        double total = 0.0, charge = 0.0;
+        for (std::size_t i = 0; i < m.size(); ++i) {
+            if (!std::isfinite(m[i]) || m[i] < 0.0)
+                throw std::invalid_argument("full solute molalities must be finite and nonnegative");
+            total += m[i];
+            charge += m[i] * parameters.charge_number[i];
+        }
+        const double mass = parameters.molar_mass_kg_per_mol[solvent];
+        solute_ratio = mass * total;
+        const double denominator = 1.0 + *solute_ratio;
+        if (!std::isfinite(denominator) || !std::isfinite(charge)
+            || m[ion_indices[0]] <= 0.0 || m[ion_indices[1]] <= 0.0
+            || std::abs(mass * charge / denominator) > policy::COMPOSITION_SUM_TOLERANCE.value
+            || std::abs(mass * (m[ion_indices[0]] - stoichiometry[0] * molality) / denominator)
+                > policy::COMPOSITION_SUM_TOLERANCE.value)
+            throw std::invalid_argument("full solute molalities must be neutral and match the selected formula cation molality");
+        composition[solvent] = 1.0 / denominator;
+        for (std::size_t i = 0; i < m.size(); ++i)
+            if (i != solvent) composition[i] = mass * m[i] / denominator;
+    }
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
@@ -1062,16 +1096,16 @@ ElectrolyteActivity electrolyte_activity(
     }
     // EqID: molality_activity_conversion
     const double mean_log_m = mean_log_x
-        - std::log(1.0 + solvent_mass * molality * coefficient_sum);
+        - std::log(1.0 + solute_ratio.value_or(solvent_mass * molality * coefficient_sum));
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
     result.mean_ionic_molality_scale = std::exp(mean_log_m);
-    if (reference.pure_solvent_state && molality < policy::OSMOTIC_MOLALITY_FLOOR.value)
+    if (reference.pure_solvent_state && !finite_solute_molalities && molality < policy::OSMOTIC_MOLALITY_FLOOR.value)
         result.osmotic_coefficient = core::Stop::converged_to_floor;
     else if (reference.pure_solvent_state) {
         auto water = solvent_activity(model, temperature, pressure, composition, reference, std::move(result.state),
-            coefficient_sum * molality * solvent_mass);
+            solute_ratio.value_or(coefficient_sum * molality * solvent_mass));
         result.state = std::move(water.state);
         if (!water.solvent_activity) throw std::runtime_error(water.cause);
         result.osmotic_coefficient = water.osmotic_coefficient;

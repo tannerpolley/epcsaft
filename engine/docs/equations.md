@@ -1258,7 +1258,7 @@ $$
 $$
 \gamma_\pm^{(m)}=
 \frac{\gamma_\pm^{(x)}}
-{1+\overline M_s\,m(\nu_++\nu_-)}.
+{1+M_s q},\qquad q=m(\nu_++\nu_-)\ \text{for one binary salt}.
 \qquad m_i=\frac{x_i}{x_s M_s},\quad q=\sum_{i\ne s}m_i,\quad D=M_s q.
 $$
 

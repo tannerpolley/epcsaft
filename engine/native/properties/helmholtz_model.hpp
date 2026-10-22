@@ -621,7 +621,8 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<int, 2>& stoichiometry,
     double molality,
     const InfiniteDilutionReference& reference,
-    std::optional<double> finite_density = std::nullopt
+    std::optional<double> finite_density = std::nullopt,
+    const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt
 );
 
 namespace properties {
