@@ -125,9 +125,9 @@ Budget changes must not silently change scientific scope.
   runtime layer has zero issue-owned growth. This includes the scoped
   normalized declared-root check in the existing charged-Vapor trial polish.
   After the admission-order correction, unused result-member removal and
-  current main merges, the issue contributes +133 net / 191 gross Equilibrium
-  lines and +6 / 14 Python lines. Equilibrium counts 10,346, requiring
-  10,316 → 10,450 (count plus band 104). Total counts 27,273, within main's
+  current main merges, the issue contributes +134 net / 193 gross Equilibrium
+  lines and +6 / 14 Python lines. Equilibrium counts 10,347 against
+  the 10,450 ceiling, within its 104-line band. Total counts 27,274, within main's
   unchanged ceiling 27,384. These ceilings record source size and owner
   authority; numerical qualification is established separately by the
   manufactured recovery and the remaining falsifiers.

@@ -911,7 +911,6 @@ void admit_pins(CompiledSystem& compiled) {
 void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
     const auto& p = compiled.problem;
     if (p.solids.empty()) return;
-    if (p.temperature.free || p.pressure.free) throw std::invalid_argument("solids require fixed T and P");
     const auto& model = *compiled.model;
     const auto& z = model.parameters().charge_number;
     std::vector<std::vector<double>> nu;
@@ -1319,6 +1318,8 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
+    if (!request.solids.empty() && (request.temperature.free || request.pressure.free))
+        throw std::invalid_argument("solids require fixed T and P");
     const auto& phases = compiled.problem.phases;
     const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
     compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
