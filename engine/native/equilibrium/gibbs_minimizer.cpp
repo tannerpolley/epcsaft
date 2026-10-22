@@ -1028,7 +1028,7 @@ static EquilibriumResult run_driver_once(
                     phase = static_cast<double>(p);
                     if (index < static_cast<Eigen::Index>(offset + spec.support.size())) {
                         component = static_cast<double>(spec.support[index - offset]); quantity = "log mole fraction";
-                    } else quantity = index == static_cast<Eigen::Index>(eta) ? (model->parameters().ideal_gas ? "log inverse unit-amount volume" : "log packing fraction") : "phase amount in mol";
+                    } else quantity = index == static_cast<Eigen::Index>(eta) ? (model && model->parameters().ideal_gas ? "log inverse unit-amount volume" : "log packing fraction") : "phase amount in mol";
                 }
                 auto intensive = compiled.primal_size - compiled.free_intensive_count;
                 if (compiled.problem.temperature.free && index == static_cast<Eigen::Index>(intensive++)) quantity = "T in K";
