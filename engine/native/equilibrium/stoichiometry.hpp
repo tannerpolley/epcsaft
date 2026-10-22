@@ -18,6 +18,8 @@ std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed
 );
 
+std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
+
 std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 );
@@ -40,7 +42,8 @@ std::vector<std::vector<double>> standard_state_series(
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
 // affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
 std::vector<std::vector<double>> reaction_target_series(
-    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order,
+    const ThermochemistryRecord* thermochemistry = nullptr, const std::string& standard_state_id = EOS_STANDARD_STATE_ID
 );
 
 // A constant supplied Gibbs vector admits no temperature-dependent reaction target: the first

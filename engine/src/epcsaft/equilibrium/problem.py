@@ -24,6 +24,41 @@ class _Model(_Species, Protocol):
     _model: _core.HelmholtzModel
 
 
+class IdealMoleFraction:
+    """Ideal liquid activities with explicit species order and dimensionless charges.
+
+    Attributes
+    ----------
+    component_ids : tuple of str
+        Species identifiers in native order.
+    charge_number : tuple of int
+        Dimensionless species charges.
+    """
+
+    def __init__(
+        self,
+        component_ids: Sequence[str],
+        charge_number: Sequence[int],
+        *,
+        solver_options: Mapping[str, float] | None = None,
+    ) -> None:
+        self._model = _core.IdealMoleFraction(component_ids, charge_number, solver_options)
+        self.component_ids = tuple(self._model.component_ids)
+        self.charge_number = tuple(self._model.charge_number)
+
+
+def effective_water_amounts(
+    model: IdealMoleFraction,
+    result: _core.EquilibriumResult,
+    *,
+    water: str,
+    ions: Sequence[str],
+    molecular_species: Sequence[str],
+) -> dict[str, float]:
+    """Return native effective-water and preserved free molecular amounts in mol."""
+    return _core.effective_water_amounts(model._model, result, water, ions, molecular_species)
+
+
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
     """Declare a free temperature, pressure or phase amount.
@@ -876,7 +911,7 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
 
 
 def solve_equilibrium(
-    model: _Model,
+    model: _Model | IdealMoleFraction,
     problem: Problem | _core.EquilibriumProblem,
     start: _core.EquilibriumResult | None = None,
 ) -> _core.EquilibriumResult:
@@ -916,7 +951,7 @@ def solve_equilibrium(
     return _core.solve_equilibrium(model._model, native, start)
 
 
-def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
+def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
     """Compile a physical equilibrium declaration for reuse and exact actions.
 
     Parameters

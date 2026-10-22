@@ -6,6 +6,7 @@ namespace equilibrium_checks {
 void check_s1();
 void check_ideal_gas();
 void check_species_thermochemistry();
+void check_ideal_mole_fraction();
 void check_s2();
 void check_trace_reaction_balance();
 void check_s6();
@@ -98,6 +99,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.density-branch-admission", "TPD", "Automatic_fast"}, check_density_branch_admission},
         {{"native.equilibrium.tangent-plane-jacobian", "TPD", "Automatic_fast"}, check_tangent_plane_jacobian},
         {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_f5},
+        {{"native.equilibrium.ideal-mole-fraction", "ideal-mole-fraction", "Automatic_fast"}, check_ideal_mole_fraction},
         {{"native.equilibrium.s1", "S1", "Automatic_fast"}, check_s1},
         {{"native.equilibrium.reference-caloric-identities", "reference-caloric-identities", "Automatic_fast"}, reactive_caloric_checks::cheap, "S2"},
         {{"native.equilibrium.reactive-caloric-F2", "reactive-caloric-F2", "Explicit"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
