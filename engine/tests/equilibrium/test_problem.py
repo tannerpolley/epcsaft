@@ -416,3 +416,21 @@ def test_mid_dome_flash_returns_the_split() -> None:
     assert result.success, result.message
     vapor, liquid = result.mole_fractions[0], result.mole_fractions[2]  # methane, phase-major
     assert vapor - liquid > 0.1 and 0.0 < result.amounts[0] < 1.0
+
+
+def test_ideal_mole_fraction_species_order_and_amount_transport() -> None:
+    model = equilibrium.IdealMoleFraction(("H3O+", "water", "OH-"), (1, 0, -1))
+    reaction = equilibrium.Reaction({"water": -2, "OH-": 1, "H3O+": 1}, correlation=equilibrium.ReactionLogPolynomial(
+        a=132.899, b=-13445.9, c=-22.4773, d=0.0, reference_temperature=1.0,
+        temperature_min=273.0, temperature_max=498.0,
+        standard_state_id=equilibrium.IDEAL_MOLE_FRACTION_STANDARD_STATE_ID,
+    ))
+    declared = Problem(T=298.15, P=100000.0, feed=Amounts({"water": 1.0}),
+                       phases=[Phase("L", kind="liquid")], reactions=[reaction], row_tolerance=1e-10)
+    result = solve_equilibrium(model, declared)
+    assert result.success and result.requested_tolerance_met
+    assert result.mole_fractions[1] > 0.99
+    assert result.mole_fractions[0] == pytest.approx(result.mole_fractions[2], rel=1e-10)
+    assert result.molar_densities == result.packing_fractions == []
+    assert equilibrium.effective_water_amounts(model, result, water="water", ions=("OH-", "H3O+"),
+                                              molecular_species=()) == pytest.approx({"water": 1.0}, abs=1e-10)

@@ -26,7 +26,7 @@ plan:
 # the counting, the band rule and the amendments.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
 # #700: owner-approved executable-line accounting, 2026-10-20; rule-2 reductions.
-code_budgets: {"core": 1100, "contributions": 1235, "properties": 5769, "equilibrium": 9936, "regression": 3745, "surface": 759, "bindings": 2130, "python": 2168, "total": 26837}
+code_budgets: {"core": 1100, "contributions": 1235, "properties": 5767, "equilibrium": 10206, "regression": 3745, "surface": 759, "bindings": 2154, "python": 2200, "total": 27161}
 
 property_categories: [Ideal, Residual, Total]
 

@@ -676,6 +676,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
 
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
     core::Scope scope("stability_test");
+    if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
     core::Capture capture;
     return test_snapshot(c, result, options, {}, capture.trace());
@@ -683,6 +684,7 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 
 std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& c) {
     core::Scope scope("cooling_onset");
+    if (c.ideal) throw std::invalid_argument("ideal cooling onset unavailable");
     const auto& request = c.problem;
     if (c.has_reaction || c.has_ions || request.discovery || request.critical || request.envelope
         || request.enthalpy_j || request.entropy_j_per_k || !request.temperature.free || request.pressure.free

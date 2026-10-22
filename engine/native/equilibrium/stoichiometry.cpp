@@ -363,6 +363,16 @@ std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& fe
     return result;
 }
 
+std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed) {
+    if (feed.kind != FeedKind::Amounts && feed.kind != FeedKind::MoleFractions)
+        throw std::invalid_argument("ideal mole-fraction feed requires mol or mole fractions");
+    require_nonnegative(feed.values, "feed");
+    if (feed.values.size() != model.component_ids.size()) throw std::invalid_argument("feed size does not match species");
+    if (feed.kind == FeedKind::MoleFractions) require_unit_sum(feed.values, "mole fractions");
+    require_positive(sum(feed.values), "feed total");
+    return feed.values;
+}
+
 std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 ) {
@@ -421,7 +431,8 @@ std::vector<std::vector<double>> balance_basis(
 }
 
 std::vector<std::vector<double>> reaction_target_series(
-    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order,
+    const std::string& standard_state_id
 ) {
     require_positive(temperature, "temperature");
     if (order > 3) throw std::invalid_argument("reaction target order");
@@ -436,7 +447,7 @@ std::vector<std::vector<double>> reaction_target_series(
             continue;
         }
         if (reaction.correlation.has_value()) {
-            if (reaction.correlation->standard_state_id != EOS_STANDARD_STATE_ID) {
+            if (reaction.correlation->standard_state_id != standard_state_id) {
                 throw std::invalid_argument("reference-basis-mismatch in reaction "
                                             + reaction_name(reaction, row));
             }

@@ -36,6 +36,15 @@ void register_equilibrium(nb::module_& module) {
             throw std::invalid_argument("ASL property record requires inactive parameters with thermochemistry");
         return asl_property_record(document, *native.thermochemistry(), native.solver_options());
     }, nb::arg("model"));
+    module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+    nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")
+        .def("__init__", [](IdealMoleFraction* self, std::vector<std::string> ids, std::vector<int> charges, nb::object options) {
+            new (self) IdealMoleFraction(std::move(ids), std::move(charges), bindings::solver_options(options, 4));
+        }, nb::arg("component_ids"), nb::arg("charge_number"), nb::arg("solver_options").none() = nb::none())
+        EPCSAFT_READONLY(IdealMoleFraction, component_ids, charge_number)
+        EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, 4);
+    module.def("effective_water_amounts", &effective_water_amounts, nb::arg("model"), nb::arg("result"),
+        nb::arg("water"), nb::arg("ions"), nb::arg("molecular_species"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     nb::enum_<PhaseKind>(module, "PhaseKind")
         EPCSAFT_VALUES(PhaseKind, Liquid, Vapor);
@@ -115,7 +124,7 @@ void register_equilibrium(nb::module_& module) {
             entropy_j_per_k, critical, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });
@@ -281,10 +290,13 @@ void register_equilibrium(nb::module_& module) {
     }, nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
-    module.def("compile_problem", &compile_problem, nb::keep_alive<0, 1>());
+    module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
+    module.def("compile_problem", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
-    module.def("solve_equilibrium", &solve_equilibrium, nb::arg("model"), nb::arg("problem"),
+    module.def("solve_equilibrium", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium), nb::arg("model"), nb::arg("problem"),
                nb::arg("start") = std::nullopt);
+    module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
+        nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::keep_alive<0, 1>());
 }
 
 }  // namespace epcsaft::equilibrium

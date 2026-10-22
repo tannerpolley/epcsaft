@@ -42,6 +42,38 @@ EqID: `ideal_gas_helmholtz`, EqID: `total_enthalpy`, and EqID: `total_entropy`.
 Reaction correlations constrain a reaction subspace. A chosen gauge may define
 a reference convention but cannot supply missing absolute caloric evidence.
 
+## Ideal liquid mole-fraction chemistry
+
+`IdealMoleFraction` declares species identifiers and charges without EOS parameters.
+At fixed positive T/P, one free liquid uses EqID: `ideal_mole_fraction_reaction`
+and EqID: `ideal_reaction_amount_coordinates`. Scalar constants are dimensionless
+mole-fraction constants; laws identify `ideal-mole-fraction` explicitly. EOS-basis
+laws, reaction/source references, supplied species Gibbs energies and affinity
+targets are refused. The positive logarithm reference in `ReactionLogPolynomial`
+may lie outside its evaluation interval; evaluation outside the interval remains refused.
+
+A neutral nonnegative mol or mole-fraction feed defines the conserved inventories.
+Every reacting species requires a positive attainable inventory; an inventory face
+forcing one absent is refused. The native inventory bounds limit log amounts,
+including amounts greater than the feed reference where attainable. A supplied
+positive normalized composition guess is a native cold seed. Previous-result
+starts are refused before compilation or reaction-law evaluation.
+
+One native row expression supplies values and exact derivatives to the existing
+feasibility/Ipopt lifecycle and post-solve polish. The returned phase amount is
+the current species total in mol, with normalized true species fractions. The
+objective is zero; it is not physical Gibbs energy. Density and packing arrays
+are empty. Endpoint Jacobian rank is checked. EOS-only solved-state actions,
+stability searches and caloric conditions are unavailable for this model.
+
+EqID: `effective_water_amounts` converts a criterion-meeting result to named
+molecular amounts after checking model identity and the complete species partition.
+For the MDEA example, EqID: `mdea_reaction_conserved_amounts` supplies independent
+inventory checks. These are numerical verification of conserved hydronium chemistry,
+not physical validation of ideal ionic activities, reproduction of Figure 15 or
+agreement with the paper's nonconserved printed water balance. Hot-condition
+extrapolation remains deferred; only declared evaluation intervals are admitted.
+
 ## Multiplier units and signs
 
 Chemical potentials are dimensional (J/mol). Balance multipliers lambda are
