@@ -1352,7 +1352,14 @@ void check_ideal_mole_fraction() {
         std::vector<double> hstar(8,-1.0/64), action(8); hstar[0] = 1.0/8;
         for (std::size_t i=0;i<8;++i) action[i]=H[i*8];
         const auto error = [](const auto& actual,const auto& reference) {
-            double e=0.0; for(std::size_t i=0;i<actual.size();++i) e=std::max(e,std::abs(actual[i]-reference[i])/std::max(1.0,std::abs(reference[i]))); return e;
+            double e = 0.0;
+            for (std::size_t i = 0; i < actual.size(); ++i) {
+                const double difference = actual[i] - reference[i];
+                if (!std::isfinite(actual[i]) || !std::isfinite(reference[i]) || !std::isfinite(difference))
+                    throw std::runtime_error("nonfinite derivative comparison");
+                e = std::max(e, std::abs(difference) / std::max(1.0, std::abs(reference[i])));
+            }
+            return e;
         };
         const auto derivative_data = data+";"+fields({field("y",y),field("direction","1,0,0,0,0,0,0,0"),field("B_row",compiled.B[a]),field("weights",weights),field("Jstar",Jstar),field("J_native",J),field("H_action",action),field("hstar",hstar)});
         record("Jacobian-analytical",error(J,Jstar),0.0,1e-8,derivative_data);
