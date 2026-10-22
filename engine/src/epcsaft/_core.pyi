@@ -691,7 +691,7 @@ class ThermochemistryRecord:
         ...
 
 class ReactionLogPolynomial:
-    """Source equilibrium law ln K = a + b/T + c ln(T/Tref) + d T.
+    """Source equilibrium law ln K = a + b/T + c ln(T/Tref) + d T + e/T² + f T².
 
     Notes
     -----
@@ -713,8 +713,13 @@ class ReactionLogPolynomial:
     """Inclusive upper validity temperature in K."""
     standard_state_id: str
     """Identity of the source activity standard; K is dimensionless on this standard."""
+    e: float
+    """Inverse-square-temperature coefficient, K²; defaults to zero."""
+    f: float
+    """Square-temperature coefficient, 1/K²; defaults to zero."""
     def __init__(self, a: float, b: float, c: float, d: float, reference_temperature: float,
-                 temperature_min: float, temperature_max: float, standard_state_id: str) -> None:
+                 temperature_min: float, temperature_max: float, standard_state_id: str,
+                 e: float = 0.0, f: float = 0.0) -> None:
         """Initialize ReactionLogPolynomial from the declared inputs.
 
         Parameters
@@ -735,6 +740,10 @@ class ReactionLogPolynomial:
             Initial value of ReactionLogPolynomial.temperature_max; see its attribute description for units and ordering.
         standard_state_id : str
             Initial value of ReactionLogPolynomial.standard_state_id; see its attribute description for units and ordering.
+        e : float
+            Inverse-square-temperature coefficient in K².
+        f : float
+            Square-temperature coefficient in 1/K².
 
         Returns
         -------

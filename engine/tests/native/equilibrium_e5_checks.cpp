@@ -735,6 +735,10 @@ void check_e5_reactive() {
         p * (1.0 - p) * (L3 + 3.0 * (1.0 - 2.0 * p) * L1 * L2 + (1.0 - 6.0 * p + 6.0 * p * p) * L1 * L1 * L1)}; };
     const auto analytic = logistic(p);
     const double expected[3] = {-1.4784580498866213e-3, 8.4348805281749936e-6, -2.7304974653104138e-9};
+    auto added_terms = isomerisation_case(1.0, a);
+    added_terms.problem.reactions[0].correlation->e = 90000.0;
+    added_terms.problem.reactions[0].correlation->f = 1e-6;
+    qualify(added_terms, "e5-3-added-terms");
     for (const double total : {1.0, 2.0}) {
         auto fixture_t = isomerisation_case(total, a);
         const auto model = fixture_t.model();
