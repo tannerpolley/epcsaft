@@ -373,6 +373,13 @@
       "packet_path": "data/packets/robinson-covington-1968-kcl-cacl2-observations/1",
       "packet_fingerprint": "2b40b11665854d49403957ba1a5dcd4a486cccc6f17ced07f52a2a20faa31a3e",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "schick-2023-co2-thf",
+      "packet_version": "1",
+      "packet_path": "data/packets/schick-2023-co2-thf/1",
+      "packet_fingerprint": "69f0d49548046c6c25f235c460a9ba19c88cec4ac9593cc3df78fb3556073301",
+      "materialization": "byte-for-byte"
     }
   ]
 }

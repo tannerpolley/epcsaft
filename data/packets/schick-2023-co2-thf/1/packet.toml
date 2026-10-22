@@ -1,0 +1,25 @@
+schema_version = 2
+packet_id = "schick-2023-co2-thf"
+packet_version = "1"
+title = "Schick 2023 dry neutral CO2 + THF parameters"
+description = "Main Table 1 pure coefficients and Table 6 constant unlike energy parameter; hard-chain and dispersion only."
+license_or_use_basis = "Numerical facts transcribed for private source-attributed scientific research. No full publication redistributed; no broader redistribution licence asserted."
+tolerance_rationale = "Published decimals retained exactly; source parameter uncertainty is unavailable. This packet asserts no physical acceptance tolerance."
+
+[[sources]]
+source_id = "schick-2023"
+citation = "Schick et al., Fluid Phase Equilibria 567 (2023), 113714; DOI 10.1016/j.fluid.2022.113714. Main Table 1 p.4, Table 6 p.6; SI S3 p.3."
+use_basis = "Published numerical facts for private research with attribution. Main PDF SHA256 958d21b21def89c9d704a0844a01c506809f3a86b5405bda4e07b05d7a3939d3; SI SHA256 b3d00317abd3a8fd01698c60a91f500300be57c2df8500af074c180198de822f. No paper files copied."
+
+[[domains]]
+domain_id = "schick-2023-co2-thf-313-353-k"
+description = "Dry neutral binary. Table 6 printed fit range 313–353 K; Table S10 evaluated at 313.2, 333.2, 353.2 K and 4.7–102.9 bar. No independent predictive validation."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "5f7de9955ab6c262a6f1380759c0173a930acf60fbf939af78aa7b600de1f8b4"
+source_refs = ["schick-2023"]
+domain_refs = ["schick-2023-co2-thf-313-353-k"]
+units_basis = "Unit-bearing parameter document: dimensionless segment count and kij, angstrom diameter, kelvin dispersion energy, elementary-charge neutral declarations, inherited auxiliary kg/mol molar masses."
