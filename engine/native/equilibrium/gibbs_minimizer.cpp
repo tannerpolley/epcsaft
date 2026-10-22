@@ -931,6 +931,29 @@ static EquilibriumResult run_driver_once(
     std::size_t polish_evaluations = 0;
     bool capped = false, in_bounds = true, corrected = false;
     std::string rejected_preparation = nlp->preparation_error().value_or("");
+    const bool preserve_trial_branch = refine_trial && !compiled.log_charge_rows.empty();
+    core::Stop initial_branch_stop = core::Stop::converged;
+    const auto trial_branch = [&](const PhasePoint& prepared, const std::vector<double>& coordinates) {
+        result.convergence.stop = core::Stop::left_domain;
+        if (scope.diagnostics_on()) scope.probe("trial_branch_coordinates", coordinates);
+        try {
+            EquilibriumResult view; view.coordinates = coordinates;
+            for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
+                const double total = sum(prepared.composition[p]);
+                if (!std::isfinite(total)) result.convergence.stop = core::Stop::nonfinite;
+                if (!(total > 0.0) || !std::isfinite(total)) throw std::domain_error("invalid trial normalization");
+                for (const auto i : prepared.shape[p].x) view.coordinates[i] -= std::log(total);
+            }
+            const auto branch = check_density_branches(model, compiled, view, {}, true, scope, limits);
+            if (branch.accepted && !expired()) return true;
+            rejected_preparation = branch.message;
+        } catch (const core::ConvergenceFailure& error) {
+            result.convergence = error.record; rejected_preparation = error.what();
+        } catch (const std::exception& error) { rejected_preparation = error.what(); }
+        if (expired()) result.convergence.stop = core::Stop::budget_exhausted;
+        scope.probe("trial_branch_cause", {static_cast<double>(result.convergence.stop)}, 0, rejected_preparation.c_str());
+        return false;
+    };
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
     std::size_t polish_round = 0;
@@ -941,6 +964,11 @@ static EquilibriumResult run_driver_once(
         if (audit) audit->convergence.evaluations = ++audit->evaluations;
         if (expired()) return limited_result();
         auto rows_before = compiled.evaluate_at(at).values;
+        if (preserve_trial_branch && !trial_branch(at, full)) {
+            if (expired()) return limited_result();
+            initial_branch_stop = result.convergence.stop;
+            break;
+        }
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
@@ -1080,6 +1108,10 @@ static EquilibriumResult run_driver_once(
                 else scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
                 if (!admit) continue;
+                if (preserve_trial_branch && !trial_branch(at_candidate, candidate)) {
+                    if (expired()) return limited_result();
+                    continue;
+                }
                 if (trial_recovery) trial_scale = std::min(1.0, 2.0 * alpha);
                 if (!final_correction) ratio = after / defect;
                 full = std::move(candidate);
@@ -1164,6 +1196,7 @@ static EquilibriumResult run_driver_once(
             *convergence.criterion, convergence.floor, convergence.contraction,
             status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED, convergence.amplification);
     }
+    if (initial_branch_stop != core::Stop::converged) convergence.stop = initial_branch_stop;
     if (std::isfinite(convergence.residual)) {
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
     }
