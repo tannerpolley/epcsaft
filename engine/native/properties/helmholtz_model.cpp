@@ -701,9 +701,8 @@ void validate_cation_mixing(const Parameters& p) {
     for (const int index : {s, i, j, k}) require(index >= 0 && static_cast<std::size_t>(index) < p.component_count(), "cation mixing index");
     require(i < j && p.charge_number[s] == 0 && p.charge_number[i] > 0 && p.charge_number[j] > 0
         && p.charge_number[k] < 0 && p.electrolyte_form.declared(), "cation mixing participants");
-    require(std::count(p.charge_number.begin(), p.charge_number.end(), 0) == 1
-        && std::count_if(p.charge_number.begin(), p.charge_number.end(), [](int z) { return z < 0; }) == 1,
-        "cation mixing requires one solvent and one anion");
+    require(std::count_if(p.charge_number.begin(), p.charge_number.end(), [](int z) { return z < 0; }) == 1,
+        "cation mixing requires exactly one anion");
     require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
         && finite_vector(p.cation_pair_mixing) && finite_vector(p.cation_triple_mixing), "cation mixing values");
 }
