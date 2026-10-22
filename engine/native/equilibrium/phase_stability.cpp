@@ -187,7 +187,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
     if (phases.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
     for (auto phase : phases) {
-        phase.support = resolve_support(phase, united, z);
+        phase.support = resolve_support(phase, united, z, c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
             if (std::find(united.begin(), united.end(), i) == united.end())
@@ -364,7 +364,7 @@ std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double
 
 // Charge rescaling followed by a two-pivot arithmetic correction (largest entry, ties by index).
 std::vector<double> reconstruct_trial_composition(std::vector<double> w,
-    const std::vector<std::size_t>& support, const std::vector<int>& z) {
+    const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind) {
     if (support.empty() || z.size() != w.size()) throw std::invalid_argument("invalid reconstruction support");
     double positive = 0.0, negative = 0.0;
     std::optional<std::size_t> plus, minus;
@@ -376,19 +376,24 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     }
     if (plus.has_value() != minus.has_value()) throw std::invalid_argument("one-sign trial support");
     if (plus) {
-        const double ratio = std::sqrt(negative / positive);
-        for (auto i : support) { if (z[i] > 0) w[i] *= ratio; if (z[i] < 0) w[i] /= ratio; }
+        if (kind == PhaseKind::Vapor) {
+            const double shift = 0.5 * (std::log(negative) - std::log(positive));
+            for (auto i : support) if (z[i]) w[i] = std::exp(std::log(w[i]) + (z[i] > 0 ? shift : -shift));
+        } else {
+            const double ratio = std::sqrt(negative / positive);
+            for (auto i : support) { if (z[i] > 0) w[i] *= ratio; if (z[i] < 0) w[i] /= ratio; }
+        }
     }
     double total = 0.0;
     for (auto i : support) total += w[i];
     if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
     for (auto i : support) w[i] /= total;
-    if (plus) {
+    if (plus && kind != PhaseKind::Vapor) {
         double sum = 0.0, charge = 0.0;
         for (auto i : support) { sum += w[i]; charge += z[i] * w[i]; }
         const double dp = (-charge + z[*minus] * (sum - 1.0)) / (z[*plus] - z[*minus]);
         w[*plus] += dp; w[*minus] += 1.0 - sum - dp;
-    } else {
+    } else if (!plus) {
         const auto pivot = *std::max_element(support.begin(), support.end(), [&](auto a, auto b) { return w[a] < w[b]; });
         double sum = 0.0; for (auto i : support) sum += w[i]; w[pivot] += 1.0 - sum;
     }
@@ -540,13 +545,13 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
         else {
             std::vector<double> base(z.size(), 0.0), remainder;
             for (auto i : phase.support) base[i] = 1.0;
-            base = reconstruct_trial_composition(base, phase.support, z);
+            base = reconstruct_trial_composition(base, phase.support, z, phase.kind);
             remainder = base;
             for (std::size_t p = 0; p < at.amount.size(); ++p) {
                 if (std::all_of(phase.support.begin(), phase.support.end(), [&](auto i) { return at.composition[p][i] > 0.0; })) {
                     std::vector<double> restriction(z.size(), 0.0);
                     for (auto i : phase.support) restriction[i] = at.composition[p][i];
-                    remainder = reconstruct_trial_composition(std::move(restriction), phase.support, z); break;
+                    remainder = reconstruct_trial_composition(std::move(restriction), phase.support, z, phase.kind); break;
                 }
             }
             seeds.emplace_back("positive-neutral-base", base);
@@ -577,7 +582,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                         if (std::find(phase.support.begin(), phase.support.end(), i) == phase.support.end() && seed[i] != 0.0)
                             throw std::invalid_argument("supplied trial composition outside support");
                 }
-                seed = reconstruct_trial_composition(std::move(seed), phase.support, z);
+                seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
                 ++report.work["reconstruction_evaluations"];
                 double eta;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
@@ -623,9 +628,24 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
                 const auto raw = found ? found->first : compiled.prepare(trial.raw_coordinates, true);
                 if (!found) trial.raw_residuals = compiled.evaluate_at(raw).values;
-                trial.composition = reconstruct_trial_composition(raw.composition[0], phase.support, z);
+                trial.composition = reconstruct_trial_composition(raw.composition[0], phase.support, z, phase.kind);
                 ++report.work["reconstruction_evaluations"];
                 const double volume = c.model->packing_fraction_coefficient(at.temperature, trial.composition) / raw.eta[0];
+                if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
+                        [&](auto i) { return z[i] != 0; })) {
+                    auto& q = trial.quantities;
+                    q["packing_fraction"] = raw.eta[0]; q["molar_density_mol_m3"] = 1.0 / volume;
+                    const auto state = c.model->state(at.temperature, 1.0 / volume, trial.composition);
+                    q["pressure_pa"] = state.pressure;
+                    q["pressure_density_derivative"] = state.pressure_density_derivative;
+                    const auto root = declared_root(*c.model, at.temperature, at.pressure, trial.composition, PhaseKind::Vapor);
+                    q["vapor_root_log_displacement"] = std::abs(std::log(root.molar_density * volume));
+                    q["vapor_root_residual"] = root.convergence.residual;
+                    if (!(q["vapor_root_log_displacement"] <= policy::DENSITY_ANCHOR_LOG_WINDOW.value
+                            && root.convergence.residual <= root.convergence.criterion->value
+                            && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0))
+                        throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
+                }
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
                     volume, PhaseKind::Liquid, trial.quantities, "condensed_"), &trial.quantities);
                 trial.quantities.merge(phase_energy(*c.model, at.temperature, at.pressure, volume, trial.composition,

@@ -945,7 +945,7 @@ static EquilibriumResult run_driver_once(
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
         // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
-        double best_raw = scope.diagnostics_on() ? maximum_abs(compiled.trace_moiety_relative(at, rows_before)) : 0.0;
+        double best_raw = scope.diagnostics_on() ? maximum_abs(compiled.numerical_rows(at, rows_before)) : 0.0;
         double ratio = 1.0;
         bool trial_recovery = false;
         double trial_scale = 1.0;
@@ -956,21 +956,21 @@ static EquilibriumResult run_driver_once(
             if (stopped) return;
             stopped = true;
             if (detailed) scope.observe([&] { scope.probe("polish_stop",
-                {maximum_abs(compiled.trace_moiety_relative(at, rows_before)),
+                {maximum_abs(compiled.numerical_rows(at, rows_before)),
                  maximum_abs(compiled.classified_residuals(at, rows_before)),
                  static_cast<double>(final_step)}, static_cast<std::uint32_t>(final_step), reason); });
         };
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             final_step = step;
             if (expired()) { stop("elapsed budget"); break; }
-            const auto rows_scaled = compiled.trace_moiety_relative(at, rows_before);
+            const auto rows_scaled = compiled.numerical_rows(at, rows_before);
             const double defect = maximum_abs(rows_scaled);
             const bool extension = step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value);
             const bool final_correction = newton && defect <= row_tolerance;
             if (extension && defect <= row_tolerance && !final_correction) { stop("raw criterion"); break; }
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
             if ((!final_correction && !(defect > 0.0)) || !std::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
-            const auto jacobian = compiled.trace_moiety_relative(at, compiled.jacobian_at(at), full.size());
+            const auto jacobian = compiled.numerical_rows(at, compiled.jacobian_at(at), full.size());
             if (expired()) { stop("elapsed budget"); return limited_result(); }
             const auto n = static_cast<Eigen::Index>(full.size());
             if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) { stop("Jacobian shape"); break; }
@@ -978,7 +978,7 @@ static EquilibriumResult run_driver_once(
                 [](double value) { return std::isfinite(value); })) { stop("nonfinite Jacobian"); break; }
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
-            if (free_amount_newton && lu.rank() != n) { stop("Jacobian rank"); break; }
+            if ((free_amount_newton || !compiled.log_charge_rows.empty()) && lu.rank() != n) { stop("Jacobian rank"); break; }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
             if ((free_amount_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
@@ -1068,7 +1068,7 @@ static EquilibriumResult run_driver_once(
                         static_cast<double>(trial_index)}, step, error.what());
                     continue;
                 }
-                const double after = maximum_abs(compiled.trace_moiety_relative(at_candidate, rows_after));
+                const double after = maximum_abs(compiled.numerical_rows(at_candidate, rows_after));
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
                     || (after < defect && after <= row_tolerance)
@@ -1213,6 +1213,16 @@ static EquilibriumResult run_driver_once(
         topology_ok = false;
         result.convergence.stop = core::Stop::singular;
         topology_failure = "rank-deficient classified equations with present solids: " + present;
+    }
+    if (!compiled.log_charge_rows.empty()) {
+        const auto physical = compiled.jacobian_at(prepared);
+        const auto numerical = compiled.numerical_rows(prepared, physical, full.size());
+        const auto n = static_cast<Eigen::Index>(full.size());
+        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        const auto physical_rank = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu().rank();
+        const auto numerical_rank = Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu().rank();
+        scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
+        if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
     }
     bool accepted = !expired() && non_error && topology_ok && (!newton || (!capped && in_bounds && corrected))
         && (result.convergence.stop == core::Stop::converged

@@ -89,8 +89,8 @@ class Phase:
         Phase identifier used by observations and returned phase order.
     support : sequence of str or None
         Species with phase coordinates; omitted support is completed natively.
-        Vapor completion excludes charged species. An explicit empty support
-        or a vapor support containing a charged species is refused at compile.
+        Vapor completion excludes charged species. Explicit charged vapor requires
+        DensityTemperature permittivity; an explicit empty support is refused.
     amount : Free or Pinned
         Free amount solved in mol, or pinned fraction of compiled feed mol.
         Default is ``Free()``; phase-amount guesses are not supported.
@@ -1010,7 +1010,8 @@ def continue_equilibrium(
     return _core.continue_equilibrium(model._model, request)
 
 
-def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None,
+                 vapor_support: Sequence[str] | None = None) -> Problem:
     """Declare an isothermal bubble point with free pressure.
 
     Parameters
@@ -1023,6 +1024,8 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
         Feed declaration with explicit amounts/fractions/molality basis.
     reactions : sequence of Reaction, optional
         Reaction declarations; ``None`` means no reactions.
+    vapor_support : sequence of str, optional
+        Explicit vapor species; ``None`` keeps neutral-only completion.
 
     Returns
     -------
@@ -1036,8 +1039,9 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
     admitted phase kinds, supports, reactions and boundary existence.
     """
     reactions = () if reactions is None else reactions
+    vapor = Phase("V", kind="vapor", support=vapor_support, amount=Pinned(0.0))
     return Problem(
-        phases=[liquid, Phase("V", kind="vapor", amount=Pinned(0.0))],
+        phases=[liquid, vapor],
         T=T,
         P=Free(),
         feed=feed,

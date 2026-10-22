@@ -1187,7 +1187,7 @@ static CompiledSystem compile_with_basis(
     std::iota(all.begin(), all.end(), 0);
     for (auto& phase : compiled.problem.phases) {
         const bool omitted = phase.support.empty() && !phase.support_declared;
-        phase.support = resolve_support(phase, all, z);
+        phase.support = resolve_support(phase, all, z, model.parameters());
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
@@ -1330,8 +1330,13 @@ static CompiledSystem compile_with_basis(
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& spec = phases[phase];
         if (std::none_of(spec.support.begin(), spec.support.end(), [&](std::size_t i) { return z[i] != 0; })) continue;
-        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) rowless = true;
+        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) {
+            if (!trial_basis && spec.kind == PhaseKind::Vapor)
+                throw std::invalid_argument("charged vapor cannot be the omitted-charge phase");
+            rowless = true;
+        }
         else {
+            if (spec.kind == PhaseKind::Vapor) compiled.log_charge_rows.emplace_back(compiled.rows.size(), phase);
             compiled.rows.push_back({RowKind::Electro, phase, 0});
             ++compiled.charge_row_count;
         }
@@ -1351,6 +1356,10 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({kind, 0, i});
     }
     for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
+    if (trial_basis && phases[0].kind == PhaseKind::Vapor && compiled.has_ions)
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+            if (compiled.rows[row].kind == RowKind::Moiety && compiled.rows[row].index == 1)
+                compiled.log_charge_rows.emplace_back(row, 0);
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
@@ -1398,26 +1407,35 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     Eigen::MatrixXd physical(has_charge ? 2 : 1, support.size());
     physical.row(0).setOnes();
     if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
-    const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
-    std::vector<ReactionSpec> directions;
-    if (support.size() > static_cast<std::size_t>(physical.rows())) {
-        for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
-            ReactionSpec direction;
-            direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
-            // Only the basis owner's input validation consumes this zero target.
-            // These directions never enter the trial's reaction declaration.
-            direction.affinity_j_per_mol = 0.0;
-            directions.push_back(std::move(direction));
-        }
-    }
-    const auto reduced = balance_basis(support.size(), directions);
-    std::vector<std::vector<double>> B(reduced.size(), std::vector<double>(w.size(), 0.0));
+    std::vector<std::vector<double>> B;
     transformation.clear();
-    for (std::size_t k = 0; k < B.size(); ++k) {
-        for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
-        const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
-            Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
-        transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+    if (has_charge && phase.kind == PhaseKind::Vapor) {
+        B.assign(2, std::vector<double>(w.size(), 0.0));
+        for (std::size_t i = 0; i < support.size(); ++i) {
+            B[0][support[i]] = 1.0; B[1][support[i]] = z[support[i]];
+        }
+        transformation = {{1.0, 0.0}, {0.0, 1.0}};
+    } else {
+        const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+        std::vector<ReactionSpec> directions;
+        if (support.size() > static_cast<std::size_t>(physical.rows())) {
+            for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
+                ReactionSpec direction;
+                direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
+                // Only the basis owner's input validation consumes this zero target.
+                // These directions never enter the trial's reaction declaration.
+                direction.affinity_j_per_mol = 0.0;
+                directions.push_back(std::move(direction));
+            }
+        }
+        const auto reduced = balance_basis(support.size(), directions);
+        B.assign(reduced.size(), std::vector<double>(w.size(), 0.0));
+        for (std::size_t k = 0; k < B.size(); ++k) {
+            for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
+            const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+                Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
+            transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+        }
     }
     EquilibriumProblem request;
     request.temperature = FreeValue::fixed(T); request.pressure = FreeValue::fixed(P);
@@ -1620,6 +1638,9 @@ std::vector<double> CompiledSystem::classified_residuals(
     const PhasePoint& prepared, const std::vector<double>& values
 ) const {
     std::vector<double> result = trace_moiety_relative(prepared, values);
+    const auto numerical = log_charge_rows.empty() ? result : numerical_rows(prepared, values);
+    for (const auto& [row, phase] : log_charge_rows)
+        result[row] = std::copysign(std::max(std::abs(result[row]), std::abs(numerical[row])), numerical[row]);
     if (feasibility_cell() || values.size() != rows.size()) return result;
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const auto& item = rows[row];
@@ -1650,6 +1671,39 @@ std::vector<double> CompiledSystem::trace_moiety_relative(
         const double size = std::max(inventory, terms) / feed_total;
         if (!(size > 0.0) || size > trace) continue;
         for (std::size_t j = 0; j < width; ++j) values[row * width + j] /= size;
+    }
+    return values;
+}
+
+// Numerical charge representation only; physical equations and Ipopt derivatives remain unchanged.
+std::vector<double> CompiledSystem::numerical_rows(
+    const PhasePoint& prepared, std::vector<double> values, std::size_t width
+) const {
+    values = trace_moiety_relative(prepared, std::move(values), width);
+    const auto& z = model->parameters().charge_number;
+    for (const auto& [row, phase] : log_charge_rows) {
+        const auto& shape = prepared.shape[phase];
+        const auto& support = problem.phases[phase].support;
+        double logarithm[2];
+        for (int sign = 0; sign < 2; ++sign) {
+            double largest = -INFINITY, sum = 0.0;
+            for (std::size_t j = 0; j < support.size(); ++j)
+                if (z[support[j]] && (z[support[j]] > 0) == (sign == 0))
+                    largest = std::max(largest, prepared.point[shape.x[j]] + std::log(std::abs(z[support[j]])));
+            for (std::size_t j = 0; j < support.size(); ++j)
+                if (z[support[j]] && (z[support[j]] > 0) == (sign == 0))
+                    sum += std::exp(prepared.point[shape.x[j]] + std::log(std::abs(z[support[j]])) - largest);
+            logarithm[sign] = largest + std::log(sum);
+        }
+        if (width == 1) values[row] = logarithm[0] - logarithm[1];
+        else {
+            std::fill_n(values.begin() + row * width, width, 0.0);
+            for (std::size_t j = 0; j < support.size(); ++j) {
+                const int charge = z[support[j]];
+                if (charge) values[row * width + shape.x[j]] = std::copysign(std::exp(
+                    prepared.point[shape.x[j]] + std::log(std::abs(charge)) - logarithm[charge < 0]), charge);
+            }
+        }
     }
     return values;
 }
