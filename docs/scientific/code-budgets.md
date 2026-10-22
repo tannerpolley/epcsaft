@@ -120,6 +120,16 @@ Budget changes must not silently change scientific scope.
   The delivered change uses 223 net / 310 gross.
 
 - 2026-10-22, #781 (lead allowance: Properties at most 2 gross additions, net growth at most 0; every other runtime layer 0): removing the neutral-component count uses 2 added / 3 removed / −1 net formatted runtime line against `2c52c61a`. Properties counts 5,710, so its ceiling lowers **5,769 → 5,768** under rule 2. Total counts 26,580 and its ceiling stays 26,837.
+- 2026-10-22, #771 (owner approval, 2026-10-22): Equilibrium allowance
+  +135 net / 196 gross and Python +6 / 14 against `83d6755d`; every other
+  runtime layer has zero issue-owned growth. This includes the scoped
+  normalized declared-root check in the existing charged-Vapor trial polish.
+  After merging #766, #781 and #776, Equilibrium counts 10,347, requiring
+  10,316 → 10,451 (count plus band 104). Total counts 27,255, within main's
+  unchanged ceiling 27,384. These ceilings record source size and owner
+  authority; numerical qualification is established separately by the
+  manufactured recovery and the remaining falsifiers.
+
 - 2026-10-20, #700 / #695 (owner decision, 2026-10-20): exclude Python AST-span docstrings, comments and empty layout lines, and C++ comments outside literals and empty lines, while retaining the pinned formatters and all bypass refusals. This accounting change adds or removes no Engine calculation. All eight layer ceilings lower to the measured count plus the rounded-up 1% band under rule 2; the total lowers from 29,191 to 26,837 for 26,571 counted lines, capped by the layer-ceiling sum. Per-layer before/after measurements are retained in the issue's PR.
 
 - 2026-10-20, #692 (owner approval): shared physical-mol recovery has an allowance of +120 net / 166 gross formatted Equilibrium lines against `31460744`, with zero growth in every other runtime layer. Equilibrium **10,582 → 10,794**, the count 10,687 plus its rounded-up 1% band of 107 under rule 1. Total count **29,172** remains under the unchanged **29,191** ceiling. One recovery beside `run_driver` owns eligibility, invocation, admission and work/cause retention across ordinary solves, discovery, start sets and continuation.

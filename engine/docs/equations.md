@@ -2360,7 +2360,7 @@ $$
 - Status: Exact derivation
 - Source: Basis transformation of normalization/electroneutrality and Euler stationarity; #223 adopted derivation
 - Description: Internal unit-amount trial balance basis on S; R contains total-amount and charge rows, omitting charge for neutral support. H is the retained full-rank row transformation; λ_t is conjugate to B_t, not an optimizer multiplier.
-- Change note: No feed-moiety-proportion constraint or reaction is imposed on the trial. The total row need not be first; use λ_t dot b_t in every basis.
+- Change note: No feed-moiety-proportion constraint or reaction is imposed. Charged density-temperature Vapor trials use H=I and the numerical log-charge row h below, evaluated by maximum-shifted log sums. Only that trial charge balance or a declared Vapor Electro row is replaced in Newton correction and classification. Original physical criteria, Ipopt callbacks and solved-state derivatives remain unchanged; full transformed rank does not establish branch or recovery accuracy. Qualification remains incomplete for #771. Other trials retain their existing basis; use λ_t dot b_t in every basis.
 
 $$
 \begin{aligned}
@@ -2377,6 +2377,15 @@ N\mathbf B_t\mathbf w&=\mathbf b_t,\quad \mathbf e_S^{\mathsf T}\mathbf w=1
  t=\boldsymbol\lambda_t^{\mathsf T}\mathbf b_t=k
 \quad\text{at exact feasible stationary density and composition}.
 \end{aligned}
+\qquad
+\begin{aligned}
+Q_+&=\sum_{z_i>0}z_i e^{y_i},\quad Q_-=\sum_{z_i<0}|z_i|e^{y_i},\\
+h&=\ln Q_+-\ln Q_-,\quad R=|\tanh(h/2)|,\\
+\frac{\partial h}{\partial y_i}&=
+\begin{cases}z_i e^{y_i}/Q_+,&z_i>0,\\
+z_i e^{y_i}/Q_-,&z_i<0,\\0,&z_i=0.\end{cases}
+\end{aligned}
+
 $$
 
 ## `michelsen_modified_tangent_plane`
@@ -2418,7 +2427,7 @@ $$
 - Section: Equilibrium / Tangent-plane testing
 - Status: Implementation convention
 - Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
-- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups, normalize, then correct arithmetic residuals on the largest positive and negative entries (ties by index); structural zeros remain zero.
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; structural zeros remain zero. Liquid trials then correct arithmetic residuals on the largest positive and negative entries (ties by index). Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
 - Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
 
 $$

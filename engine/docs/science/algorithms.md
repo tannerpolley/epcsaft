@@ -580,11 +580,13 @@ not establish all roots or physical nonexistence.
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
 pins and free intensives from data. An omitted phase support is every component,
-restricted in a vapor to the zero-charge components; a declared vapor support naming a
-charged component is refused (`DeclarationError`) even when that component is unfed,
-zero-guessed or on a zero-pinned phase. Volatile electrolytes leave the liquid as
-neutral molecular species carried as separate components, and free ions are not a
-vapor state at the Engine's conditions (owner decision, #438). Supports are admitted
+restricted in a vapor to the zero-charge components. Explicit charged Vapor support
+is admitted only under `DensityTemperature`, retaining its kind, ionic coordinates
+and intensive electroneutrality even at zero pinned amount (#771's scoped amendment
+to #438). `DipolarPerturbation` charged Vapor is refused pending separate numerical
+qualification despite its vacuum limit; density-independent forms retain their
+condensed-domain refusal. This is a numerical declaration capability, with physical
+vapor applicability unvalidated. Supports are admitted
 before any reference calculation; an omitted support keeps its full declared width for
 supplied guesses and starts. A compile-time declaration error propagates to the caller
 from every entry, including declared starts and continuation endpoints. The balance basis $B$ spans the left null space
@@ -1053,6 +1055,27 @@ Newton prepared points, while trace steps separately report Newton work.
 Solved-state actions consume the same coordinates and rows. Declared starts,
 continuation correctors, stability trials and caloric seed sub-solves retain
 Ipopt alone.
+
+The #771 explicit charged density-temperature Vapor correction uses the log
+charge row and exact log-coordinate Jacobian in EqID `tangent_plane_trial_balance`.
+The same pair governs Newton correction, contraction, damping, best-point
+selection, stopping and the local forward estimate. Classification retains
+both the original physical criterion and the log-charge criterion. Endpoint
+physical and numerical ranks are recorded separately; full numerical rank is
+necessary on this path, including trial polishing. Ipopt callbacks, physical
+duals and solved-state derivative actions retain their physical equations.
+Only for `refine_trial && !compiled.log_charge_rows.empty()`, admit the starting
+point before best-point retention and each otherwise merit-admissible proposal
+through `check_density_branches` with empty anchors and `initial=true`. The
+inspection copy subtracts the log of each phase's supported-coordinate sum
+from its log coordinates at unchanged packing. It neither repairs charge nor
+changes the raw proposal. The existing declared root, convergence, positive
+slope, density window and phase-order checks own admission. A rejected
+proposal retains its typed cause and enters the existing damping/recovery;
+a rejected starting point returns an unresolved attempt with its rows and work.
+The same work/deadline limits apply. Ordinary solves, Liquid and neutral trials,
+and supplied-point evaluation skip this inspection and its root work.
+This representation does not qualify relative trace derivatives.
 
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected
@@ -1732,6 +1755,10 @@ driver. It first uses ordinary polish unchanged. At a rejected correction, recov
 starts only if the best classified point still exceeds the existing row criterion.
 A row-acceptable trial, including a curvature refusal, keeps its original result.
 Supplied-trial evaluation performs no optimization and grants no permission.
+The scoped charged density-temperature Vapor trial also requires the normalized
+declared-root inspection specified in ALG-EQUILIBRIUM before retaining the
+starting point or accepting a merit-admissible correction. Rejection keeps
+the raw iterate and uses the same damping and recovery limits below.
 
 Recovery continues the same exact-row Newton loop on the same supported problem,
 with fixed T/P and frozen standard/plane shift. It starts with damping scale $a=1$
@@ -1807,13 +1834,21 @@ pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
 Caller support/label entries **replace** defaults and limit the tested domain;
 they do not restrict the initial union candidate. An omitted caller support
 resolves on U by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
-supports and ionic Vapor. Reject empty caller lists, species outside U and one-sign
+supports; explicit ionic Vapor requires `DensityTemperature`. Reject empty caller lists, species outside U and one-sign
 ionic supports.
 
-Charged supports are admitted under every declared bulk-permittivity form.
+Charged Liquid supports are admitted under every declared bulk-permittivity form.
 `DensityTemperature` and `DipolarPerturbation` reach $\epsilon_r\to1$ as
 $\rho_m\to0$ (full EOS §6.2/§6.4), and their charged trials count at every
-density. Density-independent `IonSuppression` (all choices) and
+density. Explicit charged Vapor under `DensityTemperature` must match its own
+lowest stable pressure root after reconstruction, before energy/donor evaluation,
+including supplied packing. The root must meet `DENSITY_ANCHOR_LOG_WINDOW`, the
+existing pressure-root residual criterion and positive finite corrected slope.
+A sole root established on the Liquid side is refused; a sole root without loop
+evidence retains `Unspecified` admission. The generic sibling-root fallback is
+unchanged for existing callers. Default trial families, discovery initial
+candidates and its charged-Vapor addition veto are unchanged: no charged-Vapor
+discovery is qualified. Density-independent `IonSuppression` (all choices) and
 `ComponentMixing` are condensed-liquid correlations (#568). Under them a charged
 trial point counts only when it coincides, within `DENSITY_ANCHOR_LOG_WINDOW`,
 with a stable density root of its own composition at the test T and P, and the
@@ -1875,8 +1910,10 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the largest-entry positive/negative pivot correction follow EqID:
-`electroneutral_trial_reconstruction` with ties by index. Recompute molar volume
+and the Liquid largest-entry positive/negative pivot correction follow EqID:
+`electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
+Vapor trials retain common normalization and multiplicative charge repair in
+log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
 from reconstructed composition and the retained packing coordinate. Reject
 lost positivity/support, invalid T/P, packing or association domain. Record
 actual normalization/charge defects and rounding scales; ionic defects must

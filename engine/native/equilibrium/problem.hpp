@@ -322,6 +322,7 @@ struct CompiledSystem final {
     std::vector<double> inventory_upper_bounds;
     std::vector<std::vector<std::size_t>> declared_supports;
     std::vector<Row> rows;
+    std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t pinned_count = 0;
     std::size_t mode_count = 0;  // critical eigenvector coordinates u, just before the free intensives
     std::size_t free_intensive_count = 0;
@@ -351,12 +352,13 @@ struct CompiledSystem final {
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
     // conditions of the constrained Gibbs minimum in the solved chart; a pinned
     // (feasibility) cell classifies its rows unscaled. Trace moiety rows are relative to their
-    // size in both routes (trace_moiety_relative); charge and normalization rows are unchanged.
+    // size in both routes (trace_moiety_relative); charged Vapor also retains the log-charge criterion.
     std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
     // Moiety rows (Jacobian rows for width n) divided by their size, the larger of the feed inventory and the
     // row's term magnitude per mol of feed, when it is at most EQUILIBRIUM_TRACE_MOIETY_FRACTION (#633).
     std::vector<double> trace_moiety_relative(const PhasePoint& prepared, std::vector<double> values,
                                               std::size_t width = 1) const;
+    std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
     double classified_residual_norm(const std::vector<double>& point) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
@@ -489,6 +491,7 @@ struct EquilibriumResult final {
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
     std::vector<Row> rows;
+    std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
     std::size_t generic_nullity = 0;
@@ -542,7 +545,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, co
     const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
 double present_phase_residual_distance(double, double);
 bool descent_resolved(double, double, double);
-std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&);
+std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&, PhaseKind = PhaseKind::Liquid);
 // n dln(phi_i)/dn_j at fixed T, P on the support (row-major), from an IsothermalPhaseHessian evaluation at unit amount and v.
 std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives&, double, const std::vector<std::size_t>&);
 std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
