@@ -1,0 +1,822 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "nasrifar-2010-mdea",
+  "document_version": 1,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "nasrifar-2010",
+      "citation": "Nasrifar, K.; Tafazzol, A. H. Vapor-Liquid Equilibria of Acid Gas-Aqueous Ethanolamine Solutions Using the PC-SAFT Equation of State. I&EC Research 49 (2010), 7620-7630.",
+      "doi": "10.1021/ie901181n",
+      "use_basis": "Cited numerical parameters and structural declarations; no full article redistribution."
+    },
+    {
+      "source_id": "repository-molar-masses",
+      "citation": "ePC-SAFT retained MDEA declarations and Gross-Sadowski neutral component catalog at 494e3e5f.",
+      "use_basis": "Independent molecular molar masses; not fitted Table 2 coefficients."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "molecular-pc-saft",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "MDEA",
+      "name": "MDEA",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.1191622,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "repository-molar-masses",
+            "locator": "engine/tests/eos/test_charged_molecule_ion.py SPECIES at 494e3e5f: MDEA mass 0.1191622 kg/mol; molecular identity only, no parameter adoption.",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Sections 4-6 neutral molecular PC-SAFT; no ion EOS parameters.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/MDEA/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 7.2069,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8264,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 219.94,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "water",
+      "name": "water",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "repository-molar-masses",
+            "locator": "engine/tests/eos/test_charged_molecule_ion.py SPECIES at 494e3e5f: water mass 0.01801528 kg/mol.",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Sections 4-6 neutral molecular PC-SAFT; no ion EOS parameters.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0656,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; water row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.0007,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; water row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 366.51,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; water row",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "CO2",
+      "name": "CO2",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.04401,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "repository-molar-masses",
+            "locator": "gross-sadowski-2001/3 Table 2 carbon-dioxide molar mass 0.04401 kg/mol.",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Sections 4-6 neutral molecular PC-SAFT; no ion EOS parameters.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/CO2/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.0729,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; CO2 row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/CO2/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.7852,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; CO2 row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/CO2/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 169.21,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; CO2 row",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "H2S",
+      "name": "H2S",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.0340809,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "repository-molar-masses",
+            "locator": "Molecular formula H2S; standard atomic masses H=1.00794 and S=32.065 g/mol; 34.08088 g/mol rounded to 0.0340809 kg/mol; no runtime conversion.",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Sections 4-6 neutral molecular PC-SAFT; no ion EOS parameters.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/H2S/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.6686,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; H2S row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/H2S/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.0349,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; H2S row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/H2S/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 229.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; H2S row",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methane",
+      "name": "methane",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.016043,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "repository-molar-masses",
+            "locator": "gross-sadowski-2001/3 Table 2 methane molar mass 0.016043 kg/mol.",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Sections 4-6 neutral molecular PC-SAFT; no ion EOS parameters.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; methane row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/methane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7039,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; methane row",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/methane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 150.03,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 2; PDF p.4; printed p.7623; methane row",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 3 p.7623",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA/CO2/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA",
+      "component_id_b": "CO2"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA/H2S/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA",
+      "component_id_b": "H2S"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA/methane/k_ij",
+          "family": "k_ij",
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Table 3 p.7623",
+            "domain_id": "molecular-pc-saft"
+          },
+          "temperature_law": {
+            "form": "polynomial-plus-reciprocal-temperature",
+            "reference_temperature": {
+              "magnitude": 298.15,
+              "unit": "kelvin"
+            },
+            "terms": [
+              {
+                "power": 0,
+                "coefficient": {
+                  "identity": "pair/MDEA/methane/k_ij/constant",
+                  "value": {
+                    "magnitude": 0.1591,
+                    "unit": "dimensionless"
+                  }
+                }
+              }
+            ],
+            "reciprocal_temperature_slope": {
+              "identity": "pair/MDEA/methane/k_ij/reciprocal",
+              "value": {
+                "magnitude": -38.948,
+                "unit": "kelvin"
+              }
+            }
+          }
+        }
+      ],
+      "component_id_a": "MDEA",
+      "component_id_b": "methane"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/water/CO2/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "water",
+      "component_id_b": "CO2"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/water/H2S/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "water",
+      "component_id_b": "H2S"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/water/methane/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "water",
+      "component_id_b": "methane"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/CO2/H2S/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "CO2",
+      "component_id_b": "H2S"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/CO2/methane/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "CO2",
+      "component_id_b": "methane"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/H2S/methane/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "nasrifar-2010",
+            "locator": "Section 6: no adjustable binary parameters for unlisted pairs.",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "H2S",
+      "component_id_b": "methane"
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "nasrifar-2010",
+        "locator": "Eq. (18) and Sections 4-6.",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "nasrifar-2010",
+        "locator": "Eq. (18) and Sections 4-6.",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "nasrifar-2010",
+        "locator": "Eq. (18) and Sections 4-6.",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "nasrifar-2010",
+        "locator": "Eq. (18) and Sections 4-6.",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/polar",
+      "kind": "polar",
+      "choice": "none",
+      "provenance": {
+        "source_id": "nasrifar-2010",
+        "locator": "Eq. (18) and Sections 4-6.",
+        "domain_id": "molecular-pc-saft"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "MDEA",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "nasrifar-2010",
+          "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "nasrifar-2010",
+          "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "nasrifar-2010",
+          "locator": "Table 2; PDF p.4; printed p.7623; water row",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "nasrifar-2010",
+          "locator": "Table 2; PDF p.4; printed p.7623; water row",
+          "domain_id": "molecular-pc-saft"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "MDEA",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "nasrifar-2010",
+              "locator": "Table 2; PDF p.4; printed p.7623; MDEA row",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/MDEA/a/MDEA/b/energy_over_k",
+          "value": {
+            "magnitude": 3187.2,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/MDEA/a/MDEA/b/volume",
+          "value": {
+            "magnitude": 0.0135,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "nasrifar-2010",
+              "locator": "Table 2; PDF p.4; printed p.7623; water row",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2500.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.034868,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/MDEA/a/MDEA/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/MDEA/a/MDEA/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "nasrifar-2010",
+              "locator": "Eqs. (34), (36), (37), pp.7623-7624; sigma cubed and size-corrected geometric volume.",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/a/water/b/energy_over_k",
+              "association/MDEA/a/MDEA/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water/a/water/b/volume",
+              "association/MDEA/a/MDEA/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "nasrifar-2010",
+              "locator": "Eqs. (34), (36), (37), pp.7623-7624; sigma cubed and size-corrected geometric volume.",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -11,6 +11,7 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parents[1]
 USES = {
+    "nasrifar-2010-mdea": "Nasrifar and Tafazzol 2010 molecular PC-SAFT: MDEA 3B and water 2B with neutral gases; no reactive or electrolyte calculation.",
     "el-guendouzi-2004-licl-nacl-observations": "El Guendouzi 2004 LiCl-NaCl observations read from Lassin 2015 Fig. 22; inverted legend reading retained, original table not checked.",
     "robinson-covington-1968-kcl-cacl2-observations": "Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained.",
     "yao-1992-licl-mgcl2-observations": "Yao 1992 Table 1 LiCl-MgCl2 isopiestic observations; printed typos and the illegible row remain flagged.",
