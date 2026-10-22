@@ -33,7 +33,7 @@ class Free:
     guess : float or None
         Initial temperature in K or pressure in Pa when used for a free
         intensive. ``None`` leaves that guess absent. Phase-amount conversion
-        ignores this field and requests a native free amount.
+        refuses a non-``None`` guess; use ``Free()`` for phase amounts.
 
     Notes
     -----
@@ -93,7 +93,7 @@ class Phase:
         or a vapor support containing a charged species is refused at compile.
     amount : Free or Pinned
         Free amount solved in mol, or pinned fraction of compiled feed mol.
-        Default is ``Free()``; its ``guess`` is not transported for amounts.
+        Default is ``Free()``; phase-amount guesses are not supported.
     kind : {'liquid', 'vapor'} or None
         Required physical branch when compiled; ``None`` is refused then.
     composition_guess : sequence or mapping
@@ -519,7 +519,7 @@ class Solid:
         item.correlation = self.correlation
         item.reference = self.reference
         item.molar_volume_m3_per_mol = self.molar_volume_m3_per_mol
-        item.amount = _amount_spec(self.amount)
+        item.amount = _amount_spec(self.amount, self.name)
         return item
 
 
@@ -653,7 +653,7 @@ class Problem:
             item.support_declared = phase.support is not None
             names = () if phase.support is None else phase.support
             item.support = sorted(_index(model.component_ids, name) for name in names)  # native order
-            item.amount = _amount_spec(phase.amount)
+            item.amount = _amount_spec(phase.amount, phase.name)
             guess = phase.composition_guess
             order = tuple(model.component_ids[i] for i in item.support) or model.component_ids
             item.composition_guess = _vector(guess, order) if isinstance(guess, Mapping) else list(guess)
@@ -857,7 +857,9 @@ def _free_value(value: float | Free) -> _core.FreeValue:
     return _core.FreeValue.variable() if value.guess is None else _core.FreeValue.variable(value.guess)
 
 
-def _amount_spec(value: Free | Pinned) -> _core.AmountSpec:
+def _amount_spec(value: Free | Pinned, name: str) -> _core.AmountSpec:
+    if isinstance(value, Free) and value.guess is not None:
+        raise _core.ParameterError(f"phase {name}: phase-amount guesses are not supported; use Free()")
     return _core.AmountSpec.free() if isinstance(value, Free) else _core.AmountSpec.pinned(value.value)
 
 
