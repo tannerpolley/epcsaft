@@ -14,6 +14,7 @@ from typing import Any, Mapping, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 """Molar gas constant in J/(mol K), fixed by the native physical_constants owner."""
+IDEAL_MOLE_FRACTION_STANDARD_STATE_ID: str
 EOS_STANDARD_STATE_ID: str
 """Native reaction activity identity: (rho*x/(1 mol/m^3))*exp(mu_res/(RT)), dimensionless."""
 
@@ -2554,6 +2555,8 @@ class RowKind:
     -----
     Native enum name/value properties follow the module convention in epcsaft._core.
     """
+    ReactionMassAction: RowKind
+    """Direct logarithmic mole-fraction mass action, dimensionless."""
     Chemical: RowKind
     """Chemical-potential stationarity, normalized by RT."""
     Pressure: RowKind
@@ -2602,6 +2605,14 @@ class PointEvaluation:
     """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis; a value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
+
+class IdealMoleFraction:
+    component_ids: list[str]
+    charge_number: list[int]
+    solver_options: list[dict[str, Any]]
+    def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ...) -> None: ...
+
+def effective_water_amounts(model: IdealMoleFraction, result: EquilibriumResult, water: str, ions: Sequence[str], molecular_species: Sequence[str]) -> dict[str, float]: ...
 
 class CompiledSystem:
     """Admitted equilibrium chart and exact defining-equation readers.
@@ -3365,7 +3376,7 @@ def linear_solver() -> str:
         Linear solver name; a result.linear_solver separately records an actual solve.
     """
     ...
-def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem:
+def compile_problem(model: HelmholtzModel | IdealMoleFraction, problem: EquilibriumProblem) -> CompiledSystem:
     """Admit and compile the physical equilibrium declaration.
 
     Parameters
@@ -3460,7 +3471,7 @@ def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequenc
     """
     ...
 def solve_equilibrium(
-    model: HelmholtzModel,
+    model: HelmholtzModel | IdealMoleFraction,
     problem: EquilibriumProblem,
     start: Optional[EquilibriumResult] = ...,
 ) -> EquilibriumResult:

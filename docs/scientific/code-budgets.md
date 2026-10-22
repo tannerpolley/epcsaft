@@ -97,6 +97,19 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-22, #776 (owner approval, 2026-10-22): the ideal mole-fraction amount
+  chart, shared feasibility lifecycle and native effective-water map use +259 net /
+  293 gross formatted Equilibrium, +24/30 Bindings, +30/47 Python and -2/1
+  Properties against `83d6755d`; total +311/371. After merging main `fc247023`
+  with #766 and the species-thermochemistry path, the combined counts are
+  Equilibrium 10,213, Bindings 2,138, Python 2,179 and Properties 5,784.
+  Rule 1 raises Equilibrium 10,054 to 10,316 (band 103), Bindings 2,130 to
+  2,160 (band 22), Python 2,168 to 2,201 (band 22) and total 26,837 to
+  27,384: min(27,115 plus band 272, layer-ceiling sum 27,384).
+  Rule 2 lowers Properties 5,844 to 5,842 (5,784 plus band 58).
+  The #766 amendment below remains as merged. This approval covers the allowance
+  and measured ceiling amendments; it does not grant merge authority.
+
 - 2026-10-22, #766 (owner approval, 2026-10-22): the allowance permits
   Core 8/10, Contributions 6/8, Properties 85/125, Equilibrium 145/215,
   parameter fitting 4/8, Surface 30/45, Bindings 14/21 and Python 12/20
@@ -111,11 +124,11 @@ Budget changes must not silently change scientific scope.
   +135 net / 196 gross and Python +6 / 14 against `83d6755d`; every other
   runtime layer has zero issue-owned growth. This includes the scoped
   normalized declared-root check in the existing charged-Vapor trial polish.
-  After merging #766 and #781, Equilibrium counts 10,089, requiring
-  10,054 → 10,190 (count plus band 101). Total counts 26,945, requiring
-  26,837 → 27,197 under rule 1, bounded by the layer-ceiling sum.
-  These ceilings record source size and owner authority, not numerical
-  qualification; manufactured recovery remains subject to its falsifier.
+  After merging #766, #781 and #776, Equilibrium counts 10,346, requiring
+  10,316 → 10,450 (count plus band 104). Total counts 27,254, within main's
+  unchanged ceiling 27,384. These ceilings record source size and owner
+  authority; numerical qualification is established separately by the
+  manufactured recovery and the remaining falsifiers.
 
 - 2026-10-20, #700 / #695 (owner decision, 2026-10-20): exclude Python AST-span docstrings, comments and empty layout lines, and C++ comments outside literals and empty lines, while retaining the pinned formatters and all bypass refusals. This accounting change adds or removes no Engine calculation. All eight layer ceilings lower to the measured count plus the rounded-up 1% band under rule 2; the total lowers from 29,191 to 26,837 for 26,571 counted lines, capped by the layer-ceiling sum. Per-layer before/after measurements are retained in the issue's PR.
 

@@ -33,9 +33,7 @@ void validate_correlation(const ReactionLogPolynomial& correlation) {
         && std::isfinite(correlation.reference_temperature)
         && std::isfinite(correlation.temperature_min) && std::isfinite(correlation.temperature_max);
     if (!finite || correlation.reference_temperature <= 0.0 || correlation.temperature_min <= 0.0
-        || correlation.temperature_max < correlation.temperature_min
-        || correlation.reference_temperature < correlation.temperature_min
-        || correlation.reference_temperature > correlation.temperature_max)
+        || correlation.temperature_max < correlation.temperature_min)
         throw std::invalid_argument("invalid reaction correlation");
     validate_identity(correlation.standard_state_id);
 }

@@ -1,4 +1,5 @@
 #include "equilibrium/stoichiometry.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
@@ -17,6 +18,7 @@
 namespace epcsaft::equilibrium {
 std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& c = *this;
+    if (c.ideal) throw std::invalid_argument("ideal optimizer state unavailable");
     const auto& p = c.model->parameters();
     std::vector<double> id;
     const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
@@ -48,6 +50,30 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
         result.push_back(std::move(item));
     }
     return result;
+}
+
+// EqIDs ideal_mole_fraction_reaction and ideal_reaction_amount_coordinates; one expression for all callbacks.
+CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
+    using AD = CppAD::AD<double>;
+    std::vector<AD> y(p.point.begin(), p.point.end()), rows;
+    CppAD::Independent(y);
+    const double shift = *std::max_element(p.point.begin(), p.point.end());
+    AD total = 0.0;
+    for (const auto& value : y) total += CppAD::exp(value - shift);
+    const AD log_total = shift + CppAD::log(total);
+    const auto& support = c.problem.phases[0].support;
+    for (std::size_t r = 0; r < c.problem.reactions.size(); ++r) {
+        AD value = -c.ideal_log_k[r];
+        for (std::size_t j = 0; j < y.size(); ++j)
+            value += c.problem.reactions[r].stoichiometry[support[j]] * (y[j] - log_total);
+        rows.push_back(value);
+    }
+    for (std::size_t k = 0; k < c.rank; ++k) {
+        AD value = -c.balance[k] / c.feed_total;
+        for (std::size_t j = 0; j < y.size(); ++j) value += c.B[k][support[j]] * CppAD::exp(y[j]);
+        rows.push_back(value);
+    }
+    return CppAD::ADFun<double>(y, rows);
 }
 
 void validate_intensive_seed(const FreeValue& value, const char* name) {
@@ -939,6 +965,7 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope, bool parameter_slopes,
                                      std::size_t derivative_order) {
+    if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
     using AD = CppAD::AD<double>;
     ReferenceCalorics result;
@@ -1390,6 +1417,86 @@ void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>
             phase.composition_guess.push_back(guess[i]);
 }
 
+IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
+                                   policy::SolverOptions options)
+    : component_ids(std::move(ids)), charge_number(std::move(charges)), solver_options(std::move(options)) {
+    if (component_ids.empty() || component_ids.size() != charge_number.size())
+        throw std::invalid_argument("ideal species/charge size");
+    auto sorted = component_ids;
+    std::sort(sorted.begin(), sorted.end());
+    if (sorted.front().empty() || std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end())
+        throw std::invalid_argument("ideal species identifiers must be nonempty and unique");
+}
+
+CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
+    core::Scope scope("compile_problem");
+    if (!request.topology_declared || request.discovery || request.phases.size() != 1
+        || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
+        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+        || request.critical || request.envelope || request.azeotrope || !request.solids.empty()
+        || request.phases[0].packing_guess)
+        throw std::invalid_argument("ideal mole-fraction model requires one free liquid at fixed T/P without EOS conditions");
+    validate_intensive_seed(request.temperature, "temperature");
+    validate_intensive_seed(request.pressure, "pressure");
+    if (request.source_reference || !request.standard_gibbs_j_per_mol.empty())
+        throw std::invalid_argument("ideal mole-fraction model refuses species standard Gibbs and neutral references");
+    CompiledSystem c;
+    c.ideal = &model; c.problem = request;
+    c.problem.solver_options = request.solver_options.resolved(model.solver_options);
+    c.n_feed = resolve_feed(model, request.feed);
+    c.feed_total = sum(c.n_feed);
+    c.feed_composition = c.n_feed;
+    for (double& value : c.feed_composition) value /= c.feed_total;
+    const std::vector<double> z(model.charge_number.begin(), model.charge_number.end());
+    if (!exact_zero_dot(z, c.n_feed)) throw std::invalid_argument("ideal feed carries net z");
+    c.B = balance_basis(c.n_feed.size(), request.reactions);
+    c.rank = c.B.size(); c.balance = matvec(c.B, c.n_feed);
+    c.has_reaction = !request.reactions.empty();
+    c.has_ions = std::any_of(z.begin(), z.end(), [](double value) { return value != 0.0; });
+    c.conserves_total_moles = conserves_total_moles(c.B);
+    for (const auto& reaction : request.reactions) {
+        if (reaction.reference || reaction.affinity_j_per_mol)
+            throw std::invalid_argument("ideal mole-fraction model refuses reaction references and affinities");
+        if (!exact_zero_dot(z, reaction.stoichiometry)) throw std::invalid_argument("reaction violates z: " + reaction.name);
+    }
+    const auto targets = reaction_target_series(request.temperature.value, request.reactions, 0, nullptr,
+                                                IDEAL_MOLE_FRACTION_STANDARD_STATE_ID);
+    for (double target : targets[0]) c.ideal_log_k.push_back(-target / (GAS_CONSTANT_J_PER_MOL_K * request.temperature.value));
+    std::vector<std::size_t> all(c.n_feed.size()); std::iota(all.begin(), all.end(), 0);
+    auto& phase = c.problem.phases[0];
+    phase.support = resolve_support(phase, all, model.charge_number);
+    c.declared_supports = {phase.support};
+    const auto participating = reaction_participants(c.n_feed.size(), request.reactions);
+    for (std::size_t i : all)
+        if ((participating[i] || c.n_feed[i] > 0.0) && !std::count(phase.support.begin(), phase.support.end(), i))
+            throw std::invalid_argument("ideal species has no support: " + model.component_ids[i]);
+    c.inventory_upper_bounds.assign(all.size(), 0.0);
+    std::vector<bool> retained(all.size(), false);
+    for (const auto& bound : inventory_bounds(c, phase.support, false, 0.0)) {
+        if (bound.status != "optimal" || !bound.feed_normalized_amount)
+            throw std::invalid_argument("ideal inventory " + bound.status + ": " + bound.termination);
+        c.inventory_upper_bounds[bound.species] = *bound.feed_normalized_amount;
+        retained[bound.species] = *bound.maximum > 0.0;
+        if (!retained[bound.species] && participating[bound.species])
+            throw std::invalid_argument("inventory_face: reacting species forced absent: " + model.component_ids[bound.species]);
+    }
+    if (!phase.composition_guess.empty() && phase.composition_guess.size() != phase.support.size())
+        throw std::invalid_argument("ideal composition guess size");
+    const auto declared = phase.support;
+    phase.support.erase(std::remove_if(phase.support.begin(), phase.support.end(), [&](auto i) { return !retained[i]; }), phase.support.end());
+    restrict_composition_guess(phase, declared);
+    if (phase.support.empty()) throw std::invalid_argument("empty ideal inventory support");
+    if (phase.support.size() != all.size()) restrict_inventory_balances(c, retained);
+    for (auto i : all) if (!retained[i]) c.removed_species.push_back(i);
+    c.primal_size = phase.support.size(); c.amount_coordinates.resize(c.primal_size);
+    std::iota(c.amount_coordinates.begin(), c.amount_coordinates.end(), 0);
+    for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({RowKind::ReactionMassAction, 0, r});
+    for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
+    const auto info = inspect_sensitivity(c, c.generic_point());
+    c.jacobian_rank = info.rank; c.generic_nullity = c.primal_size - info.rank; c.feasible = info.nonsingular;
+    return c;
+}
+
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
     core::Scope scope("compile_problem");
     return compile_with_basis(model, request, nullptr);
@@ -1449,6 +1556,17 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
 
 std::vector<double> CompiledSystem::generic_point() const {
     core::Scope scope("equilibrium_generic_point");
+    if (ideal) {
+        std::vector<double> point;
+        const auto& phase = problem.phases[0];
+        const auto& guess = phase.composition_guess;
+        if (!guess.empty() && (guess.size() != phase.support.size() || !all_numeric(guess)
+            || *std::min_element(guess.begin(), guess.end()) <= 0.0 || std::abs(sum(guess) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value))
+            throw std::invalid_argument("invalid ideal composition guess");
+        for (auto i : phase.support) point.push_back(std::log(inventory_upper_bounds[i] / phase.support.size()));
+        if (!guess.empty()) for (std::size_t j = 0; j < point.size(); ++j) point[j] = std::log(guess[j]);
+        return point;
+    }
     const auto shape = layouts(*this);
     std::vector<double> point(primal_size + rank + charge_row_count, 0.0);
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
@@ -1475,6 +1593,7 @@ std::vector<double> CompiledSystem::generic_point() const {
 }
 
 std::vector<std::size_t> CompiledSystem::phase_offsets() const {
+    if (ideal) return {0};
     std::vector<std::size_t> result;
     for (const auto& item : layouts(*this)) result.push_back(item.x.front());
     return result;
@@ -1484,6 +1603,22 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
+    }
+    if (ideal) {
+        if (point.size() != primal_size) throw std::invalid_argument("ideal amount coordinate count");
+        PhasePoint result; result.point = point;
+        result.temperature = problem.temperature.value; result.pressure = problem.pressure.value;
+        std::vector<double> amounts(n_feed.size(), 0.0);
+        for (std::size_t j = 0; j < point.size(); ++j) {
+            const double amount = feed_total * std::exp(point[j]);
+            if (!std::isfinite(amount) || amount <= 0.0) throw std::invalid_argument("invalid ideal amount");
+            amounts[problem.phases[0].support[j]] = amount;
+        }
+        const double total = sum(amounts);
+        if (!std::isfinite(total) || total <= 0.0) throw std::invalid_argument("invalid ideal total amount");
+        for (double& amount : amounts) amount /= total;
+        result.composition.push_back(std::move(amounts)); result.amount.push_back(total);
+        return result;
     }
     const std::size_t components = model->parameters().component_count();
     PhasePoint result;
@@ -1530,6 +1665,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
 
 PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     core::Scope scope("equilibrium_evaluate");
+    if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
     const auto& shape = prepared.shape;
     const std::size_t components = model->parameters().component_count();
@@ -1719,6 +1855,7 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
 
 std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) const {
     core::Scope scope("equilibrium_jacobian");
+    if (ideal) return ideal_rows(*this, prepared).Jacobian(prepared.point);
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     const auto& compositions = prepared.composition;
@@ -2002,6 +2139,7 @@ RowSeries CompiledSystem::row_series(
     const std::vector<double>& control, std::size_t order
 ) const {
     core::Scope scope("equilibrium_row_series");
+    if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const std::size_t n = prepared.point.size();
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = control_width(), extended = extended_control_width();
@@ -2255,6 +2393,12 @@ RowSeries CompiledSystem::row_series(
 std::vector<double> CompiledSystem::constraint_hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
 ) const {
+    if (ideal) {
+        if (!constraint_multipliers.empty() && constraint_multipliers.size() != rows.size())
+            throw std::invalid_argument("constraint multiplier count");
+        return ideal_rows(*this, prepared).Hessian(prepared.point,
+            constraint_multipliers.empty() ? std::vector<double>(rows.size(), 0.0) : constraint_multipliers);
+    }
     if (feasibility_cell()) return pinned_hessian(*this, prepared, constraint_multipliers);
     const auto& point = prepared.point;
     const std::size_t n = point.size();

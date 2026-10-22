@@ -241,6 +241,7 @@ bool state_dependent(const SolvedStateObservable& observable, const EquilibriumP
 
 void validate_request(const CompiledSystem& compiled, const EquilibriumResult& central,
                       const SolvedStateActionRequest& request) {
+    if (compiled.ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const auto& problem = compiled.problem;
     if (central.has_state() && (!central.declaration ||
         !(central.declaration->solver_options == problem.solver_options)))

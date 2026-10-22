@@ -1226,4 +1226,170 @@ void check_s2() {
           && source_batches[1].results[1].diagnostic_message.has_value());
 }
 
+// Nasrifar and Tafazzol (2010), Eqs. (1)-(6), (11), Table 1; Kamps (2001), Tables 2-3.
+void check_ideal_mole_fraction() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    using recording_support::field;
+    using recording_support::fields;
+    const auto record = [](const std::string& name, double value, double reference, double tolerance,
+                           const std::string& inputs, const char* unit = "1") {
+        recording_support::compare(name.c_str(), name.c_str(), unit, value, reference, inputs,
+            "declared mol; true species", "independent analytical identity", "numerical verification",
+            "absolute", tolerance, 0.0, std::abs(value - reference) <= tolerance);
+    };
+    const auto refused = [&](const auto& call, const char* cause) {
+        std::string message;
+        try { call(); } catch (const std::invalid_argument& error) { message = error.what(); }
+        record(std::string("refusal-") + cause, message.find(cause) != std::string::npos, 1.0, 0.0, field("cause", message));
+    };
+    const std::array<std::array<double, 6>, 6> coefficients = {{
+        {132.899, -13445.9, -22.4773, 0, 273, 498}, {231.456, -12092.1, -36.7816, 0, 273, 498},
+        {216.049, -12431.7, -35.4819, 0, 273, 498}, {214.582, -12995.4, -33.5471, 0, 273, 423},
+        {-32, -3338, 0, 0, 287, 343}, {-9.4165, -4234.98, 0, 0, 298, 333}}};
+    const auto reaction = [&](std::size_t r, std::vector<double> nu) {
+        const auto& a = coefficients[r];
+        ReactionSpec spec; spec.name = "R" + std::to_string(r + 1); spec.stoichiometry = std::move(nu);
+        spec.correlation = ReactionLogPolynomial{a[0], a[1], a[2], a[3], 1.0, a[4], a[5], IDEAL_MOLE_FRACTION_STANDARD_STATE_ID};
+        return spec;
+    };
+    const auto source_log_k = [&](std::size_t r, double T) {
+        const auto& a = coefficients[r]; return a[0] + a[1] / T + a[2] * std::log(T) + a[3] * T;
+    };
+    IdealMoleFraction water({"water", "OH-", "H3O+"}, {0, -1, 1});
+    auto p = equilibrium_support::flash(3); p.temperature.value = 298.15;
+    p.feed.values = {1.0, 0.0, 0.0}; p.solver_options.values[policy::row] = 1e-10;
+    p.reactions = {reaction(0, {-2, 1, 1})};
+    const auto r1 = solve_equilibrium(water, p);
+    CHECK(r1.success && r1.requested_tolerance_met.value_or(false));
+    CHECK(r1.molar_densities.empty() && r1.packing_fractions.empty());
+    const auto& x = r1.mole_fractions;
+    const double q = std::exp(source_log_k(0, p.temperature.value) / 2.0), xw = 1.0 / (1.0 + 2.0 * q);
+    const auto input = fields({field("T_K", p.temperature.value), field("P_Pa", p.pressure.value),
+        field("model", IDEAL_MOLE_FRACTION_STANDARD_STATE_ID), field("species", "water,OH-,H3O+"),
+        field("x", x), field("N_mol", r1.amounts[0]), field("lnK", source_log_k(0, p.temperature.value)),
+        field("iterations", r1.iterations), field("evaluations", r1.evaluations), field("hessian_calls", r1.hessian_calls),
+        field("rows", r1.residuals), field("rank", r1.jacobian_rank)});
+    record("R1-log-mass-action", std::log(x[1]) + std::log(x[2]) - 2 * std::log(x[0]), source_log_k(0, p.temperature.value), 1e-10, input);
+    record("R1-water", x[0], xw, 1e-10, input);
+    for (int i : {1, 2}) record("R1-log-ion-" + std::to_string(i), std::log(x[i]), std::log(q * xw), 1e-10, input);
+    record("R1-W", r1.amounts[0], 1.0, 1e-10, input, "mol");
+    record("R1-normalization", std::accumulate(x.begin(), x.end(), 0.0), 1.0, 1e-10, input);
+    record("R1-charge", x[2] - x[1], 0.0, 1e-10, input);
+    const auto converted = effective_water_amounts(water, r1, "water", {"OH-", "H3O+"}, {});
+    record("R1-effective-water", converted.at("water"), 1.0, 1e-10, input, "mol");
+    auto rebased = *p.reactions[0].correlation;
+    rebased.a += rebased.c * std::log(p.temperature.value); rebased.reference_temperature = p.temperature.value;
+    record("log-reference-scale", evaluate_reaction_properties(rebased, p.temperature.value).ln_k,
+        evaluate_reaction_properties(*p.reactions[0].correlation, p.temperature.value).ln_k, 1e-12, input);
+    refused([&] { evaluate_reaction_properties(rebased, 250.0); }, "outside reaction correlation");
+    auto invalid = p; invalid.reactions[0].correlation->standard_state_id = EOS_STANDARD_STATE_ID;
+    refused([&] { compile_problem(water, invalid); }, "reference-basis-mismatch");
+    refused([&] { effective_water_amounts(water, r1, "water", {"OH-"}, {}); }, "incomplete conversion");
+    core::Capture capture;
+    refused([&] { solve_equilibrium(water, invalid, r1); }, "previous-result starts unsupported before calculation");
+    record("start-refusal-native-spans", capture.trace().spans.size(), 0.0, 0.0, input);
+    for (bool sulfide : {false, true}) {
+        IdealMoleFraction model({"water", "MDEA", sulfide ? "H2S" : "CO2", "OH-", "H3O+",
+            sulfide ? "HS-" : "HCO3-", sulfide ? "S--" : "CO3--", "MDEAH+"}, {0,0,0,-1,1,-1,-2,1});
+        auto problem = equilibrium_support::flash(8); problem.temperature.value = 313.11;
+        const double W = 1.0 / 0.01801528, M = sulfide ? 8.001 : 7.994, G = sulfide ? 6.254 : 6.363;
+        problem.feed.values = {W,M,G,0,0,0,0,0}; problem.solver_options.values[policy::row] = 1e-10;
+        problem.reactions = {reaction(0, {-2,0,0,1,1,0,0,0}),
+            reaction(sulfide ? 3 : 1, {sulfide ? -1.0 : -2.0,0,-1,0,1,1,0,0}),
+            reaction(sulfide ? 4 : 2, {-1,0,0,0,1,-1,1,0}), reaction(5, {-1,1,0,0,1,0,0,-1})};
+        const auto compiled = compile_problem(model, problem);
+        const auto result = solve_equilibrium(model, problem);
+        CHECK(result.success && result.requested_tolerance_met.value_or(false));
+        CHECK(result.jacobian_rank == 8);
+        std::vector<double> n = result.mole_fractions;
+        for (double& value : n) value *= result.amounts[0];
+        const auto out = effective_water_amounts(model, result, "water",
+            {"OH-", "H3O+", model.component_ids[5], model.component_ids[6], "MDEAH+"}, {"MDEA", model.component_ids[2]});
+        const auto prefix = sulfide ? "H2S-" : "CO2-";
+        const auto data = fields({field("T_K", problem.temperature.value), field("P_Pa", problem.pressure.value),
+            field("model", IDEAL_MOLE_FRACTION_STANDARD_STATE_ID), field("species", sulfide ? "water,MDEA,H2S,OH-,H3O+,HS-,S--,MDEAH+" : "water,MDEA,CO2,OH-,H3O+,HCO3-,CO3--,MDEAH+"),
+            field("feed_mol", problem.feed.values), field("n_mol", n), field("x", result.mole_fractions),
+            field("rows", result.residuals), field("classified_rows", result.classified_residuals),
+            field("rank", result.jacobian_rank), field("condition", inspect_sensitivity(compiled, result.coordinates).condition_estimate), field("iterations", result.iterations), field("evaluations", result.evaluations),
+            field("hessian_calls", result.hessian_calls), field("effective_water_mol", out.at("water"))});
+        for (std::size_t r = 0; r < 4; ++r) {
+            const auto& spec = problem.reactions[r]; double logQ = 0.0;
+            for (std::size_t i = 0; i < 8; ++i) logQ += spec.stoichiometry[i] * std::log(result.mole_fractions[i]);
+            const auto ri = static_cast<std::size_t>(std::stoi(spec.name.substr(1)) - 1);
+            record(prefix + spec.name, logQ, source_log_k(ri, problem.temperature.value), 1e-10,
+                data + ";" + field("lnK", source_log_k(ri, problem.temperature.value)));
+        }
+        record(std::string(prefix) + "W", n[0]+n[3]+n[4]+(sulfide ? 0.0 : n[5]+n[6]), W, 1e-10, data, "mol");
+        record(std::string(prefix) + "M", n[1]+n[7], M, 1e-10, data, "mol");
+        record(std::string(prefix) + "gas", n[2]+n[5]+n[6], G, 1e-10, data, "mol");
+        record(std::string(prefix) + "charge", n[4]+n[7]-n[3]-n[5]-2*n[6], 0.0, 1e-10, data, "mol");
+        record(std::string(prefix) + "normalization", std::accumulate(result.mole_fractions.begin(), result.mole_fractions.end(), 0.0), 1.0, 1e-10, data);
+        record(std::string(prefix) + "converted-total", out.at("water")+out.at("MDEA")+out.at(model.component_ids[2]), result.amounts[0], 1e-10, data, "mol");
+        record(std::string(prefix) + "free-MDEA", out.at("MDEA"), n[1], 1e-10, data, "mol");
+        record(std::string(prefix) + "free-gas", out.at(model.component_ids[2]), n[2], 1e-10, data, "mol");
+        record(std::string(prefix) + "effective-water", out.at("water"), W+n[7]+(sulfide ? n[5]+n[6] : 0.0), 1e-10, data, "mol");
+        record(std::string(prefix) + "effective-inventory", out.at("water")+n[1]+(sulfide ? n[2] : 0.0), W+M+(sulfide ? G : 0.0), 1e-10, data, "mol");
+        record(std::string(prefix) + "changed-total", result.amounts[0], W+M+G-(sulfide ? 0.0 : n[5]+n[6]), 1e-10, data, "mol");
+        for (double value : n) CHECK(std::isfinite(value) && value > 0.0);
+        if (sulfide) continue;
+        auto other_pressure = problem; other_pressure.pressure.value = 200000.0;
+        const auto high = solve_equilibrium(model, other_pressure);
+        CHECK(high.success);
+        for (std::size_t i = 0; i < 8; ++i) {
+            const auto pressure_data = data + ";" + fields({field("other_P_Pa", *high.pressure), field("other_x", high.mole_fractions), field("other_N_mol", high.amounts[0])});
+            record("pressure-n-"+std::to_string(i), high.amounts[0]*high.mole_fractions[i], n[i], 1e-10*std::max(1.0,std::abs(n[i])), pressure_data, "mol");
+            record("pressure-x-"+std::to_string(i), high.mole_fractions[i], result.mole_fractions[i], 1e-10, pressure_data);
+        }
+        std::vector<double> y(8, std::log(1.0/64)), weights(8,0.0), Jstar(64);
+        std::size_t a = 0; while (compiled.B[a][0] == 0.0) ++a;
+        weights[1] = 1.0; weights[4+a] = 1.0/compiled.B[a][0];
+        for (std::size_t row = 0; row < 8; ++row) for (std::size_t j = 0; j < 8; ++j) {
+            const auto& nu = problem.reactions[row < 4 ? row : 0].stoichiometry;
+            Jstar[row*8+j] = row < 4 ? nu[j]-std::accumulate(nu.begin(),nu.end(),0.0)/8 : compiled.B[row-4][j]/64;
+        }
+        const auto J = compiled.jacobian(y), H = compiled.hessian(y,weights);
+        std::vector<double> hstar(8,-1.0/64), action(8); hstar[0] = 1.0/8;
+        for (std::size_t i=0;i<8;++i) action[i]=H[i*8];
+        const auto error = [](const auto& actual,const auto& reference) {
+            double e = 0.0;
+            for (std::size_t i = 0; i < actual.size(); ++i) {
+                const double difference = actual[i] - reference[i];
+                if (!std::isfinite(actual[i]) || !std::isfinite(reference[i]) || !std::isfinite(difference))
+                    throw std::runtime_error("nonfinite derivative comparison");
+                e = std::max(e, std::abs(difference) / std::max(1.0, std::abs(reference[i])));
+            }
+            return e;
+        };
+        const auto derivative_data = data+";"+fields({field("y",y),field("direction","1,0,0,0,0,0,0,0"),field("B_row",compiled.B[a]),field("weights",weights),field("Jstar",Jstar),field("J_native",J),field("H_action",action),field("hstar",hstar)});
+        record("Jacobian-analytical",error(J,Jstar),0.0,1e-8,derivative_data);
+        record("Hessian-action-analytical",error(action,hstar),0.0,1e-7,derivative_data);
+        for(double step:{1e-3,3e-4,1e-4}) {
+            std::vector<double> Jfd(64),hfd(8),Jdiff(64),hdiff(8);
+            const auto independent = [&](const auto& point,bool gradient) {
+                std::vector<double> values(8,0.0), expy(8); double total=0;
+                for(std::size_t j=0;j<8;++j) total+=expy[j]=std::exp(point[j]);
+                if(gradient) for(std::size_t j=0;j<8;++j)
+                    values[j]=problem.reactions[1].stoichiometry[j]+expy[j]/total+weights[4+a]*compiled.B[a][j]*expy[j];
+                else for(std::size_t r=0;r<8;++r) {
+                    values[r]= r<4 ? -source_log_k(r==3?5:r,313.11) : -compiled.balance[r-4]/compiled.feed_total;
+                    for(std::size_t j=0;j<8;++j) values[r]+=r<4 ? problem.reactions[r].stoichiometry[j]*(point[j]-std::log(total)) : compiled.B[r-4][j]*expy[j];
+                }
+                return values;
+            };
+            for(std::size_t j=0;j<8;++j) {
+                auto plus=y,minus=y;plus[j]+=step;minus[j]-=step;
+                const auto rp=independent(plus,false),rm=independent(minus,false);
+                for(std::size_t r=0;r<8;++r) Jfd[r*8+j]=(rp[r]-rm[r])/(2*step);
+                if(j==0) {const auto gp=independent(plus,true),gm=independent(minus,true);for(std::size_t i=0;i<8;++i)hfd[i]=(gp[i]-gm[i])/(2*step);}
+            }
+            for(std::size_t i=0;i<64;++i)Jdiff[i]=J[i]-Jfd[i]+Jstar[i];
+            for(std::size_t i=0;i<8;++i)hdiff[i]=action[i]-hfd[i]+hstar[i];
+            const auto fd_data=derivative_data+";"+fields({field("step",step),field("J_fd",Jfd),field("H_action_fd",hfd),field("E_J_fd",error(Jfd,Jstar)),field("E_H_fd",error(hfd,hstar))});
+            record("Jacobian-centered",error(Jdiff,Jstar),0.0, step==1e-4?1e-8:1.0,fd_data);
+            record("Hessian-action-centered",error(hdiff,hstar),0.0,step==1e-4?1e-7:1.0,fd_data);
+        }
+    }
+}
+
 }  // namespace equilibrium_checks

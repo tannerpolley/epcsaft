@@ -14,6 +14,15 @@ admitted ionic/reacting cases, supported by the independent delivered review
 within the retained limits. Reuse accepted numerical owners and independent cases.
 Declared-branch continuation and mechanical/local checks remain required.
 
+The ideal liquid `IdealMoleFraction` specialization uses the log-amount chart
+and square direct reaction/inventory rows of EqID: `ideal_reaction_amount_coordinates`.
+Its cold start is positive on the admitted inventory support, or uses a declared
+positive composition guess. The same Ipopt lifecycle and exact-Jacobian polish
+classify these rows. No EOS density seed, branch admission, neutral recovery or
+pre-Ipopt Newton attempt applies. Previous-result starts are refused before native
+compilation. EqID: `effective_water_amounts` is a deterministic native amount map
+from an available criterion-meeting result, with no further equilibrium iteration.
+
 ## ALG-ADMISSION
 
 Inputs are ordered components, explicit charges, source-backed coefficients,

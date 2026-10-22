@@ -74,6 +74,15 @@ struct FeedSpec final {
 // The only admitted correlation identity: activity (rho x / (1 mol/m^3)) exp(mu_res / RT).
 inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-basis";
 
+inline constexpr const char* IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = "ideal-mole-fraction";
+struct IdealMoleFraction final {
+    std::vector<std::string> component_ids;
+    std::vector<int> charge_number;
+    policy::SolverOptions solver_options;
+    IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
+                      policy::SolverOptions options = {});
+};
+
 // Exactly one target: scalar K, affinity in J/mol, or the P3 ln K(T) correlation on the
 // EOS density basis. No target silently overrides another.
 struct ReactionSpec final {
@@ -160,7 +169,7 @@ struct EquilibriumProblem final {
 };
 
 enum class RowKind {
-    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy,
+    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, ReactionMassAction,
     CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity
 };
 
@@ -171,6 +180,7 @@ inline bool stationarity_row(RowKind kind) noexcept {
 
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
+    case RowKind::ReactionMassAction: return "ideal_mole_fraction_reaction";
     case RowKind::Chemical: return "chemical_potential_stationarity";
     case RowKind::Pressure: return "pressure_equality";
     case RowKind::Moiety: return "material_balance";
@@ -298,6 +308,10 @@ struct CompiledSolid final {
 struct CompiledSystem final {
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
+    const IdealMoleFraction* ideal = nullptr;
+    // EqID ideal_reaction_amount_coordinates: column j is ln(n_support[j]/N_feed).
+    std::vector<std::size_t> amount_coordinates;
+    std::vector<double> ideal_log_k;
     EquilibriumProblem problem;
     std::vector<double> n_feed;
     std::vector<double> feed_composition;
@@ -374,7 +388,7 @@ struct CompiledSystem final {
     ) const;
 
     std::size_t unknown_count() const noexcept {
-        return primal_size + rank + charge_row_count;
+        return ideal ? primal_size : primal_size + rank + charge_row_count;
     }
 
 
@@ -383,7 +397,7 @@ struct CompiledSystem final {
     }
 
     bool feasibility_cell() const noexcept {
-        return pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
+        return ideal || pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
     }
     // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
     bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
@@ -397,7 +411,7 @@ struct CompiledSystem final {
 
     // Control direction [T, P, n_feed (C), active parameters (A)]; the extended layout appends the
     // (a, b, c, d) increments of every reaction law and then the H and S targets.
-    std::size_t control_width() const noexcept { return 2 + n_feed.size() + model->active_parameters().size(); }
+    std::size_t control_width() const noexcept { return 2 + n_feed.size() + (model ? model->active_parameters().size() : 0); }
     std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + 2; }
 
     // A free amount is a coordinate seeded at 1 mol; a pinned amount is its fraction of the feed.
@@ -412,6 +426,7 @@ struct CompiledSystem final {
 CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
+CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
 CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 
@@ -450,6 +465,7 @@ struct EquilibriumResult final {
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
     const HelmholtzModel* model_identity = nullptr;
+    const IdealMoleFraction* ideal_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
     bool success = false;
@@ -543,6 +559,10 @@ EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
+EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
+    const std::optional<EquilibriumResult>& start = std::nullopt);
+std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, const EquilibriumResult&,
+    const std::string& water, const std::vector<std::string>& ions, const std::vector<std::string>& molecular_species);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 // `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
 struct DriverLimits;
