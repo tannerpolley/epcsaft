@@ -172,7 +172,7 @@ void check_trial_refinement() {
     const HelmholtzModel model(p);
     const double temperature = 298.15, pressure = 1000.0, a = 1e-30, b = 1e-230;
     const std::vector<double> target{1.0 - 2.0 * a - 3.0 * b, a + 2.0 * b, a, b}, seed{.99, .006, .002, .002};
-    auto phase = equilibrium_support::phase("L", PhaseKind::Liquid); phase.support = {0, 1, 2, 3};
+    auto phase = equilibrium_support::phase("V", PhaseKind::Vapor); phase.support = {0, 1, 2, 3};
     const auto root = solve_density(model, temperature, pressure, target, DensityBranch::Vapor, std::nullopt);
     const auto derivative = model.evaluate(temperature, 1.0 / root.molar_density, target, DerivativeOrder::IsothermalPhaseHessian);
     std::vector<double> shift(4);
@@ -194,6 +194,8 @@ void check_trial_refinement() {
     tpd_compare("trial-refinement/stationarity", result.convergence.residual, 0.0, 1e-10, inputs);
     tpd_compare("trial-refinement/charge", std::inner_product(composition.begin(), composition.end(), p.charge_number.begin(), 0.0), 0.0, 1e-12, inputs);
     tpd_compare("trial-refinement/normalization", std::accumulate(composition.begin(), composition.end(), 0.0), 1.0, 1e-12, inputs);
+    for (std::size_t i = 1; i < target.size(); ++i)
+        tpd_compare("trial-refinement/log-fraction/" + std::to_string(i), std::log(composition[i]), std::log(target[i]), 1e-7, inputs);
     for (double x : composition) CHECK(std::isfinite(x) && x > 0.0);
     CHECK(result.success);
 }
@@ -560,14 +562,52 @@ void check_tangent_plane_admission() {
         if (item.optimizer.success) tpd_compare("witness/trial-dual/" + std::to_string(i), item.quantities.at("trial_identity_defect_over_rt"), 0.0, 1e-10, definition);
     }
     CHECK(physical_trials > 0);
-    for (const auto& support : std::vector<std::vector<std::size_t>>{{}, {0, 1}, {0, 1, 2}}) {
+    for (const auto& support : std::vector<std::vector<std::size_t>>{{}, {0, 1}}) {
         auto invalid = phase; invalid.support = support; invalid.support_declared = true;
-        if (support.size() == 3) invalid.kind = PhaseKind::Vapor;
         StabilityOptions options; options.trials = std::vector<PhaseSpec>{invalid};
         bool rejected = false;
         try { (void)stability_test(compiled, candidate, options); } catch (const std::invalid_argument&) { rejected = true; }
         tpd_compare("support/physics-rejected/" + std::to_string(support.size()), rejected ? 1.0 : 0.0, 1.0, 0.0);
     }
+    // #771: supplied charged Vapor points retain their kind and match their own root, never its sibling.
+    const std::vector<double> trace{1.0 - 2e-8, 1e-8, 1e-8};
+    const auto vapor_root = epcsaft::solve_density(model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Vapor, std::nullopt);
+    const auto liquid_root = epcsaft::solve_density(model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Liquid, std::nullopt);
+    CHECK(liquid_root.molar_density > vapor_root.molar_density);
+    StabilityOptions supplied; supplied.evaluate_supplied_trials = true;
+    std::vector<PhaseSpec> points;
+    for (double rho : {vapor_root.molar_density, 1.1 * vapor_root.molar_density, liquid_root.molar_density}) {
+        auto point = phase; point.kind = PhaseKind::Vapor; point.support_declared = true;
+        point.composition_guess = trace; point.packing_guess = model.packing_fraction_coefficient(298.15, trace) * rho;
+        points.push_back(point);
+    }
+    supplied.trials = points;
+    const auto evaluated = stability_test(aqueous_system, aqueous_state, supplied);
+    CHECK(evaluated.trials.size() == points.size());
+    for (std::size_t j = 0; j < points.size(); ++j) {
+        const auto& trial = evaluated.trials[j];
+        CHECK(trial.phase.kind == PhaseKind::Vapor && trial.phase.support == phase.support);
+        const auto id = "charged-vapor/supplied/" + std::to_string(j);
+        const auto inputs = recording_support::fields({recording_support::field("composition", trial.composition),
+            recording_support::field("raw_rows", trial.raw_residuals), recording_support::field("cause", trial.message)});
+        for (const auto& [name, value] : trial.quantities)
+            recording_support::observe((id + "/" + name).c_str(), name.c_str(), "native-field-units", value, std::nullopt, inputs,
+                "Relationship", "native-supplied-point", "#771 pressure-root admission");
+        if (j == 0) {
+            CHECK(trial.evidence == "evaluated" && std::isfinite(trial.quantities.at("tpd_over_rt")));
+            tpd_compare(id + "/pressure", trial.quantities.at("pressure_pa"), 1000.0, 1e-4, inputs, "Pa");
+            CHECK(trial.quantities.at("pressure_density_derivative") > 0.0);
+        } else CHECK(trial.evidence == "unresolved" && trial.message.find("pressure-root window") != std::string::npos);
+    }
+    auto dipolar = parameters; dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563}; dipolar.correlation_integral_parameter = {.1276, .215, .138};
+    const epcsaft::HelmholtzModel dipolar_model(dipolar);
+    auto charged = aqueous; charged.phases = {points[0]};
+    epcsaft::core::Capture refusal_capture(true); std::string cause;
+    try { (void)compile_problem(dipolar_model, charged); }
+    catch (const epcsaft::core::DeclarationError& error) { cause = error.what(); }
+    CHECK(cause.find("not numerically qualified") != std::string::npos);
+    for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
     // A declared electrolyte bubble has ions absent from its first, neutral vapor phase.
     // Explicit trials must still seed their ionic support with strictly positive amounts.
     auto bubble = problem;

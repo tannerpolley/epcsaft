@@ -355,7 +355,12 @@ that packing when recomputing molar volume, without a second root solve. The
 returned packing, density and pressure row describe the final point. Packing
 outside the domain or nonpositive supported composition yields an unavailable
 row with its existing cause, never an invented TPD. Charged-family admission
-below applies even when packing is supplied. Donor slope and estimated
+below applies even when packing is supplied. An explicit charged Vapor support
+requires `DensityTemperature` and must match its own lowest stable pressure root
+after final reconstruction, within the existing root window and residual criterion,
+with positive finite pressure slope. A sole root on the Liquid side is unavailable;
+a sole root with no loop evidence retains the density owner's `Unspecified` meaning.
+This admission supplies no charged-Vapor discovery or physical vapor-validation claim. Donor slope and estimated
 uncertainty remain available when a positive full-support donor exists, but
 optimizer-only values are absent. Exhausting the evaluation sequence, a zero
 or negative TPD, or a donor estimate establishes no stability conclusion.
