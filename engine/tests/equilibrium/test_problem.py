@@ -45,6 +45,13 @@ def test_unknown_species_and_amount_status_are_rejected_by_name() -> None:
         })
 
 
+def test_phase_amount_guess_is_rejected_by_name() -> None:
+    model, feed = mixture(), Amounts({"methane": 1.0})
+    problem(feed, amount=Free())._native(model)
+    with pytest.raises(ParameterError, match=r"phase L.*phase-amount guesses are not supported.*Free\(\)"):
+        problem(feed, amount=Free(0.3))._native(model)
+
+
 def test_named_guess_follows_the_declared_support() -> None:
     # A supported phase's guess has one entry per support component; a name map must start the same solve.
     def solve(first: object, second: object) -> _core.EquilibriumResult:
