@@ -571,11 +571,13 @@ not establish all roots or physical nonexistence.
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
 pins and free intensives from data. An omitted phase support is every component,
-restricted in a vapor to the zero-charge components; a declared vapor support naming a
-charged component is refused (`DeclarationError`) even when that component is unfed,
-zero-guessed or on a zero-pinned phase. Volatile electrolytes leave the liquid as
-neutral molecular species carried as separate components, and free ions are not a
-vapor state at the Engine's conditions (owner decision, #438). Supports are admitted
+restricted in a vapor to the zero-charge components. Explicit charged Vapor support
+is admitted only under `DensityTemperature`, retaining its kind, ionic coordinates
+and intensive electroneutrality even at zero pinned amount (#771's scoped amendment
+to #438). `DipolarPerturbation` charged Vapor is refused pending separate numerical
+qualification despite its vacuum limit; density-independent forms retain their
+condensed-domain refusal. This is a numerical declaration capability, with physical
+vapor applicability unvalidated. Supports are admitted
 before any reference calculation; an omitted support keeps its full declared width for
 supplied guesses and starts. A compile-time declaration error propagates to the caller
 from every entry, including declared starts and continuation endpoints. The balance basis $B$ spans the left null space
@@ -1798,13 +1800,21 @@ pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
 Caller support/label entries **replace** defaults and limit the tested domain;
 they do not restrict the initial union candidate. An omitted caller support
 resolves on U by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
-supports and ionic Vapor. Reject empty caller lists, species outside U and one-sign
+supports; explicit ionic Vapor requires `DensityTemperature`. Reject empty caller lists, species outside U and one-sign
 ionic supports.
 
-Charged supports are admitted under every declared bulk-permittivity form.
+Charged Liquid supports are admitted under every declared bulk-permittivity form.
 `DensityTemperature` and `DipolarPerturbation` reach $\epsilon_r\to1$ as
 $\rho_m\to0$ (full EOS §6.2/§6.4), and their charged trials count at every
-density. Density-independent `IonSuppression` (all choices) and
+density. Explicit charged Vapor under `DensityTemperature` must match its own
+lowest stable pressure root after reconstruction, before energy/donor evaluation,
+including supplied packing. The root must meet `DENSITY_ANCHOR_LOG_WINDOW`, the
+existing pressure-root residual criterion and positive finite corrected slope.
+A sole root established on the Liquid side is refused; a sole root without loop
+evidence retains `Unspecified` admission. The generic sibling-root fallback is
+unchanged for existing callers. Default trial families, discovery initial
+candidates and its charged-Vapor addition veto are unchanged: no charged-Vapor
+discovery is qualified. Density-independent `IonSuppression` (all choices) and
 `ComponentMixing` are condensed-liquid correlations (#568). Under them a charged
 trial point counts only when it coincides, within `DENSITY_ANCHOR_LOG_WINDOW`,
 with a stable density root of its own composition at the test T and P, and the

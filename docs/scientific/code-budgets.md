@@ -97,6 +97,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-22, #771 (**owner approval pending**): the partial explicit `DensityTemperature` charged-Vapor admission and supplied-point root guard count 9,865 Equilibrium lines, up 20 against `83d6755d`. The proposed ceiling is **9,936 → 9,964**, exactly count plus the rounded-up 1% band of 99 under rule 1. Python uses +6 net; total runtime is 26,607, below the unchanged 26,837 ceiling. Numerical qualification is incomplete: the manufactured trace recovery fails, and the permitted Newton row-equilibration probe did not repair it. No allowance or numerical acceptance is claimed.
+
 - 2026-10-20, #700 / #695 (owner decision, 2026-10-20): exclude Python AST-span docstrings, comments and empty layout lines, and C++ comments outside literals and empty lines, while retaining the pinned formatters and all bypass refusals. This accounting change adds or removes no Engine calculation. All eight layer ceilings lower to the measured count plus the rounded-up 1% band under rule 2; the total lowers from 29,191 to 26,837 for 26,571 counted lines, capped by the layer-ceiling sum. Per-layer before/after measurements are retained in the issue's PR.
 
 - 2026-10-20, #692 (owner approval): shared physical-mol recovery has an allowance of +120 net / 166 gross formatted Equilibrium lines against `31460744`, with zero growth in every other runtime layer. Equilibrium **10,582 → 10,794**, the count 10,687 plus its rounded-up 1% band of 107 under rule 1. Total count **29,172** remains under the unchanged **29,191** ceiling. One recovery beside `run_driver` owns eligibility, invocation, admission and work/cause retention across ordinary solves, discovery, start sets and continuation.

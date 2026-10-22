@@ -187,7 +187,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
     if (phases.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
     for (auto phase : phases) {
-        phase.support = resolve_support(phase, united, z);
+        phase.support = resolve_support(phase, united, z, c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
             if (std::find(united.begin(), united.end(), i) == united.end())
@@ -626,6 +626,21 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 trial.composition = reconstruct_trial_composition(raw.composition[0], phase.support, z);
                 ++report.work["reconstruction_evaluations"];
                 const double volume = c.model->packing_fraction_coefficient(at.temperature, trial.composition) / raw.eta[0];
+                if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
+                        [&](auto i) { return z[i] != 0; })) {
+                    auto& q = trial.quantities;
+                    q["packing_fraction"] = raw.eta[0]; q["molar_density_mol_m3"] = 1.0 / volume;
+                    const auto state = c.model->state(at.temperature, 1.0 / volume, trial.composition);
+                    q["pressure_pa"] = state.pressure;
+                    q["pressure_density_derivative"] = state.pressure_density_derivative;
+                    const auto root = declared_root(*c.model, at.temperature, at.pressure, trial.composition, PhaseKind::Vapor);
+                    q["vapor_root_log_displacement"] = std::abs(std::log(root.molar_density * volume));
+                    q["vapor_root_residual"] = root.convergence.residual;
+                    if (!(q["vapor_root_log_displacement"] <= policy::DENSITY_ANCHOR_LOG_WINDOW.value
+                            && root.convergence.residual <= root.convergence.criterion->value
+                            && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0))
+                        throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
+                }
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
                     volume, PhaseKind::Liquid, trial.quantities, "condensed_"), &trial.quantities);
                 trial.quantities.merge(phase_energy(*c.model, at.temperature, at.pressure, volume, trial.composition,
