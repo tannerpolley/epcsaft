@@ -37,6 +37,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
 | `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
+| `nasrifar-2010-mdea` | 1 | 1 | Nasrifar and Tafazzol 2010 molecular PC-SAFT: MDEA 3B and water 2B with neutral gases; no reactive or electrolyte calculation. |
 | `robinson-covington-1968-kcl-cacl2-observations` | 1 | 1 | Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained. |
 | `saad-padova-marcus-1980-nacl-kcl-cacl2-observations` | 1 | 1 | Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980). |
 | `schick-2023-co2-thf` | 1 | 1 | Schick 2023 dry CO2-THF binary: published pure records and k_ij for full binary VLE replay of Table S10 (no water, salts or reactions). |
@@ -848,6 +849,9 @@ Current packet versions whose parameter files hold the component.
 | `8-methylquinoline` | `feos-esper-2023/1` |
 | `9-(2-phenylethyl)heptadecane` | `feos-esper-2023/1` |
 | `9-ethylcarbazole` | `feos-esper-2023/1` |
+| `CO2` | `nasrifar-2010-mdea/1` |
+| `H2S` | `nasrifar-2010-mdea/1` |
+| `MDEA` | `nasrifar-2010-mdea/1` |
 | `acetaldehyde` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `acetaldehyde dibutyl acetal` | `feos-esper-2023/1` |
 | `acetaldoxime` | `feos-esper-2023/1` |
@@ -1457,7 +1461,7 @@ Current packet versions whose parameter files hold the component.
 | `methacrylic acid methyl ester` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `methacrylic acid, butyl ester` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `methacrylonitrile` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
-| `methane` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3`, `hda-pc-saft/1` |
+| `methane` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3`, `hda-pc-saft/1`, `nasrifar-2010-mdea/1` |
 | `methanesulfonic acid` | `feos-esper-2023/1` |
 | `methanesulfonylchloride` | `feos-esper-2023/1` |
 | `methanethiol` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
@@ -1982,5 +1986,5 @@ Current packet versions whose parameter files hold the component.
 | `vinyl triethoxy silane` | `feos-esper-2023/1` |
 | `vinylethylene carbonate` | `feos-esper-2023/1` |
 | `vinyltrimethoxysilane` | `feos-esper-2023/1` |
-| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5` |
+| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
 | `xenon` | `feos-esper-2023/1` |

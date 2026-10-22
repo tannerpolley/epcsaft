@@ -380,6 +380,13 @@
       "packet_path": "data/packets/schick-2023-co2-thf/1",
       "packet_fingerprint": "69f0d49548046c6c25f235c460a9ba19c88cec4ac9593cc3df78fb3556073301",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "nasrifar-2010-mdea",
+      "packet_version": "1",
+      "packet_path": "data/packets/nasrifar-2010-mdea/1",
+      "packet_fingerprint": "88ebdcef83fdf6d1ac35c1db2ba2c6c106d811a13e37ab2f5fa6f80f43811868",
+      "materialization": "byte-for-byte"
     }
   ]
 }
