@@ -1708,8 +1708,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                     + (component == species ? 1.0 / compositions[row.phase][species] : 0.0);
                 const double dv = packings[row.phase].component[component] / prepared.eta[row.phase];
                 at(row_index, shape[row.phase].x[local]) =
-                    physical_x * compositions[row.phase][component] + physical_v * dv
-                        + (model->parameters().ideal_gas ? compositions[row.phase][component] : 0.0);
+                    physical_x * compositions[row.phase][component] + physical_v * dv;
             }
             at(row_index, shape[row.phase].volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) =

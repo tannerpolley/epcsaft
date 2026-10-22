@@ -1457,6 +1457,23 @@ void check_ideal_gas() {
     const auto actual = c.evaluate(q);
     const auto gradient = c.objective_gradient(q), hessian = c.hessian(q);
     const auto n = q.size();
+    const auto jacobian = c.jacobian(q);
+    bool chemical_identity = true, chemical_difference = true;
+    for (std::size_t j = 0; j < 2; ++j) {
+        auto plus = q, minus = q;
+        constexpr double step = 1e-5;
+        plus[layout.x[j]] += step; minus[layout.x[j]] -= step;
+        const auto up = c.evaluate(plus).values, down = c.evaluate(minus).values;
+        for (std::size_t row = 0; row < c.rows.size(); ++row) if (c.rows[row].kind == RowKind::Chemical) {
+            const double value = jacobian[row * n + layout.x[j]];
+            const double identity = c.rows[row].index == j ? 1.0 : 0.0;
+            const double difference = (up[row] - down[row]) / (2 * step);
+            chemical_identity &= close_with_tolerance(value, identity, 1e-10);
+            chemical_difference &= close_with_tolerance(value, difference, 1e-10);
+            std::printf("coordinate,chemical-jacobian,i=%zu,j=%zu,actual=%.17g,reference=%.17g,central=%.17g\n",
+                c.rows[row].index, j, value, identity, difference);
+        }
+    }
     const double expected = 2 * (0.2 * (std::log(0.2 / v) - 1) + 0.6 * (std::log(0.6 / v) - 1) + 2);
     CHECK(close_with_tolerance(actual.objective, expected, 1e-10));
     CHECK(close_with_tolerance(gradient[layout.volume], -2.4, 1e-10));
@@ -1483,6 +1500,28 @@ void check_ideal_gas() {
     for (std::size_t i = 0; i < 2; ++i) CHECK(std::abs(solved.amounts[0] * solved.mole_fractions[i] - problem.feed.values[i]) <= 2e-9);
     CHECK(!solved.residuals.empty());
     for (auto row : solved.residuals) CHECK(std::abs(row) <= 1e-10);
+    auto target = problem;
+    target.pressure = FreeValue::fixed(101000);
+    const auto direct = solve_equilibrium(model, target);
+    const auto path = continue_equilibrium(model, {problem, target, solved, {0.25, 1e-6, 20, 4}, {}});
+    std::printf("ideal-continuation,success=%d,stop=%s,cause=%s,attempts=%zu,retries=%zu,accepted=%zu,reached=%.17g,message=%s\n",
+        path.success, continuation_stop_name(path.stop), path.cause_stop ? continuation_stop_name(*path.cause_stop) : "none",
+        path.attempts, path.retries, path.accepted_steps, path.reached_path, path.message.c_str());
+    CHECK(chemical_identity); CHECK(chemical_difference);
+    CHECK(direct.success && path.success && path.stop == ContinuationStop::reached_target);
+    CHECK(path.reached_path == 1 && path.states.size() > 1 && path.states.size() == path.path_values.size());
+    for (std::size_t k = 0; k < path.states.size(); ++k) {
+        const auto& point = path.states[k];
+        const double pressure = P + 1000 * path.path_values[k];
+        std::printf("ideal-continuation,path=%.17g,P=%.17g,rho=%.17g,reference=%.17g\n",
+            path.path_values[k], pressure, point.molar_densities[0], pressure / rt);
+        CHECK(close_with_tolerance(point.molar_densities[0], pressure / rt, 1e-10));
+        CHECK(!point.residuals.empty());
+        for (double row : point.residuals) CHECK(std::abs(row) <= 1e-10);
+        for (std::size_t i = 0; i < 2; ++i)
+            CHECK(std::abs(point.amounts[0] * point.mole_fractions[i] - problem.feed.values[i]) <= 2e-9);
+    }
+    CHECK(close_with_tolerance(path.states.back().molar_densities[0], direct.molar_densities[0], 1e-10));
     bool refused = false;
     try { stability_test(c, solved, {}); } catch (const std::invalid_argument& e) { refused = std::string(e.what()).find("ideal-gas") != std::string::npos; std::printf("refusal,stability,T=600,P=100000,cause=%s\n",e.what()); }
     CHECK(refused);

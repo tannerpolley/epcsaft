@@ -102,7 +102,7 @@ Budget changes must not silently change scientific scope.
   parameter fitting 4/8, Surface 30/45, Bindings 14/21 and Python 12/20
   net formatted runtime lines / gross executable additions against `83d6755d`.
   Measured counts require Properties 5,769 → 5,845 (5,787 + band 58),
-  Equilibrium 9,936 → 10,051 (9,951 + band 100), and Surface 759 → 785
+  Equilibrium 9,936 → 10,054 (9,954 + band 100), and Surface 759 → 785
   (777 + band 8), exactly rule 1. The total ceiling remains 26,837.
   These edits record the requested candidate ceilings; owner approval pending.
 

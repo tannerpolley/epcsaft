@@ -564,7 +564,11 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
             if (y[offset] < 0.0) { y[offset] = 0.0; ++projected; }
             ++offset;
         }
-        if (!admitted_packing_fraction(std::exp(y[offset++]))) return false;
+        const double coordinate = std::exp(y[offset++]);
+        if (compiled.model->parameters().ideal_gas) {
+            if (!(coordinate > 0.0) || !std::isfinite(coordinate)
+                || !std::isfinite(1.0 / coordinate)) return false;
+        } else if (!admitted_packing_fraction(coordinate)) return false;
     }
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
     if (compiled.problem.pressure.free && !(y[offset++] > 0.0)) return false;
