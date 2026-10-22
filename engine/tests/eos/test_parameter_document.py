@@ -51,3 +51,26 @@ def test_set_k_ij_replaces_the_stored_pair() -> None:
 def test_polar_and_nonpolar_packets_are_refused_by_their_model_family() -> None:
     with pytest.raises(ParameterError, match="polar model .* conflicts"):
         Parameters.from_packets(PACKETS, [("gross-vrabec-2006/1", ["acetone"]), ("gross-sadowski-2001/3", ["hexane"])])
+
+
+def test_cation_mixing_with_zero_dodecane_preserves_aqueous_state() -> None:
+    doc = packet("figiel-2025-chloride-mixture-refit/2")
+    names = [c["component_id"] for c in doc["components"]]
+    aqueous = Parameters.from_mapping(doc)
+    doc["components"].append(next(c for c in packet("gross-sadowski-2001/3")["components"] if c["component_id"] == "dodecane"))
+    doc["components"][-1]["coefficients"].append({"identity": "component/dodecane/relative_permittivity",
+        "family": "relative_permittivity", "value": {"magnitude": 2.0, "unit": "dimensionless"}})
+    doc["components"][-1]["coefficients"].append({"identity": "component/dodecane/solvation_factor",
+        "family": "solvation_factor", "value": {"magnitude": 1.0, "unit": "dimensionless"}})
+    for name in names:
+        doc["pairs"].append({"component_id_a": name, "component_id_b": "dodecane", "coefficients": [
+            {"identity": f"pair/{name}/dodecane/k_ij", "family": "k_ij", "value": {"magnitude": 0.0, "unit": "dimensionless"}}]})
+        doc["topology"]["no_cross_association"].append({"component_id_a": name, "component_id_b": "dodecane",
+            "provenance": {"locator": "#781 explicit inactive cross association"}})
+    extended = Parameters.from_mapping(doc)
+    amounts = [1 / aqueous.molar_masses[0], 0.2, 0.1, 0.4, 0.1, 1.35, 0.05]
+    x = [n / sum(amounts) for n in amounts]
+    old = Mixture(aqueous).state(298.15, rho=30000, x=x)
+    new = Mixture(extended).state(298.15, rho=30000, x=[*x, 0.0])
+    assert old.residual_helmholtz == new.residual_helmholtz
+    assert old.cation_mixing == new.cation_mixing != 0

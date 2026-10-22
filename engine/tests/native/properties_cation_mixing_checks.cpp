@@ -25,6 +25,58 @@ void cation_mixing() {
     const double T = 298.15, mass = p.molar_mass_kg_per_mol[0];
     const HelmholtzModel plain(base), mixed(p, active);
     std::printf("a,b,quantity,step,value\n");
+    // #781: an extra neutral uses normalization, never extra solvent mass.
+    auto neutral = properties_support::parameters(5);
+    neutral.segment_count = {1.2047, 1, 1, 1, 5.306};
+    neutral.sigma_constant = {2.7927, 2.8, 3, 2.756, 3.8959};
+    neutral.dispersion_energy_over_k = {353.95, 230, 230, 170, 249.21};
+    neutral.molar_mass_kg_per_mol = {mass, 0.00694, 0.024305, 0.035453, 0.17034};
+    neutral.charge_number = {0, 1, 2, -1, 0};
+    neutral.relative_permittivity = {78.09, 0, 0, 0, 2};
+    neutral.packing_diameter_angstrom = {0, 2.5, 2.5, 2.5, 0};
+    neutral.debye_huckel_diameter_angstrom = {0, 3, 3, 3, 0};
+    neutral.electrolyte_form = p.electrolyte_form;
+    neutral.ionic_dispersion = p.ionic_dispersion;
+    neutral.permittivity_form = p.permittivity_form;
+    neutral.cation_mixing = p.cation_mixing;
+    neutral.cation_pair_mixing = p.cation_pair_mixing;
+    neutral.cation_triple_mixing = p.cation_triple_mixing;
+    const std::vector<double> aqueous = {1 / mass, 0.2, 0.4, 1.0};
+    auto extended = aqueous;
+    extended.push_back(0);
+    const double volume = std::accumulate(aqueous.begin(), aqueous.end(), 0.0) / 30000;
+    const auto four = HelmholtzModel(p).evaluate(T, volume, aqueous, DerivativeOrder::Hessian);
+    const auto five = HelmholtzModel(neutral).evaluate(T, volume, extended, DerivativeOrder::Hessian);
+    CHECK(four.value == five.value);
+    for (std::size_t row = 0; row < 6; ++row) {
+        CHECK(four.gradient[row] == five.gradient[row]);
+        for (std::size_t col = 0; col < 6; ++col) CHECK(four.hessian[row*6+col] == five.hessian[row*7+col]);
+    }
+    neutral.cation_pair_mixing = {-0.2205};
+    neutral.cation_triple_mixing = {0.024};
+    extended[3] = 1.35;
+    std::vector<double> reference_mu;
+    for (const double amount : {1.0, 2.0}) for (const double neutral_mass : {0.17034, 0.34068}) {
+        extended[4] = amount;
+        neutral.molar_mass_kg_per_mol[4] = neutral_mass;
+        const double F = cation_mixing_helmholtz(extended, neutral);
+        CHECK(std::abs((F - (-0.032688)) / F) <= 1e-15);
+        std::vector<detail::AD> amounts(extended.begin(), extended.end());
+        CppAD::Independent(amounts);
+        CppAD::ADFun<double> tape(amounts, {cation_mixing_helmholtz(amounts, neutral)});
+        const auto mu = tape.Jacobian(extended);
+        if (reference_mu.empty()) reference_mu = mu;
+        CHECK(mu == reference_mu && mu[4] == 0);
+        const auto hessian = tape.Hessian(extended, 0);
+        for (std::size_t row = 0; row < 5; ++row) CHECK(hessian[row*5+4] == 0 && hessian[4*5+row] == 0);
+        auto x = extended;
+        const double total = std::accumulate(x.begin(), x.end(), 0.0);
+        for (auto& value : x) value /= total;
+        const auto state = HelmholtzModel(neutral).state(T, 30000, x);
+        CHECK(std::abs((state.cation_mixing - F/total) / (F/total)) <= 1e-15);
+        std::printf("neutral,%.17g,mass,%.17g,F,%.17g,molar,%.17g,mu,%.17g,%.17g,%.17g,%.17g\n",
+            amount, neutral_mass, F, state.cation_mixing, mu[0], mu[1], mu[2], mu[3]);
+    }
     std::vector<regression::Observation> observations;
     for (const auto& [a, b] : {std::pair{0.2, 0.4}, std::pair{1.2, 2.0}}) {
         const double c = a + 2 * b;
