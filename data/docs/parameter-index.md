@@ -1246,7 +1246,6 @@ Current packet versions whose parameter files hold the component.
 | `ethanesulfonylchloride` | `feos-esper-2023/1` |
 | `ethanethiol` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `ethanol` | `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `khudaida-2026-figure-2-electrolyte-lle/7` |
-| `ethanol-water` | `held-2012-alcohols/1` |
 | `ethoxybenzene` | `feos-esper-2023/1` |
 | `ethyl acetate` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `ethyl acetoacetate` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
@@ -1468,7 +1467,6 @@ Current packet versions whose parameter files hold the component.
 | `methanesulfonylchloride` | `feos-esper-2023/1` |
 | `methanethiol` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `methanol` | `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1` |
-| `methanol-water` | `held-2012-alcohols/1` |
 | `methoxybenzene` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `methoxycyclopentane` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `methyl 4-tert-butylbenzoate` | `feos-esper-2023/1` |
