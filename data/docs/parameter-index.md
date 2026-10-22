@@ -39,6 +39,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
 | `nasrifar-2010-mdea` | 1 | 1 | Nasrifar and Tafazzol 2010 molecular PC-SAFT: MDEA 3B and water 2B with neutral gases; no reactive or electrolyte calculation. |
+| `pahlavanzadeh-2013-mdea` | 1 | 1 | Pahlavanzadeh 2013 raw molecular MDEA/water association alternatives; Engine sigma-cubed differs from printed d-cubed; Figure 4 k_ij=0; no ideal chemistry. |
 | `robinson-covington-1968-kcl-cacl2-observations` | 1 | 1 | Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained. |
 | `saad-padova-marcus-1980-nacl-kcl-cacl2-observations` | 1 | 1 | Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980). |
 | `schick-2023-co2-thf` | 1 | 1 | Schick 2023 dry CO2-THF binary: published pure records and k_ij for full binary VLE replay of Table S10 (no water, salts or reactions). |
@@ -853,6 +854,9 @@ Current packet versions whose parameter files hold the component.
 | `CO2` | `nasrifar-2010-mdea/1` |
 | `H2S` | `nasrifar-2010-mdea/1` |
 | `MDEA` | `nasrifar-2010-mdea/1` |
+| `MDEA_2B` | `pahlavanzadeh-2013-mdea/1` |
+| `MDEA_4C` | `pahlavanzadeh-2013-mdea/1` |
+| `MDEA_6C` | `pahlavanzadeh-2013-mdea/1` |
 | `acetaldehyde` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `acetaldehyde dibutyl acetal` | `feos-esper-2023/1` |
 | `acetaldoxime` | `feos-esper-2023/1` |
@@ -1988,4 +1992,6 @@ Current packet versions whose parameter files hold the component.
 | `vinylethylene carbonate` | `feos-esper-2023/1` |
 | `vinyltrimethoxysilane` | `feos-esper-2023/1` |
 | `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
+| `water_2B` | `pahlavanzadeh-2013-mdea/1` |
+| `water_4C` | `pahlavanzadeh-2013-mdea/1` |
 | `xenon` | `feos-esper-2023/1` |
