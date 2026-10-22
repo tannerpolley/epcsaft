@@ -387,6 +387,13 @@
       "packet_path": "data/packets/nasrifar-2010-mdea/1",
       "packet_fingerprint": "88ebdcef83fdf6d1ac35c1db2ba2c6c106d811a13e37ab2f5fa6f80f43811868",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2012-alcohols",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2012-alcohols/1",
+      "packet_fingerprint": "df387b167bef0af9c60216137b13fd2b90241553ecb0402fde4ccfcd1b0b3d35",
+      "materialization": "byte-for-byte"
     }
   ]
 }

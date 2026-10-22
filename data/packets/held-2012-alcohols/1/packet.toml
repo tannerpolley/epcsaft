@@ -1,0 +1,68 @@
+schema_version = 2
+packet_id = "held-2012-alcohols"
+packet_version = "1"
+title = "Held 2012 alcohol salt parameters"
+description = "Two solvent-specific binary declarations at 298.15 K; no Born term or ion-ion dispersion. Printed screening sigma, packing 0.88 sigma. Methanol permittivity pinned at this temperature. Potassium in ethanol was fitted to ternary activity data."
+license_or_use_basis = "Numeric source transcription for scientific verification; no full paper or images redistributed."
+tolerance_rationale = "No packet accuracy or numerical acceptance tolerance claimed. Source-fitted parameters are not independent physical validation; source print criteria belong to the analysis. Supplementary masses carry atomic-weight uncertainty."
+[[sources]]
+source_id = "held-2012"
+citation = "Held et al., Measuring and modeling alcohol/salt systems, CES 68 (2012) 328-339, DOI 10.1016/j.ces.2011.09.040"
+use_basis = "Tables 4-6 and Eqs. 7-14; Held 2014 Eq. 21 backward packing statement; CIAAW 2024 supplementary masses plus existing solvent packet masses; exact source rows retained."
+[[domains]]
+domain_id = "fixed-temperature"
+description = "298.15 K only; fully dissociated single 1:1 salts in methanol or ethanol. Density and activities; no off-temperature methanol claim."
+
+[[files]]
+path = "parameters/ethanol.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "9572039e698e587ea772468a8fbcfb5762e9e2d5fcc0f1b3a25a64cb12ee6202"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
+
+[[files]]
+path = "parameters/ions-source.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "fe57ac05036326ccba57d0455e17350bbbde94e4b4c41b436a110ed6635d7564"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
+
+[[files]]
+path = "parameters/masses-source.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "af3f946fcdc7644721eeb641241bfd31ef449e44efbce0c94156078bae1b4f85"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
+
+[[files]]
+path = "parameters/methanol.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "d66b94697a67aa9ce546b94058b562143712a30d104edd4a5b02f5b2f427d1c0"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
+
+[[files]]
+path = "parameters/permittivity-source.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "4844c86cf485aeec14963ef42c1445904eab5c0b71e046570e909d0b978ba677"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
+
+[[files]]
+path = "parameters/solvents-source.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "53ab85755a2b19ffaf33e2b68cd40c18bc775e32429eef273dfe89892c320897"
+source_refs = ["held-2012"]
+domain_refs = ["fixed-temperature"]
+units_basis = "Explicit SI or angstrom, kelvin and dimensionless units in each document or source column."
