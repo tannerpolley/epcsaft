@@ -77,7 +77,7 @@ exception before a thermodynamic solve:
 ...     Reaction({"A": -1.0, "B": 1.0}, equilibrium_constant=1.0, affinity_j_per_mol=0.0)
 ... except ParameterError as error:
 ...     print(error)
-reaction target must be at most one of equilibrium_constant or affinity_j_per_mol or correlation
+reaction admits at most one equilibrium_constant, affinity_j_per_mol or correlation
 ```
 
 For failures after admission, retain the returned cause and residuals; see
