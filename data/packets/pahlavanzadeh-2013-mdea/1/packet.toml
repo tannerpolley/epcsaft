@@ -1,0 +1,31 @@
+schema_version = 2
+packet_id = "pahlavanzadeh-2013-mdea"
+packet_version = "1"
+title = "Pahlavanzadeh 2013 molecular MDEA association alternatives"
+description = "Printed Table 2 associating alternatives; select one MDEA and at most one water scheme. Neutral PC-SAFT, raw kappa with Engine sigma-cubed instead of printed d-cubed. Figure 4 k_ij=0; no chemistry or caloric law admission. CO2/CH4 reuse gross-sadowski-2001/3."
+license_or_use_basis = "Cited published numerical facts and structural declarations for scientific reproduction; no full article redistribution."
+tolerance_rationale = "Exact printed coefficients; two-pixel source rectangles fixed before prediction. These are reading criteria, not physical-validation uncertainty."
+
+[[sources]]
+source_id = "pahlavanzadeh-2013"
+citation = "Pahlavanzadeh and Fakouri Baygi. J. Chem. Thermodynamics 59 (2013), 214-221."
+doi = "10.1016/j.jct.2012.12.021"
+use_basis = "Cited numerical facts for scientific reproduction."
+
+[[sources]]
+source_id = "molecular-identity"
+citation = "nasrifar-2010-mdea/1 molecular molar-mass identity provenance only."
+use_basis = "Independent molecular identity, no fitted parameter adoption."
+
+[[domains]]
+domain_id = "molecular-pc-saft"
+description = "Table 2 raw alternative tuples, no refit or conversion; grouped acceptor/donor multiplicities. Figure 1 303.15-443.15 K and Figure 4 declared liquid/vapor states. Cross rules Eqs. (6)-(7); equation convention differs in association prefactor. No ions, dielectric, Born or polar contribution."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "9986458c4316102385373b8c622d895e8f5f3c7f3c633ed674d62dbcaa85122a"
+source_refs = ["pahlavanzadeh-2013", "molecular-identity"]
+domain_refs = ["molecular-pc-saft"]
+units_basis = "Dimensionless m, kappa, k_ij and site counts; sigma in angstrom; energies/kB in kelvin; molecular masses in kg/mol; exact neutral charge."

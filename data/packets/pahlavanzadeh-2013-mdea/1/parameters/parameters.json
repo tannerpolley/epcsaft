@@ -1,0 +1,1040 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "pahlavanzadeh-2013-mdea",
+  "document_version": 1,
+  "purpose": "external-document",
+  "domains": [
+    {
+      "domain_id": "molecular-pc-saft",
+      "kind": "unknown"
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "pahlavanzadeh-2013",
+        "locator": "Eq. (1); neutral hc + dispersion + association; Engine sigma-cubed rather than printed Eq. (4) d-cubed",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "pahlavanzadeh-2013",
+        "locator": "Eq. (1); neutral hc + dispersion + association; Engine sigma-cubed rather than printed Eq. (4) d-cubed",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "pahlavanzadeh-2013",
+        "locator": "Eq. (1); neutral hc + dispersion + association; Engine sigma-cubed rather than printed Eq. (4) d-cubed",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "pahlavanzadeh-2013",
+        "locator": "Eq. (1); neutral hc + dispersion + association; Engine sigma-cubed rather than printed Eq. (4) d-cubed",
+        "domain_id": "molecular-pc-saft"
+      }
+    },
+    {
+      "family_id": "model/polar",
+      "kind": "polar",
+      "choice": "none",
+      "provenance": {
+        "source_id": "pahlavanzadeh-2013",
+        "locator": "Eq. (1); neutral hc + dispersion + association; Engine sigma-cubed rather than printed Eq. (4) d-cubed",
+        "domain_id": "molecular-pc-saft"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "sources": [
+    {
+      "source_id": "pahlavanzadeh-2013",
+      "citation": "Pahlavanzadeh, H.; Fakouri Baygi, S. J. Chem. Thermodynamics 59 (2013), 214-221.",
+      "doi": "10.1016/j.jct.2012.12.021",
+      "use_basis": "Cited numerical facts for scientific reproduction; no full paper redistribution."
+    },
+    {
+      "source_id": "molecular-identity",
+      "citation": "nasrifar-2010-mdea/1 molecular molar masses, inherited identity provenance only.",
+      "use_basis": "MDEA and water molecular identity; no fitted parameters adopted."
+    }
+  ],
+  "components": [
+    {
+      "component_id": "MDEA_6C",
+      "name": "MDEA_6C",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.1191622,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "molecular-identity",
+            "locator": "nasrifar-2010-mdea/1 parameters/parameters.json component MDEA fixed molar_mass; unchanged identity provenance",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Eq. (1); molecular neutral species",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/MDEA_6C/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 4.874,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 6(4:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_6C/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.211,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 6(4:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_6C/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 288.87,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 6(4:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "MDEA_4C",
+      "name": "MDEA_4C",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.1191622,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "molecular-identity",
+            "locator": "nasrifar-2010-mdea/1 parameters/parameters.json component MDEA fixed molar_mass; unchanged identity provenance",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Eq. (1); molecular neutral species",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/MDEA_4C/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.675,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_4C/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_4C/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 228.711,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2,0:0)",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "MDEA_2B",
+      "name": "MDEA_2B",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.1191622,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "molecular-identity",
+            "locator": "nasrifar-2010-mdea/1 parameters/parameters.json component MDEA fixed molar_mass; unchanged identity provenance",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Eq. (1); molecular neutral species",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/MDEA_2B/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.3044,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_2B/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5975,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/MDEA_2B/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 237.44,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "water_2B",
+      "name": "water_2B",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "molecular-identity",
+            "locator": "nasrifar-2010-mdea/1 parameters/parameters.json component water fixed molar_mass; unchanged identity provenance",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Eq. (1); molecular neutral species",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water_2B/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.9599,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water_2B/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.362,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water_2B/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 279.42,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "water_4C",
+      "name": "water_4C",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "molecular-identity",
+            "locator": "nasrifar-2010-mdea/1 parameters/parameters.json component water fixed molar_mass; unchanged identity provenance",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Eq. (1); molecular neutral species",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water_4C/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.1945,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water_4C/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.229,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2)",
+            "domain_id": "molecular-pc-saft"
+          }
+        },
+        {
+          "identity": "component/water_4C/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 141.66,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Table 2; PDF p.3; printed p.216; 4(2:2)",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA_4C/water_2B/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Figure 4 caption; k_ij = 0",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA_4C",
+      "component_id_b": "water_2B"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA_4C/water_4C/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Figure 4 caption; k_ij = 0",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA_4C",
+      "component_id_b": "water_4C"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA_6C/water_2B/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Figure 4 caption; k_ij = 0",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA_6C",
+      "component_id_b": "water_2B"
+    },
+    {
+      "coefficients": [
+        {
+          "identity": "pair/MDEA_6C/water_4C/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "pahlavanzadeh-2013",
+            "locator": "Figure 4 caption; k_ij = 0",
+            "domain_id": "molecular-pc-saft"
+          }
+        }
+      ],
+      "component_id_a": "MDEA_6C",
+      "component_id_b": "water_4C"
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "MDEA_6C",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 6(4:2,0:0)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA_6C",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 4,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 6(4:2,0:0)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA_4C",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 4(2:2,0:0)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA_4C",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 4(2:2,0:0)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA_2B",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "MDEA_2B",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water_2B",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water_2B",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 2(1:1)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water_4C",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 4(2:2)",
+          "domain_id": "molecular-pc-saft"
+        }
+      },
+      {
+        "component_id": "water_4C",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 2,
+        "provenance": {
+          "source_id": "pahlavanzadeh-2013",
+          "locator": "Table 2; PDF p.3; printed p.216; 4(2:2)",
+          "domain_id": "molecular-pc-saft"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_6C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_6C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Table 2; PDF p.3; printed p.216; raw kappa, no diameter conversion",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/MDEA_6C/a/MDEA_6C/b/energy_over_k",
+          "value": {
+            "magnitude": 513.2765,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/MDEA_6C/a/MDEA_6C/b/volume",
+          "value": {
+            "magnitude": 0.016894,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Table 2; PDF p.3; printed p.216; raw kappa, no diameter conversion",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/MDEA_4C/a/MDEA_4C/b/energy_over_k",
+          "value": {
+            "magnitude": 2046.624,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/MDEA_4C/a/MDEA_4C/b/volume",
+          "value": {
+            "magnitude": 0.123858,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_2B",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_2B",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Table 2; PDF p.3; printed p.216; raw kappa, no diameter conversion",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/MDEA_2B/a/MDEA_2B/b/energy_over_k",
+          "value": {
+            "magnitude": 3709.9,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/MDEA_2B/a/MDEA_2B/b/volume",
+          "value": {
+            "magnitude": 0.066454,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_2B",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_2B",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Table 2; PDF p.3; printed p.216; raw kappa, no diameter conversion",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/water_2B/a/water_2B/b/energy_over_k",
+          "value": {
+            "magnitude": 2059.28,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water_2B/a/water_2B/b/volume",
+          "value": {
+            "magnitude": 0.175,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Table 2; PDF p.3; printed p.216; raw kappa, no diameter conversion",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        },
+        "energy_over_k": {
+          "identity": "association/water_4C/a/water_4C/b/energy_over_k",
+          "value": {
+            "magnitude": 1804.17,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water_4C/a/water_4C/b/volume",
+          "value": {
+            "magnitude": 0.2039,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_2B",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/MDEA_4C/a/MDEA_4C/b/energy_over_k",
+              "association/water_2B/a/water_2B/b/energy_over_k"
+            ],
+            "volume": [
+              "association/MDEA_4C/a/MDEA_4C/b/volume",
+              "association/water_2B/a/water_2B/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_2B",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water_2B/a/water_2B/b/energy_over_k",
+              "association/MDEA_4C/a/MDEA_4C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water_2B/a/water_2B/b/volume",
+              "association/MDEA_4C/a/MDEA_4C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/MDEA_4C/a/MDEA_4C/b/energy_over_k",
+              "association/water_4C/a/water_4C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/MDEA_4C/a/MDEA_4C/b/volume",
+              "association/water_4C/a/water_4C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water_4C/a/water_4C/b/energy_over_k",
+              "association/MDEA_4C/a/MDEA_4C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water_4C/a/water_4C/b/volume",
+              "association/MDEA_4C/a/MDEA_4C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_6C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_2B",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/MDEA_6C/a/MDEA_6C/b/energy_over_k",
+              "association/water_2B/a/water_2B/b/energy_over_k"
+            ],
+            "volume": [
+              "association/MDEA_6C/a/MDEA_6C/b/volume",
+              "association/water_2B/a/water_2B/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_2B",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_6C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water_2B/a/water_2B/b/energy_over_k",
+              "association/MDEA_6C/a/MDEA_6C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water_2B/a/water_2B/b/volume",
+              "association/MDEA_6C/a/MDEA_6C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "MDEA_6C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water_4C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/MDEA_6C/a/MDEA_6C/b/energy_over_k",
+              "association/water_4C/a/water_4C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/MDEA_6C/a/MDEA_6C/b/volume",
+              "association/water_4C/a/water_4C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water_4C",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "MDEA_6C",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water_4C/a/water_4C/b/energy_over_k",
+              "association/MDEA_6C/a/MDEA_6C/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water_4C/a/water_4C/b/volume",
+              "association/MDEA_6C/a/MDEA_6C/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "pahlavanzadeh-2013",
+              "locator": "Eqs. (6)-(7); sigma size correction, geometric volume, arithmetic energy; Eq. (4) d-cubed not implemented",
+              "domain_id": "molecular-pc-saft"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
