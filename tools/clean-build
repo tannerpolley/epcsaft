@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Keep the main checkout's build/ small (owner, 2026-10-22: 83 GB was unacceptable).
+
+Usage: tools/clean-build [--dry-run]
+Run daily by the user timer epcsaft-clean-build.timer, and safe to run by hand. It removes:
+- build/pr-gates/pr-N/<head> trees older than a day whose PR is not open, or that an open PR's newer head
+  superseded (the PR body keeps the gate result);
+- build/archive files older than ARCHIVE_DAYS, except those named for an open issue;
+- inside other build/ entries untouched for STALE_DAYS and not named for an open issue: virtual environments,
+  Meson build trees, git checkouts and files over BIG_BYTES. Text records (designs, reviews, CSV, JSON) stay.
+Removed git worktrees are unregistered by `git worktree prune` at the end.
+Tool-owned working trees in KEEP are never touched, nor anything a running process has as its directory.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+# The main checkout owns build/, even when this copy of the tool runs from a task worktree.
+ROOT = Path(subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=Path(__file__).resolve().parent,
+                           check=True, capture_output=True, text=True).stdout.splitlines()[0].removeprefix("worktree "))
+BUILD = ROOT / "build"
+KEEP = {"archive", "pr-gates", "docs", "engine-meson", "wheels", "environment", "environment-wheel", "subprojects",
+        "test-results", "checks", "time-key-solves", "native-isolated", "native-drivers", "analysis-declarations",
+        "highs", "equilibrium-corpora"}
+DAY = 86400
+ARCHIVE_DAYS, STALE_DAYS, BIG_BYTES, WARN_BYTES = 3, 3, 10 * 2**20, 10 * 2**30
+
+
+def gh_numbers(kind):
+    try:
+        out = subprocess.run(["gh", kind, "list", "--state", "open", "--limit", "1000", "--json", "number"],
+                             cwd=ROOT, check=True, capture_output=True, text=True).stdout
+        return {item["number"] for item in json.loads(out)}
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        sys.exit(f"clean-build: open {kind}s unknown (gh failed); nothing removed")
+
+
+def stats(path):
+    """(bytes, newest mtime) of a file or tree, without following symlinks."""
+    found = [path.lstat()]
+    for d, _, files in os.walk(path):
+        for name in files:
+            try:
+                found.append((Path(d) / name).lstat())
+            except OSError:
+                pass
+    return sum(s.st_size for s in found[1:] or found), max(s.st_mtime for s in found)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--dry-run", action="store_true")
+    dry = parser.parse_args().dry_run
+    now = time.time()
+    open_prs, open_issues = gh_numbers("pr"), gh_numbers("issue")
+    live = set()
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        try:
+            live.add(Path(os.readlink(f"/proc/{pid}/cwd")).resolve())
+        except OSError:
+            pass
+    freed = 0
+
+    def remove(path, why):
+        nonlocal freed
+        if any(p == path or path in p.parents for p in live):
+            print(f"kept {path.relative_to(ROOT)}: a running process works inside it")
+            return
+        amount = stats(path)[0]
+        print(f"{'would remove' if dry else 'removed'} {path.relative_to(ROOT)} ({amount / 2**20:.0f} MiB): {why}")
+        freed += amount
+        if dry:
+            return
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.exists() or path.is_symlink():
+            path.unlink()
+
+    for pr in sorted((BUILD / "pr-gates").glob("pr-*")):
+        number = int(pr.name[3:]) if pr.name[3:].isdigit() else None
+        heads = sorted((h for h in pr.iterdir() if h.is_dir()), key=lambda h: (h / "lock").stat().st_mtime
+                       if (h / "lock").exists() else h.stat().st_mtime)
+        for head in heads:
+            old = now - stats(head / "lock" if (head / "lock").exists() else head)[1] > DAY
+            if old and (number not in open_prs or head != heads[-1]):
+                remove(head, "gate tree of a closed or superseded PR head")
+        if not dry and pr.exists() and not any(pr.iterdir()):
+            pr.rmdir()
+
+    def for_open_issue(name):
+        issue = re.match(r"(?:issue|t3code)[-_]?(\d+)", name)
+        return bool(issue and int(issue[1]) in open_issues)
+
+    for item in sorted((BUILD / "archive").iterdir()):
+        if now - item.lstat().st_mtime > ARCHIVE_DAYS * DAY and not for_open_issue(item.name):
+            remove(item, f"archive older than {ARCHIVE_DAYS} days")
+
+    for entry in sorted(BUILD.iterdir()):
+        if entry.name in KEEP or for_open_issue(entry.name):
+            continue
+        if now - stats(entry)[1] < STALE_DAYS * DAY:
+            continue
+        if entry.is_file():
+            if entry.stat().st_size > BIG_BYTES:
+                remove(entry, f"file over {BIG_BYTES >> 20} MiB untouched for {STALE_DAYS} days")
+            continue
+        for d, dirs, files in os.walk(entry):
+            here = Path(d)
+            if {"pyvenv.cfg", "build.ninja", ".git"} & set(files + dirs):
+                remove(here, "virtual environment, Meson build tree or git worktree")
+                dirs[:] = []
+                continue
+            for name in files:
+                path = here / name
+                if not path.is_symlink() and path.stat().st_size > BIG_BYTES:
+                    remove(path, f"file over {BIG_BYTES >> 20} MiB")
+
+    if not dry:
+        subprocess.run(["git", "worktree", "prune"], cwd=ROOT, check=False)
+    total = stats(BUILD)[0]
+    print(f"{'would free' if dry else 'freed'} {freed / 2**30:.1f} GiB; build/ is {total / 2**30:.1f} GiB")
+    if total - (freed if dry else 0) > WARN_BYTES:
+        print(f"warning: build/ exceeds {WARN_BYTES >> 30} GiB after cleanup", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

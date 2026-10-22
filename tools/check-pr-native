@@ -44,6 +44,14 @@ def main():
     root.mkdir(parents=True, exist_ok=True)
     with (root / 'lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        for stale in (path for path in root.parent.iterdir() if path != root and path.is_dir()):
+            with (stale / 'lock').open('a') as other:  # an earlier head of this PR; skip one still checking
+                try:
+                    fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    continue
+                shutil.rmtree(stale)
+        run('git', 'worktree', 'prune', cwd=repo)
         source, build, venv = root / 'source', root / 'meson', root / 'venv'
         if not source.exists():
             run('git', 'worktree', 'add', '--detach', str(source), head, cwd=repo)
