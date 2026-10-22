@@ -39,6 +39,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `nasa-glenn-2002-hda-species` | 1 | 1 | NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters. |
 | `robinson-covington-1968-kcl-cacl2-observations` | 1 | 1 | Robinson and Covington 1968 Table 1 KCl-CaCl2 isopiestic observations; starred measurements and pure-salt endpoints retained. |
 | `saad-padova-marcus-1980-nacl-kcl-cacl2-observations` | 1 | 1 | Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980). |
+| `schick-2023-co2-thf` | 1 | 1 | Schick 2023 dry CO2-THF binary: published pure records and k_ij for full binary VLE replay of Table S10 (no water, salts or reactions). |
 | `yao-1992-licl-mgcl2-observations` | 1 | 1 | Yao 1992 Table 1 LiCl-MgCl2 isopiestic observations; printed typos and the illegible row remain flagged. |
 | `zuber-2014-electrolyte-permittivity` | 1 | 1 | Zuber 2014 ion-specific dielectric suppression coefficients in water, methanol and ethanol. |
 
@@ -1033,6 +1034,7 @@ Current packet versions whose parameter files hold the component.
 | `cis-decahydronaphthalene` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `cis-octahydro-1h-indene` | `feos-esper-2023/1` |
 | `citral <isomer not spec.>` | `feos-esper-2023/1` |
+| `co2` | `schick-2023-co2-thf/1` |
 | `cobalt-cation` | `held-cameretti-sadowski-2008/4` |
 | `copper-cation` | `held-cameretti-sadowski-2008/4` |
 | `crotonaldehyde` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
@@ -1871,6 +1873,7 @@ Current packet versions whose parameter files hold the component.
 | `tetranitromethane` | `feos-esper-2023/1` |
 | `tetrapropylene glycol` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `tetrapropylgermane` | `feos-esper-2023/1` |
+| `thf` | `schick-2023-co2-thf/1` |
 | `thiacyclobutane` | `feos-esper-2023/1` |
 | `thianthrene` | `feos-esper-2023/1` |
 | `thiocyanate-anion` | `held-cameretti-sadowski-2008/4` |

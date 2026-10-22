@@ -40,6 +40,7 @@ USES = {
     "hydrogen-binary-vle": "Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K.",
     "khudaida-2026-figure-2-electrolyte-lle": "Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE.",
     "mea-co2-h2o-nine-species-estimation": "CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets).",
+    "schick-2023-co2-thf": "Schick 2023 dry CO2-THF binary: published pure records and k_ij for full binary VLE replay of Table S10 (no water, salts or reactions).",
     "saad-padova-marcus-1980-nacl-kcl-cacl2-observations": "Observations, not parameters: isopiestic NaCl-KCl-CaCl2 osmotic coefficients at 298.15 K (Saad, Padova and Marcus 1980).",
     "mixed-chloride-water-observations": "Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights.",
     "nasa-glenn-2002-hda-species": "NASA9 ideal-gas records for H2, CH4, benzene and toluene at 1 bar; thermochemistry, not PC-SAFT parameters.",
