@@ -19,6 +19,10 @@ dependencies = [
   "scipy>=1.15,<2",
 ]
 
+[tool.pyright]
+# Pyright ignores .gitignore: scope it to the package, tests, tools and docs so build/ and analyses/ stay unscanned.
+include = ["engine/src", "engine/tests", "engine/tools", "engine/scripts", "tools", "docs"]
+
 [tool.uv]
 package = false
 
