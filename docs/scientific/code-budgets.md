@@ -97,6 +97,19 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-22, #776 (owner approval, 2026-10-22): the ideal mole-fraction amount
+  chart, shared feasibility lifecycle and native effective-water map use +259 net /
+  293 gross formatted Equilibrium, +24/30 Bindings, +30/47 Python and -2/1
+  Properties against `83d6755d`; total +311/371. After merging main `fc247023`
+  with #766 and the species-thermochemistry path, the combined counts are
+  Equilibrium 10,213, Bindings 2,138, Python 2,179 and Properties 5,784.
+  Rule 1 raises Equilibrium 10,054 to 10,316 (band 103), Bindings 2,130 to
+  2,160 (band 22), Python 2,168 to 2,201 (band 22) and total 26,837 to
+  27,384: min(27,115 plus band 272, layer-ceiling sum 27,384).
+  Rule 2 lowers Properties 5,844 to 5,842 (5,784 plus band 58).
+  The #766 amendment below remains as merged. This approval covers the allowance
+  and measured ceiling amendments; it does not grant merge authority.
+
 - 2026-10-22, #766 (owner approval, 2026-10-22): the allowance permits
   Core 8/10, Contributions 6/8, Properties 85/125, Equilibrium 145/215,
   parameter fitting 4/8, Surface 30/45, Bindings 14/21 and Python 12/20
