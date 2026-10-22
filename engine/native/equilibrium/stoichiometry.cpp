@@ -571,7 +571,7 @@ std::vector<bool> reaction_participants(std::size_t components, const std::vecto
 }
 
 std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
-    const std::vector<int>& z, const Parameters& parameters) {
+    const std::vector<int>& z, const Parameters* parameters) {
     const bool vapor = phase.kind == PhaseKind::Vapor;
     auto result = phase.support;
     if (result.empty() && !phase.support_declared)
@@ -583,10 +583,10 @@ std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vect
         throw core::DeclarationError("duplicate support index");
     if (result.back() >= z.size()) throw core::DeclarationError("support index out of range");
     for (const std::size_t i : result)
-        if (vapor && z[i] != 0 && !parameters.permittivity_form.is(PermittivityForm::DensityTemperature))
+        if (vapor && z[i] != 0 && !(parameters && parameters->permittivity_form.is(PermittivityForm::DensityTemperature)))
             throw core::DeclarationError("vapor phase " + phase.name + " support contains charged component index "
                 + std::to_string(i) + " (z=" + std::to_string(z[i])
-                + (parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)
+                + (parameters && parameters->permittivity_form.is(PermittivityForm::DipolarPerturbation)
                     ? "); explicit charged vapor under DipolarPerturbation is not numerically qualified"
                     : "); charged vapor outside the condensed domain of the selected permittivity"));
     return result;

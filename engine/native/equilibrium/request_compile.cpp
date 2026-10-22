@@ -1214,7 +1214,7 @@ static CompiledSystem compile_with_basis(
     std::iota(all.begin(), all.end(), 0);
     for (auto& phase : compiled.problem.phases) {
         const bool omitted = phase.support.empty() && !phase.support_declared;
-        phase.support = resolve_support(phase, all, z, model.parameters());
+        phase.support = resolve_support(phase, all, z, &model.parameters());
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }

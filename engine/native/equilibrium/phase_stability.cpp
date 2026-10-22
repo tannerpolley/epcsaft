@@ -187,7 +187,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
     if (phases.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
     for (auto phase : phases) {
-        phase.support = resolve_support(phase, united, z, c.model->parameters());
+        phase.support = resolve_support(phase, united, z, &c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
             if (std::find(united.begin(), united.end(), i) == united.end())

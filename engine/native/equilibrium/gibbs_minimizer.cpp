@@ -947,13 +947,13 @@ static EquilibriumResult run_driver_once(
                 if (!(total > 0.0) || !std::isfinite(total)) throw std::domain_error("invalid trial normalization");
                 for (const auto i : prepared.shape[p].x) view.coordinates[i] -= std::log(total);
             }
-            const auto branch = check_density_branches(model, compiled, view, {}, true, scope, limits);
+            const auto branch = check_density_branches(*model, compiled, view, {}, true, scope, limits);
             if (branch.accepted && !expired()) return true;
             rejected_preparation = branch.message;
         } catch (const core::ConvergenceFailure& error) {
             result.convergence = error.record; rejected_preparation = error.what();
         } catch (const std::exception& error) { rejected_preparation = error.what(); }
-        if (expired()) result.convergence.stop = core::Stop::budget_exhausted;
+        if (expired()) return false;
         scope.probe("trial_branch_cause", {static_cast<double>(result.convergence.stop)}, 0, rejected_preparation.c_str());
         return false;
     };

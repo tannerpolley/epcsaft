@@ -63,7 +63,7 @@ std::vector<bool> reaction_participants(std::size_t components, const std::vecto
 // a declared support is sorted and refused (core::DeclarationError) if empty, repeated, out of range,
 // or, in a vapor, holding a charged component outside DensityTemperature permittivity.
 std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
-    const std::vector<int>& z, const Parameters& parameters);
+    const std::vector<int>& z, const Parameters* parameters = nullptr);
 
 std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,

@@ -1064,8 +1064,18 @@ both the original physical criterion and the log-charge criterion. Endpoint
 physical and numerical ranks are recorded separately; full numerical rank is
 necessary on this path, including trial polishing. Ipopt callbacks, physical
 duals and solved-state derivative actions retain their physical equations.
-This representation does not qualify relative trace derivatives or guarantee
-that a separated seed recovers a manufactured Vapor solution.
+Only for `refine_trial && !compiled.log_charge_rows.empty()`, admit the starting
+point before best-point retention and each otherwise merit-admissible proposal
+through `check_density_branches` with empty anchors and `initial=true`. The
+inspection copy subtracts the log of each phase's supported-coordinate sum
+from its log coordinates at unchanged packing. It neither repairs charge nor
+changes the raw proposal. The existing declared root, convergence, positive
+slope, density window and phase-order checks own admission. A rejected
+proposal retains its typed cause and enters the existing damping/recovery;
+a rejected starting point returns an unresolved attempt with its rows and work.
+The same work/deadline limits apply. Ordinary solves, Liquid and neutral trials,
+and supplied-point evaluation skip this inspection and its root work.
+This representation does not qualify relative trace derivatives.
 
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected
@@ -1745,6 +1755,10 @@ driver. It first uses ordinary polish unchanged. At a rejected correction, recov
 starts only if the best classified point still exceeds the existing row criterion.
 A row-acceptable trial, including a curvature refusal, keeps its original result.
 Supplied-trial evaluation performs no optimization and grants no permission.
+The scoped charged density-temperature Vapor trial also requires the normalized
+declared-root inspection specified in ALG-EQUILIBRIUM before retaining the
+starting point or accepting a merit-admissible correction. Rejection keeps
+the raw iterate and uses the same damping and recovery limits below.
 
 Recovery continues the same exact-row Newton loop on the same supported problem,
 with fixed T/P and frozen standard/plane shift. It starts with damping scale $a=1$

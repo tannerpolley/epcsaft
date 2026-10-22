@@ -124,8 +124,8 @@ Budget changes must not silently change scientific scope.
   +135 net / 196 gross and Python +6 / 14 against `83d6755d`; every other
   runtime layer has zero issue-owned growth. This includes the scoped
   normalized declared-root check in the existing charged-Vapor trial polish.
-  After merging #766, #781 and #776, Equilibrium counts 10,346, requiring
-  10,316 → 10,450 (count plus band 104). Total counts 27,254, within main's
+  After merging #766, #781 and #776, Equilibrium counts 10,347, requiring
+  10,316 → 10,451 (count plus band 104). Total counts 27,255, within main's
   unchanged ceiling 27,384. These ceilings record source size and owner
   authority; numerical qualification is established separately by the
   manufactured recovery and the remaining falsifiers.
