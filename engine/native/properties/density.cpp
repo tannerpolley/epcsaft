@@ -1338,6 +1338,24 @@ DensityRoot solve_density(
     // EqID: ideal_gas_density
     const double ideal_density = pressure
         / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+    if (model.parameters().ideal_gas) {
+        if (!(ideal_density > 0.0) || !std::isfinite(ideal_density) || !std::isfinite(GAS_CONSTANT_J_PER_MOL_K * temperature))
+            throw std::domain_error("nonfinite ideal-gas density closure");
+        if (branch == DensityBranch::Liquid) throw std::invalid_argument("ideal-gas has only a vapor density root");
+        if (anchor_density && (!std::isfinite(*anchor_density) || *anchor_density <= 0.0))
+            throw std::invalid_argument("invalid density anchor");
+        DensityRoot root;
+        root.molar_density = ideal_density;
+        root.pressure_density_derivative = GAS_CONSTANT_J_PER_MOL_K * temperature;
+        root.stable_root_count = 1;
+        root.branch = DensityBranch::Vapor;
+        core::stopping_criterion(root.convergence, model.solver_options(), policy::density);
+        root.convergence.residual = 0.0;
+        root.convergence.stop = core::classify(root.convergence.residual, *root.convergence.criterion, std::nullopt, std::nullopt, false);
+        scope.finish(root.convergence);
+        if (sibling_root) *sibling_root = root;
+        return root;
+    }
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
     const double upper = model.molar_density_upper_bound(temperature, mole_fractions)
         * policy::DENSITY_UPPER_FRACTION.value;

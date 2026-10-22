@@ -421,7 +421,7 @@ std::vector<std::vector<double>> balance_basis(
 }
 
 std::vector<std::vector<double>> reaction_target_series(
-    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order, const ThermochemistryRecord* thermochemistry
 ) {
     require_positive(temperature, "temperature");
     if (order > 3) throw std::invalid_argument("reaction target order");
@@ -429,6 +429,14 @@ std::vector<std::vector<double>> reaction_target_series(
     std::vector<std::vector<double>> result(order + 1, std::vector<double>(reactions.size(), 0.0));
     for (std::size_t row = 0; row < reactions.size(); ++row) {
         const auto& reaction = reactions[row];
+        if (reaction.uses_species_thermochemistry()) {
+            const auto label = "reaction " + reaction_name(reaction, row) + " at T=" + std::to_string(temperature) + " K: ";
+            if (!thermochemistry) throw std::invalid_argument(label + "MissingRecord");
+            const auto source = reaction_thermochemistry_density(*thermochemistry, reaction.stoichiometry, temperature);
+            if (source.status != ThermochemistryStatus::Available) throw std::invalid_argument(label + source.cause);
+            for (std::size_t k = 0; k <= order; ++k) result[k][row] = source.gibbs_derivatives[k];
+            continue;
+        }
         // l[k] = d^k ln K / dT^k; t = -R T ln K, so t^(k) = -R (k l[k-1] + T l[k]).
         std::array<double, 4> l{};
         if (reaction.affinity_j_per_mol.has_value()) {
@@ -455,10 +463,10 @@ std::vector<std::vector<double>> reaction_target_series(
 }
 
 std::optional<std::size_t> thermal_reference_missing(
-    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied
+    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry
 ) {
     if (supplied.empty() || reactions.empty()) return std::nullopt;
-    const auto targets = reaction_target_series(temperature, reactions, 3);
+    const auto targets = reaction_target_series(temperature, reactions, 3, thermochemistry);
     for (std::size_t row = 0; row < reactions.size(); ++row) {
         const double scale = std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, std::abs(targets[0][row]));
         double power = 1.0;
@@ -473,13 +481,13 @@ std::optional<std::size_t> thermal_reference_missing(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry
 ) {
     require_positive(temperature, "temperature");
     validate_reaction_set(components, reactions);
     std::vector<std::vector<double>> result(order + 1, std::vector<double>(components, 0.0));
     if (reactions.empty() && supplied.empty()) return result;
-    const auto targets = reaction_target_series(temperature, reactions, order);
+    const auto targets = reaction_target_series(temperature, reactions, order, thermochemistry);
     if (reactions.empty()) {
         if (supplied.size() != components) throw std::invalid_argument("standard state size");
         if (!all_numeric(supplied)) throw std::invalid_argument("invalid standard state");
@@ -522,9 +530,9 @@ std::vector<std::vector<double>> standard_state_series(
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied
+    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry
 ) {
-    return standard_state_series(temperature, components, reactions, supplied, 0).front();
+    return standard_state_series(temperature, components, reactions, supplied, 0, thermochemistry).front();
 }
 
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
@@ -605,9 +613,9 @@ void validate_reaction_set(
         }
         const int targets = reaction.equilibrium_constant.has_value()
             + reaction.affinity_j_per_mol.has_value() + reaction.correlation.has_value();
-        if (targets != 1) {
+        if (targets > 1 || (targets == 0 && reaction.reference)) {
             throw std::invalid_argument("inconsistent standard state: reaction " + label
-                                        + " needs exactly one target");
+                                        + " needs at most one target; a source reference requires a target");
         }
         if (reaction.affinity_j_per_mol.has_value()
             && !std::isfinite(*reaction.affinity_j_per_mol)) {

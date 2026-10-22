@@ -208,9 +208,9 @@ void copy_previous_phase(
         density = solve_density(*compiled.model, *start.temperature, *start.pressure,
                                 composition, branch, std::nullopt).molar_density;
     }
-    point[cursor] = std::log(compiled.model->packing_fraction_coefficient(
+    point[cursor] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(
         start.temperature.value_or(compiled.problem.temperature.value),
-        composition) * density);
+        composition)) * density);
 }
 
 std::vector<double> start_point(
@@ -1025,7 +1025,7 @@ static EquilibriumResult run_driver_once(
                     phase = static_cast<double>(p);
                     if (index < static_cast<Eigen::Index>(offset + spec.support.size())) {
                         component = static_cast<double>(spec.support[index - offset]); quantity = "log mole fraction";
-                    } else quantity = index == static_cast<Eigen::Index>(eta) ? "log packing fraction" : "phase amount in mol";
+                    } else quantity = index == static_cast<Eigen::Index>(eta) ? (model.parameters().ideal_gas ? "log inverse unit-amount volume" : "log packing fraction") : "phase amount in mol";
                 }
                 auto intensive = compiled.primal_size - compiled.free_intensive_count;
                 if (compiled.problem.temperature.free && index == static_cast<Eigen::Index>(intensive++)) quantity = "T in K";
@@ -1182,8 +1182,8 @@ static EquilibriumResult run_driver_once(
     result.topology_pair = topology.pair;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
-        volumes.push_back(model.packing_fraction_coefficient(
-            temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
+        volumes.push_back(model.parameters().ideal_gas ? prepared.volume[phase] / sum(prepared.composition[phase])
+            : model.packing_fraction_coefficient(temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
@@ -1798,6 +1798,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                             phase.declared_composition_guess = false;
                             restrict_composition_guess(phase, compiled.declared_supports[p]);
                         }
+                        check(!model.parameters().ideal_gas || !packed(p), "ideal-gas packing seeds are undefined");
                         if (packed(p)) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
                         for (const double x : phase.composition_guess)
@@ -1840,7 +1841,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         check(x > 0.0);
                     }
                     if (phase.is_free()) check(initial[cursor++] >= 0.0);
-                    check(admitted_packing_fraction(std::exp(initial[cursor])));
+                    check(model.parameters().ideal_gas ? std::isfinite(std::exp(initial[cursor])) && std::exp(initial[cursor]) > 0.0
+                          : admitted_packing_fraction(std::exp(initial[cursor])));
                 }
                 for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j) check(initial[j] > 0.0);
                 audit = structural_result(compiled, scope);

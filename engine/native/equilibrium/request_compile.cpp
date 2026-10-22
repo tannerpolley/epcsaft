@@ -62,6 +62,12 @@ void validate_intensive_seed(const FreeValue& value, const char* name) {
 PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
                            const std::vector<double>& composition) {
     const auto& parameters = model.parameters();
+    if (parameters.ideal_gas) {
+        PackingTerms result;
+        result.coefficient = 1.0; // q is log inverse unit-amount volume; composition and T partials vanish.
+        result.component.assign(composition.size(), 0.0);
+        return result;
+    }
     const auto sigma = segment_sigma(temperature, parameters);
     const auto diameter = segment_diameter(temperature, parameters, sigma);
     std::vector<double> sigma_t(sigma.size(), 0.0);
@@ -98,17 +104,18 @@ void check_reference_consistency(
     const ThermochemistryRecord& record, double temperature,
     const std::vector<ReactionSpec>& reactions
 ) {
-    const auto targets = reaction_target_series(temperature, reactions, 2);
+    const auto targets = reaction_target_series(temperature, reactions, 2, &record);
     for (std::size_t row = 0; row < reactions.size(); ++row) {
+        if (reactions[row].uses_species_thermochemistry()) continue;
         const auto species = reaction_thermochemistry_density(
             record, reactions[row].stoichiometry, temperature);
-        if (!species.has_value()) continue;
+        if (species.status != ThermochemistryStatus::Available) continue;
         const double t0 = targets[0][row];
         const double t1 = temperature * targets[1][row];
         const double t2 = temperature * temperature * targets[2][row];
-        const double d0 = t0 - species->gibbs;
-        const double d1 = t1 - (species->gibbs - species->enthalpy);
-        const double d2 = t2 + temperature * species->heat_capacity;
+        const double d0 = t0 - species.gibbs;
+        const double d1 = t1 - (species.gibbs - species.enthalpy);
+        const double d2 = t2 + temperature * species.heat_capacity;
         const double scale = std::sqrt(std::numeric_limits<double>::epsilon())
             * std::max(1.0, std::sqrt(t0 * t0 + t1 * t1 + t2 * t2));
         if (std::sqrt(d0 * d0 + d1 * d1 + d2 * d2) > scale) {
@@ -319,7 +326,7 @@ StandardTerm standard_term(
         return result;
     }
     const auto gibbs = standard_state_series(
-        temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol, order);
+        temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol, order, compiled.model->thermochemistry() ? &*compiled.model->thermochemistry() : nullptr);
     if (compiled.model->thermochemistry().has_value() && !problem.reactions.empty()) {
         check_reference_consistency(*compiled.model->thermochemistry(), temperature,
                                     problem.reactions);
@@ -647,14 +654,14 @@ CppAD::ADFun<double> record_geometry(
         for (std::size_t local = 0; local < spec.support.size(); ++local)
             x[spec.support[local]] = CppAD::exp(u[layout.x[local]]);
         const AD eta = CppAD::exp(u[layout.volume]);
-        const AD volume = packing_fraction_from_geometry(AD(1.0), x, tape_parameters, diameter) / eta;
+        const AD volume = (tape_parameters.ideal_gas ? AD(1.0) : packing_fraction_from_geometry(AD(1.0), x, tape_parameters, diameter)) / eta;
         const AD amount = layout.amount.has_value() ? u[*layout.amount] : AD(spec.amount.fraction) * feed_total;
         output.push_back(T);
         output.push_back(volume);
         output.insert(output.end(), x.begin(), x.end());
         output.insert(output.end(), theta.begin(), theta.end());
         output.push_back(amount);
-        output.push_back(eta);
+        output.push_back(tape_parameters.ideal_gas ? AD(0.0) : eta);
         if (compiled.has_caloric_condition()) {
             const bool h = problem.enthalpy_j.has_value();
             const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0));
@@ -696,7 +703,8 @@ CppAD::ADFun<double> record_geometry(
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
                 row_values[row] = value;
             } else if (item.kind == RowKind::Pressure) {
-                row_values[row] = AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T);
+                row_values[row] = (tape_parameters.ideal_gas ? std::accumulate(x.begin(), x.end(), AD(0.0)) : AD(1.0))
+                    - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T);
             } else if (item.kind == RowKind::Electro) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += AD(charges[species]) * x[species];
@@ -943,6 +951,11 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         result.message = message;
         return result;
     };
+    if (model.parameters().ideal_gas && derivative_order > 3)
+        return refuse(SolvedStateActionStatus::EnergyOrderUnavailable, "ideal-gas fourth-order calorics are deferred");
+    for (std::size_t row = 0; row < problem.reactions.size(); ++row)
+        if (problem.reactions[row].uses_species_thermochemistry())
+            return refuse(SolvedStateActionStatus::ReferenceUnavailable, "species-derived calorics deferred for reaction " + reaction_name(problem.reactions[row], row));
     if (!record)
         return refuse(SolvedStateActionStatus::MissingThermochemistry,
                       "reference calorics need record anchors");
@@ -1117,6 +1130,15 @@ static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
     const std::vector<std::vector<double>>* trial_basis
 ) {
+    if (model.parameters().ideal_gas && (request.phases.size() != 1 || request.phases[0].kind != PhaseKind::Vapor
+        || request.temperature.free || request.pressure.free || !request.solids.empty() || request.discovery
+        || request.enthalpy_j || request.entropy_j_per_k || request.source_reference || request.critical || request.envelope
+        || request.azeotrope || has_reaction_reference(request) || request.phases[0].packing_guess))
+        throw std::invalid_argument("ideal-gas equilibrium requires one vapor at fixed T/P; calorics and phase searches deferred");
+    if (std::any_of(request.reactions.begin(), request.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); })
+        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+            || !request.solids.empty() || request.source_reference || has_reaction_reference(request)))
+        throw std::invalid_argument("species-derived targets require ordinary fixed T/P; calorics and source-reference transfer deferred");
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
     }
@@ -1180,9 +1202,9 @@ static CompiledSystem compile_with_basis(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol);
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
     if (request.temperature.free)
-        if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol))
+        if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
                                         + reaction_name(request.reactions[*row], *row));
     compiled.feed_composition = compiled.n_feed;
@@ -1368,6 +1390,7 @@ CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumPro
 CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, double P,
     const PhaseSpec& phase, const std::vector<double>& w, const std::vector<double>& c,
     std::vector<std::vector<double>>& transformation) {
+    if (model.parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability trial compilation is deferred");
     core::Scope scope("compile_problem");
     const auto& support = phase.support;
     const auto& z = model.parameters().charge_number;
@@ -1421,7 +1444,9 @@ std::vector<double> CompiledSystem::generic_point() const {
         for (const std::size_t coordinate : shape[phase].x)
             point[coordinate] = std::log(point[coordinate] / total);
         if (shape[phase].amount.has_value()) point[*shape[phase].amount] = 1.0;
-        point[shape[phase].volume] = std::log(0.25 + 0.05 * static_cast<double>(phase));
+        point[shape[phase].volume] = model->parameters().ideal_gas
+            ? std::log(seed_pressure() / (GAS_CONSTANT_J_PER_MOL_K * seed_temperature()))
+            : std::log(0.25 + 0.05 * static_cast<double>(phase));
     }
     for (std::size_t i = 0; i < mode_count; ++i)  // a generic mode direction, aligned with no axis
         point[mode_offset() + i] = (1.0 + 0.29 * static_cast<double>(i)) / static_cast<double>(mode_count + 1);
@@ -1463,7 +1488,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
         if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
         result.packing.push_back(packing_terms(*model, result.temperature, values));
         result.eta.push_back(std::exp(point[layout.volume]));
-        if (log_packing_unbounded() && !admitted_packing_fraction(result.eta.back()))
+        if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(result.eta.back()))
             throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");
         result.volume.push_back(result.packing.back().coefficient / result.eta.back());
         result.amount.push_back(layout.amount.has_value()
@@ -1531,7 +1556,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = prepared.derivative[row.phase];
             value = volume[row.phase] * (
-                1.0 / volume[row.phase] - derivative.gradient[1] - prepared.pressure / rt);
+                (model->parameters().ideal_gas ? sum(x[row.phase]) : 1.0) / volume[row.phase] - derivative.gradient[1] - prepared.pressure / rt);
         } else if (row.kind == RowKind::Moiety) {
             for (std::size_t phase = 0; phase < shape.size(); ++phase) {
                 for (std::size_t species = 0; species < components; ++species) {
@@ -1683,7 +1708,8 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                     + (component == species ? 1.0 / compositions[row.phase][species] : 0.0);
                 const double dv = packings[row.phase].component[component] / prepared.eta[row.phase];
                 at(row_index, shape[row.phase].x[local]) =
-                    physical_x * compositions[row.phase][component] + physical_v * dv;
+                    physical_x * compositions[row.phase][component] + physical_v * dv
+                        + (model->parameters().ideal_gas ? compositions[row.phase][component] : 0.0);
             }
             at(row_index, shape[row.phase].volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) =
@@ -1706,7 +1732,8 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                 const double dv = packings[row.phase].component[component] / prepared.eta[row.phase];
                 at(row_index, shape[row.phase].x[local]) =
                     -volumes[row.phase] * derivative.hessian[width + 2 + component]
-                        * compositions[row.phase][component] + physical_v * dv;
+                        * compositions[row.phase][component] + physical_v * dv
+                        + (model->parameters().ideal_gas ? compositions[row.phase][component] : 0.0);
             }
             at(row_index, shape[row.phase].volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) = -derivative.hessian[width]

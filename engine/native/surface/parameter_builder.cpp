@@ -149,6 +149,27 @@ Parameters build_parameters(const ParameterDocument& document) {
     const std::size_t components = document.component_ids.size();
     const std::size_t sites = document.site_component.size();
     if (document.site_multiplicity.size() != sites) reject("site structural lists have different sizes");
+    if (document.base_choice == "ideal-gas") {
+        if (sites || !document.ionic_dispersion_choice.empty() || document.association_choice != "none" || document.electrolyte_choice != "none"
+            || document.permittivity_choice != "none" || (!document.polar_choice.empty() && document.polar_choice != "none"))
+            reject("ideal-gas has unconsumed residual families or sites");
+        Parameters ideal;
+        ideal.ideal_gas = true;
+        ideal.molar_mass_kg_per_mol.assign(components, 0.0);
+        ideal.charge_number.assign(components, 0);
+        std::set<std::pair<std::string, Index>> seen;
+        for (const auto& entry : document.entries) {
+            if (!seen.emplace(entry.field, entry.index).second) reject("repeated " + where(entry));
+            if (entry.field != "molar_mass" && entry.field != "charge_number") reject("ideal-gas unconsumed " + where(entry));
+            const auto i = component_index(entry, components);
+            if (entry.field == "charge_number") {
+                if (entry.magnitude != 0.0 || unit_factor(entry, "dimensionless") != 1.0) reject("ideal-gas requires neutral species");
+            } else ideal.molar_mass_kg_per_mol[i] = entry.magnitude * unit_factor(entry, "molar mass");
+        }
+        if (components == 0 || std::any_of(ideal.molar_mass_kg_per_mol.begin(), ideal.molar_mass_kg_per_mol.end(),
+            [](double mass) { return !std::isfinite(mass) || mass <= 0.0; })) reject("ideal-gas requires positive molar masses");
+        return ideal;
+    }
     if (document.base_choice != "pc-saft") reject("unknown base choice " + document.base_choice);
     if (document.association_choice == "none") {
         if (sites != 0) reject("association none has unconsumed site topology");

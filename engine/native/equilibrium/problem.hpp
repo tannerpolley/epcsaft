@@ -83,6 +83,7 @@ struct ReactionSpec final {
     std::optional<double> affinity_j_per_mol;
     std::optional<ReactionLogPolynomial> correlation;
     std::optional<ReactionReference> reference;
+    bool uses_species_thermochemistry() const { return !equilibrium_constant && !affinity_j_per_mol && !correlation; }
 };
 
 // EqID solid_standard_gibbs: a pure stoichiometric solid S -> sum_i nu_i A_i (charge neutral) with exactly one

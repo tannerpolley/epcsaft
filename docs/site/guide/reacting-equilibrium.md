@@ -18,8 +18,13 @@ check element or moiety balances independently when interpreting a solution.
 The native compiler derives the conserved coordinates from the declared
 stoichiometry. It does not infer missing chemistry from species names.
 
-Declare exactly one target for each reaction: an equilibrium constant,
-an affinity in J/mol, or a supported temperature correlation. A positive
+Declare at most one explicit target for each reaction: an equilibrium constant,
+an affinity in J/mol, or a supported temperature correlation. With no target,
+the compiler derives the reaction standard from the model's species
+thermochemistry at the fixed temperature and pressure. Every participating
+species needs an interval at that temperature; a missing interval remains
+unavailable. Caloric conditions and source-reference transfer for this choice
+are deferred. A positive
 constant K is dimensionless on its stated standard; it is not ln K.
 The [reaction declarations](../api/equilibrium.rst) and
 [native reference records](../api/native/equilibrium.rst) define the fields.

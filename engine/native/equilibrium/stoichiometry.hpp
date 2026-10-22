@@ -25,7 +25,7 @@ std::vector<std::vector<double>> balance_basis(
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied
+    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // series[k][i] is d^k g_i / dT^k of the minimum-norm standard state (one gauge for every
@@ -34,19 +34,19 @@ std::vector<double> standard_state(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
 // affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
 std::vector<std::vector<double>> reaction_target_series(
-    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // A constant supplied Gibbs vector admits no temperature-dependent reaction target: the first
 // reaction whose |T^k t^(k)|, k = 1..3, exceeds sqrt(eps) max(1, |t|), if any.
 std::optional<std::size_t> thermal_reference_missing(
-    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied
+    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // True when the declared reaction space conserves total moles: rank([B; e]) == rank(B).

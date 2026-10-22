@@ -319,6 +319,7 @@ class Parameters:
     -----
     Lengths used throughout this module are n = component_count, s = site_count, and a = the number of active parameter directions. Construction uses build_parameters, not direct mutation.
     """
+    ideal_gas: bool
     @property
     def component_count(self) -> int:
         """Read the number of declared components.
@@ -1091,6 +1092,46 @@ class DensityBranch:
             Integer enum value; see the module enum-property convention.
         """
         ...
+
+class ReactionThermochemistry:
+    """Species-contracted reaction standards at the requested temperature.
+
+    Values are defined only with Available status. Gibbs energy and enthalpy use
+    J/mol of reaction, heat capacity J/(mol K), and Gibbs derivatives J/(mol K**k).
+    Density standard is 1 mol/m³; pressure standard is the declared record pressure.
+    ln K is dimensionless; K is absent if exponentiation is not positive and finite.
+    Unavailable results retain the component, temperature and cause in ``cause``.
+    """
+    gibbs: float
+    enthalpy: float
+    heat_capacity: float
+    pressure_gibbs: float
+    ln_k_pressure: float
+    ln_k_density: float
+    k_pressure: float | None
+    k_density: float | None
+    gibbs_derivatives: list[float]
+    status: ThermochemistryStatus
+    cause: str
+
+def reaction_thermochemistry_density(record: ThermochemistryRecord, stoichiometry: Sequence[float], temperature: float) -> ReactionThermochemistry:
+    """Contract participant records and convert pressure to density standards natively.
+
+    Parameters
+    ----------
+    record : ThermochemistryRecord
+        Thermal records in native component order, with pressure standard in Pa.
+    stoichiometry : Sequence[float]
+        Products positive, in the same component order.
+    temperature : float
+        Requested temperature in K.
+
+    Returns
+    -------
+    ReactionThermochemistry
+        Available reaction values or the retained source-unavailability cause.
+    """
+    ...
 
 class ThermochemistryStatus:
     """Availability of ideal-gas thermochemistry at the state temperature.
