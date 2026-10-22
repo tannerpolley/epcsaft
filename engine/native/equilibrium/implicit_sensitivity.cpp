@@ -429,7 +429,7 @@ struct PhaseMap final {
     std::vector<Series> mole_fraction, potential;
 };
 
-PhaseMap phase_map(const RowSeries& series, std::size_t phase, std::size_t components) {
+PhaseMap phase_map(const HelmholtzModel& model, const RowSeries& series, std::size_t phase, std::size_t components) {
     const auto& item = series.phase[phase];
     const std::size_t order = item.point.size();
     PhaseMap result;
@@ -442,7 +442,7 @@ PhaseMap phase_map(const RowSeries& series, std::size_t phase, std::size_t compo
         for (std::size_t i = 0; i < components; ++i) total[k] += item.point[k][2 + i];
     }
     result.volume = volume;
-    result.density = inverse(volume);
+    result.density = model.parameters().ideal_gas ? product(total, inverse(volume)) : inverse(volume);
     const auto inverse_total = inverse(total);
     for (std::size_t i = 0; i < components; ++i) {
         Series x(order), mu(order);
@@ -876,6 +876,22 @@ static SolvedStateActionBatch evaluate_action(
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
+    const auto species_target = std::find_if(problem.reactions.begin(), problem.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); });
+    if ((model.parameters().ideal_gas || species_target != problem.reactions.end()) && std::any_of(request.observables.begin(), request.observables.end(), [](const auto& o) {
+        return o.kind == SolvedStateObservableKind::SystemEnthalpy || o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
+            || o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume
+            || (o.kind == SolvedStateObservableKind::PhaseProperty && caloric_property(o.property));
+    })) {
+        SolvedStateActionBatch refused;
+        for (const auto& o : request.observables) {
+            SolvedStateActionResult item;
+            item.observable = o; item.unit = observable_unit(o); item.order = request.directions.size();
+            item.status = model.parameters().ideal_gas ? SolvedStateActionStatus::EnergyOrderUnavailable : SolvedStateActionStatus::ReferenceUnavailable;
+            item.diagnostic_message = model.parameters().ideal_gas ? "ideal-gas solved-state calorics are deferred" : "species-derived calorics deferred for reaction " + reaction_name(*species_target, species_target - problem.reactions.begin());
+            refused.results.push_back(std::move(item));
+        }
+        return refused;
+    }
     const bool apparent = std::any_of(request.observables.begin(), request.observables.end(), [](const auto &o) {
         return o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
     });
@@ -1037,7 +1053,7 @@ static SolvedStateActionBatch evaluate_action(
         const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
         std::vector<PhaseMap> base_maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase)
-            base_maps.push_back(phase_map(base, phase, components));
+            base_maps.push_back(phase_map(model, base, phase, components));
         for (auto& item : batch.results) {
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
             try {
@@ -1154,7 +1170,7 @@ static SolvedStateActionBatch evaluate_action(
     const bool thermal = problem.temperature.free ||
         std::any_of(controls.begin(), controls.end(), [](const auto &c) { return c[0] != 0.0; });
     if (gate == SolvedStateActionStatus::Available && !zero && thermal
-        && thermal_reference_missing(center.prepared.temperature, problem.reactions, problem.standard_gibbs_j_per_mol))
+        && thermal_reference_missing(center.prepared.temperature, problem.reactions, problem.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr))
         gate = SolvedStateActionStatus::MissingThermochemistry;
     // A critical cell's row series reaches Taylor order two (five-direction energy contractions);
     // a third-order action needs order three of the critical rows, which needs six-direction ones.
@@ -1196,7 +1212,7 @@ static SolvedStateActionBatch evaluate_action(
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;
-        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(path.series, phase, components));
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(model, path.series, phase, components));
         for (std::size_t i = 0; i < batch.results.size(); ++i) {
             auto& item = batch.results[i];
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty || !state_dependent(item.observable, problem)) continue;

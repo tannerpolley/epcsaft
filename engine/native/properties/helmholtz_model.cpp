@@ -719,6 +719,16 @@ HelmholtzModel::HelmholtzModel(
     const std::size_t sites = parameters_.site_count();
     const std::size_t pairs = components * components;
     const std::size_t site_pairs = sites * sites;
+    if (parameters_.ideal_gas) {
+        require(components > 0 && positive_vector(parameters_.molar_mass_kg_per_mol), "ideal-gas molar masses");
+        require(parameters_.charge_number.size() == components && std::all_of(parameters_.charge_number.begin(),
+            parameters_.charge_number.end(), [](int z) { return z == 0; }), "ideal-gas neutral species");
+        require(active_.empty() && parameters_.segment_count.empty() && parameters_.sigma_constant.empty()
+            && parameters_.dispersion_energy_over_k.empty() && sites == 0 && !parameters_.electrolyte_form.declared()
+            && !parameters_.permittivity_form.declared(), "ideal-gas unconsumed residual inputs");
+        if (thermochemistry_) validate_thermochemistry(*thermochemistry_, components);
+        return;
+    }
     require(components > 0, "segment_count");
     require(parameters_.sigma_constant.size() == components, "sigma_constant");
     require(parameters_.dispersion_energy_over_k.size() == components,
@@ -1030,7 +1040,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         return result;
     }
-    const auto delta = association_delta(
+    const auto delta = parameters_.ideal_gas ? std::vector<double>{} : association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
     auto factorization = properties::site_factorization(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
@@ -2094,6 +2104,7 @@ double HelmholtzModel::packing_fraction_coefficient(
 ) const {
     validate_composition(mole_fractions);
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    if (parameters_.ideal_gas) return 0.0;
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     require(positive_vector(sigma), "sigma correlation");

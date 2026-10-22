@@ -1002,8 +1002,8 @@ $$
 - Section: Density closure and mechanical domain
 - Status: Exact derivation
 - Source: Ideal-gas limiting relation
-- Description: Ideal-gas density scale used to construct the density search interval.
-- Change note: This is a numerical scale, not a replacement EOS.
+- Description: Exact density closure for the declared neutral ideal-gas base; also the density scale for residual-model searches.
+- Change note: The ideal-gas base has one stable vapor root with pressure slope RT and no packing bound.
 
 $$
 \rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
@@ -2250,8 +2250,8 @@ $$
 - Section: Equilibrium
 - Status: Exact derivation
 - Source: [Pereira2012] Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
-- Description: System Gibbs objective in Helmholtz coordinates; density-standard offsets appear exactly once and are consistent with ideal_gas_helmholtz.
-- Change note: Use either mechanical energy plus offsets or total energy, never both reference terms.
+- Description: System Gibbs objective in Helmholtz coordinates; density-standard offsets appear exactly once and are consistent with ideal_gas_helmholtz. The ideal-gas base uses q = ln[(1/v)/rho0], v = exp(-q)/rho0 for unit-amount volume v; at an unnormalized trial S = sum_i x_i, physical density is S/v.
+- Change note: Use either mechanical energy plus offsets or total energy, never both reference terms. At fixed q, v_q = -v, v_qq = v and composition/temperature partials vanish. Do not normalize trial compositions.
 
 $$
 \frac{G}{RT}=\sum_p\left[\frac{A_{p,\mathrm{mech}}}{RT}+\frac{PV_p}{RT}+\sum_i n_{p,i}\frac{g^{\circ}_{i,\rho}}{RT}\right].

@@ -45,6 +45,7 @@ enum class TemperatureLaw {
 };
 
 struct FixedParameters {
+    bool ideal_gas = false;
     // Chain and segment geometry
     std::vector<int> sigma_term_component;
     std::vector<double> sigma_term_amplitude;
@@ -98,7 +99,7 @@ struct FixedParameters {
     std::vector<double> quadrupole_count;
 
     std::vector<int> form_identity() const {
-        std::vector<int> result = {electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,
+        std::vector<int> result = {static_cast<int>(ideal_gas), electrolyte_form.declared() ? static_cast<int>(electrolyte_form.require("electrolyte")) : 0,
                 ionic_dispersion.declared() ? static_cast<int>(ionic_dispersion.require("dispersion")) : 0,
                 permittivity_form.declared() ? static_cast<int>(permittivity_form.require("permittivity")) : 0};
         for (const auto& record : cation_mixing) result.insert(result.end(), record.begin(), record.end());
@@ -131,7 +132,7 @@ struct ParameterRecord final : FixedParameters {
     std::vector<Scalar> cation_pair_mixing;
     std::vector<Scalar> cation_triple_mixing;
 
-    std::size_t component_count() const { return segment_count.size(); }
+    std::size_t component_count() const { return ideal_gas ? molar_mass_kg_per_mol.size() : segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }
 };
 

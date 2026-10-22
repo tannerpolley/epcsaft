@@ -2,6 +2,7 @@
 
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
+#include "core/trace.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -116,30 +117,55 @@ ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial& cor
         reaction_log_value(correlation, temperature, 3));
 }
 
-std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
+ReactionThermochemistry reaction_thermochemistry_density(
     const ThermochemistryRecord& record, const std::vector<double>& stoichiometry, double temperature
 ) {
+    core::Scope scope("reaction_thermochemistry_density");
     validate_thermochemistry(record, stoichiometry.size());
     if (!std::isfinite(temperature) || temperature <= 0.0 || !finite_values(stoichiometry))
         throw std::invalid_argument("invalid reaction thermochemistry request");
-    ReactionThermochemistry pressure_basis;
-    double delta_nu = 0.0;
+    ReactionThermochemistry result;
+    Taylor<3> T(temperature), gp(0.0);
+    T.c[1] = 1.0;
+    double delta_nu = 0.0, hp = 0.0, cp = 0.0;
     for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
         if (stoichiometry[i] == 0.0) continue;
         const auto* interval = ideal_interval(record.component_intervals[i], temperature);
-        if (interval == nullptr) return std::nullopt;
-        const auto thermal = evaluate_ideal_correlation(interval->correlation, temperature, record.standard_pressure);
-        pressure_basis.gibbs += stoichiometry[i] * (thermal.h - temperature * thermal.s);
-        pressure_basis.enthalpy += stoichiometry[i] * thermal.h;
-        pressure_basis.heat_capacity += stoichiometry[i] * thermal.cp;
+        if (interval == nullptr) {
+            result.status = record.component_intervals[i].empty() ? ThermochemistryStatus::MissingRecord : ThermochemistryStatus::OutsideInterval;
+            result.cause = std::string(record.component_intervals[i].empty() ? "MissingRecord" : "OutsideInterval")
+                + ": component " + std::to_string(i) + " at T=" + std::to_string(temperature) + " K";
+            return result;
+        }
+        const auto thermal = evaluate_ideal_correlation(interval->correlation, T, record.standard_pressure);
+        if (!std::isfinite(thermal.h.c[0]) || !std::isfinite(thermal.s.c[0]) || !std::isfinite(thermal.cp.c[0])) {
+            result.status = ThermochemistryStatus::Nonfinite;
+            result.cause = "Nonfinite: component " + std::to_string(i) + " at T=" + std::to_string(temperature) + " K";
+            return result;
+        }
+        gp += stoichiometry[i] * (thermal.h - T * thermal.s);
+        hp += stoichiometry[i] * thermal.h.c[0];
+        cp += stoichiometry[i] * thermal.cp.c[0];
         delta_nu += stoichiometry[i];
     }
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
-    // EqID: standard_pressure_density_conversion applied to the reaction contraction.
-    const double shift = rt * std::log(rt / record.standard_pressure);
-    return ReactionThermochemistry{pressure_basis.gibbs + delta_nu * shift,
-        pressure_basis.enthalpy - delta_nu * rt,
-        pressure_basis.heat_capacity - delta_nu * GAS_CONSTANT_J_PER_MOL_K};
+    const auto rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    // EqID: standard_pressure_density_conversion, rho0 = 1 mol/m3.
+    const auto g = gp + delta_nu * rt * scalar_log(rt / record.standard_pressure);
+    result.gibbs = g.c[0]; result.enthalpy = hp - delta_nu * rt.c[0];
+    result.heat_capacity = cp - delta_nu * GAS_CONSTANT_J_PER_MOL_K;
+    result.pressure_gibbs = gp.c[0]; result.ln_k_pressure = -gp.c[0] / rt.c[0]; result.ln_k_density = -g.c[0] / rt.c[0];
+    result.gibbs_derivatives = {g.c[0], g.c[1], 2 * g.c[2], 6 * g.c[3]};
+    if (!std::isfinite(result.enthalpy) || !std::isfinite(result.heat_capacity) || !std::isfinite(result.ln_k_pressure)
+        || !std::isfinite(result.ln_k_density) || !std::all_of(result.gibbs_derivatives.begin(), result.gibbs_derivatives.end(),
+            [](double v) { return std::isfinite(v); })) {
+        result.status = ThermochemistryStatus::Nonfinite; result.cause = "Nonfinite reaction thermochemistry at T=" + std::to_string(temperature) + " K";
+        return result;
+    }
+    for (auto item : {std::pair{result.ln_k_pressure, &result.k_pressure}, std::pair{result.ln_k_density, &result.k_density}}) {
+        const double k = std::exp(item.first); if (std::isfinite(k) && k > 0.0) *item.second = k;
+    }
+    result.status = ThermochemistryStatus::Available;
+    return result;
 }
 
 }  // namespace epcsaft

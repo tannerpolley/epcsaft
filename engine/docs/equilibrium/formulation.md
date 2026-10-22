@@ -23,7 +23,12 @@ EqID: `system_gibbs_helmholtz_coordinates`. All phase values and derivatives
 come from the same defining energy.
 
 A phase carries amount (mol), normalized composition, and volume (m³), or an
-equivalent packing-fraction coordinate (EqID: `phase_packing_volume`). Evaluate
+equivalent packing-fraction coordinate (EqID: `phase_packing_volume`). The declared
+neutral ideal-gas base uses the log inverse unit-amount volume coordinate from
+EqID: `system_gibbs_helmholtz_coordinates`; its occupied fraction is zero. It
+admits one vapor phase at fixed positive T/P. Caloric conditions, solved-state
+caloric actions, source-reference transfer and phase searches are deferred and
+refused before calculation. Evaluate
 intensive properties at unit amount before scaling extensive contributions.
 An incipient phase has zero amount but a defined intensive composition and
 volume per mole; do not evaluate a logarithm of its zero extensive amount.
@@ -183,7 +188,14 @@ only for a sole finite liquid with a zero-amount vapor, as in the #237 Born case
 They establish neither thermodynamic equilibrium nor stability, and no derivative
 of the potentially nonsmooth maximum is supplied.
 
-Ordinary reaction targets are a constant affinity, a scalar K, or the P3
+When no target is supplied, participating species thermochemistry supplies the
+density-standard reaction Gibbs series through order three, preserving missing
+records and excluded-interval causes. This source admits ordinary fixed-T/P
+problems without solids, caloric conditions or source-reference transfer.
+Attaching records alone does not select absolute species standards: with neither
+reactions nor a supplied vector the compiler uses zero species standards.
+
+Ordinary supplied reaction targets are a constant affinity, a scalar K, or the P3
 correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
 exp(μ_i^res / RT). A correlation on another basis requires the explicit neutral
 reference declaration below. An ordinary scalar K is a

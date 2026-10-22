@@ -96,8 +96,15 @@ struct ReactionProperties final {
 };
 // Reaction Gibbs/enthalpy/heat capacity of supplied species thermochemistry on the
 // EOS density basis (1 mol/m^3); absent when a participating interval excludes T.
-struct ReactionThermochemistry final { double gibbs = 0.0, enthalpy = 0.0, heat_capacity = 0.0; };
-std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
+struct ReactionThermochemistry final {
+    double gibbs = NAN, enthalpy = NAN, heat_capacity = NAN, pressure_gibbs = NAN;
+    double ln_k_pressure = NAN, ln_k_density = NAN;
+    std::optional<double> k_pressure, k_density;
+    std::array<double, 4> gibbs_derivatives = {NAN, NAN, NAN, NAN};
+    ThermochemistryStatus status = ThermochemistryStatus::MissingRecord;
+    std::string cause;
+};
+ReactionThermochemistry reaction_thermochemistry_density(
     const ThermochemistryRecord&, const std::vector<double>& stoichiometry, double temperature
 );
 

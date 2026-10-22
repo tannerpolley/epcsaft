@@ -104,10 +104,10 @@ void reactions() {
         const auto ref=solve_equilibrium(m,p);CHECK(ref.has_state());
         for(bool h:{true,false}) recovered(m,p,ref,h,280,(h?"PH5/":"PS5/")+std::to_string(kind));
         const auto target=reaction_target_series(300,p.reactions,2);
-        const auto thermal=reaction_thermochemistry_density(r,rx.stoichiometry,300);CHECK(thermal);
-        compare("PH5/"+std::to_string(kind)+"/gibbs",thermal->gibbs,target[0][0],5000,1e-8);
-        compare("PH5/"+std::to_string(kind)+"/enthalpy",thermal->enthalpy,target[0][0]-300*target[1][0],5000,1e-8);
-        compare("PH5/"+std::to_string(kind)+"/cp",thermal->heat_capacity,-300*target[2][0],40,1e-8);
+        const auto thermal=reaction_thermochemistry_density(r,rx.stoichiometry,300);CHECK(thermal.status==ThermochemistryStatus::Available);
+        compare("PH5/"+std::to_string(kind)+"/gibbs",thermal.gibbs,target[0][0],5000,1e-8);
+        compare("PH5/"+std::to_string(kind)+"/enthalpy",thermal.enthalpy,target[0][0]-300*target[1][0],5000,1e-8);
+        compare("PH5/"+std::to_string(kind)+"/cp",thermal.heat_capacity,-300*target[2][0],40,1e-8);
         auto& polynomial=std::get<IdealPolynomial>(r.component_intervals[1][0].correlation.form);polynomial.reference_enthalpy+=100;
         const HelmholtzModel wrong(e2::identical_ethane_pair(),{},r);
         bool rejected=false;try{(void)compile_problem(wrong,condition(p,true,total(m,ref,true),280));}

@@ -444,8 +444,9 @@ class Reaction:
 
     Notes
     -----
-    Construction raises ``ParameterError`` unless exactly one of K, affinity
-    and correlation is supplied. Native compilation checks stoichiometry,
+    With no K, affinity or correlation, native compilation derives targets from
+    participating species thermochemistry. More than one supplied target raises
+    ``ParameterError``. Native compilation checks stoichiometry,
     reference consistency and source applicability. The EOS activity is
     ``(rho*x_i / (1 mol/m³))*exp(mu_res_i/(RT))``; K is the product of these
     activities raised to signed stoichiometric coefficients (ALG-EQUILIBRIUM).
@@ -467,8 +468,8 @@ class Reaction:
     reference: _core.ReactionReference | None = None
 
     def __post_init__(self) -> None:
-        if sum(item is not None for item in (self.equilibrium_constant, self.affinity_j_per_mol, self.correlation)) != 1:
-            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
+        if sum(item is not None for item in (self.equilibrium_constant, self.affinity_j_per_mol, self.correlation)) > 1:
+            raise _core.ParameterError("reaction admits at most one equilibrium_constant, affinity_j_per_mol or correlation")
         self.name = "" if self.name is None else self.name
 
 
