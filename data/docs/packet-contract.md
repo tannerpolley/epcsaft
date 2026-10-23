@@ -92,6 +92,12 @@ source record hashes every derived packet file, names the transformations, and h
 each retained repository input so mixed-source fits remain reproducible without
 claiming a false single-repository origin.
 
+Origin identities are kept exactly as recorded. On 2026-10-22 the repositories cited as `ePC-SAFT/<name>` moved to
+`tannerpolley/<name>`, keeping their commits, issues and releases. The archived `ePC-SAFT-eos` is
+`tannerpolley/ePC-SAFT-engine` (its renamed successor). A recorded commit therefore resolves at
+`github.com/tannerpolley/<name>/commit/<sha>`, for example
+`ePC-SAFT/ePC-SAFT-validation@dc1841fc` at `tannerpolley/ePC-SAFT-validation`.
+
 ## Consumer lock
 
 The live `data/packet-locks.json` manifest records the monorepo identity, repository-relative
