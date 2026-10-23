@@ -1009,6 +1009,16 @@ static EquilibriumResult run_driver_once(
             if ((free_amount_newton || !compiled.log_charge_rows.empty()) && lu.rank() != n) { stop("Jacobian rank"); break; }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
             if ((free_amount_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
+            double trial_limit = 1.0;
+            if (refine_trial) {
+                double log_step = 0.0;
+                for (const auto& shape : at.shape) {
+                    for (auto i : shape.x) log_step = std::max(log_step, std::abs(delta(i)));
+                    log_step = std::max(log_step, std::abs(delta(shape.volume)));
+                }
+                if (log_step > policy::EQUILIBRIUM_TRIAL_LOG_STEP.value)
+                    trial_limit = policy::EQUILIBRIUM_TRIAL_LOG_STEP.value / log_step;
+            }
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
             bool positive = true;
             for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
@@ -1067,7 +1077,7 @@ static EquilibriumResult run_driver_once(
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
             for (const double damping : {1.0, 0.5, 0.25}) {
-                const double alpha = (trial_recovery ? trial_scale : 1.0) * damping;
+                const double alpha = std::min((trial_recovery ? trial_scale : 1.0) * damping, trial_limit);
                 if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;
                 if (expired()) { stop("elapsed budget"); break; }
