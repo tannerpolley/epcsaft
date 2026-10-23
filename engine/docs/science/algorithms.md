@@ -1753,7 +1753,12 @@ trace. Declared calls retain their existing scopes and perform no trial work.
 ### Unfinished optimized trials
 
 An ordinary explicit trial passes an internal refinement permission to the shared
-driver. It first uses ordinary polish unchanged. At a rejected correction, recovery
+driver. Every proposal of this polish, ordinary or recovery, limits its damping to
+$\alpha \leftarrow \min(\alpha, L/\max|\Delta|)$ over the supported log mole fractions
+and log packing fraction. Here $L$ = `EQUILIBRIUM_TRIAL_LOG_STEP` = $\ln 101$ is an
+empirical retention policy (#811), equal to $\ln(1+f/\tau)$ for the $10^{-8}$
+composition box and $10^{-10}$ row criterion; no accuracy bound follows from
+that identity. At a rejected correction, recovery
 starts only if the best classified point still exceeds the existing row criterion.
 A row-acceptable trial, including a curvature refusal, keeps its original result.
 Supplied-trial evaluation performs no optimization and grants no permission.
@@ -1779,7 +1784,10 @@ row/curvature admission. Reaching a cap confers no success; detailed diagnostics
 retain the cap or no-progress cause even if the best point passes final admission.
 The existing positive-support charge reconstruction and reevaluated finite descent
 then consume the returned raw point. Reconstruction does not revise optimizer
-success. This finite local refinement provides no global-stability certificate.
+success. `StabilityTrial.composition` is that reconstructed composition and the
+trial's state composition; `optimizer.mole_fractions` remains the raw optimizer
+point, electroneutral only to the row criterion, and is not a property-state input.
+This finite local refinement provides no global-stability certificate.
 
 ### Supplied trial points
 

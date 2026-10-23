@@ -97,6 +97,16 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-23, #811 (owner approval, 2026-10-23): rule 1 records Core
+  **1,100 → 1,107** (measured 1,096 plus band 11), Equilibrium
+  **10,596 → 10,607** (10,501 plus band 106), and total **27,800 → 27,818**,
+  the layer-ceiling sum below count 27,591 plus band 276. Against `e4d87ac8`,
+  the approved allowances are Core +5 net / 6 gross and Equilibrium +160 / 280;
+  every other runtime layer has zero allowance. The trial polish log-step limit
+  uses Core +5 net / 6 gross and Equilibrium +10 net / 11 gross formatted
+  lines. The numerical policy
+  remains in Core; the existing trial polish remains its sole consumer.
+
 - 2026-10-22, #791 (owner approval, 2026-10-22): Equilibrium **10,450 → 10,596**,
   the measured count 10,491 plus band 105, and total **27,654 → 27,800**, the
   layer-ceiling sum, below count 27,576 plus band 276. The approved task allowance
