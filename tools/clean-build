@@ -5,6 +5,10 @@ Usage: tools/clean-build [--dry-run]
 Run daily by the user timer epcsaft-clean-build.timer. It deletes regular files directly in build/archive older
 than DAYS whose name carries no open issue or PR number; it never descends, follows a symlink or touches anything
 else. Gate trees need no sweep: tools/check-pr-native removes its own tree when each run ends.
+
+Trust assumption (owner, 2026-10-22): only this repository's tools write build/, so nothing swaps build/archive or its
+ancestors for a symlink while the job runs; three safety reviews (#783) found residual risk only under that adversarial
+case, which the owner accepted.
 """
 import argparse
 import json
