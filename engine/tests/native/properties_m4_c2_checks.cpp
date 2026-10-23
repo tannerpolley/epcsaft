@@ -624,6 +624,48 @@ void density_and_reference() {
         "T,P,\\mathbf{x}", "\\log\\gamma", "state");
     CHECK(std::isfinite(reference.convergence_error));
     CHECK(std::isfinite(activity.mean_ionic_log_molality_scale));
+    for (double m : {0.001, 0.2, 1.0, 3.0, 7.0}) {
+        const auto scalar = epcsaft::electrolyte_activity(model, 298.15, 1e5,
+            {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, m, reference);
+        const auto full = epcsaft::electrolyte_activity(model, 298.15, 1e5,
+            {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, m, reference, std::nullopt, std::vector<double>{0.0, m, m});
+        CHECK(std::abs(scalar.mean_ionic_log_molality_scale - full.mean_ionic_log_molality_scale) <= 1e-10);
+    }
+    std::vector<double> water(9, 0.0);
+    water[0] = 1.0;
+    const auto mixed_reference = epcsaft::infinite_dilution_reference(nine, 298.15, 1e5, water, {3, 4}, {1, 1});
+    for (const auto& amounts : {std::array<double, 2>{0.2, 0.4}, std::array<double, 2>{0.7, 1.1},
+                               std::array<double, 2>{1e-15, 0.4}}) {
+        const double acid = amounts[0], background = amounts[1];
+        std::vector<double> m(9, 0.0);
+        m[3] = acid; m[7] = background; m[4] = acid + background;
+        const auto full = epcsaft::electrolyte_activity(nine, 298.15, 1e5,
+            water, {3, 4}, {1, 1}, acid, mixed_reference, std::nullopt, m);
+        const auto& logs = *full.state.log_fugacity_coefficient;
+        const double expected = 0.5 * (epcsaft::require_component_property(logs[3]) - mixed_reference.log_fugacity[0]
+            + epcsaft::require_component_property(logs[4]) - mixed_reference.log_fugacity[1])
+            - std::log(1.0 + nine.parameters().molar_mass_kg_per_mol[0] * 2.0 * (acid + background));
+        CHECK(std::abs(full.mean_ionic_log_molality_scale - expected) <= 1e-10);
+        CHECK(full.osmotic_coefficient && std::holds_alternative<double>(*full.osmotic_coefficient));
+        const auto rejects = [&](const std::vector<double>& declaration, const auto& ref) {
+            try {
+                epcsaft::electrolyte_activity(nine, 298.15, 1e5, water, {3, 4}, {1, 1}, acid, ref, std::nullopt, declaration);
+            } catch (const std::invalid_argument&) { return true; }
+            return false;
+        };
+        m[4] = acid;
+        CHECK(rejects(m, mixed_reference));
+        m[4] = acid + background; m[3] = -acid;
+        CHECK(rejects(m, mixed_reference));
+        m[3] = acid; m[0] = 1.0;
+        CHECK(rejects(m, mixed_reference));
+        m[0] = 0.0;
+        auto wrong = mixed_reference;
+        wrong.pressure = 101325.0;
+        CHECK(rejects(m, wrong));
+        m.pop_back();
+        CHECK(rejects(m, mixed_reference));
+    }
     const double gamma_coefficient = epcsaft::ELEMENTARY_CHARGE_C
         * epcsaft::ELEMENTARY_CHARGE_C
         / (8.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M
