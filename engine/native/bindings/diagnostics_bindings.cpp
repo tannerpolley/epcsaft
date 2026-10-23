@@ -62,10 +62,6 @@ void register_diagnostics(nb::module_& module) {
             if (!record.floor.has_value()) return nb::none();
             return nb::float_(record.residual / *record.floor);
         })
-        .def_prop_ro("amplification_over_declared", [](const core::Convergence& record) -> nb::object {
-            if (!record.amplification.has_value() || record.criterion == nullptr) return nb::none();
-            return nb::float_(*record.amplification / record.criterion->factor);
-        })
         .def("__repr__", [](const core::Convergence& record) {
             return core::describe(record);
         });

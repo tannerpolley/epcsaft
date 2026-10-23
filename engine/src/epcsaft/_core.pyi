@@ -151,16 +151,6 @@ class Convergence:
             Dimensionless residual/floor, or None without an estimated floor.
         """
         ...
-    @property
-    def amplification_over_declared(self) -> Optional[float]:
-        """Read estimated amplification relative to its declared factor.
-
-        Returns
-        -------
-        Optional[float]
-            Dimensionless amplification/criterion.factor, or None without either input.
-        """
-        ...
 
 class Event:
     """One named numerical probe within a captured span."""
