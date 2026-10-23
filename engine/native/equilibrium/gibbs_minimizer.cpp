@@ -1692,10 +1692,12 @@ std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* m
     for (std::size_t p = 0; p < result.phase_count; ++p) {
         std::vector<double> x(result.mole_fractions.begin() + p * n, result.mole_fractions.begin() + (p + 1) * n);
         std::optional<State> state;
+        if (ideal && ideal->solvent_index && x[*ideal->solvent_index] * result.amounts[p] <= 0.0)
+            throw std::invalid_argument("unit-activity solvent absent from physical state");
         if (model) state = model->state(*result.temperature, result.molar_densities[p], x);
         for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
             ReactionActivities row; row.phase_index = p; row.reaction_index = r;
-            row.basis = model ? EOS_STANDARD_STATE_ID : IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+            row.basis = model ? EOS_STANDARD_STATE_ID : ideal->standard_state_id();
             const auto found = std::find(referenced.begin(), referenced.end(), r);
             if (found != referenced.end()) {
                 const auto k = static_cast<std::size_t>(found - referenced.begin());
@@ -1706,6 +1708,18 @@ std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* m
                 if (diagnostics[k].status != NeutralReferenceStatus::Available) row.cause = diagnostics[k].message;
                 row.species = species_activities(x, &*state, species_references[k], &model->parameters(), &declaration, references[k].source_basis);
             } else row.species = species_activities(x, state ? &*state : nullptr);
+            if (ideal && ideal->activity_basis == "molarity") {
+                row.species.solvent_index = ideal->solvent_index;
+                for (std::size_t i = 0; i < n; ++i) {
+                    const double value = ideal->molarity_log_activity(std::log(result.amounts[p]) + std::log(x[i]), i);
+                    row.species.log_activities[i] = value;
+                    const double activity = std::exp(value);
+                    row.species.activities[i].reset();
+                    if (!std::isfinite(activity) || (activity == 0.0 && std::isfinite(value)))
+                        row.species.causes[i] = "activity exponentiation overflow or underflow";
+                    else row.species.activities[i] = activity;
+                }
+            }
             row.log_quotient = 0.0;
             for (std::size_t i = 0; row.cause.empty() && i < n; ++i) {
                 const double nu = problem.reactions[r].stoichiometry[i];

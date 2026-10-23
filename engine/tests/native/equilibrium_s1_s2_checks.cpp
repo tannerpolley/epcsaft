@@ -1437,4 +1437,106 @@ void check_ideal_mole_fraction() {
     }
 }
 
+// IAPWS TGD9-18, Table 2, 25 C; ideal concentration standard and log-amount chain rule.
+void check_ideal_molarity() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto compare = [](const char* name, double value, double reference, double tolerance) {
+        recording_support::compare(name, name, "1", value, reference, "V_m3=0.001 or 0.002;c0_mol_per_m3=1000",
+            "absolute mol", "analytical ideal concentration identity", "numerical verification",
+            "absolute", tolerance, 0.0, std::abs(value-reference) <= tolerance);
+        std::printf("molarity,%s,%.17g,%.17g,%.17g\n", name, value, reference, value-reference);
+    };
+    const auto refused = [](const auto& call) {
+        bool caught = false;
+        try { call(); } catch (const std::invalid_argument&) { caught = true; }
+        CHECK(caught);
+    };
+    auto p = equilibrium_support::flash(3); p.temperature.value = 298.15;
+    p.feed.values = {55.5,0,0}; p.solver_options.values[policy::row] = 1e-12;
+    const double K = std::pow(10.0,-13.995), root = std::sqrt(K);
+    p.reactions = {{"water autoionization", {-1,1,1}, K}};
+    IdealMoleFraction water({"water","H+","OH-"}, {0,1,-1}, {}, "molarity", 0.001, "water");
+    const auto c = compile_problem(water,p);
+    const std::vector<double> y = {-0.2,-3.1,-1.7};
+    const auto J = c.jacobian(y);
+    std::vector<double> w(c.rows.size(),0.0); w[0] = 1.7;
+    const auto Hr = c.hessian(y,w);
+    double ej=0,eh=0,ebj=0,ebh=0;
+    for (std::size_t i=0;i<3;++i) {
+        ej=std::max(ej,std::abs(J[i]-(i==0?0.0:1.0)));
+        for (std::size_t j=0;j<3;++j) eh=std::max(eh,std::abs(Hr[i*3+j]));
+    }
+    w[0]=0;
+    for (std::size_t k=0;k<c.rank;++k) w[1+k]=0.3+k;
+    const auto Hb=c.hessian(y,w);
+    for (std::size_t i=0;i<3;++i) {
+        double diagonal=0;
+        for (std::size_t k=0;k<c.rank;++k) {
+            const double expected=c.B[k][i]*std::exp(y[i]);
+            ebj=std::max(ebj,std::abs(J[(1+k)*3+i]-expected)/std::max(1.0,std::abs(expected)));
+            diagonal+=w[1+k]*expected;
+        }
+        for (std::size_t j=0;j<3;++j) {
+            const double expected=i==j?diagonal:0;
+            ebh=std::max(ebh,std::abs(Hb[i*3+j]-expected)/std::max(1.0,std::abs(expected)));
+        }
+    }
+    compare("reaction-J-error",ej,0,1e-12); compare("reaction-H-error",eh,0,1e-12);
+    compare("balance-J-error",ebj,0,1e-12); compare("balance-H-error",ebh,0,1e-12);
+    for (double V : {0.001,0.002}) {
+        for (const std::string solvent : {"water","solvent"}) {
+            IdealMoleFraction model({solvent,"H+","OH-"}, {0,1,-1}, {}, "molarity", V, solvent);
+            const auto result=solve_equilibrium(model,p);
+            CHECK(result.success);
+            const auto activity=reaction_activities(model,result)[0];
+            CHECK(activity.basis==IDEAL_MOLARITY_STANDARD_STATE_ID);
+            compare("water-activity",*activity.species.activities[0],1,0);
+            for (std::size_t i=1;i<3;++i) {
+                compare("water-ion-concentration-relative",result.amounts[0]*result.mole_fractions[i]/(1000*V)/root,1,1e-8);
+                compare("returned-activity",*activity.species.activities[i],result.amounts[0]*result.mole_fractions[i]/(1000*V),1e-12);
+            }
+            auto candidate=result;
+            std::vector<double> amounts=result.mole_fractions;
+            for (double& n:amounts) n*=result.amounts[0];
+            const double extent=amounts[1]*0.05;
+            amounts[0]-=extent; amounts[1]+=extent; amounts[2]+=extent;
+            candidate.amounts[0]=std::accumulate(amounts.begin(),amounts.end(),0.0);
+            for (std::size_t i=0;i<3;++i) candidate.mole_fractions[i]=amounts[i]/candidate.amounts[0];
+            compare("snapshot-lnQ-change",*reaction_activities(model,candidate)[0].log_quotient-*activity.log_quotient,
+                std::log1p(0.05)+std::log1p(extent/(result.amounts[0]*result.mole_fractions[2])),1e-10);
+            candidate.mole_fractions={0,0.5,0.5};
+            refused([&]{reaction_activities(model,candidate);});
+        }
+    }
+    auto law=p;
+    law.reactions[0].equilibrium_constant.reset();
+    law.reactions[0].correlation=ReactionLogPolynomial{std::log(K),0,0,0,1,290,310,IDEAL_MOLARITY_STANDARD_STATE_ID};
+    const auto scalar=solve_equilibrium(water,p), correlated=solve_equilibrium(water,law);
+    for (std::size_t i=0;i<3;++i) compare("scalar-law-amount",scalar.amounts[0]*scalar.mole_fractions[i],
+        correlated.amounts[0]*correlated.mole_fractions[i],1e-10);
+    law.reactions[0].correlation->standard_state_id=IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+    refused([&]{compile_problem(water,law);});
+    IdealMoleFraction fractions({"water","H+","OH-"}, {0,1,-1});
+    law.reactions[0].correlation->standard_state_id=IDEAL_MOLARITY_STANDARD_STATE_ID;
+    refused([&]{compile_problem(fractions,law);});
+    for (auto V : {std::optional<double>{}, std::optional<double>{0}, std::optional<double>{-1},
+                   std::optional<double>{INFINITY},std::optional<double>{NAN}})
+        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",V);});
+    for (const std::string solvent:{"unknown","H+"})
+        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",0.001,solvent);});
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",0.001);});
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",{},"water");});
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"unknown");});
+    auto invalid=p; invalid.feed.kind=FeedKind::MoleFractions; invalid.feed.values={1,0,0};
+    refused([&]{compile_problem(water,invalid);});
+    invalid=p; invalid.feed.values={0,1,1}; invalid.reactions.clear();
+    refused([&]{compile_problem(water,invalid);});
+    IdealMoleFraction all({"water","H+","OH-"},{0,1,-1},{},"molarity",0.001);
+    const auto ordinary=solve_equilibrium(all,p);
+    CHECK(ordinary.success);
+    const auto a=reaction_activities(all,ordinary)[0];
+    compare("nonunit-solvent-mass-action",*a.log_quotient,std::log(K),1e-10);
+}
+
 }  // namespace equilibrium_checks

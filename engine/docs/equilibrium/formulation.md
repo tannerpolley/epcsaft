@@ -47,7 +47,7 @@ EqID: `ideal_gas_helmholtz`, EqID: `total_enthalpy`, and EqID: `total_entropy`.
 Reaction correlations constrain a reaction subspace. A chosen gauge may define
 a reference convention but cannot supply missing absolute caloric evidence.
 
-## Ideal liquid mole-fraction chemistry
+## Ideal liquid chemistry
 
 `IdealMoleFraction` declares species identifiers and charges without EOS parameters.
 At fixed positive T/P, one free liquid uses EqID: `ideal_mole_fraction_reaction`
@@ -57,7 +57,16 @@ laws, reaction/source references, supplied species Gibbs energies and affinity
 targets are refused. The positive logarithm reference in `ReactionLogPolynomial`
 may lie outside its evaluation interval; evaluation outside the interval remains refused.
 
-A neutral nonnegative mol or mole-fraction feed defines the conserved inventories.
+The default `activity_basis="mole_fraction"` retains the equations above.
+With `activity_basis="molarity"`, EqID: `ideal_molarity_reaction` requires a finite
+positive `solution_volume_m3` and an absolute `Amounts` feed. Scalar K is the
+dimensionless concentration constant on the 1 mol/L standard; correlations declare
+`ideal-molarity-1-mol-per-litre`. No basis conversion is inferred.
+`unit_activity_solvent` optionally names one neutral species on the positive liquid
+support. Its activity is one; its amount and stoichiometry remain in the balances.
+Volume and unit-solvent declarations are refused on the default basis.
+
+A neutral nonnegative mol or mole-fraction feed defines the default conserved inventories.
 Every reacting species requires a positive attainable inventory; an inventory face
 forcing one absent is refused. The native inventory bounds limit log amounts,
 including amounts greater than the feed reference where attainable. A supplied
@@ -82,7 +91,10 @@ component order. A zero phase amount does not remove its defined composition.
 EqID: `reaction_activity_quotient` governs the products-positive `log_quotient`.
 Unreferenced Helmholtz reactions, including ideal gas and species-derived
 targets, return density-standard activities. Ideal mole-fraction reactions
-return exactly the mole fractions. Source references retain their declared
+return exactly the mole fractions. Molarity reactions instead use returned phase
+amounts times fractions and the shared fixed-volume expression, with unit solvent
+activity where declared. Concentration pH is an analysis quantity under a declared
+individual-ion convention, not an Engine result. Source references retain their declared
 pressure and pure/dilute species standards; common molality subtracts the
 solvent-mass/standard-molality factor for every solute. `basis`,
 `reference_pressure_pa` and the `species` solvent/molality fields identify

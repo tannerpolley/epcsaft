@@ -434,3 +434,56 @@ def test_ideal_mole_fraction_species_order_and_amount_transport() -> None:
     assert result.molar_densities == result.packing_fractions == []
     assert equilibrium.effective_water_amounts(model, result, water="water", ions=("OH-", "H3O+"),
                                               molecular_species=()) == pytest.approx({"water": 1.0}, abs=1e-10)
+
+
+@pytest.mark.parametrize("case", range(3))
+def test_ideal_molarity_carbonate_reference(case: int) -> None:
+    import csv
+    import json
+
+    source = Path(__file__).resolve().parents[3] / (
+        "analyses/reproduction/2018-iapws/inputs/cases/carbonate-complexation/results/data/ideal-carbonate-reference.csv"
+    )
+    with source.open() as stream:
+        reference = list(csv.DictReader(stream))[case]
+    ids = ("water", "H+", "OH-", "H2CO3*", "HCO3-", "CO3--", "Na+")
+    model = equilibrium.IdealMoleFraction(ids, (0, 1, -1, 0, -1, -2, 1), activity_basis="molarity",
+                                        solution_volume_m3=0.001, unit_activity_solvent="water")
+    assert (model.activity_basis, model.solution_volume_m3, model.unit_activity_solvent) == ("molarity", 0.001, "water")
+    reactions = tuple(equilibrium.Reaction(nu, equilibrium_constant=10.0**power) for nu, power in (
+        ({"water": -1, "H+": 1, "OH-": 1}, -13.995),
+        ({"H2CO3*": -1, "H+": 1, "HCO3-": 1}, -6.345),
+        ({"HCO3-": -1, "H+": 1, "CO3--": 1}, -10.329),
+    ))
+    outputs = []
+    for water in (55.5, 27.75):
+        feed = {"water": water, ids[3 + case]: 0.001, "Na+": case * 0.001}
+        problem = Problem(T=298.15, P=100000, phases=(Phase("L", kind="liquid"),),
+                          feed=Amounts(feed), reactions=reactions, row_tolerance=1e-12)
+        result = equilibrium.solve_equilibrium(model, problem)
+        assert result.success
+        amounts = {key: result.amounts[0] * result.mole_fractions[i] for i, key in enumerate(ids)}
+        columns = ("H3O_M", "OH_M", "H2CO3star_M", "HCO3_M", "CO3_M")
+        values = {column: amounts[key] for column, key in zip(columns, ids[1:6], strict=True)}
+        values["pH"] = -math.log10(amounts["H+"])
+        for key, value in values.items():
+            expected = float(reference[key])
+            assert math.isfinite(value) and value > 0
+            assert abs(value - expected) <= 1e-8 and abs(value / expected - 1) <= 1e-8
+        defects = {"carbon_M": sum(amounts[key] for key in ids[3:6]) - 0.001,
+                   "charge_M": amounts["H+"] + amounts["Na+"] - amounts["OH-"] - amounts["HCO3-"] - 2 * amounts["CO3--"],
+                   "sodium_M": amounts["Na+"] - case * 0.001, "solvent_M": amounts["water"] + amounts["OH-"] - water}
+        assert all(abs(v) <= 1e-10 for v in defects.values())
+        if case == 0:
+            assert amounts["Na+"] == 0
+        for read in equilibrium.reaction_activities(model, result):
+            assert read.basis == equilibrium.IDEAL_MOLARITY_STANDARD_STATE_ID
+            assert read.species.activities[0] == 1
+            for i in range(1, len(ids)):
+                assert read.species.activities[i] == pytest.approx(amounts[ids[i]], rel=1e-12, abs=0)
+        outputs.append(values)
+        print("carbonate-result=" + json.dumps({"case": reference["case_id"], "water_mol": water, "values": values,
+              "reference": {k: float(reference[k]) for k in values}, "defects": defects, "rows": result.residuals,
+              "minimum_positive_mol": min(v for v in amounts.values() if v > 0), "rank": result.jacobian_rank}))
+    for key in outputs[0]:
+        assert outputs[1][key] == pytest.approx(outputs[0][key], rel=1e-8, abs=0)

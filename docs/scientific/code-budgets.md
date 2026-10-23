@@ -97,6 +97,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-22, #791 (owner approval, 2026-10-22): Equilibrium **10,450 → 10,596**,
+  the measured count 10,491 plus band 105, and total **27,654 → 27,800**, the
+  layer-ceiling sum, below count 27,576 plus band 276. The approved task allowance
+  is Equilibrium 100/140, Bindings 20/30 and Python 16/24 net/gross, zero elsewhere,
+  against integrated main `955ff6d0`. Inherited #793 additions are excluded.
+  Fixed-volume molarity rows and the existing ideal activity reader share one
+  concentration expression; balance and solver owners are unchanged.
+
 - 2026-10-22, #793 (owner approval, 2026-10-22): Properties **5,842 → 5,983**
   and total **27,384 → 27,654**, the measured Properties count plus its 1% band
   (5,923 + 60) and the layer-ceiling sum, below total count plus band

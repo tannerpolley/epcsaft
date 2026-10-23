@@ -15,6 +15,7 @@ from typing import Any, Mapping, Optional, Sequence, Union, overload
 GAS_CONSTANT_J_PER_MOL_K: float
 """Molar gas constant in J/(mol K), fixed by the native physical_constants owner."""
 IDEAL_MOLE_FRACTION_STANDARD_STATE_ID: str
+IDEAL_MOLARITY_STANDARD_STATE_ID: str
 EOS_STANDARD_STATE_ID: str
 """Native reaction activity identity: (rho*x/(1 mol/m^3))*exp(mu_res/(RT)), dimensionless."""
 
@@ -2554,6 +2555,8 @@ class RowKind:
     -----
     Native enum name/value properties follow the module convention in epcsaft._core.
     """
+    ReactionMolarity: RowKind
+    """Direct logarithmic molarity mass action, dimensionless."""
     ReactionMassAction: RowKind
     """Direct logarithmic mole-fraction mass action, dimensionless."""
     Chemical: RowKind
@@ -2606,10 +2609,13 @@ class PointEvaluation:
     """Dimensionless estimated residual floor at this point."""
 
 class IdealMoleFraction:
+    activity_basis: str
+    solution_volume_m3: float | None
+    unit_activity_solvent: str | None
     component_ids: list[str]
     charge_number: list[int]
     solver_options: list[dict[str, Any]]
-    def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ...) -> None: ...
+    def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ..., activity_basis: str | None = ..., solution_volume_m3: float | None = ..., unit_activity_solvent: str | None = ...) -> None: ...
 
 def effective_water_amounts(model: IdealMoleFraction, result: EquilibriumResult, water: str, ions: Sequence[str], molecular_species: Sequence[str]) -> dict[str, float]: ...
 

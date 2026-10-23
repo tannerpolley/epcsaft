@@ -71,16 +71,29 @@ struct FeedSpec final {
     double solvent_mass_kg = 1.0;
 };
 
-// The only admitted correlation identity: activity (rho x / (1 mol/m^3)) exp(mu_res / RT).
+// EOS correlation identity: activity (rho x / (1 mol/m^3)) exp(mu_res / RT).
 inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-basis";
 
 inline constexpr const char* IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = "ideal-mole-fraction";
+inline constexpr const char* IDEAL_MOLARITY_STANDARD_STATE_ID = "ideal-molarity-1-mol-per-litre";
 struct IdealMoleFraction final {
     std::vector<std::string> component_ids;
     std::vector<int> charge_number;
     policy::SolverOptions solver_options;
+    std::string activity_basis;
+    std::optional<double> solution_volume_m3;
+    std::optional<std::string> unit_activity_solvent;
+    std::optional<std::size_t> solvent_index;
     IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
-                      policy::SolverOptions options = {});
+                      policy::SolverOptions options = {}, std::optional<std::string> basis = {},
+                      std::optional<double> volume = {}, std::optional<std::string> solvent = {});
+    const char* standard_state_id() const {
+        return activity_basis == "molarity" ? IDEAL_MOLARITY_STANDARD_STATE_ID : IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+    }
+    // EqID ideal_molarity_reaction; log_amount is ln(n_i / mol), V is in m^3.
+    template<class Scalar> Scalar molarity_log_activity(const Scalar& log_amount, std::size_t i) const {
+        return solvent_index == i ? Scalar(0.0) : Scalar(log_amount - std::log(*solution_volume_m3) - std::log(1000.0));
+    }
 };
 
 // Exactly one target: scalar K, affinity in J/mol, or the P3 ln K(T) correlation on the
@@ -170,7 +183,7 @@ struct EquilibriumProblem final {
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, ReactionMassAction,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity
 };
 
 // Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
@@ -181,6 +194,7 @@ inline bool stationarity_row(RowKind kind) noexcept {
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
     case RowKind::ReactionMassAction: return "ideal_mole_fraction_reaction";
+    case RowKind::ReactionMolarity: return "ideal_molarity_reaction";
     case RowKind::Chemical: return "chemical_potential_stationarity";
     case RowKind::Pressure: return "pressure_equality";
     case RowKind::Moiety: return "material_balance";

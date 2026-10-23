@@ -16,6 +16,8 @@ Declared-branch continuation and mechanical/local checks remain required.
 
 The ideal liquid `IdealMoleFraction` specialization uses the log-amount chart
 and square direct reaction/inventory rows of EqID: `ideal_reaction_amount_coordinates`.
+The molarity basis selects EqID: `ideal_molarity_reaction`, with constant reaction
+Jacobian and zero reaction Hessians; exponential balance derivatives are unchanged.
 Its cold start is positive on the admitted inventory support, or uses a declared
 positive composition guess. The same Ipopt lifecycle and exact-Jacobian polish
 classify these rows. No EOS density seed, branch admission, neutral recovery or

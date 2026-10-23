@@ -52,7 +52,7 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
     return result;
 }
 
-// EqIDs ideal_mole_fraction_reaction and ideal_reaction_amount_coordinates; one expression for all callbacks.
+// EqIDs ideal_mole_fraction_reaction, ideal_molarity_reaction and ideal_reaction_amount_coordinates.
 CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
     using AD = CppAD::AD<double>;
     std::vector<AD> y(p.point.begin(), p.point.end()), rows;
@@ -65,7 +65,8 @@ CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
     for (std::size_t r = 0; r < c.problem.reactions.size(); ++r) {
         AD value = -c.ideal_log_k[r];
         for (std::size_t j = 0; j < y.size(); ++j)
-            value += c.problem.reactions[r].stoichiometry[support[j]] * (y[j] - log_total);
+            value += c.problem.reactions[r].stoichiometry[support[j]] * (c.ideal->activity_basis == "molarity"
+                ? c.ideal->molarity_log_activity(AD(y[j] + std::log(c.feed_total)), support[j]) : AD(y[j] - log_total));
         rows.push_back(value);
     }
     for (std::size_t k = 0; k < c.rank; ++k) {
@@ -1419,14 +1420,28 @@ void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>
 }
 
 IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
-                                   policy::SolverOptions options)
-    : component_ids(std::move(ids)), charge_number(std::move(charges)), solver_options(std::move(options)) {
+                                   policy::SolverOptions options, std::optional<std::string> basis,
+                                   std::optional<double> volume, std::optional<std::string> solvent)
+    : component_ids(std::move(ids)), charge_number(std::move(charges)), solver_options(std::move(options)),
+      activity_basis(basis.value_or("mole_fraction")), solution_volume_m3(volume), unit_activity_solvent(std::move(solvent)) {
     if (component_ids.empty() || component_ids.size() != charge_number.size())
         throw std::invalid_argument("ideal species/charge size");
     auto sorted = component_ids;
     std::sort(sorted.begin(), sorted.end());
     if (sorted.front().empty() || std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end())
         throw std::invalid_argument("ideal species identifiers must be nonempty and unique");
+    if (activity_basis != "mole_fraction" && activity_basis != "molarity")
+        throw std::invalid_argument("unknown ideal activity basis");
+    if (activity_basis == "mole_fraction" && (volume || unit_activity_solvent))
+        throw std::invalid_argument("mole-fraction basis refuses volume and unit-activity solvent");
+    if (activity_basis == "molarity" && (!volume || !std::isfinite(*volume) || *volume <= 0.0))
+        throw std::invalid_argument("molarity requires finite positive solution volume in m^3");
+    if (unit_activity_solvent) {
+        const auto found = std::find(component_ids.begin(), component_ids.end(), *unit_activity_solvent);
+        if (found == component_ids.end() || charge_number[found - component_ids.begin()] != 0)
+            throw std::invalid_argument("unit-activity solvent must be a known neutral species");
+        solvent_index = found - component_ids.begin();
+    }
 }
 
 CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
@@ -1461,7 +1476,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
         if (!exact_zero_dot(z, reaction.stoichiometry)) throw std::invalid_argument("reaction violates z: " + reaction.name);
     }
     const auto targets = reaction_target_series(request.temperature.value, request.reactions, 0, nullptr,
-                                                IDEAL_MOLE_FRACTION_STANDARD_STATE_ID);
+                                                model.standard_state_id());
     for (double target : targets[0]) c.ideal_log_k.push_back(-target / (GAS_CONSTANT_J_PER_MOL_K * request.temperature.value));
     std::vector<std::size_t> all(c.n_feed.size()); std::iota(all.begin(), all.end(), 0);
     auto& phase = c.problem.phases[0];
@@ -1487,11 +1502,13 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     phase.support.erase(std::remove_if(phase.support.begin(), phase.support.end(), [&](auto i) { return !retained[i]; }), phase.support.end());
     restrict_composition_guess(phase, declared);
     if (phase.support.empty()) throw std::invalid_argument("empty ideal inventory support");
+    if (model.solvent_index && !std::count(phase.support.begin(), phase.support.end(), *model.solvent_index))
+        throw std::invalid_argument("unit-activity solvent absent from positive liquid support");
     if (phase.support.size() != all.size()) restrict_inventory_balances(c, retained);
     for (auto i : all) if (!retained[i]) c.removed_species.push_back(i);
     c.primal_size = phase.support.size(); c.amount_coordinates.resize(c.primal_size);
     std::iota(c.amount_coordinates.begin(), c.amount_coordinates.end(), 0);
-    for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({RowKind::ReactionMassAction, 0, r});
+    for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({model.activity_basis == "molarity" ? RowKind::ReactionMolarity : RowKind::ReactionMassAction, 0, r});
     for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
     const auto info = inspect_sensitivity(c, c.generic_point());
     c.jacobian_rank = info.rank; c.generic_nullity = c.primal_size - info.rank; c.feasible = info.nonsingular;

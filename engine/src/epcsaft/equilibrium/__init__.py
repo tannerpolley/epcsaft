@@ -71,6 +71,7 @@ SolvedStateObservable = _core.SolvedStateObservable
 SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
 IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = _core.IDEAL_MOLE_FRACTION_STANDARD_STATE_ID
+IDEAL_MOLARITY_STANDARD_STATE_ID = _core.IDEAL_MOLARITY_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
 asl_record = _core.equilibrium_asl_record
 cooling_onset = _core.cooling_onset
@@ -83,6 +84,7 @@ __all__ = (
     "effective_water_amounts",
     "reaction_activities",
     "IDEAL_MOLE_FRACTION_STANDARD_STATE_ID",
+    "IDEAL_MOLARITY_STANDARD_STATE_ID",
     "inventory_bounds",
     "InventoryBound",
     "cooling_onset",

@@ -114,6 +114,11 @@ Source: `docs/scientific/CONTEXT.md` "The project map" (leaf issues record unqua
 The dimensionless activity $a_i=x_i$ with standard fraction one and unit activity coefficient.
 Source: Nasrifar and Tafazzol (2010), Eq. (11) and section 6; `engine/docs/equations.md` ideal_mole_fraction_reaction.
 
+**Ideal molarity activity**:
+The dimensionless activity $a_i=n_i/(V c^\circ)$ at declared fixed solution volume,
+with $c^\circ=1$ mol/L; an explicitly declared neutral solvent may instead have unit activity.
+Source: IAPWS TGD9-18, Table 2, p.15 (ideal concentration constants); `engine/docs/equations.md` ideal_molarity_reaction.
+
 **Effective-water amount**:
 The free water amount plus all declared ionic species amounts, used with preserved free molecular amounts.
 Source: Nasrifar and Tafazzol (2010), section 6, p.7627; `engine/docs/equations.md` effective_water_amounts.

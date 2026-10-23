@@ -364,6 +364,8 @@ std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& fe
 }
 
 std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed) {
+    if (model.activity_basis == "molarity" && feed.kind != FeedKind::Amounts)
+        throw std::invalid_argument("molarity feed requires absolute mol amounts");
     if (feed.kind != FeedKind::Amounts && feed.kind != FeedKind::MoleFractions)
         throw std::invalid_argument("ideal mole-fraction feed requires mol or mole fractions");
     require_nonnegative(feed.values, "feed");

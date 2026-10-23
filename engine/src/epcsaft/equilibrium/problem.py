@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
 from .. import _core
 
@@ -33,6 +33,12 @@ class IdealMoleFraction:
         Species identifiers in native order.
     charge_number : tuple of int
         Dimensionless species charges.
+    activity_basis : {"mole_fraction", "molarity"}
+        Dimensionless ideal activity basis, defaulting to mole fractions.
+    solution_volume_m3 : float or None
+        Fixed positive solution volume required for molarity and absolute mol feeds.
+    unit_activity_solvent : str or None
+        Optional neutral species with unit activity on the molarity basis.
     """
 
     def __init__(
@@ -41,8 +47,21 @@ class IdealMoleFraction:
         charge_number: Sequence[int],
         *,
         solver_options: Mapping[str, float] | None = None,
+        activity_basis: Literal["mole_fraction", "molarity"] | None = None,
+        solution_volume_m3: float | None = None,
+        unit_activity_solvent: str | None = None,
     ) -> None:
-        self._model = _core.IdealMoleFraction(component_ids, charge_number, solver_options)
+        self._model = _core.IdealMoleFraction(
+            component_ids,
+            charge_number,
+            solver_options,
+            activity_basis,
+            solution_volume_m3,
+            unit_activity_solvent,
+        )
+        self.activity_basis = self._model.activity_basis
+        self.solution_volume_m3 = self._model.solution_volume_m3
+        self.unit_activity_solvent = self._model.unit_activity_solvent
         self.component_ids = tuple(self._model.component_ids)
         self.charge_number = tuple(self._model.charge_number)
 

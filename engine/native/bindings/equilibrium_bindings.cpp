@@ -37,11 +37,16 @@ void register_equilibrium(nb::module_& module) {
         return asl_property_record(document, *native.thermochemistry(), native.solver_options());
     }, nb::arg("model"));
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+    module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;
     nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")
-        .def("__init__", [](IdealMoleFraction* self, std::vector<std::string> ids, std::vector<int> charges, nb::object options) {
-            new (self) IdealMoleFraction(std::move(ids), std::move(charges), bindings::solver_options(options, 4));
-        }, nb::arg("component_ids"), nb::arg("charge_number"), nb::arg("solver_options").none() = nb::none())
-        EPCSAFT_READONLY(IdealMoleFraction, component_ids, charge_number)
+        .def("__init__", [](IdealMoleFraction* self, std::vector<std::string> ids, std::vector<int> charges, nb::object options,
+            std::optional<std::string> basis, std::optional<double> volume, std::optional<std::string> solvent) {
+            new (self) IdealMoleFraction(std::move(ids), std::move(charges), bindings::solver_options(options, 4),
+                std::move(basis), volume, std::move(solvent));
+        }, nb::arg("component_ids"), nb::arg("charge_number"), nb::arg("solver_options").none() = nb::none(),
+           nb::arg("activity_basis").none() = nb::none(), nb::arg("solution_volume_m3").none() = nb::none(),
+           nb::arg("unit_activity_solvent").none() = nb::none())
+        EPCSAFT_READONLY(IdealMoleFraction, component_ids, charge_number, activity_basis, solution_volume_m3, unit_activity_solvent)
         EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, 4);
     module.def("effective_water_amounts", &effective_water_amounts, nb::arg("model"), nb::arg("result"),
         nb::arg("water"), nb::arg("ions"), nb::arg("molecular_species"));
@@ -131,7 +136,7 @@ void register_equilibrium(nb::module_& module) {
             entropy_j_per_k, critical, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });

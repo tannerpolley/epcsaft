@@ -1740,12 +1740,28 @@ a_i=x_i=\frac{n_i}{N},\quad N=\sum_i n_i,\qquad
 F_r=\sum_i\nu_{ir}\ln x_i-\ln K_r^x(T)=0.
 $$
 
+## `ideal_molarity_reaction`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: IAPWS TGD9-18, Table 2, p.15, 25 °C concentration constants; reaction_activity_quotient and ideal_reaction_amount_coordinates
+- Description: Fixed declared solution volume V in m³ and absolute amounts in mol, with standard concentration c° = 1000 mol/m³. A declared neutral solvent has unit activity; no identifier selects this exception.
+- Change note: Products-positive stoichiometry. The formal proton convention H3O+ = H+ + H2O with unit water activity preserves the numerical source constants. This is ideal concentration chemistry, without EOS density closure or real-solution validation.
+
+$$
+a_i^c=\frac{n_i}{V c^\circ},\quad a_s^c=1\text{ for a declared unit-activity solvent},\qquad
+F_r=\sum_i\nu_{ir}\ln a_i^c-\ln K_r^c(T)=0,\quad c^\circ=1000\ \mathrm{mol\,m^{-3}}.
+\qquad m_s=0,\quad m_i=1\ (i\ne s),\qquad
+\ln a_i^c=m_i[y_i+\ln(N_{\rm ref}/\mathrm{mol})-\ln(Vc^\circ/\mathrm{mol})],\qquad
+\partial_j F_r=\nu_{jr}m_j,\quad\partial_{jk}F_r=0.
+$$
+
 ## `ideal_reaction_amount_coordinates`
 
 - Section: Equilibrium / Amount coordinates
 - Status: Exact derivation
-- Source: ideal_mole_fraction_reaction and material_balance; logarithm and exponential chain rules
-- Description: Log amounts scaled by positive feed mol, with independent conserved null-space rows. There are s coordinates and r+(s-r) equations; charge conservation follows from the neutral feed and charge-conserving reactions.
+- Source: ideal_mole_fraction_reaction, ideal_molarity_reaction and material_balance; logarithm and exponential chain rules
+- Description: Log amounts on either ideal activity basis, scaled by positive feed mol, with independent conserved null-space rows. There are s coordinates and r+(s-r) equations; charge conservation follows from the neutral feed and charge-conserving reactions.
 - Change note: The feasibility objective is zero. No density, phase-amount, normalization or balance-dual coordinate is added. CppAD differentiates the same row expression for the existing Ipopt driver and exact-Jacobian polish.
 
 $$
