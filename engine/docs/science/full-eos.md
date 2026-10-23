@@ -851,7 +851,8 @@ the declared anion retained. Additional anions are admitted: $\theta_{ij}$ is
 independent of the anion, while only the declared $\psi_{ijk}$ is nonzero;
 every other anion triple coefficient is zero as a model assumption
 (Pitzer and Kim, 1974, Eqs. 8, 9 and 11,
-[doi:10.1021/ja00825a004](https://doi.org/10.1021/ja00825a004)).
+[doi:10.1021/ja00825a004](https://doi.org/10.1021/ja00825a004);
+Peiper and Pitzer (1982), J. Chem. Thermodyn. 14, 613–638, Eqs. (7)–(8), Zotero X8GEDSJ2).
 The unequal-charge electrostatic $E\theta$ terms are excluded.
 Transferring chloride-fitted coefficients to sulfate is unvalidated.
 Other neutral components enter this contribution only through
