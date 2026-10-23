@@ -52,6 +52,79 @@ void cation_mixing() {
         CHECK(four.gradient[row] == five.gradient[row]);
         for (std::size_t col = 0; col < 6; ++col) CHECK(four.hessian[row*6+col] == five.hessian[row*7+col]);
     }
+    // #819: fixed dry supports have zero correction; dense transverse entries are storage only.
+    auto dry_plain = neutral;
+    dry_plain.cation_mixing.clear(); dry_plain.cation_pair_mixing.clear(); dry_plain.cation_triple_mixing.clear();
+    const HelmholtzModel dry_model(neutral, active), dry_off(dry_plain);
+    const std::vector<std::vector<double>> supports = {{0, 0, 0, 0, 1}, {0, .1, 0, .1, .8},
+        {0, 0, .1, .2, .7}, {.9, .02, .02, .06, 0}};
+    // Exercise both cached positions and eviction by a third support, in both transition orders.
+    for (const std::size_t index : {3U, 0U, 3U, 0U, 1U, 2U, 3U, 2U, 0U}) {
+        const auto& x = supports[index];
+        const auto cached = dry_model.evaluate(T, 1/1000., x, DerivativeOrder::Hessian);
+        const auto fresh = HelmholtzModel(neutral, active).evaluate(T, 1/1000., x, DerivativeOrder::Hessian);
+        CHECK(cached.value == fresh.value && cached.gradient == fresh.gradient && cached.hessian == fresh.hessian);
+        if (index == 3) continue;
+        const auto old = dry_off.evaluate(T, 1/1000., x, DerivativeOrder::Hessian);
+        CHECK(cached.value == old.value);
+        for (std::size_t row = 0; row < 9; ++row) {
+            CHECK(cached.gradient[row] == (row < 7 ? old.gradient[row] : 0));
+            for (std::size_t col = 0; col < 9; ++col)
+                CHECK(cached.hessian[row*9+col] == (row < 7 && col < 7 ? old.hessian[row*7+col] : 0));
+        }
+        std::vector<detail::AD> variables(x.begin(), x.end());
+        CppAD::Independent(variables);
+        CppAD::ADFun<double> tape(variables, {cation_mixing_helmholtz(variables, neutral)});
+        CHECK(tape.Forward(0, x)[0] == 0);
+        for (const auto value : tape.Jacobian(x)) CHECK(value == 0);
+        for (const auto value : tape.Hessian(x, 0)) CHECK(value == 0);
+        const auto state = dry_model.state_at_pressure(T, 101325, x, DensityBranch::Liquid);
+        CHECK(state.cation_mixing == 0);
+        const auto missing = index == 1 ? 2U : 1U;
+        CHECK(!state.residual_chemical_potential_over_rt[missing]);
+        CHECK(state.component_property_status[missing] == PropertyActionStatus::IonicInsertion);
+        CHECK(state.log_fugacity_coefficient && !(*state.log_fugacity_coefficient)[missing]);
+        if (index != 0) CHECK(state.residual_chemical_potential_over_rt[3-missing]);
+        const auto actions = dry_model.pressure_actions(T, 101325, x, DensityBranch::Liquid,
+            {PropertyObservable::LogFugacityCoefficient}, {{1, 0, {0, 0, 0, 0, 0}, {}}});
+        CHECK(actions.results[missing].status == PropertyActionStatus::IonicInsertion);
+        CHECK(!actions.results[missing].value && !actions.results[missing].action);
+        std::vector<double> insertion(9, 0); insertion[2+missing] = 1;
+        const auto refused = dry_model.residual_energy_action(T, 1/1000., x, {insertion, insertion, insertion});
+        CHECK(!refused.action && refused.status == PropertyActionStatus::IonicInsertion);
+        std::vector<std::vector<double>> directions(3, std::vector<double>(9, 0));
+        for (auto& direction : directions) direction[7] = 1;
+        const auto zero = dry_model.residual_energy_action(T, 1/1000., x, directions);
+        std::printf("dry-action,%zu,status,%d,value,%.17g\n", index, static_cast<int>(zero.status), zero.action.value_or(-999));
+        CHECK(zero.action && *zero.action == 0);
+        std::printf("dry,%zu,correction,%.17g,dense-difference,0,insertion-status,%d\n",
+            index, state.cation_mixing, static_cast<int>(state.component_property_status[missing]));
+    }
+    for (const auto& x : {std::vector<double>{0, .1, .1, .3, .5}, {0, 1e-200, 1e-200, 3e-200, 1}}) {
+        for (const bool zero_coefficients : {false, true}) {
+            auto rejected = neutral;
+            if (zero_coefficients) rejected.cation_pair_mixing[0] = rejected.cation_triple_mixing[0] = 0;
+            bool refused = false;
+            try { (void)cation_mixing_helmholtz(x, rejected); } catch (const std::invalid_argument&) { refused = true; }
+            CHECK(refused);
+        }
+        bool refused = false;
+        try { (void)dry_model.state(T, 1000, x); } catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
+    }
+    // Wet faces retain their analytic insertion and mixed derivative even at very small positive solvent.
+    for (const double solvent : {1.0, 1e-20}) for (const std::size_t missing : {1U, 2U}) {
+        std::vector<double> x = {solvent, .1, .2, .3, .4}; x[missing] = 0;
+        std::vector<detail::AD> variables(x.begin(), x.end());
+        CppAD::Independent(variables);
+        CppAD::ADFun<double> tape(variables, {cation_mixing_helmholtz(variables, neutral)});
+        const double W = mass*solvent, cross = -.4/W + .02*x[3]/(W*W);
+        CHECK(close(tape.Jacobian(x)[missing], x[3-missing]*cross, 1e-12));
+        CHECK(close(tape.Hessian(x, 0)[1*5+2], cross, 1e-12));
+        CHECK(tape.Jacobian(x)[missing] != 0);
+        std::printf("wet-face,%.17g,%zu,insertion,%.17g,mixed,%.17g\n", solvent, missing,
+            tape.Jacobian(x)[missing], tape.Hessian(x, 0)[1*5+2]);
+    }
     neutral.cation_pair_mixing = {-0.2205};
     neutral.cation_triple_mixing = {0.024};
     extended[3] = 1.35;

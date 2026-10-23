@@ -25,6 +25,7 @@ void validate_cation_mixing(const Parameters& parameters);
 // PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
 // Phase Hessians differentiate only V, positive amounts and (unless isothermal) T; other
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
+// Dry cation-mixing transverse entries are defined zero storage, not physical insertion derivatives (full EOS 12).
 // StateHessian keeps the full gradient and T, V and active-parameter Hessian columns.
 enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian };
 
