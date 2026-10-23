@@ -2223,13 +2223,15 @@ $$
 
 - Section: Residual Helmholtz energy
 - Status: Exact derivation
-- Source: Solvent-mass integration of the constant short-range terms in Song et al. (2010), §2, p. 1287, Eqs. (1), (2), (10-1), (10-2), Zotero W3AX2GHK; #658 design D1–D7.
-- Description: One declared neutral solvent s, distinct cations i and j and common anion k; M_s is kg/mol, W is kg solvent, theta is kg/mol and psi is kg²/mol². The reduced molar contribution is Delta a^r = F/N, with N = sum n.
-- Change note: Evaluated in every phase on the declared solvent's molality basis, with positive solvent mass and exactly one anion. Other neutral components enter this contribution only through mole fractions and total-mole normalization; their masses are not added to W. The constant coefficients are qualified only for retained aqueous water/chloride-salt cases at 298.15 K and 1 bar. Occupied additional neutrals and organic-phase effects are unqualified extrapolation, with no phase selector or automatic deactivation; water-free states remain outside the evaluation domain. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients. Full EOS §12 gives an illustrative organic-phase substitution and its limits.
+- Source: Solvent-mass integration of the constant short-range terms in Song et al. (2010), §2, p. 1287, Eqs. (1), (2), (10-1), (10-2), Zotero W3AX2GHK; #658 design D1–D7. Multi-anion indexing: Pitzer and Kim (1974), Eqs. (8), (9), (11), [doi:10.1021/ja00825a004](https://doi.org/10.1021/ja00825a004); like-sign θ independent of the counter-ion and ψ per ion triple as written in Peiper and Pitzer (1982), J. Chem. Thermodyn. 14, 613–638, Eqs. (7)–(8), Zotero X8GEDSJ2.
+- Description: One declared neutral solvent s, distinct cations i and j and declared anion k; M_s is kg/mol, W is kg solvent, theta is kg/mol and psi is kg²/mol². The reduced molar contribution is Delta a^r = F/N, with N = sum n.
+- Change note: Evaluated in every phase on the declared solvent's molality basis, with positive solvent mass and the declared anion retained. Additional anions are admitted: theta_ij is independent of the anion; only the declared psi_ijk is nonzero, with psi_ija = 0 for every other anion as a model assumption. The unequal-charge electrostatic Etheta terms are excluded. Transfer of chloride-fitted coefficients to sulfate is unvalidated. Other neutral components enter this contribution only through mole fractions and total-mole normalization; their masses are not added to W. The constant coefficients are qualified only for retained aqueous water/chloride-salt cases at 298.15 K and 1 bar. Occupied additional neutrals and organic-phase effects are unqualified extrapolation, with no phase selector or automatic deactivation; water-free states remain outside the evaluation domain. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients. Full EOS §12 gives an illustrative organic-phase substitution and its limits.
 
 $$
 F=\frac{\Delta A^r}{RT}
-=\frac{2\theta n_i n_j}{W}+\frac{\psi n_i n_j n_k}{W^2},\quad
+=Wm_im_j\left(2\theta_{ij}+\sum_{a\in\mathcal A}\psi_{ija}m_a\right)
+=\frac{2\theta_{ij}n_i n_j}{W}+\frac{\psi_{ijk}n_i n_j n_k}{W^2},\quad
+\psi_{ija}=0\ (a\ne k),\quad
 W=M_s n_s>0,\quad m_l=\frac{n_l}{W},\qquad
 \Delta a^r=\frac{2\theta x_i x_j}{M_s x_s}
 +\frac{\psi x_i x_j x_k}{(M_s x_s)^2},\quad
