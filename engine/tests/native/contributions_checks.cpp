@@ -613,9 +613,75 @@ void inactive_terms_contribute_nothing() {
         "p5-debye", "inactive", "a^{DH}", "T,\\rho,\\mathbf{x}", "a^{DH}=0", "term");
 }
 
+// Bulow 2019 Eq. (7): a declared water component remains active at zero amount.
+void component_permittivity_zero_solvent() {
+    using AD = CppAD::AD<double>;
+    auto p = electrolyte_fixture();
+    p.charge_number = {0, 1, -1};
+    p.relative_permittivity = {80.0, 11.0, 11.0};
+    p.permittivity_term_component.clear();
+    p.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    const auto record = [](const char* id, double value, double reference,
+                           const std::string& inputs, double tolerance) {
+        recording_support::compare(id, id, "1", value, reference, inputs,
+            "Relationship", "exact_derivative_or_difference", "Bulow Eq. (7) continuation",
+            "absolute", tolerance, 0.0,
+            std::isfinite(value) && std::abs(value - reference) <= tolerance,
+            "component-permittivity", id, id, "t,h,x,n", "Bulow Eq. (7)", "composition");
+    };
+    const auto value = [&](double t) {
+        return epcsaft::bulk_relative_permittivity(298.15, 1000.0,
+            std::vector<double>{t, (1.0 - t) / 2.0, (1.0 - t) / 2.0}, p);
+    };
+    for (double t : {0.0, 1.0e-3, 1.0e-2}) {
+        std::vector<AD> u{t};
+        CppAD::Independent(u);
+        const std::vector<AD> x{u[0], (1.0 - u[0]) / 2.0, (1.0 - u[0]) / 2.0};
+        CppAD::ADFun<double> tape(u, {epcsaft::bulk_relative_permittivity(AD(298.15), AD(1000.0), x, p)});
+        const std::vector<double> path_point{t};
+        const double first = tape.Jacobian(path_point)[0], second = tape.Hessian(path_point, 0)[0];
+        const auto point = recording_support::field("t", t);
+        record("path-first", first, 69.0, point, t == 0.0 ? 1.0e-12 : 1.0e-8);
+        record("path-second", second, 0.0, point, t == 0.0 ? 1.0e-12 : 1.0e-6);
+        for (double h : {t == 0.0 ? 1.0e-3 : t / 4.0, t == 0.0 ? 5.0e-4 : t / 8.0}) {
+            const double f = value(t), plus = value(t + h), twice = value(t + 2.0 * h);
+            const double other = value(t == 0.0 ? 3.0 * h : t - h);
+            const double d1 = t == 0.0 ? (-3.0 * f + 4.0 * plus - twice) / (2.0 * h)
+                                         : (plus - other) / (2.0 * h);
+            const double d2 = t == 0.0 ? (2.0 * f - 5.0 * plus + 4.0 * twice - other) / (h * h)
+                                         : (plus - 2.0 * f + other) / (h * h);
+            const auto inputs = recording_support::fields({point, recording_support::field("h", h),
+                recording_support::field("f", f), recording_support::field("f_plus", plus),
+                recording_support::field("f_twice", twice), recording_support::field("f_other", other)});
+            record("difference-first", d1, first, inputs, 1.0e-8);
+            record("difference-second", d2, second, inputs, 1.0e-4);
+        }
+        const std::vector<double> point_x{t, (1.0 - t) / 2.0, (1.0 - t) / 2.0};
+        for (bool amounts : {false, true}) {
+            std::vector<AD> n(point_x.begin(), point_x.end());
+            CppAD::Independent(n);
+            const AD total = amounts ? n[0] + n[1] + n[2] : AD(1.0);
+            const std::vector<AD> composition{n[0] / total, n[1] / total, n[2] / total};
+            CppAD::ADFun<double> ambient(n, {epcsaft::bulk_relative_permittivity(
+                AD(298.15), AD(1000.0), composition, p)});
+            const auto gradient = ambient.Jacobian(point_x), hessian = ambient.Hessian(point_x, 0);
+            const std::vector<double> a{80.0, 11.0, 11.0};
+            for (std::size_t i = 0; i < 3; ++i) {
+                const auto inputs = recording_support::fields({point,
+                    recording_support::field("amounts", amounts), recording_support::field("i", i)});
+                record("ambient-first", gradient[i], amounts ? a[i] - value(t) : a[i], inputs, 1.0e-8);
+                for (std::size_t j = 0; j < 3; ++j)
+                    record("ambient-second", hessian[3 * i + j], amounts ? 2.0 * value(t) - a[i] - a[j] : 0.0,
+                           recording_support::fields({inputs, recording_support::field("j", j)}), 1.0e-6);
+            }
+        }
+    }
+}
+
 // These references use only the accepted scalar equations, including numerical
 // radial and finite-size integrals; they do not route through the contribution owners.
 void electrolyte_born_and_dielectric_match_independent_equations() {
+    component_permittivity_zero_solvent();
     const double temperature = 320.0, density = 9.0e3;
     const std::vector<double> x = {0.4, 0.3, 0.2, 0.1};
     Parameters p = electrolyte_fixture();

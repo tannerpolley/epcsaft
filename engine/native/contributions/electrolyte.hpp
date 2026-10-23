@@ -151,6 +151,17 @@ Scalar bulk_relative_permittivity(
         if (std::none_of(parameters.charge_number.begin(), parameters.charge_number.end(),
                          [](int charge) { return charge == 0; }))
             return ion_dielectric;
+        if (solvent_mass == Fixed(0.0)) {
+            std::size_t solvent = 0, solvent_count = 0;
+            for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+                if (dielectric_solvent_component(component, parameters)) {
+                    solvent = component;
+                    ++solvent_count;
+                }
+            }
+            if (solvent_count == 1)
+                return mole_fractions[solvent] * relative_permittivity[solvent] + ion_dielectric;
+        }
         // EqID: salt_free_solvent_permittivity
         return dielectric_mass / solvent_mass * solvent_fraction + ion_dielectric;
     }
