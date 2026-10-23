@@ -139,6 +139,8 @@ template <typename Scalar, typename ParameterSet>
 Scalar cation_mixing_helmholtz(const std::vector<Scalar>& x, const ParameterSet& parameters) {
     if (parameters.cation_mixing.empty()) return Scalar(0.0);
     const auto [s, i, j, k] = parameters.cation_mixing.front();
+    if (x[s] == Scalar(0.0) && (x[i] == Scalar(0.0) || x[j] == Scalar(0.0)))
+        return Scalar(0.0);
     const Scalar mass = parameters.molar_mass_kg_per_mol[s] * x[s];
     if (!(mass > Scalar(0.0))) throw std::invalid_argument("cation mixing requires positive solvent mass");
     return 2.0 * parameters.cation_pair_mixing[0] * x[i] * x[j] / mass

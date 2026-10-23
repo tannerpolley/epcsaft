@@ -860,16 +860,35 @@ mole fractions and total-mole normalization; their masses are not added to the
 declared solvent mass. There is no phase selector or automatic deactivation in
 an organic phase. Omitting either cation from
 a component selection omits the term; a zero amount in a retained component set
-keeps its insertion derivatives. With no declaration, arithmetic is unchanged.
+keeps its insertion derivatives when the declared solvent amount is positive.
+With no declaration, arithmetic is unchanged.
 The coefficients are qualified only for retained aqueous water/chloride-salt
 cases at 298.15 K and 1 bar; the #658 Yao
 calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
 mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
 In particular, it has no ideal-gas residual limit at fixed composition.
 Occupied additional neutrals and organic-phase effects are unqualified
-extrapolation. Water-free states and pure-organic reference states remain
-outside the evaluation domain. Other neutral components retain their existing
-effects on the other EOS contributions.
+extrapolation. At exact $x_s=0$, if $x_i=0$ or $x_j=0$, define the contribution
+as zero on that fixed support. Every derivative within that support, including
+thermal, volume and active-coefficient derivatives, is exactly zero. Dense
+arrays store zero transverse mixing entries; these are defined storage, not
+physical insertion derivatives or limits of the aqueous Hessian. In general
+$F_{ij}=2\theta/W+\psi n_k/W^2$ diverges as $W\to0$, so this definition is
+not a continuous full-composition extension. Dry states with both cations
+present remain refused even with zero coefficients or an underflowing cation
+product. The individual exact-zero comparisons introduce no water threshold;
+positive-solvent arithmetic and its positive-mass refusal are unchanged.
+
+Existing `IonicInsertion` refusals for absent-ion actions and for ionic values
+in an uncharged phase remain. In a dry phase containing one participating
+cation, the absent partner's scalar chemical potential and fugacity, including
+fugacity actions, are also unavailable with `IonicInsertion`. Separate scalar
+insertions when both cations are absent do not authorize mixed insertion
+actions. Component support signatures distinguish dry and wet tapes; these
+stored zeros cannot authorize continuation across the dry boundary. This
+admits neutral pure-organic reference evaluations without qualifying organic
+ions or predicting Lithium extraction. Other neutral components retain their
+existing effects on the other EOS contributions.
 
 For an **illustrative**, electroneutral organic-rich composition, take water
 $x_s=10^{-3}$, Li and Mg $x_i=x_j=10^{-6}$, chloride $x_k=3\times10^{-6}$,

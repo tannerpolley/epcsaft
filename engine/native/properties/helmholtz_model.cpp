@@ -586,6 +586,14 @@ std::array<PropertyActionStatus, 2> support_status(
     return {status(support), status(support && multipole)};
 }
 
+bool ionic_insertion_value(const Parameters& p, const std::vector<double>& x, std::size_t component, bool charged) {
+    if (!charged && p.charge_number[component] != 0) return true;
+    if (p.cation_mixing.empty()) return false;
+    const auto [s, i, j, k] = p.cation_mixing.front();
+    return x[s] == 0.0 && ((component == i && x[i] == 0.0 && x[j] > 0.0)
+        || (component == j && x[j] == 0.0 && x[i] > 0.0));
+}
+
 PropertyActionBatch unavailable_batch(
     const std::vector<PropertyObservable>& observables, PropertyActionStatus status,
     std::size_t order, std::size_t components
@@ -1661,7 +1669,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     }
     const bool charged = detail::charged_support(mole_fractions, parameters_);
     for (auto& item : result.results)  // fixed-pressure value, as state_at_pressure, which has no absent-ion value
-        if (is_fugacity(item.observable) && !charged && parameters_.charge_number[*item.component] != 0)
+        if (is_fugacity(item.observable) && ionic_insertion_value(parameters_, mole_fractions, *item.component, charged))
             item = {item.observable, item.component, std::nullopt, std::nullopt, PropertyActionStatus::IonicInsertion, item.energy_order};
         else if (is_fugacity(item.observable) && item.value)
             *item.value -= std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * molar_density));
@@ -1921,7 +1929,7 @@ State HelmholtzModel::state(
     result.component_property_status.assign(mole_fractions.size(), PropertyActionStatus::Available);
     const bool charged = detail::charged_support(mole_fractions, parameters_);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        if (!charged && parameters_.charge_number[component] != 0) {
+        if (ionic_insertion_value(parameters_, mole_fractions, component, charged)) {
             result.component_property_status[component] = PropertyActionStatus::IonicInsertion;
             continue;
         }
