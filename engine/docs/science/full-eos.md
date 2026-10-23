@@ -844,10 +844,17 @@ establishes global equilibrium.
 
 The optional `cation_mixing` declaration adds the empirical solvent-mass
 pair/triple term in EqID `cation_pair_triple_mixing_helmholtz`. It names one
-neutral solvent, two distinct cations and one common anion, with both constant
+neutral solvent, two distinct cations and one declared anion, with both constant
 coefficients supplied explicitly. The term is evaluated in every phase on the
 molality basis of that declared neutral solvent, with positive solvent mass and
-exactly one anion. Other neutral components enter this contribution only through
+the declared anion retained. Additional anions are admitted: $\theta_{ij}$ is
+independent of the anion, while only the declared $\psi_{ijk}$ is nonzero;
+every other anion triple coefficient is zero as a model assumption
+(Pitzer and Kim, 1974, Eqs. 8, 9 and 11,
+[doi:10.1021/ja00825a004](https://doi.org/10.1021/ja00825a004)).
+The unequal-charge electrostatic $E\theta$ terms are excluded.
+Transferring chloride-fitted coefficients to sulfate is unvalidated.
+Other neutral components enter this contribution only through
 mole fractions and total-mole normalization; their masses are not added to the
 declared solvent mass. There is no phase selector or automatic deactivation in
 an organic phase. Omitting either cation from

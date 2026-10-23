@@ -77,6 +77,102 @@ void cation_mixing() {
         std::printf("neutral,%.17g,mass,%.17g,F,%.17g,molar,%.17g,mu,%.17g,%.17g,%.17g,%.17g\n",
             amount, neutral_mass, F, state.cation_mixing, mu[0], mu[1], mu[2], mu[3]);
     }
+    // #814: hand-derived Li-Mg-Cl-SO4 reference, 1 kg water; undeclared sulfate psi is zero.
+    auto sulfate = neutral;
+    const double M = 0.0180153;
+    sulfate.molar_mass_kg_per_mol = {M, 0.00694, 0.024305, 0.035453, 0.09606};
+    sulfate.charge_number[4] = -2;
+    sulfate.relative_permittivity[4] = 0;
+    sulfate.packing_diameter_angstrom[4] = 2.5;
+    sulfate.debye_huckel_diameter_angstrom[4] = 3;
+    auto without = sulfate;
+    without.cation_mixing.clear(); without.cation_pair_mixing.clear(); without.cation_triple_mixing.clear();
+    const HelmholtzModel sulfate_model(sulfate), sulfate_plain(without);
+    const std::vector<double> n = {1/M, 0.2, 0.4, 0.6, 0.2}, scales = {1/M, 1, 1, 1, 1};
+    const double N = std::accumulate(n.begin(), n.end(), 0.0), V = N/30000, F = -0.034128;
+    const std::vector<double> g = {0.032976*M, -0.17064, -0.08532, 0.00192, 0};
+    const std::vector<double> H = {-0.063648*M*M, 0.16488*M, 0.08244*M, -0.00384*M, 0,
+        0.16488*M, 0, -0.4266, 0.0096, 0, 0.08244*M, -0.4266, 0, 0.0048, 0,
+        -0.00384*M, 0.0096, 0.0048, 0, 0, 0, 0, 0, 0, 0};
+    const auto verify = [](const char* quantity, std::size_t row, std::size_t col,
+                           double value, double reference, double scale, double tolerance) {
+        const double error = (value-reference)*scale;
+        std::printf("sulfate,%s,%zu,%zu,%.17g,%.17g,%.17g\n", quantity, row, col, value, reference, error);
+        CHECK(std::abs(error) <= tolerance*std::max(1.0, std::abs(reference*scale)));
+    };
+    std::vector<double> inputs = {T, V}; inputs.insert(inputs.end(), n.begin(), n.end());
+    std::vector<detail::AD> variables(inputs.begin(), inputs.end());
+    CppAD::Independent(variables);
+    CppAD::ADFun<double> isolated(variables, {cation_mixing_helmholtz(
+        std::vector<detail::AD>(variables.begin()+2, variables.end()), sulfate)});
+    const auto gradient = isolated.Jacobian(inputs), hessian = isolated.Hessian(inputs, 0);
+    verify("F", 0, 0, isolated.Forward(0, inputs)[0], F, 1/std::abs(F), 1e-12);
+    const auto on = sulfate_model.evaluate(T, V, n, DerivativeOrder::Hessian);
+    const auto off = sulfate_plain.evaluate(T, V, n, DerivativeOrder::Hessian);
+    verify("full-F", 0, 0, on.value-off.value, F, 1, 1e-10);
+    for (std::size_t row = 0; row < 7; ++row) {
+        const double reference = row < 2 ? 0 : g[row-2], scale = row < 2 ? 1 : scales[row-2];
+        verify("gradient", row, 0, gradient[row], reference, scale, 1e-12);
+        verify("full-gradient", row, 0, on.gradient[row]-off.gradient[row], reference, scale, 1e-10);
+        if (row < 2 || row == 6) CHECK(gradient[row] == 0);
+        for (std::size_t col = 0; col < 7; ++col) {
+            const double expected = row < 2 || col < 2 ? 0 : H[(row-2)*5+col-2];
+            const double factor = scale*(col < 2 ? 1 : scales[col-2]);
+            verify("hessian", row, col, hessian[row*7+col], expected, factor, 1e-12);
+            verify("full-hessian", row, col, on.hessian[row*7+col]-off.hessian[row*7+col], expected, factor, 1e-10);
+            if (row < 2 || col < 2 || row == 6 || col == 6) CHECK(hessian[row*7+col] == 0);
+        }
+    }
+    std::vector<double> composition = {T, 30000};
+    for (const double amount : n) composition.push_back(amount/N);
+    variables.assign(composition.begin(), composition.end());
+    CppAD::Independent(variables);
+    CppAD::ADFun<double> molar(variables, {cation_mixing_helmholtz(
+        std::vector<detail::AD>(variables.begin()+2, variables.end()), sulfate)});
+    const auto gx = molar.Jacobian(composition), hx = molar.Hessian(composition, 0);
+    verify("molar", 0, 0, sulfate_model.state(T, 30000, std::vector<double>(composition.begin()+2, composition.end())).cation_mixing,
+        F/N, N/std::abs(F), 1e-12);
+    const std::vector<double> u = {0, 0, 0, 1, 0, -3, 2};
+    double first = 0, second = 0;
+    for (std::size_t row = 0; row < 7; ++row) {
+        first += gx[row]*u[row];
+        for (std::size_t col = 0; col < 7; ++col) {
+            second += u[row]*hx[row*7+col]*u[col];
+            if (row < 2 || col < 2) CHECK(hx[row*7+col] == 0);
+        }
+        if (row < 2) CHECK(gx[row] == 0);
+    }
+    verify("composition-first", 0, 0, first, -0.1764, 1, 1e-12);
+    verify("composition-second", 0, 0, second, -0.0576*N, 1, 1e-12);
+    for (std::size_t col = 0; col < 7; ++col) {
+        double previous = std::numeric_limits<double>::infinity();
+        for (const double step : {1e-3, 5e-4, 2.5e-4}) {
+            auto plus = inputs, minus = inputs;
+            const double scale = col < 2 ? inputs[col] : scales[col-2], h = step*scale;
+            plus[col] += h; minus[col] -= h;
+            const double fd = (isolated.Forward(0, plus)[0]-isolated.Forward(0, minus)[0])/(2*h);
+            const double error = std::abs((fd-gradient[col])*scale);
+            std::printf("sulfate,fd-gradient,%zu,%.17g,%.17g\n", col, step, error);
+            if (col == 2) CHECK(error <= previous*0.4);
+            if (step == 2.5e-4) CHECK(error <= 1e-7);
+            previous = error;
+            const auto gp = isolated.Jacobian(plus), gm = isolated.Jacobian(minus);
+            for (std::size_t row = 0; row < 7; ++row) {
+                const double e = std::abs(((gp[row]-gm[row])/(2*h)-hessian[row*7+col])*scale*(row < 2 ? inputs[row] : scales[row-2]));
+                std::printf("sulfate,fd-hessian,%zu,%zu,%.17g,%.17g\n", row, col, step, e);
+                if (step == 2.5e-4) CHECK(e <= 1e-7);
+            }
+        }
+    }
+    auto spectator = inputs; spectator[6] += 0.7;
+    CHECK(isolated.Forward(0, spectator)[0] == isolated.Forward(0, inputs)[0]);
+    CHECK(isolated.Jacobian(spectator) == gradient && isolated.Hessian(spectator, 0) == hessian);
+    auto spectator_x = n; spectator_x[4] += 0.7;
+    for (auto& x : spectator_x) x /= N+0.7;
+    verify("spectator-molar", 0, 0, sulfate_model.state(T, 30000, spectator_x).cation_mixing, F/(N+0.7), 1, 1e-12);
+    auto chloride_zero = inputs; chloride_zero[5] = 0; chloride_zero[6] = 0.5;
+    verify("chloride-zero-F", 0, 0, isolated.Forward(0, chloride_zero)[0], -0.03528, 1/0.03528, 1e-12);
+    verify("chloride-insertion", 0, 0, isolated.Jacobian(chloride_zero)[5], 0.00192, 1, 1e-12);
     std::vector<regression::Observation> observations;
     for (const auto& [a, b] : {std::pair{0.2, 0.4}, std::pair{1.2, 2.0}}) {
         const double c = a + 2 * b;

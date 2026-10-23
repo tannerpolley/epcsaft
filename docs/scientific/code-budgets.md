@@ -97,6 +97,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-23, #814 (rule 2): removing the one-anion count requirement adds
+  zero runtime lines and removes two from Properties against `e4d87ac8`.
+  Lower Properties **5,983 → 5,981** (count 5,921 plus band 60) and total
+  **27,800 → 27,798** (the layer-ceiling sum). The equation is unchanged.
+
 - 2026-10-22, #791 (owner approval, 2026-10-22): Equilibrium **10,450 → 10,596**,
   the measured count 10,491 plus band 105, and total **27,654 → 27,800**, the
   layer-ceiling sum, below count 27,576 plus band 276. The approved task allowance
