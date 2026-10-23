@@ -255,6 +255,50 @@ void properties_thermochemistry_p3() {
         2.0, -1200.0, 0.4, -0.003, 300.0, 293.15, 393.15, "P0"
     };
 
+    // PHREEQC v3.9.0 WATEQ4F, H+ + CO3-2 = HCO3-; pinned LK_SPECIES replay (#790).
+    const double ln10 = std::log(10.0), tref_phreeqc = 298.15;
+    const epcsaft::ReactionLogPolynomial bicarbonate{ln10 * 107.8871 - 38.92561 * std::log(tref_phreeqc),
+        ln10 * -5151.79, -38.92561, ln10 * 0.03252849, tref_phreeqc, 298.15, 423.15,
+        "PHREEQC-WATEQ4F", ln10 * 563713.9, 0.0};
+    const std::array<double, 6> phreeqc{10.32885437851, 10.17440127629, 10.12525183557,
+        10.15523535789, 10.24662341286, 10.38703684093};
+    for (std::size_t i = 0; i < phreeqc.size(); ++i) {
+        const double t = 298.15 + 25.0 * i;
+        const double value = epcsaft::evaluate_reaction_properties(bicarbonate, t).ln_k / ln10;
+        recording_support::compare(("p3-reaction/bicarbonate/" + std::to_string(i)).c_str(), "log10_K", "1",
+            value, phreeqc[i], "T=" + std::to_string(t), "Reference", "PHREEQC-LK_SPECIES",
+            "pinned WATEQ4F bicarbonate source law", "absolute", 1e-10, 0.0,
+            std::abs(value - phreeqc[i]) <= 1e-10, "p3-reaction", "bicarbonate");
+    }
+    for (const auto terms : {std::pair{90000.0, 0.0}, std::pair{0.0, 1e-6}, std::pair{90000.0, 1e-6}}) {
+        const epcsaft::ReactionLogPolynomial law{0, 0, 0, 0, 350, 300, 400, "basis-verification", terms.first, terms.second};
+        for (std::size_t order = 1; order <= 3; ++order) {
+            int successive = 0;
+            for (const double h : {0.01, 0.005, 0.0025}) {
+                const double exact = epcsaft::reaction_log_value(law, 350.0, order);
+                const double fd = (epcsaft::reaction_log_value(law, 350.0 + h, order - 1)
+                    - epcsaft::reaction_log_value(law, 350.0 - h, order - 1)) / (2.0 * h);
+                const bool ok = std::abs(exact - fd) <= 1e-7 * std::abs(fd) + 1e-12;
+                successive = ok ? successive + 1 : 0;
+                recording_support::compare(("p3-reaction/terms/" + std::to_string(terms.first) + "/"
+                    + std::to_string(terms.second) + "/" + std::to_string(order) + "/" + std::to_string(h)).c_str(),
+                    "dlnK_dT_order", ("K^-" + std::to_string(order)).c_str(), exact, fd,
+                    "T=350;h=" + std::to_string(h), "Derivative", "central-difference",
+                    "difference of preceding native derivative", "reference_scale", 1e-12, 1e-7, ok,
+                    "p3-reaction", "basis-terms");
+            }
+            CHECK(successive >= 2);
+        }
+    }
+    for (const auto member : {&epcsaft::ReactionLogPolynomial::e, &epcsaft::ReactionLogPolynomial::f}) {
+        auto invalid = correlation;
+        invalid.*member = std::numeric_limits<double>::infinity();
+        bool refused = false;
+        try { (void)epcsaft::evaluate_reaction_properties(invalid, 350.0); }
+        catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
+    }
+
     const auto reaction = epcsaft::evaluate_reaction_properties(correlation, 350.0);
     const double expected_ln_k = 2.0 - 1200.0 / 350.0
         + 0.4 * std::log(350.0 / 300.0) - 0.003 * 350.0;

@@ -185,7 +185,8 @@ version, duplicate species and an invalid gas constant, pressure, coefficient or
 selection's order; it copies the prepared intervals and never rescales again.
 
 Reaction sets come from the caller. `ReactionLogPolynomial` is
-ln K(T) = a + b/T + c ln(T/T_ref) + d T on the Engine standard state
+ln K(T) = a + b/T + c ln(T/T_ref) + d T + e/T² + f T², with trailing optional
+`e=0.0` (K²) and `f=0.0` (K⁻²), on the Engine standard state
 (`EOS_STANDARD_STATE_ID`); a K or correlation on a source basis (molality or
 mole fraction at infinite dilution) also needs `Reaction(reference=ReactionReference(...))`
 and the problem's `neutral_reference`. Data packets carry no complete reaction

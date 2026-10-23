@@ -1,4 +1,5 @@
 #include "equilibrium/stoichiometry.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
@@ -17,6 +18,7 @@
 namespace epcsaft::equilibrium {
 std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& c = *this;
+    if (c.ideal) throw std::invalid_argument("ideal optimizer state unavailable");
     const auto& p = c.model->parameters();
     std::vector<double> id;
     const auto append = [&](const auto& values) { id.push_back(values.size()); for (auto v : values) id.push_back(static_cast<double>(v)); };
@@ -50,6 +52,30 @@ std::vector<Layout> layouts(const CompiledSystem& compiled) {
     return result;
 }
 
+// EqIDs ideal_mole_fraction_reaction and ideal_reaction_amount_coordinates; one expression for all callbacks.
+CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
+    using AD = CppAD::AD<double>;
+    std::vector<AD> y(p.point.begin(), p.point.end()), rows;
+    CppAD::Independent(y);
+    const double shift = *std::max_element(p.point.begin(), p.point.end());
+    AD total = 0.0;
+    for (const auto& value : y) total += CppAD::exp(value - shift);
+    const AD log_total = shift + CppAD::log(total);
+    const auto& support = c.problem.phases[0].support;
+    for (std::size_t r = 0; r < c.problem.reactions.size(); ++r) {
+        AD value = -c.ideal_log_k[r];
+        for (std::size_t j = 0; j < y.size(); ++j)
+            value += c.problem.reactions[r].stoichiometry[support[j]] * (y[j] - log_total);
+        rows.push_back(value);
+    }
+    for (std::size_t k = 0; k < c.rank; ++k) {
+        AD value = -c.balance[k] / c.feed_total;
+        for (std::size_t j = 0; j < y.size(); ++j) value += c.B[k][support[j]] * CppAD::exp(y[j]);
+        rows.push_back(value);
+    }
+    return CppAD::ADFun<double>(y, rows);
+}
+
 void validate_intensive_seed(const FreeValue& value, const char* name) {
     if (!value.free && !value.is_positive()) {
         throw std::invalid_argument(std::string("invalid ") + name);
@@ -62,6 +88,12 @@ void validate_intensive_seed(const FreeValue& value, const char* name) {
 PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
                            const std::vector<double>& composition) {
     const auto& parameters = model.parameters();
+    if (parameters.ideal_gas) {
+        PackingTerms result;
+        result.coefficient = 1.0; // q is log inverse unit-amount volume; composition and T partials vanish.
+        result.component.assign(composition.size(), 0.0);
+        return result;
+    }
     const auto sigma = segment_sigma(temperature, parameters);
     const auto diameter = segment_diameter(temperature, parameters, sigma);
     std::vector<double> sigma_t(sigma.size(), 0.0);
@@ -98,17 +130,18 @@ void check_reference_consistency(
     const ThermochemistryRecord& record, double temperature,
     const std::vector<ReactionSpec>& reactions
 ) {
-    const auto targets = reaction_target_series(temperature, reactions, 2);
+    const auto targets = reaction_target_series(temperature, reactions, 2, &record);
     for (std::size_t row = 0; row < reactions.size(); ++row) {
+        if (reactions[row].uses_species_thermochemistry()) continue;
         const auto species = reaction_thermochemistry_density(
             record, reactions[row].stoichiometry, temperature);
-        if (!species.has_value()) continue;
+        if (species.status != ThermochemistryStatus::Available) continue;
         const double t0 = targets[0][row];
         const double t1 = temperature * targets[1][row];
         const double t2 = temperature * temperature * targets[2][row];
-        const double d0 = t0 - species->gibbs;
-        const double d1 = t1 - (species->gibbs - species->enthalpy);
-        const double d2 = t2 + temperature * species->heat_capacity;
+        const double d0 = t0 - species.gibbs;
+        const double d1 = t1 - (species.gibbs - species.enthalpy);
+        const double d2 = t2 + temperature * species.heat_capacity;
         const double scale = std::sqrt(std::numeric_limits<double>::epsilon())
             * std::max(1.0, std::sqrt(t0 * t0 + t1 * t1 + t2 * t2));
         if (std::sqrt(d0 * d0 + d1 * d1 + d2 * d2) > scale) {
@@ -319,7 +352,7 @@ StandardTerm standard_term(
         return result;
     }
     const auto gibbs = standard_state_series(
-        temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol, order);
+        temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol, order, compiled.model->thermochemistry() ? &*compiled.model->thermochemistry() : nullptr);
     if (compiled.model->thermochemistry().has_value() && !problem.reactions.empty()) {
         check_reference_consistency(*compiled.model->thermochemistry(), temperature,
                                     problem.reactions);
@@ -647,14 +680,14 @@ CppAD::ADFun<double> record_geometry(
         for (std::size_t local = 0; local < spec.support.size(); ++local)
             x[spec.support[local]] = CppAD::exp(u[layout.x[local]]);
         const AD eta = CppAD::exp(u[layout.volume]);
-        const AD volume = packing_fraction_from_geometry(AD(1.0), x, tape_parameters, diameter) / eta;
+        const AD volume = (tape_parameters.ideal_gas ? AD(1.0) : packing_fraction_from_geometry(AD(1.0), x, tape_parameters, diameter)) / eta;
         const AD amount = layout.amount.has_value() ? u[*layout.amount] : AD(spec.amount.fraction) * feed_total;
         output.push_back(T);
         output.push_back(volume);
         output.insert(output.end(), x.begin(), x.end());
         output.insert(output.end(), theta.begin(), theta.end());
         output.push_back(amount);
-        output.push_back(eta);
+        output.push_back(tape_parameters.ideal_gas ? AD(0.0) : eta);
         if (compiled.has_caloric_condition()) {
             const bool h = problem.enthalpy_j.has_value();
             const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0));
@@ -696,7 +729,8 @@ CppAD::ADFun<double> record_geometry(
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
                 row_values[row] = value;
             } else if (item.kind == RowKind::Pressure) {
-                row_values[row] = AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T);
+                row_values[row] = (tape_parameters.ideal_gas ? std::accumulate(x.begin(), x.end(), AD(0.0)) : AD(1.0))
+                    - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T);
             } else if (item.kind == RowKind::Electro) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += AD(charges[species]) * x[species];
@@ -877,7 +911,6 @@ void admit_pins(CompiledSystem& compiled) {
 void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
     const auto& p = compiled.problem;
     if (p.solids.empty()) return;
-    if (p.temperature.free || p.pressure.free) throw std::invalid_argument("solids require fixed T and P");
     const auto& model = *compiled.model;
     const auto& z = model.parameters().charge_number;
     std::vector<std::vector<double>> nu;
@@ -931,6 +964,7 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope, bool parameter_slopes,
                                      std::size_t derivative_order) {
+    if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
     using AD = CppAD::AD<double>;
     ReferenceCalorics result;
@@ -943,6 +977,11 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         result.message = message;
         return result;
     };
+    if (model.parameters().ideal_gas && derivative_order > 3)
+        return refuse(SolvedStateActionStatus::EnergyOrderUnavailable, "ideal-gas fourth-order calorics are deferred");
+    for (std::size_t row = 0; row < problem.reactions.size(); ++row)
+        if (problem.reactions[row].uses_species_thermochemistry())
+            return refuse(SolvedStateActionStatus::ReferenceUnavailable, "species-derived calorics deferred for reaction " + reaction_name(problem.reactions[row], row));
     if (!record)
         return refuse(SolvedStateActionStatus::MissingThermochemistry,
                       "reference calorics need record anchors");
@@ -1117,6 +1156,15 @@ static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
     const std::vector<std::vector<double>>* trial_basis
 ) {
+    if (model.parameters().ideal_gas && (request.phases.size() != 1 || request.phases[0].kind != PhaseKind::Vapor
+        || request.temperature.free || request.pressure.free || !request.solids.empty() || request.discovery
+        || request.enthalpy_j || request.entropy_j_per_k || request.source_reference || request.critical || request.envelope
+        || request.azeotrope || has_reaction_reference(request) || request.phases[0].packing_guess))
+        throw std::invalid_argument("ideal-gas equilibrium requires one vapor at fixed T/P; calorics and phase searches deferred");
+    if (std::any_of(request.reactions.begin(), request.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); })
+        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+            || !request.solids.empty() || request.source_reference || has_reaction_reference(request)))
+        throw std::invalid_argument("species-derived targets require ordinary fixed T/P; calorics and source-reference transfer deferred");
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
     }
@@ -1165,7 +1213,7 @@ static CompiledSystem compile_with_basis(
     std::iota(all.begin(), all.end(), 0);
     for (auto& phase : compiled.problem.phases) {
         const bool omitted = phase.support.empty() && !phase.support_declared;
-        phase.support = resolve_support(phase, all, z);
+        phase.support = resolve_support(phase, all, z, &model.parameters());
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
@@ -1176,13 +1224,8 @@ static CompiledSystem compile_with_basis(
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = compiled.seed_temperature();
     const double pressure_guess = compiled.seed_pressure();
-    const auto central_reactions = central_reference_reactions(
-        model, request, temperature_guess, pressure_guess,
-        compiled.reference_diagnostics, false);
-    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol);
     if (request.temperature.free)
-        if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol))
+        if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
                                         + reaction_name(request.reactions[*row], *row));
     compiled.feed_composition = compiled.n_feed;
@@ -1275,7 +1318,8 @@ static CompiledSystem compile_with_basis(
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
     admit_pins(compiled);
-    admit_solids(compiled, covered);
+    if (!request.solids.empty() && (request.temperature.free || request.pressure.free))
+        throw std::invalid_argument("solids require fixed T and P");
     const auto& phases = compiled.problem.phases;
     const auto pinned = [](const PhaseSpec& phase) { return phase.is_pinned(); };
     compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
@@ -1308,12 +1352,23 @@ static CompiledSystem compile_with_basis(
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& spec = phases[phase];
         if (std::none_of(spec.support.begin(), spec.support.end(), [&](std::size_t i) { return z[i] != 0; })) continue;
-        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) rowless = true;
+        if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) {
+            if (!trial_basis && spec.kind == PhaseKind::Vapor)
+                throw std::invalid_argument("charged vapor cannot be the omitted-charge phase");
+            rowless = true;
+        }
         else {
+            if (spec.kind == PhaseKind::Vapor) compiled.log_charge_rows.emplace_back(compiled.rows.size(), phase);
             compiled.rows.push_back({RowKind::Electro, phase, 0});
             ++compiled.charge_row_count;
         }
     }
+    const auto central_reactions = central_reference_reactions(
+        model, request, temperature_guess, pressure_guess,
+        compiled.reference_diagnostics, false);
+    // central_reference_reactions refuses supplied standard Gibbs with a source reference.
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
+    admit_solids(compiled, covered);
     for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
@@ -1329,6 +1384,10 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({kind, 0, i});
     }
     for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
+    if (trial_basis && phases[0].kind == PhaseKind::Vapor && compiled.has_ions)
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+            if (compiled.rows[row].kind == RowKind::Moiety && compiled.rows[row].index == 1)
+                compiled.log_charge_rows.emplace_back(row, 0);
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
@@ -1359,6 +1418,86 @@ void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>
             phase.composition_guess.push_back(guess[i]);
 }
 
+IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
+                                   policy::SolverOptions options)
+    : component_ids(std::move(ids)), charge_number(std::move(charges)), solver_options(std::move(options)) {
+    if (component_ids.empty() || component_ids.size() != charge_number.size())
+        throw std::invalid_argument("ideal species/charge size");
+    auto sorted = component_ids;
+    std::sort(sorted.begin(), sorted.end());
+    if (sorted.front().empty() || std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end())
+        throw std::invalid_argument("ideal species identifiers must be nonempty and unique");
+}
+
+CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
+    core::Scope scope("compile_problem");
+    if (!request.topology_declared || request.discovery || request.phases.size() != 1
+        || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
+        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+        || request.critical || request.envelope || request.azeotrope || !request.solids.empty()
+        || request.phases[0].packing_guess)
+        throw std::invalid_argument("ideal mole-fraction model requires one free liquid at fixed T/P without EOS conditions");
+    validate_intensive_seed(request.temperature, "temperature");
+    validate_intensive_seed(request.pressure, "pressure");
+    if (request.source_reference || !request.standard_gibbs_j_per_mol.empty())
+        throw std::invalid_argument("ideal mole-fraction model refuses species standard Gibbs and neutral references");
+    CompiledSystem c;
+    c.ideal = &model; c.problem = request;
+    c.problem.solver_options = request.solver_options.resolved(model.solver_options);
+    c.n_feed = resolve_feed(model, request.feed);
+    c.feed_total = sum(c.n_feed);
+    c.feed_composition = c.n_feed;
+    for (double& value : c.feed_composition) value /= c.feed_total;
+    const std::vector<double> z(model.charge_number.begin(), model.charge_number.end());
+    if (!exact_zero_dot(z, c.n_feed)) throw std::invalid_argument("ideal feed carries net z");
+    c.B = balance_basis(c.n_feed.size(), request.reactions);
+    c.rank = c.B.size(); c.balance = matvec(c.B, c.n_feed);
+    c.has_reaction = !request.reactions.empty();
+    c.has_ions = std::any_of(z.begin(), z.end(), [](double value) { return value != 0.0; });
+    c.conserves_total_moles = conserves_total_moles(c.B);
+    for (const auto& reaction : request.reactions) {
+        if (reaction.reference || reaction.affinity_j_per_mol)
+            throw std::invalid_argument("ideal mole-fraction model refuses reaction references and affinities");
+        if (!exact_zero_dot(z, reaction.stoichiometry)) throw std::invalid_argument("reaction violates z: " + reaction.name);
+    }
+    const auto targets = reaction_target_series(request.temperature.value, request.reactions, 0, nullptr,
+                                                IDEAL_MOLE_FRACTION_STANDARD_STATE_ID);
+    for (double target : targets[0]) c.ideal_log_k.push_back(-target / (GAS_CONSTANT_J_PER_MOL_K * request.temperature.value));
+    std::vector<std::size_t> all(c.n_feed.size()); std::iota(all.begin(), all.end(), 0);
+    auto& phase = c.problem.phases[0];
+    phase.support = resolve_support(phase, all, model.charge_number);
+    c.declared_supports = {phase.support};
+    const auto participating = reaction_participants(c.n_feed.size(), request.reactions);
+    for (std::size_t i : all)
+        if ((participating[i] || c.n_feed[i] > 0.0) && !std::count(phase.support.begin(), phase.support.end(), i))
+            throw std::invalid_argument("ideal species has no support: " + model.component_ids[i]);
+    c.inventory_upper_bounds.assign(all.size(), 0.0);
+    std::vector<bool> retained(all.size(), false);
+    for (const auto& bound : inventory_bounds(c, phase.support, false, 0.0)) {
+        if (bound.status != "optimal" || !bound.feed_normalized_amount)
+            throw std::invalid_argument("ideal inventory " + bound.status + ": " + bound.termination);
+        c.inventory_upper_bounds[bound.species] = *bound.feed_normalized_amount;
+        retained[bound.species] = *bound.maximum > 0.0;
+        if (!retained[bound.species] && participating[bound.species])
+            throw std::invalid_argument("inventory_face: reacting species forced absent: " + model.component_ids[bound.species]);
+    }
+    if (!phase.composition_guess.empty() && phase.composition_guess.size() != phase.support.size())
+        throw std::invalid_argument("ideal composition guess size");
+    const auto declared = phase.support;
+    phase.support.erase(std::remove_if(phase.support.begin(), phase.support.end(), [&](auto i) { return !retained[i]; }), phase.support.end());
+    restrict_composition_guess(phase, declared);
+    if (phase.support.empty()) throw std::invalid_argument("empty ideal inventory support");
+    if (phase.support.size() != all.size()) restrict_inventory_balances(c, retained);
+    for (auto i : all) if (!retained[i]) c.removed_species.push_back(i);
+    c.primal_size = phase.support.size(); c.amount_coordinates.resize(c.primal_size);
+    std::iota(c.amount_coordinates.begin(), c.amount_coordinates.end(), 0);
+    for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({RowKind::ReactionMassAction, 0, r});
+    for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
+    const auto info = inspect_sensitivity(c, c.generic_point());
+    c.jacobian_rank = info.rank; c.generic_nullity = c.primal_size - info.rank; c.feasible = info.nonsingular;
+    return c;
+}
+
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
     core::Scope scope("compile_problem");
     return compile_with_basis(model, request, nullptr);
@@ -1368,6 +1507,7 @@ CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumPro
 CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, double P,
     const PhaseSpec& phase, const std::vector<double>& w, const std::vector<double>& c,
     std::vector<std::vector<double>>& transformation) {
+    if (model.parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability trial compilation is deferred");
     core::Scope scope("compile_problem");
     const auto& support = phase.support;
     const auto& z = model.parameters().charge_number;
@@ -1375,26 +1515,35 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     Eigen::MatrixXd physical(has_charge ? 2 : 1, support.size());
     physical.row(0).setOnes();
     if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
-    const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
-    std::vector<ReactionSpec> directions;
-    if (support.size() > static_cast<std::size_t>(physical.rows())) {
-        for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
-            ReactionSpec direction;
-            direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
-            // Only the basis owner's input validation consumes this zero target.
-            // These directions never enter the trial's reaction declaration.
-            direction.affinity_j_per_mol = 0.0;
-            directions.push_back(std::move(direction));
-        }
-    }
-    const auto reduced = balance_basis(support.size(), directions);
-    std::vector<std::vector<double>> B(reduced.size(), std::vector<double>(w.size(), 0.0));
+    std::vector<std::vector<double>> B;
     transformation.clear();
-    for (std::size_t k = 0; k < B.size(); ++k) {
-        for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
-        const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
-            Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
-        transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+    if (has_charge && phase.kind == PhaseKind::Vapor) {
+        B.assign(2, std::vector<double>(w.size(), 0.0));
+        for (std::size_t i = 0; i < support.size(); ++i) {
+            B[0][support[i]] = 1.0; B[1][support[i]] = z[support[i]];
+        }
+        transformation = {{1.0, 0.0}, {0.0, 1.0}};
+    } else {
+        const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+        std::vector<ReactionSpec> directions;
+        if (support.size() > static_cast<std::size_t>(physical.rows())) {
+            for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
+                ReactionSpec direction;
+                direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
+                // Only the basis owner's input validation consumes this zero target.
+                // These directions never enter the trial's reaction declaration.
+                direction.affinity_j_per_mol = 0.0;
+                directions.push_back(std::move(direction));
+            }
+        }
+        const auto reduced = balance_basis(support.size(), directions);
+        B.assign(reduced.size(), std::vector<double>(w.size(), 0.0));
+        for (std::size_t k = 0; k < B.size(); ++k) {
+            for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
+            const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+                Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
+            transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+        }
     }
     EquilibriumProblem request;
     request.temperature = FreeValue::fixed(T); request.pressure = FreeValue::fixed(P);
@@ -1408,6 +1557,17 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
 
 std::vector<double> CompiledSystem::generic_point() const {
     core::Scope scope("equilibrium_generic_point");
+    if (ideal) {
+        std::vector<double> point;
+        const auto& phase = problem.phases[0];
+        const auto& guess = phase.composition_guess;
+        if (!guess.empty() && (guess.size() != phase.support.size() || !all_numeric(guess)
+            || *std::min_element(guess.begin(), guess.end()) <= 0.0 || std::abs(sum(guess) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value))
+            throw std::invalid_argument("invalid ideal composition guess");
+        for (auto i : phase.support) point.push_back(std::log(inventory_upper_bounds[i] / phase.support.size()));
+        if (!guess.empty()) for (std::size_t j = 0; j < point.size(); ++j) point[j] = std::log(guess[j]);
+        return point;
+    }
     const auto shape = layouts(*this);
     std::vector<double> point(primal_size + rank + charge_row_count, 0.0);
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
@@ -1421,7 +1581,9 @@ std::vector<double> CompiledSystem::generic_point() const {
         for (const std::size_t coordinate : shape[phase].x)
             point[coordinate] = std::log(point[coordinate] / total);
         if (shape[phase].amount.has_value()) point[*shape[phase].amount] = 1.0;
-        point[shape[phase].volume] = std::log(0.25 + 0.05 * static_cast<double>(phase));
+        point[shape[phase].volume] = model->parameters().ideal_gas
+            ? std::log(seed_pressure() / (GAS_CONSTANT_J_PER_MOL_K * seed_temperature()))
+            : std::log(0.25 + 0.05 * static_cast<double>(phase));
     }
     for (std::size_t i = 0; i < mode_count; ++i)  // a generic mode direction, aligned with no axis
         point[mode_offset() + i] = (1.0 + 0.29 * static_cast<double>(i)) / static_cast<double>(mode_count + 1);
@@ -1432,6 +1594,7 @@ std::vector<double> CompiledSystem::generic_point() const {
 }
 
 std::vector<std::size_t> CompiledSystem::phase_offsets() const {
+    if (ideal) return {0};
     std::vector<std::size_t> result;
     for (const auto& item : layouts(*this)) result.push_back(item.x.front());
     return result;
@@ -1441,6 +1604,22 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
+    }
+    if (ideal) {
+        if (point.size() != primal_size) throw std::invalid_argument("ideal amount coordinate count");
+        PhasePoint result; result.point = point;
+        result.temperature = problem.temperature.value; result.pressure = problem.pressure.value;
+        std::vector<double> amounts(n_feed.size(), 0.0);
+        for (std::size_t j = 0; j < point.size(); ++j) {
+            const double amount = feed_total * std::exp(point[j]);
+            if (!std::isfinite(amount) || amount <= 0.0) throw std::invalid_argument("invalid ideal amount");
+            amounts[problem.phases[0].support[j]] = amount;
+        }
+        const double total = sum(amounts);
+        if (!std::isfinite(total) || total <= 0.0) throw std::invalid_argument("invalid ideal total amount");
+        for (double& amount : amounts) amount /= total;
+        result.composition.push_back(std::move(amounts)); result.amount.push_back(total);
+        return result;
     }
     const std::size_t components = model->parameters().component_count();
     PhasePoint result;
@@ -1463,7 +1642,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
         if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
         result.packing.push_back(packing_terms(*model, result.temperature, values));
         result.eta.push_back(std::exp(point[layout.volume]));
-        if (log_packing_unbounded() && !admitted_packing_fraction(result.eta.back()))
+        if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(result.eta.back()))
             throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");
         result.volume.push_back(result.packing.back().coefficient / result.eta.back());
         result.amount.push_back(layout.amount.has_value()
@@ -1487,6 +1666,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
 
 PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     core::Scope scope("equilibrium_evaluate");
+    if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
     const auto& shape = prepared.shape;
     const std::size_t components = model->parameters().component_count();
@@ -1531,7 +1711,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = prepared.derivative[row.phase];
             value = volume[row.phase] * (
-                1.0 / volume[row.phase] - derivative.gradient[1] - prepared.pressure / rt);
+                (model->parameters().ideal_gas ? sum(x[row.phase]) : 1.0) / volume[row.phase] - derivative.gradient[1] - prepared.pressure / rt);
         } else if (row.kind == RowKind::Moiety) {
             for (std::size_t phase = 0; phase < shape.size(); ++phase) {
                 for (std::size_t species = 0; species < components; ++species) {
@@ -1595,6 +1775,9 @@ std::vector<double> CompiledSystem::classified_residuals(
     const PhasePoint& prepared, const std::vector<double>& values
 ) const {
     std::vector<double> result = trace_moiety_relative(prepared, values);
+    const auto numerical = log_charge_rows.empty() ? result : numerical_rows(prepared, values);
+    for (const auto& [row, phase] : log_charge_rows)
+        result[row] = std::copysign(std::max(std::abs(result[row]), std::abs(numerical[row])), numerical[row]);
     if (feasibility_cell() || values.size() != rows.size()) return result;
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const auto& item = rows[row];
@@ -1629,6 +1812,39 @@ std::vector<double> CompiledSystem::trace_moiety_relative(
     return values;
 }
 
+// Numerical charge representation only; physical equations and Ipopt derivatives remain unchanged.
+std::vector<double> CompiledSystem::numerical_rows(
+    const PhasePoint& prepared, std::vector<double> values, std::size_t width
+) const {
+    values = trace_moiety_relative(prepared, std::move(values), width);
+    for (const auto& [row, phase] : log_charge_rows) {
+        const auto& z = model->parameters().charge_number;
+        const auto& shape = prepared.shape[phase];
+        const auto& support = problem.phases[phase].support;
+        double logarithm[2];
+        for (int sign = 0; sign < 2; ++sign) {
+            double largest = -INFINITY, sum = 0.0;
+            for (std::size_t j = 0; j < support.size(); ++j)
+                if (z[support[j]] && (z[support[j]] > 0) == (sign == 0))
+                    largest = std::max(largest, prepared.point[shape.x[j]] + std::log(std::abs(z[support[j]])));
+            for (std::size_t j = 0; j < support.size(); ++j)
+                if (z[support[j]] && (z[support[j]] > 0) == (sign == 0))
+                    sum += std::exp(prepared.point[shape.x[j]] + std::log(std::abs(z[support[j]])) - largest);
+            logarithm[sign] = largest + std::log(sum);
+        }
+        if (width == 1) values[row] = logarithm[0] - logarithm[1];
+        else {
+            std::fill_n(values.begin() + row * width, width, 0.0);
+            for (std::size_t j = 0; j < support.size(); ++j) {
+                const int charge = z[support[j]];
+                if (charge) values[row * width + shape.x[j]] = std::copysign(std::exp(
+                    prepared.point[shape.x[j]] + std::log(std::abs(charge)) - logarithm[charge < 0]), charge);
+            }
+        }
+    }
+    return values;
+}
+
 double CompiledSystem::classified_residual_norm(const std::vector<double>& point) const {
     const auto prepared = prepare(point);
     return maximum_abs(classified_residuals(prepared, evaluate_at(prepared).values));
@@ -1640,6 +1856,7 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
 
 std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) const {
     core::Scope scope("equilibrium_jacobian");
+    if (ideal) return ideal_rows(*this, prepared).Jacobian(prepared.point);
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     const auto& compositions = prepared.composition;
@@ -1706,7 +1923,8 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                 const double dv = packings[row.phase].component[component] / prepared.eta[row.phase];
                 at(row_index, shape[row.phase].x[local]) =
                     -volumes[row.phase] * derivative.hessian[width + 2 + component]
-                        * compositions[row.phase][component] + physical_v * dv;
+                        * compositions[row.phase][component] + physical_v * dv
+                        + (model->parameters().ideal_gas ? compositions[row.phase][component] : 0.0);
             }
             at(row_index, shape[row.phase].volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) = -derivative.hessian[width]
@@ -1922,6 +2140,7 @@ RowSeries CompiledSystem::row_series(
     const std::vector<double>& control, std::size_t order
 ) const {
     core::Scope scope("equilibrium_row_series");
+    if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const std::size_t n = prepared.point.size();
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = control_width(), extended = extended_control_width();
@@ -2175,6 +2394,12 @@ RowSeries CompiledSystem::row_series(
 std::vector<double> CompiledSystem::constraint_hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
 ) const {
+    if (ideal) {
+        if (!constraint_multipliers.empty() && constraint_multipliers.size() != rows.size())
+            throw std::invalid_argument("constraint multiplier count");
+        return ideal_rows(*this, prepared).Hessian(prepared.point,
+            constraint_multipliers.empty() ? std::vector<double>(rows.size(), 0.0) : constraint_multipliers);
+    }
     if (feasibility_cell()) return pinned_hessian(*this, prepared, constraint_multipliers);
     const auto& point = prepared.point;
     const std::size_t n = point.size();

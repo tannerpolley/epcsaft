@@ -109,3 +109,11 @@ Source: `ARCHITECTURE.yaml` project map
 **Qualification**:
 Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check.
 Source: `docs/scientific/CONTEXT.md` "The project map" (leaf issues record unqualified capability) and "Review rules"
+
+**Ideal mole-fraction activity**:
+The dimensionless activity $a_i=x_i$ with standard fraction one and unit activity coefficient.
+Source: Nasrifar and Tafazzol (2010), Eq. (11) and section 6; `engine/docs/equations.md` ideal_mole_fraction_reaction.
+
+**Effective-water amount**:
+The free water amount plus all declared ionic species amounts, used with preserved free molecular amounts.
+Source: Nasrifar and Tafazzol (2010), section 6, p.7627; `engine/docs/equations.md` effective_water_amounts.

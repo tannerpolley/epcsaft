@@ -24,6 +24,41 @@ class _Model(_Species, Protocol):
     _model: _core.HelmholtzModel
 
 
+class IdealMoleFraction:
+    """Ideal liquid activities with explicit species order and dimensionless charges.
+
+    Attributes
+    ----------
+    component_ids : tuple of str
+        Species identifiers in native order.
+    charge_number : tuple of int
+        Dimensionless species charges.
+    """
+
+    def __init__(
+        self,
+        component_ids: Sequence[str],
+        charge_number: Sequence[int],
+        *,
+        solver_options: Mapping[str, float] | None = None,
+    ) -> None:
+        self._model = _core.IdealMoleFraction(component_ids, charge_number, solver_options)
+        self.component_ids = tuple(self._model.component_ids)
+        self.charge_number = tuple(self._model.charge_number)
+
+
+def effective_water_amounts(
+    model: IdealMoleFraction,
+    result: _core.EquilibriumResult,
+    *,
+    water: str,
+    ions: Sequence[str],
+    molecular_species: Sequence[str],
+) -> dict[str, float]:
+    """Return native effective-water and preserved free molecular amounts in mol."""
+    return _core.effective_water_amounts(model._model, result, water, ions, molecular_species)
+
+
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
     """Declare a free temperature, pressure or phase amount.
@@ -89,8 +124,8 @@ class Phase:
         Phase identifier used by observations and returned phase order.
     support : sequence of str or None
         Species with phase coordinates; omitted support is completed natively.
-        Vapor completion excludes charged species. An explicit empty support
-        or a vapor support containing a charged species is refused at compile.
+        Vapor completion excludes charged species. Explicit charged vapor requires
+        DensityTemperature permittivity; an explicit empty support is refused.
     amount : Free or Pinned
         Free amount solved in mol, or pinned fraction of compiled feed mol.
         Default is ``Free()``; phase-amount guesses are not supported.
@@ -444,8 +479,9 @@ class Reaction:
 
     Notes
     -----
-    Construction raises ``ParameterError`` unless exactly one of K, affinity
-    and correlation is supplied. Native compilation checks stoichiometry,
+    With no K, affinity or correlation, native compilation derives targets from
+    participating species thermochemistry. More than one supplied target raises
+    ``ParameterError``. Native compilation checks stoichiometry,
     reference consistency and source applicability. The EOS activity is
     ``(rho*x_i / (1 mol/m³))*exp(mu_res_i/(RT))``; K is the product of these
     activities raised to signed stoichiometric coefficients (ALG-EQUILIBRIUM).
@@ -467,8 +503,8 @@ class Reaction:
     reference: _core.ReactionReference | None = None
 
     def __post_init__(self) -> None:
-        if sum(item is not None for item in (self.equilibrium_constant, self.affinity_j_per_mol, self.correlation)) != 1:
-            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
+        if sum(item is not None for item in (self.equilibrium_constant, self.affinity_j_per_mol, self.correlation)) > 1:
+            raise _core.ParameterError("reaction admits at most one equilibrium_constant, affinity_j_per_mol or correlation")
         self.name = "" if self.name is None else self.name
 
 
@@ -875,7 +911,7 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
 
 
 def solve_equilibrium(
-    model: _Model,
+    model: _Model | IdealMoleFraction,
     problem: Problem | _core.EquilibriumProblem,
     start: _core.EquilibriumResult | None = None,
 ) -> _core.EquilibriumResult:
@@ -915,7 +951,7 @@ def solve_equilibrium(
     return _core.solve_equilibrium(model._model, native, start)
 
 
-def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
+def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
     """Compile a physical equilibrium declaration for reuse and exact actions.
 
     Parameters
@@ -1009,7 +1045,8 @@ def continue_equilibrium(
     return _core.continue_equilibrium(model._model, request)
 
 
-def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None,
+                 vapor_support: Sequence[str] | None = None) -> Problem:
     """Declare an isothermal bubble point with free pressure.
 
     Parameters
@@ -1022,6 +1059,8 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
         Feed declaration with explicit amounts/fractions/molality basis.
     reactions : sequence of Reaction, optional
         Reaction declarations; ``None`` means no reactions.
+    vapor_support : sequence of str, optional
+        Explicit vapor species; ``None`` keeps neutral-only completion.
 
     Returns
     -------
@@ -1035,8 +1074,9 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
     admitted phase kinds, supports, reactions and boundary existence.
     """
     reactions = () if reactions is None else reactions
+    vapor = Phase("V", kind="vapor", support=vapor_support, amount=Pinned(0.0))
     return Problem(
-        phases=[liquid, Phase("V", kind="vapor", amount=Pinned(0.0))],
+        phases=[liquid, vapor],
         T=T,
         P=Free(),
         feed=feed,

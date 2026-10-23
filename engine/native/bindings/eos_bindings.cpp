@@ -92,11 +92,11 @@ void register_thermal_inputs(nb::module_& module) {
         .def(nb::init<double, std::vector<std::vector<IdealInterval>>>(), nb::arg("standard_pressure"), nb::arg("component_intervals"))
         EPCSAFT_READWRITE(ThermochemistryRecord, standard_pressure, component_intervals);
     nb::class_<ReactionLogPolynomial>(module, "ReactionLogPolynomial")
-        .def(nb::init<double, double, double, double, double, double, double, std::string>(), nb::arg("a"), nb::arg("b"), nb::arg("c"), nb::arg("d"),
+        .def(nb::init<double, double, double, double, double, double, double, std::string, double, double>(), nb::arg("a"), nb::arg("b"), nb::arg("c"), nb::arg("d"),
             nb::arg("reference_temperature"), nb::arg("temperature_min"),
-            nb::arg("temperature_max"), nb::arg("standard_state_id"))
+            nb::arg("temperature_max"), nb::arg("standard_state_id"), nb::arg("e") = 0.0, nb::arg("f") = 0.0)
         EPCSAFT_READWRITE(ReactionLogPolynomial, a, b, c, d, reference_temperature, temperature_min, temperature_max,
-            standard_state_id);
+            standard_state_id, e, f);
     nb::enum_<ParameterFamily>(module, "ParameterFamily")
         EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
             DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
@@ -127,6 +127,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)
         .def_prop_ro("site_count", &epcsaft::Parameters::site_count)
+        .def_ro("ideal_gas", &epcsaft::Parameters::ideal_gas)
         .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order")
         .def_ro("temperature_law_coefficient_identities", &epcsaft::Parameters::temperature_law_coefficient_identity,
             "source identity of each TemperatureLawCoefficient slot");
@@ -177,6 +178,11 @@ void register_eos(nb::module_& module) {
             density_action, density_mixed_action, density_message, density_convergence, density_status);
     nb::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
         EPCSAFT_VALUES(epcsaft::ThermochemistryStatus, MissingRecord, Available, OutsideInterval, Nonfinite);
+    nb::class_<epcsaft::ReactionThermochemistry>(module, "ReactionThermochemistry")
+        EPCSAFT_READONLY(epcsaft::ReactionThermochemistry, gibbs, enthalpy, heat_capacity, pressure_gibbs, ln_k_pressure, ln_k_density,
+            k_pressure, k_density, gibbs_derivatives, status, cause);
+    module.def("reaction_thermochemistry_density", &epcsaft::reaction_thermochemistry_density,
+        nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
     nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
         EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,

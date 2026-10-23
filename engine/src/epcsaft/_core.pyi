@@ -14,6 +14,7 @@ from typing import Any, Mapping, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 """Molar gas constant in J/(mol K), fixed by the native physical_constants owner."""
+IDEAL_MOLE_FRACTION_STANDARD_STATE_ID: str
 EOS_STANDARD_STATE_ID: str
 """Native reaction activity identity: (rho*x/(1 mol/m^3))*exp(mu_res/(RT)), dimensionless."""
 
@@ -319,6 +320,7 @@ class Parameters:
     -----
     Lengths used throughout this module are n = component_count, s = site_count, and a = the number of active parameter directions. Construction uses build_parameters, not direct mutation.
     """
+    ideal_gas: bool
     @property
     def component_count(self) -> int:
         """Read the number of declared components.
@@ -689,7 +691,7 @@ class ThermochemistryRecord:
         ...
 
 class ReactionLogPolynomial:
-    """Source equilibrium law ln K = a + b/T + c ln(T/Tref) + d T.
+    """Source equilibrium law ln K = a + b/T + c ln(T/Tref) + d T + e/T² + f T².
 
     Notes
     -----
@@ -711,8 +713,13 @@ class ReactionLogPolynomial:
     """Inclusive upper validity temperature in K."""
     standard_state_id: str
     """Identity of the source activity standard; K is dimensionless on this standard."""
+    e: float
+    """Inverse-square-temperature coefficient, K²; defaults to zero."""
+    f: float
+    """Square-temperature coefficient, 1/K²; defaults to zero."""
     def __init__(self, a: float, b: float, c: float, d: float, reference_temperature: float,
-                 temperature_min: float, temperature_max: float, standard_state_id: str) -> None:
+                 temperature_min: float, temperature_max: float, standard_state_id: str,
+                 e: float = 0.0, f: float = 0.0) -> None:
         """Initialize ReactionLogPolynomial from the declared inputs.
 
         Parameters
@@ -733,6 +740,10 @@ class ReactionLogPolynomial:
             Initial value of ReactionLogPolynomial.temperature_max; see its attribute description for units and ordering.
         standard_state_id : str
             Initial value of ReactionLogPolynomial.standard_state_id; see its attribute description for units and ordering.
+        e : float
+            Inverse-square-temperature coefficient in K².
+        f : float
+            Square-temperature coefficient in 1/K².
 
         Returns
         -------
@@ -1091,6 +1102,46 @@ class DensityBranch:
             Integer enum value; see the module enum-property convention.
         """
         ...
+
+class ReactionThermochemistry:
+    """Species-contracted reaction standards at the requested temperature.
+
+    Values are defined only with Available status. Gibbs energy and enthalpy use
+    J/mol of reaction, heat capacity J/(mol K), and Gibbs derivatives J/(mol K**k).
+    Density standard is 1 mol/m³; pressure standard is the declared record pressure.
+    ln K is dimensionless; K is absent if exponentiation is not positive and finite.
+    Unavailable results retain the component, temperature and cause in ``cause``.
+    """
+    gibbs: float
+    enthalpy: float
+    heat_capacity: float
+    pressure_gibbs: float
+    ln_k_pressure: float
+    ln_k_density: float
+    k_pressure: float | None
+    k_density: float | None
+    gibbs_derivatives: list[float]
+    status: ThermochemistryStatus
+    cause: str
+
+def reaction_thermochemistry_density(record: ThermochemistryRecord, stoichiometry: Sequence[float], temperature: float) -> ReactionThermochemistry:
+    """Contract participant records and convert pressure to density standards natively.
+
+    Parameters
+    ----------
+    record : ThermochemistryRecord
+        Thermal records in native component order, with pressure standard in Pa.
+    stoichiometry : Sequence[float]
+        Products positive, in the same component order.
+    temperature : float
+        Requested temperature in K.
+
+    Returns
+    -------
+    ReactionThermochemistry
+        Available reaction values or the retained source-unavailability cause.
+    """
+    ...
 
 class ThermochemistryStatus:
     """Availability of ideal-gas thermochemistry at the state temperature.
@@ -2513,6 +2564,8 @@ class RowKind:
     -----
     Native enum name/value properties follow the module convention in epcsaft._core.
     """
+    ReactionMassAction: RowKind
+    """Direct logarithmic mole-fraction mass action, dimensionless."""
     Chemical: RowKind
     """Chemical-potential stationarity, normalized by RT."""
     Pressure: RowKind
@@ -2561,6 +2614,14 @@ class PointEvaluation:
     """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis; a value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
+
+class IdealMoleFraction:
+    component_ids: list[str]
+    charge_number: list[int]
+    solver_options: list[dict[str, Any]]
+    def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ...) -> None: ...
+
+def effective_water_amounts(model: IdealMoleFraction, result: EquilibriumResult, water: str, ions: Sequence[str], molecular_species: Sequence[str]) -> dict[str, float]: ...
 
 class CompiledSystem:
     """Admitted equilibrium chart and exact defining-equation readers.
@@ -3324,7 +3385,7 @@ def linear_solver() -> str:
         Linear solver name; a result.linear_solver separately records an actual solve.
     """
     ...
-def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem:
+def compile_problem(model: HelmholtzModel | IdealMoleFraction, problem: EquilibriumProblem) -> CompiledSystem:
     """Admit and compile the physical equilibrium declaration.
 
     Parameters
@@ -3419,7 +3480,7 @@ def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequenc
     """
     ...
 def solve_equilibrium(
-    model: HelmholtzModel,
+    model: HelmholtzModel | IdealMoleFraction,
     problem: EquilibriumProblem,
     start: Optional[EquilibriumResult] = ...,
 ) -> EquilibriumResult:

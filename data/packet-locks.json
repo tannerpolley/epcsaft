@@ -394,6 +394,13 @@
       "packet_path": "data/packets/held-2012-alcohols/1",
       "packet_fingerprint": "df387b167bef0af9c60216137b13fd2b90241553ecb0402fde4ccfcd1b0b3d35",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "pahlavanzadeh-2013-mdea",
+      "packet_version": "1",
+      "packet_path": "data/packets/pahlavanzadeh-2013-mdea/1",
+      "packet_fingerprint": "d7c29cdb4377bde7649b0c445bacba65b3b000f99395dc9e6a5b7a0c08050a73",
+      "materialization": "byte-for-byte"
     }
   ]
 }

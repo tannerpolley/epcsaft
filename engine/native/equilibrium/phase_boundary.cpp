@@ -400,7 +400,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             }
             for (std::size_t j = 0; j < m; ++j) trial[offset + j] = std::log(composition[phase.support[j]]);
             trial[offset + m] = compiled.feed_total;
-            trial[offset + m + 1] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
+            trial[offset + m + 1] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
             const auto rows = compiled.evaluate_at(compiled.prepare(trial, true)).values;
             std::vector<double> c(m);
@@ -564,7 +564,11 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
             if (y[offset] < 0.0) { y[offset] = 0.0; ++projected; }
             ++offset;
         }
-        if (!admitted_packing_fraction(std::exp(y[offset++]))) return false;
+        const double coordinate = std::exp(y[offset++]);
+        if (compiled.model->parameters().ideal_gas) {
+            if (!(coordinate > 0.0) || !std::isfinite(coordinate)
+                || !std::isfinite(1.0 / coordinate)) return false;
+        } else if (!admitted_packing_fraction(coordinate)) return false;
     }
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
     if (compiled.problem.pressure.free && !(y[offset++] > 0.0)) return false;
@@ -1104,7 +1108,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         }
         const auto density = start->densities.empty() ? speciated_density : std::optional(start->densities[phase]);
         if (density.has_value()) {
-            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
+            point[cursor] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             continue;
         }
         const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor
@@ -1138,7 +1142,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
                     static_cast<std::uint32_t>(phase));
         scope.probe("pressure", p);
         scope.probe("temperature", t);
-        point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition)
+        point[cursor] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition))
                                  * root.molar_density);
     }
     return point;
@@ -1219,7 +1223,7 @@ BranchCheck check_density_branches(
         std::vector<double> x = prepared.composition[phase];
         const double total = std::accumulate(x.begin(), x.end(), 0.0);
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
-        const double corrected = 1.0 / prepared.volume[phase];
+        const double corrected = (model.parameters().ideal_gas ? total : 1.0) / prepared.volume[phase];
         const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
         const auto state = model.state(prepared.temperature, corrected, x);
         if (limits) limits->check();

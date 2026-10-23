@@ -40,7 +40,7 @@ std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate) {
 // EqID: reaction_constant_log10_reciprocal
 std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law) {
     core::Scope scope("reaction_log10_reciprocal");
-    require(law.c == 0.0 && std::isfinite(law.a) && std::isfinite(law.b) && std::isfinite(law.d), "law is not a finite negative log10 reciprocal polynomial");
+    require(law.c == 0.0 && law.e == 0.0 && law.f == 0.0 && std::isfinite(law.a) && std::isfinite(law.b) && std::isfinite(law.d), "law is not a finite negative log10 reciprocal polynomial");
     return {-law.b / std::log(10.0), -law.a / std::log(10.0), -law.d / std::log(10.0)};
 }
 
@@ -95,11 +95,12 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
                     check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
                     check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
+                    check(!reaction.uses_species_thermochemistry(), "K fixed by species thermochemistry");
                     check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
                     if (shift) check(reaction.correlation && target.pivot_temperature >= reaction.correlation->temperature_min
                         && target.pivot_temperature <= reaction.correlation->temperature_max, "enthalpy shift pivot outside correlation interval");
-                    check(reaction.reference || !thermochemistry || !reaction_thermochemistry_density(*thermochemistry,
-                          reaction.stoichiometry, problem.temperature.value), "K fixed by thermochemistry");
+                    check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
+                          reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
                     if (prior) {
                         check(same_reaction(*prior, reaction), "tied declarations or starts disagree");
                         if (reaction.reference) {

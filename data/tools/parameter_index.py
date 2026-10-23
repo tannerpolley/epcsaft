@@ -11,6 +11,7 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parents[1]
 USES = {
+    "pahlavanzadeh-2013-mdea": "Pahlavanzadeh 2013 raw molecular MDEA/water association alternatives; Engine sigma-cubed differs from printed d-cubed; Figure 4 k_ij=0; no ideal chemistry.",
     "held-2012-alcohols": "Held 2012 solvent-specific ethanol and methanol salts at 298.15 K; printed screening sigma, 0.88 sigma packing; no Born or ion-ion dispersion.",
     "nasrifar-2010-mdea": "Nasrifar and Tafazzol 2010 molecular PC-SAFT: MDEA 3B and water 2B with neutral gases; no reactive or electrolyte calculation.",
     "el-guendouzi-2004-licl-nacl-observations": "El Guendouzi 2004 LiCl-NaCl observations read from Lassin 2015 Fig. 22; inverted legend reading retained, original table not checked.",

@@ -18,6 +18,8 @@ std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed
 );
 
+std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
+
 std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 );
@@ -25,7 +27,7 @@ std::vector<std::vector<double>> balance_basis(
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied
+    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // series[k][i] is d^k g_i / dT^k of the minimum-norm standard state (one gauge for every
@@ -34,19 +36,20 @@ std::vector<double> standard_state(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
 // affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
 std::vector<std::vector<double>> reaction_target_series(
-    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order,
+    const ThermochemistryRecord* thermochemistry = nullptr, const std::string& standard_state_id = EOS_STANDARD_STATE_ID
 );
 
 // A constant supplied Gibbs vector admits no temperature-dependent reaction target: the first
 // reaction whose |T^k t^(k)|, k = 1..3, exceeds sqrt(eps) max(1, |t|), if any.
 std::optional<std::size_t> thermal_reference_missing(
-    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied
+    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr
 );
 
 // True when the declared reaction space conserves total moles: rank([B; e]) == rank(B).
@@ -58,9 +61,9 @@ std::vector<bool> reaction_participants(std::size_t components, const std::vecto
 
 // ALG-EQUILIBRIUM phase support: an omitted support is the candidates, zero-charge only in a vapor;
 // a declared support is sorted and refused (core::DeclarationError) if empty, repeated, out of range,
-// or, in a vapor, holding a charged component.
+// or, in a vapor, holding a charged component outside DensityTemperature permittivity.
 std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
-    const std::vector<int>& z);
+    const std::vector<int>& z, const Parameters* parameters = nullptr);
 
 std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,

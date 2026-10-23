@@ -1002,8 +1002,8 @@ $$
 - Section: Density closure and mechanical domain
 - Status: Exact derivation
 - Source: Ideal-gas limiting relation
-- Description: Ideal-gas density scale used to construct the density search interval.
-- Change note: This is a numerical scale, not a replacement EOS.
+- Description: Exact density closure for the declared neutral ideal-gas base; also the density scale for residual-model searches.
+- Change note: The ideal-gas base has one stable vapor root with pressure slope RT and no packing bound.
 
 $$
 \rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
@@ -1727,6 +1727,66 @@ $$
 \ln K_b=-\frac{\sum_i\nu_i\mu_i^{\circ,b}}{RT}.
 $$
 
+## `ideal_mole_fraction_reaction`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Source equation
+- Source: Nasrifar and Tafazzol (2010), DOI 10.1021/ie901181n, Eq. (11), Table 1 and section 6, pp.7621,7627; ideal activity assumption
+- Description: Dimensionless mole-fraction activities with standard fraction one; positive products stoichiometry and caller-declared constants on the ideal-mole-fraction basis. Pressure does not enter these liquid chemistry rows.
+- Change note: Specializes reaction_activity_quotient. ReactionLogPolynomial owns the temperature law; its finite positive logarithm reference is independent of its evaluation interval. No EOS density or infinite-dilution correction applies.
+
+$$
+a_i=x_i=\frac{n_i}{N},\quad N=\sum_i n_i,\qquad
+F_r=\sum_i\nu_{ir}\ln x_i-\ln K_r^x(T)=0.
+$$
+
+## `ideal_reaction_amount_coordinates`
+
+- Section: Equilibrium / Amount coordinates
+- Status: Exact derivation
+- Source: ideal_mole_fraction_reaction and material_balance; logarithm and exponential chain rules
+- Description: Log amounts scaled by positive feed mol, with independent conserved null-space rows. There are s coordinates and r+(s-r) equations; charge conservation follows from the neutral feed and charge-conserving reactions.
+- Change note: The feasibility objective is zero. No density, phase-amount, normalization or balance-dual coordinate is added. CppAD differentiates the same row expression for the existing Ipopt driver and exact-Jacobian polish.
+
+$$
+y_i=\ln(n_i/N_{\rm ref}),\quad N_{\rm ref}=N_{\rm feed},\quad
+\ln x_i=y_i-\operatorname{logsumexp}_j y_j,\qquad
+C_a=\sum_i B_{ai}e^{y_i}-b_a/N_{\rm ref},\quad B\nu=0,\quad b=Bn^0,
+\qquad
+\partial_j F_r=\nu_{jr}-\Delta\nu_r x_j,\quad
+\partial_{jk}F_r=-\Delta\nu_r(\delta_{jk}x_j-x_jx_k),\quad
+\partial_j C_a=B_{aj}e^{y_j},\quad\partial_{jk}C_a=\delta_{jk}B_{aj}e^{y_j}.
+$$
+
+## `mdea_reaction_conserved_amounts`
+
+- Section: Equilibrium / Reaction inventories
+- Status: Exact derivation
+- Source: Null space of Nasrifar and Tafazzol (2010), Eqs. (1)-(6), p.7621; hydronium stoichiometry
+- Description: Physical inventory checks for the caller-declared aqueous MDEA/CO2/H2S example. The Engine computes a general null-space basis, independent of these example species names.
+- Change note: Water equivalent includes hydronium. The paper's printed Eq. (12) omits it and does not conserve R1; these conserved equations do not reproduce that printed balance.
+
+$$
+W=n_w+n_{OH^-}+n_{H_3O^+}+n_{HCO_3^-}+n_{CO_3^{2-}},\quad
+M=n_{MDEA}+n_{MDEAH^+},\quad C=n_{CO_2}+n_{HCO_3^-}+n_{CO_3^{2-}},\quad
+S=n_{H_2S}+n_{HS^-}+n_{S^{2-}},\quad
+Z=n_{H_3O^+}+n_{MDEAH^+}-n_{OH^-}-n_{HCO_3^-}-2n_{CO_3^{2-}}-n_{HS^-}-2n_{S^{2-}}.
+$$
+
+## `effective_water_amounts`
+
+- Section: Equilibrium / Amount conversion
+- Status: Source equation
+- Source: Nasrifar and Tafazzol (2010), section 6, p.7627, effective-water passage
+- Description: Lump every charged species amount into declared neutral water, preserving every remaining free molecular species and the current true-species mole total. This molecular representation does not preserve every elemental inventory.
+- Change note: Native conversion requires this ideal model's criterion-meeting liquid result and a complete disjoint water/ion/molecular partition. It does not calculate molecular phase equilibrium or reproduce Figure 15.
+
+$$
+\widetilde n_w=n_w+\sum_{i\in I}n_i,\qquad
+\widetilde n_j=n_j\ (j\in J),\qquad
+\widetilde N=\widetilde n_w+\sum_{j\in J}\widetilde n_j=N.
+$$
+
 ## `reaction_standard_state_conversion`
 
 - Section: Equilibrium / Reaction standard states
@@ -1762,12 +1822,16 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
-- Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
+- Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, ln K(T); Parkhurst and Appelo (2013), USGS Techniques and Methods 6-A43, SOLUTION_SPECIES, printed p.200, analytical expression (https://doi.org/10.3133/tm6A43).
 - Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
-- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order for state actions and for referenced finite-addition enthalpy actions at fixed temperature. Heat-capacity coefficient actions, coefficient Hessians and referenced free-temperature fitting are not implied; parameter adoption remains application-owned.
+- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order for state actions and for referenced finite-addition enthalpy actions at fixed temperature. Heat-capacity coefficient actions, coefficient Hessians and referenced free-temperature fitting are not implied; parameter adoption remains application-owned. Coefficients $(a,b,c,d,e,f)$ have units $(1,\mathrm K,1,\mathrm K^{-1},\mathrm K^2,\mathrm K^{-2})$; temperatures are in kelvin and $K$ is dimensionless on its declared source activity standard. All coefficients are finite and $0<T_{min}\le T\le T_{max}$; the interval is inclusive. The two added coefficients default to zero and remain fixed during fitting. PHREEQC's $\log_{10}K=A_1+A_2T+A_3/T+A_4\log_{10}[T/(1\,\mathrm K)]+A_5/T^2+A_6T^2$ maps, for the same reaction direction and source standard, by the displayed coefficient conversion.
 
 $$
-\ln K=a+\frac{b}{T}+c\ln\frac{T}{T_{ref}}+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
+\begin{gathered}
+L(T)\equiv\ln K=a+\frac bT+c\ln\frac{T}{T_{ref}}+dT+\frac e{T^2}+fT^2,\qquad \Delta_r h^{\circ}=RT^2 L'(T),\\
+L'=-\frac b{T^2}+\frac cT+d-\frac{2e}{T^3}+2fT,\qquad L''=\frac{2b}{T^3}-\frac c{T^2}+\frac{6e}{T^4}+2f,\qquad L'''=-\frac{6b}{T^4}+\frac{2c}{T^3}-\frac{24e}{T^5},\\
+a=\ln(10)A_1+A_4\ln[T_{ref}/(1\,\mathrm K)],\quad b=\ln(10)A_3,\quad c=A_4,\quad d=\ln(10)A_2,\quad e=\ln(10)A_5,\quad f=\ln(10)A_6.
+\end{gathered}
 $$
 
 ## `reaction_constant_coordinate_derivative`
@@ -1776,7 +1840,7 @@ $$
 - Status: Exact derivation
 - Source: Chain rule for `reaction_constant_ln_polynomial`, the minimum-norm standard state in `chemical_potential_stationarity`, and `implicit_sensitivity`; issue #187 accepted design
 - Description: A fitted source-basis coefficient changes its density-basis reaction target by the same basis function. The source molality scale and reference contraction have no reaction-coefficient dependence. The minimum-norm image supplies chemical-row derivatives, and the existing defining Jacobian supplies the solved-state derivative.
-- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the coefficient law at the path temperature T(t) for state actions, including its free-temperature chain. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. The bounded caloric actions consume the same analytic thermal coefficient terms; outer coefficient Hessians remain outside this consumer set. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns. The constant source reaction-enthalpy shift $h$ (J/mol) at a fixed declared pivot $T_p$ is one derived coefficient direction (#484), preserving the supplied correlation. The existing coefficient chain consumes the combined direction $\mathbf w$. For the `reaction_constant_log10_reciprocal` view, a native law with $c=0$ replays as $(A,B,C)=-(b,a,d)/\ln 10$; source metadata remains caller-owned.
+- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the coefficient law at the path temperature T(t) for state actions, including its free-temperature chain. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. The bounded caloric actions consume the same analytic thermal coefficient terms; outer coefficient Hessians remain outside this consumer set. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns. The constant source reaction-enthalpy shift $h$ (J/mol) at a fixed declared pivot $T_p$ is one derived coefficient direction (#484), preserving the supplied correlation. The existing coefficient chain consumes the combined direction $\mathbf w$. For the `reaction_constant_log10_reciprocal` view, a native law with $c=e=f=0$ replays as $(A,B,C)=-(b,a,d)/\ln 10$; source metadata remains caller-owned.
 
 $$
 \phi_k(T)=\left(1,\frac1T,\ln\frac{T}{T_{ref}},T\right)_k,
@@ -1822,7 +1886,7 @@ $$
 - Status: Bounded empirical relation
 - Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source specification (Aroua 1999, Tong 2012)
 - Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; fitting uses the explicitly converted native coefficients; valid on the declared temperature domain only.
-- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
+- Change note: The three-coefficient view requires native $c=e=f=0$; otherwise it is refused. Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
 $$
 -\log_{10}K=\frac{a}{T}+b+cT,\qquad \ln K=-\ln 10\left(\frac{a}{T}+b+cT\right),\qquad \frac{d\ln K}{dT}=\ln 10\left(\frac{a}{T^2}-c\right)
@@ -2145,7 +2209,7 @@ $$
 - Status: Exact derivation
 - Source: Solvent-mass integration of the constant short-range terms in Song et al. (2010), §2, p. 1287, Eqs. (1), (2), (10-1), (10-2), Zotero W3AX2GHK; #658 design D1–D7.
 - Description: One declared neutral solvent s, distinct cations i and j and common anion k; M_s is kg/mol, W is kg solvent, theta is kg/mol and psi is kg²/mol². The reduced molar contribution is Delta a^r = F/N, with N = sum n.
-- Change note: Optional aqueous liquid correction at 298.15 K and 1 bar; coefficients are constant in temperature. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients.
+- Change note: Evaluated in every phase on the declared solvent's molality basis, with positive solvent mass and exactly one anion. Other neutral components enter this contribution only through mole fractions and total-mole normalization; their masses are not added to W. The constant coefficients are qualified only for retained aqueous water/chloride-salt cases at 298.15 K and 1 bar. Occupied additional neutrals and organic-phase effects are unqualified extrapolation, with no phase selector or automatic deactivation; water-free states remain outside the evaluation domain. No density dependence, pressure correction, unequal-charge electrostatic mixing, vapor, dry-salt, mixed-solvent or caloric qualification. Faces retain nonzero absent-ion insertion derivatives. Coefficients correct this EOS and are not imported Pitzer coefficients. Full EOS §12 gives an illustrative organic-phase substitution and its limits.
 
 $$
 F=\frac{\Delta A^r}{RT}
@@ -2250,8 +2314,8 @@ $$
 - Section: Equilibrium
 - Status: Exact derivation
 - Source: [Pereira2012] Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
-- Description: System Gibbs objective in Helmholtz coordinates; density-standard offsets appear exactly once and are consistent with ideal_gas_helmholtz.
-- Change note: Use either mechanical energy plus offsets or total energy, never both reference terms.
+- Description: System Gibbs objective in Helmholtz coordinates; density-standard offsets appear exactly once and are consistent with ideal_gas_helmholtz. The ideal-gas base uses q = ln[(1/v)/rho0], v = exp(-q)/rho0 for unit-amount volume v; at an unnormalized trial S = sum_i x_i, physical density is S/v.
+- Change note: Use either mechanical energy plus offsets or total energy, never both reference terms. At fixed q, v_q = -v, v_qq = v and composition/temperature partials vanish. Do not normalize trial compositions.
 
 $$
 \frac{G}{RT}=\sum_p\left[\frac{A_{p,\mathrm{mech}}}{RT}+\frac{PV_p}{RT}+\sum_i n_{p,i}\frac{g^{\circ}_{i,\rho}}{RT}\right].
@@ -2296,7 +2360,7 @@ $$
 - Status: Exact derivation
 - Source: Basis transformation of normalization/electroneutrality and Euler stationarity; #223 adopted derivation
 - Description: Internal unit-amount trial balance basis on S; R contains total-amount and charge rows, omitting charge for neutral support. H is the retained full-rank row transformation; λ_t is conjugate to B_t, not an optimizer multiplier.
-- Change note: No feed-moiety-proportion constraint or reaction is imposed on the trial. The total row need not be first; use λ_t dot b_t in every basis.
+- Change note: No feed-moiety-proportion constraint or reaction is imposed. Charged density-temperature Vapor trials use H=I and the numerical log-charge row h below, evaluated by maximum-shifted log sums. Only that trial charge balance or a declared Vapor Electro row is replaced in Newton correction and classification. Original physical criteria, Ipopt callbacks and solved-state derivatives remain unchanged; full transformed rank does not establish branch or recovery accuracy. Qualification remains incomplete for #771. Other trials retain their existing basis; use λ_t dot b_t in every basis.
 
 $$
 \begin{aligned}
@@ -2313,6 +2377,15 @@ N\mathbf B_t\mathbf w&=\mathbf b_t,\quad \mathbf e_S^{\mathsf T}\mathbf w=1
  t=\boldsymbol\lambda_t^{\mathsf T}\mathbf b_t=k
 \quad\text{at exact feasible stationary density and composition}.
 \end{aligned}
+\qquad
+\begin{aligned}
+Q_+&=\sum_{z_i>0}z_i e^{y_i},\quad Q_-=\sum_{z_i<0}|z_i|e^{y_i},\\
+h&=\ln Q_+-\ln Q_-,\quad R=|\tanh(h/2)|,\\
+\frac{\partial h}{\partial y_i}&=
+\begin{cases}z_i e^{y_i}/Q_+,&z_i>0,\\
+z_i e^{y_i}/Q_-,&z_i<0,\\0,&z_i=0.\end{cases}
+\end{aligned}
+
 $$
 
 ## `michelsen_modified_tangent_plane`
@@ -2354,7 +2427,7 @@ $$
 - Section: Equilibrium / Tangent-plane testing
 - Status: Implementation convention
 - Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
-- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups, normalize, then correct arithmetic residuals on the largest positive and negative entries (ties by index); structural zeros remain zero.
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; structural zeros remain zero. Liquid trials then correct arithmetic residuals on the largest positive and negative entries (ties by index). Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
 - Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
 
 $$

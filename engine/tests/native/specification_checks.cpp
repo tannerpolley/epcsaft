@@ -821,7 +821,7 @@ void check_e2_reaction() {
     record_rejection("e2-2/zero-vector-with-K", "e2-2-reaction", model, zero, "inconsistent standard state", inputs);
     auto both = supplied;
     both.reactions[0].affinity_j_per_mol = 12.0;
-    record_rejection("e2-2/two-targets", "e2-2-reaction", model, both, "exactly one target", inputs);
+    record_rejection("e2-2/two-targets", "e2-2-reaction", model, both, "at most one target", inputs);
     auto free_t = supplied;
     free_t.temperature = FreeValue::variable(300.0);
     free_t.pressure = FreeValue::fixed(1.0e5);

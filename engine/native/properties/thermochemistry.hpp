@@ -72,19 +72,36 @@ struct ReactionLogPolynomial final {
     double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
     double reference_temperature = 0.0, temperature_min = 0.0, temperature_max = 0.0;
     std::string standard_state_id;
+    double e = 0.0, f = 0.0;
 };
 // One scalar/AD expression owns the source law and its raw thermal derivatives.
 template <typename Scalar>
 // EqID: reaction_constant_ln_polynomial
 Scalar reaction_log_value(const ReactionLogPolynomial& law, const Scalar& temperature,
                           std::size_t thermal_order = 0) {
-    if (thermal_order == 0)
-        return law.a + law.b / temperature + law.c * scalar_log(temperature / law.reference_temperature)
+    Scalar value;
+    if (thermal_order == 0) {
+        value = law.a + law.b / temperature + law.c * scalar_log(temperature / law.reference_temperature)
             + law.d * temperature;
+        if (law.e == 0.0 && law.f == 0.0) return value;
+        return value + law.e / (temperature * temperature) + law.f * temperature * temperature;
+    }
     const Scalar t2 = temperature * temperature;
-    if (thermal_order == 1) return -law.b / t2 + law.c / temperature + law.d;
-    if (thermal_order == 2) return 2.0 * law.b / (t2 * temperature) - law.c / t2;
-    if (thermal_order == 3) return -6.0 * law.b / (t2 * t2) + 2.0 * law.c / (t2 * temperature);
+    if (thermal_order == 1) {
+        value = -law.b / t2 + law.c / temperature + law.d;
+        if (law.e == 0.0 && law.f == 0.0) return value;
+        return value - 2.0 * law.e / (t2 * temperature) + 2.0 * law.f * temperature;
+    }
+    if (thermal_order == 2) {
+        value = 2.0 * law.b / (t2 * temperature) - law.c / t2;
+        if (law.e == 0.0 && law.f == 0.0) return value;
+        return value + 6.0 * law.e / (t2 * t2) + 2.0 * law.f;
+    }
+    if (thermal_order == 3) {
+        value = -6.0 * law.b / (t2 * t2) + 2.0 * law.c / (t2 * temperature);
+        if (law.e == 0.0) return value;
+        return value - 24.0 * law.e / (t2 * t2 * temperature);
+    }
     throw std::invalid_argument("source thermal derivative order");
 }
 struct ReactionProperties final {
@@ -96,8 +113,15 @@ struct ReactionProperties final {
 };
 // Reaction Gibbs/enthalpy/heat capacity of supplied species thermochemistry on the
 // EOS density basis (1 mol/m^3); absent when a participating interval excludes T.
-struct ReactionThermochemistry final { double gibbs = 0.0, enthalpy = 0.0, heat_capacity = 0.0; };
-std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
+struct ReactionThermochemistry final {
+    double gibbs = NAN, enthalpy = NAN, heat_capacity = NAN, pressure_gibbs = NAN;
+    double ln_k_pressure = NAN, ln_k_density = NAN;
+    std::optional<double> k_pressure, k_density;
+    std::array<double, 4> gibbs_derivatives = {NAN, NAN, NAN, NAN};
+    ThermochemistryStatus status = ThermochemistryStatus::MissingRecord;
+    std::string cause;
+};
+ReactionThermochemistry reaction_thermochemistry_density(
     const ThermochemistryRecord&, const std::vector<double>& stoichiometry, double temperature
 );
 
