@@ -498,6 +498,18 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double 
     std::size_t temperature_order, std::size_t pressure_order,
     std::optional<std::size_t> parameter, const State& state);
 
+struct SpeciesActivities final {
+    std::optional<double> standard_molality_mol_per_kg;
+    std::optional<std::size_t> solvent_index;
+    std::vector<std::optional<double>> log_activities, activities;
+    std::vector<std::string> causes;
+};
+// EqID reaction_activity_quotient; a null state selects ideal mole fractions.
+SpeciesActivities species_activities(const std::vector<double>&, const State*,
+    const std::vector<NeutralReferenceReactionDiagnostic::Derivative>& = {},
+    const Parameters* = nullptr, const NeutralReferenceDeclaration* = nullptr,
+    ReferenceSourceBasis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
+
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the
 // Python surface exposes only the established singular diagnostic/result path.
@@ -512,7 +524,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
     bool parameter_jets = false,  // dC/dtheta for every active parameter
-    std::size_t reference_order = 0  // consumed C3/C4 and one-theta columns; 0 preserves lower work
+    std::size_t reference_order = 0,  // consumed C3/C4 and one-theta columns; 0 preserves lower work
+    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values = nullptr
 );
 
 // Fugacity-based Henry constant H_i^px = lim f_i/x_i = RT rho0 exp(L_i) of a neutral solute in one

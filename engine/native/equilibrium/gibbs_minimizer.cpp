@@ -138,9 +138,6 @@ double michelsen_deficit(
 void require_solution_shape(
     const EquilibriumResult& result, std::size_t phases, std::size_t components
 ) {
-    if (!all_numeric(result.residuals) || result.rows.empty()) {
-        throw std::runtime_error("equilibrium result has invalid residuals");
-    }
     for (const double amount : result.amounts) {
         if (!std::isfinite(amount) || amount < 0.0) {
             throw std::runtime_error("equilibrium result has invalid amount");
@@ -1399,6 +1396,9 @@ static EquilibriumResult run_driver_once(
         result.solid_amounts.push_back(compiled.solids[s].column ? full[*compiled.solids[s].column] : 0.0);
         result.solid_affinity_decades.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
     }
+    if (!all_numeric(result.residuals) || result.rows.empty()) {
+        throw std::runtime_error("equilibrium result has invalid residuals");
+    }
     require_solution_shape(result, compiled.problem.phases.size(),
                            compiled.n_feed.size());
     return result;
@@ -1655,6 +1655,77 @@ EquilibriumResult solve_equilibrium(const IdealMoleFraction& model, const Equili
     if (start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
     core::Scope scope("solve_equilibrium");
     return solve_compiled(compile_problem(model, request), std::nullopt, &scope);
+}
+
+namespace {
+std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* model,
+    const IdealMoleFraction* ideal, const EquilibriumResult& result) {
+    core::Scope scope("reaction_activities");
+    if ((model && result.model_identity != model) || (ideal && result.ideal_identity != ideal))
+        throw std::invalid_argument("reaction activities: model/result mismatch");
+    const auto n = model ? model->parameters().component_count() : ideal->component_ids.size();
+    if (!result.declaration || !result.temperature || !result.pressure || !std::isfinite(*result.temperature)
+        || *result.temperature <= 0 || !std::isfinite(*result.pressure) || *result.pressure <= 0
+        || result.phase_count == 0 || result.phase_count != result.declaration->phases.size()
+        || result.amounts.size() != result.phase_count || result.mole_fractions.size() != n * result.phase_count
+        || (model && result.molar_densities.size() != result.phase_count))
+        throw std::invalid_argument("reaction activities: physical state or declaration unavailable");
+    require_solution_shape(result, result.phase_count, n);
+    const auto& problem = *result.declaration;
+    std::vector<std::vector<double>> rows;
+    std::vector<ReactionReference> references;
+    std::vector<std::size_t> referenced;
+    for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
+        const auto& reaction = problem.reactions[r];
+        if (reaction.stoichiometry.size() != n || !all_numeric(reaction.stoichiometry))
+            throw std::invalid_argument("reaction activities: stoichiometry");
+        if (reaction.reference) {
+            if (!model || !problem.source_reference) throw std::invalid_argument("reaction activities: source declaration unavailable");
+            rows.push_back(reaction.stoichiometry); references.push_back(*reaction.reference); referenced.push_back(r);
+        }
+    }
+    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>> species_references;
+    const auto diagnostics = rows.empty() ? std::vector<NeutralReferenceReactionDiagnostic>{}
+        : reaction_references(*model, *result.temperature, *result.pressure, *problem.source_reference,
+            rows, references, false, std::nullopt, 0, false, 0, &species_references);
+    std::vector<ReactionActivities> output;
+    for (std::size_t p = 0; p < result.phase_count; ++p) {
+        std::vector<double> x(result.mole_fractions.begin() + p * n, result.mole_fractions.begin() + (p + 1) * n);
+        std::optional<State> state;
+        if (model) state = model->state(*result.temperature, result.molar_densities[p], x);
+        for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
+            ReactionActivities row; row.phase_index = p; row.reaction_index = r;
+            row.basis = model ? EOS_STANDARD_STATE_ID : IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
+            const auto found = std::find(referenced.begin(), referenced.end(), r);
+            if (found != referenced.end()) {
+                const auto k = static_cast<std::size_t>(found - referenced.begin());
+                const auto& declaration = *problem.source_reference;
+                row.reference_pressure_pa = references[k].reference_pressure_pa.value_or(*result.pressure);
+                row.basis = references[k].source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
+                    ? "common-molality-infinite-dilution; EOS single-ion convention" : "raw-mole-fraction-species-reference; EOS single-ion convention";
+                if (diagnostics[k].status != NeutralReferenceStatus::Available) row.cause = diagnostics[k].message;
+                row.species = species_activities(x, &*state, species_references[k], &model->parameters(), &declaration, references[k].source_basis);
+            } else row.species = species_activities(x, state ? &*state : nullptr);
+            row.log_quotient = 0.0;
+            for (std::size_t i = 0; row.cause.empty() && i < n; ++i) {
+                const double nu = problem.reactions[r].stoichiometry[i];
+                if (nu == 0) continue;
+                if (!row.species.log_activities[i]) row.cause = row.species.causes[i];
+                else *row.log_quotient += nu * *row.species.log_activities[i];
+            }
+            if (std::isnan(*row.log_quotient)) row.cause = "conflicting infinite log activity terms";
+            if (!row.cause.empty()) row.log_quotient.reset();
+            output.push_back(std::move(row));
+        }
+    }
+    return output;
+}
+} // namespace
+std::vector<ReactionActivities> reaction_activities(const HelmholtzModel& model, const EquilibriumResult& result) {
+    return read_reaction_activities(&model, nullptr, result);
+}
+std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction& model, const EquilibriumResult& result) {
+    return read_reaction_activities(nullptr, &model, result);
 }
 
 std::map<std::string, double> effective_water_amounts(const IdealMoleFraction& model, const EquilibriumResult& result,

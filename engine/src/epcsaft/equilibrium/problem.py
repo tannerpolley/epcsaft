@@ -47,6 +47,11 @@ class IdealMoleFraction:
         self.charge_number = tuple(self._model.charge_number)
 
 
+def reaction_activities(model: _Model | IdealMoleFraction, result: _core.EquilibriumResult) -> list[_core.ReactionActivities]:
+    """Read native dimensionless species activities and ln Q at the returned state, on each declared basis."""
+    return _core.reaction_activities(model._model, result)
+
+
 def effective_water_amounts(
     model: IdealMoleFraction,
     result: _core.EquilibriumResult,

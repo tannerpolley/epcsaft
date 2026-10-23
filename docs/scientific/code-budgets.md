@@ -97,6 +97,15 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-22, #793 (owner approval, 2026-10-22): Properties **5,842 → 5,983**
+  and total **27,384 → 27,654**, the measured Properties count plus its 1% band
+  (5,923 + 60) and the layer-ceiling sum, below total count plus band
+  (27,495 + 275). The explicit reaction activity reader shares
+  the finite-state activity and source-reference owners. The owner allowance is
+  +240 net / 342 gross: Properties 120/180, Equilibrium 90/120, Bindings 24/32,
+  Python 6/10; all other runtime layers zero. Final measured accounting is in
+  the #793 pull request. Other ceilings remain within their bands.
+
 - 2026-10-22, #776 (owner approval, 2026-10-22): the ideal mole-fraction amount
   chart, shared feasibility lifecycle and native effective-water map use +259 net /
   293 gross formatted Equilibrium, +24/30 Bindings, +30/47 Python and -2/1

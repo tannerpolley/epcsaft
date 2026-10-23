@@ -511,6 +511,16 @@ struct EquilibriumResult final {
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
 
+// EqID reaction_activity_quotient; per declared phase/reaction, in component order.
+struct ReactionActivities final {
+    std::size_t phase_index = 0, reaction_index = 0;
+    std::string basis, cause;
+    std::optional<double> reference_pressure_pa, log_quotient;
+    SpeciesActivities species;
+};
+std::vector<ReactionActivities> reaction_activities(const HelmholtzModel&, const EquilibriumResult&);
+std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction&, const EquilibriumResult&);
+
 struct StabilityTrial final {
     PhaseSpec phase;
     std::string seed, evidence, message;

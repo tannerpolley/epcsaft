@@ -71,6 +71,33 @@ objective is zero; it is not physical Gibbs energy. Density and packing arrays
 are empty. Endpoint Jacobian rank is checked. EOS-only solved-state actions,
 stability searches and caloric conditions are unavailable for this model.
 
+The explicit `reaction_activities(model, result)` call reads dimensionless species
+activities and their logarithms at each returned phase composition and density,
+including a finite candidate that misses its requested criterion. It performs
+no calculation or storage during an unrequested solve, continuation or fit.
+The model must match the result, which must retain its original declaration
+and physical arrays. Records follow phase/reaction order; `species` arrays use
+component order. A zero phase amount does not remove its defined composition.
+
+EqID: `reaction_activity_quotient` governs the products-positive `log_quotient`.
+Unreferenced Helmholtz reactions, including ideal gas and species-derived
+targets, return density-standard activities. Ideal mole-fraction reactions
+return exactly the mole fractions. Source references retain their declared
+pressure and pure/dilute species standards; common molality subtracts the
+solvent-mass/standard-molality factor for every solute. `basis`,
+`reference_pressure_pa` and the `species` solvent/molality fields identify
+these conventions. Ionic values use the EOS single-ion convention; only
+charge-neutral combinations have convention-independent meaning. Values come
+from the state and reference owner, independently of targets and residuals.
+
+`species.causes` names unavailable component quantities; `cause` names an
+unavailable quotient. A finite log value survives activity exponentiation
+underflow or overflow, with the activity absent. A structural zero has activity
+zero and log activity negative infinity when its reference exists. Zero
+stoichiometric coefficients are skipped, and conflicting infinite terms make
+the quotient unavailable. This call supplies no pressure-basis quotient, pH,
+derivative, solid activity, persistent cache or fitting payload.
+
 EqID: `effective_water_amounts` converts a criterion-meeting result to named
 molecular amounts after checking model identity and the complete species partition.
 For the MDEA example, EqID: `mdea_reaction_conserved_amounts` supplies independent

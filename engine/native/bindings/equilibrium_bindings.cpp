@@ -45,6 +45,13 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, 4);
     module.def("effective_water_amounts", &effective_water_amounts, nb::arg("model"), nb::arg("result"),
         nb::arg("water"), nb::arg("ions"), nb::arg("molecular_species"));
+    nb::class_<SpeciesActivities>(module, "SpeciesActivities")
+        EPCSAFT_READONLY(SpeciesActivities, log_activities, activities, causes, solvent_index, standard_molality_mol_per_kg);
+    nb::class_<ReactionActivities>(module, "ReactionActivities")
+        EPCSAFT_READONLY(ReactionActivities, phase_index, reaction_index, basis, cause, reference_pressure_pa,
+            log_quotient, species);
+    module.def("reaction_activities", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(&reaction_activities), nb::arg("model"), nb::arg("result"));
+    module.def("reaction_activities", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(&reaction_activities), nb::arg("model"), nb::arg("result"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     nb::enum_<PhaseKind>(module, "PhaseKind")
         EPCSAFT_VALUES(PhaseKind, Liquid, Vapor);

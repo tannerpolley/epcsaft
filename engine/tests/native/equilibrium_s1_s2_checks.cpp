@@ -320,6 +320,34 @@ void check_s2() {
     const auto fixed_pressure = epcsaft::reaction_reference(
         reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu,
         epcsaft::ReactionReference{1.0e5, reference.source_basis});
+    auto read_problem = equilibrium_support::flash(3);
+    read_problem.temperature.value = 300; read_problem.pressure.value = 2e5;
+    read_problem.source_reference = ratios({0, 1, 1});
+    read_problem.reactions = {{"raw", nu, 1.0, {}, {}, epcsaft::ReactionReference{1e5, reference.source_basis}},
+        {"density", nu, 1.0}};
+    epcsaft::equilibrium::EquilibriumResult snapshot;
+    snapshot.model_identity = &reference_model; snapshot.declaration = std::make_shared<epcsaft::equilibrium::EquilibriumProblem>(read_problem);
+    snapshot.phase_count = 1; snapshot.temperature = 300; snapshot.pressure = 2e5; snapshot.amounts = {0};
+    snapshot.mole_fractions = {0.5, 0.3, 0.2};
+    const auto finite = reference_model.state_at_pressure(300, 2e5, snapshot.mole_fractions, epcsaft::DensityBranch::Liquid);
+    snapshot.molar_densities = {finite.molar_density};
+    const auto read_rows = epcsaft::equilibrium::reaction_activities(reference_model, snapshot);
+    double density_q = 0;
+    for (std::size_t i = 0; i < 3; ++i) density_q += nu[i] * (std::log(snapshot.mole_fractions[i] * finite.molar_density)
+        + epcsaft::require_component_property(finite.residual_chemical_potential_over_rt[i]));
+    CHECK(read_rows.size() == 2 && read_rows[0].reference_pressure_pa == 1e5);
+    CHECK(read_rows[0].log_quotient && read_rows[1].log_quotient);
+    CHECK(std::abs(*read_rows[1].log_quotient - density_q) <= 1e-10);
+    CHECK(std::abs(*read_rows[0].log_quotient - density_q + *fixed_pressure.terminal_contraction) <= 1e-10);
+    std::printf("activity-source,lnQ=%.17g,densityQ=%.17g,C=%.17g,error=%.17g\n", *read_rows[0].log_quotient,
+        density_q, *fixed_pressure.terminal_contraction, *read_rows[0].log_quotient - density_q + *fixed_pressure.terminal_contraction);
+    auto two_phases = std::make_shared<epcsaft::equilibrium::EquilibriumProblem>(read_problem);
+    two_phases->phases.push_back(read_problem.phases[0]); snapshot.declaration = two_phases; snapshot.phase_count = 2;
+    snapshot.amounts.push_back(1); snapshot.molar_densities.push_back(finite.molar_density);
+    snapshot.mole_fractions = {0.5,0.3,0.2,0.5,0.3,0.2};
+    const auto phased = epcsaft::equilibrium::reaction_activities(reference_model, snapshot);
+    CHECK(phased.size() == 4 && phased[2].phase_index == 1 && phased[2].reaction_index == 0);
+    CHECK(phased[2].log_quotient == read_rows[0].log_quotient && phased[3].log_quotient == read_rows[1].log_quotient);
     const auto system_pressure = epcsaft::reaction_reference(
         reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu, reference);
     CHECK(fixed_pressure.status == epcsaft::NeutralReferenceStatus::Available
@@ -1276,6 +1304,23 @@ void check_ideal_mole_fraction() {
     record("R1-W", r1.amounts[0], 1.0, 1e-10, input, "mol");
     record("R1-normalization", std::accumulate(x.begin(), x.end(), 0.0), 1.0, 1e-10, input);
     record("R1-charge", x[2] - x[1], 0.0, 1e-10, input);
+    const auto read = reaction_activities(water, r1)[0];
+    CHECK(read.species.activities == std::vector<std::optional<double>>(x.begin(), x.end()));
+    CHECK(read.log_quotient && std::abs(*read.log_quotient - source_log_k(0, p.temperature.value)) <= 1e-10);
+    auto candidate = r1;
+    candidate.mole_fractions = {x[0] - 2 * x[1], 2 * x[1], 2 * x[2]};
+    const auto compiled_water = compile_problem(water, p);
+    for (std::size_t i = 0; i < 3; ++i) candidate.coordinates[compiled_water.amount_coordinates[i]] = std::log(candidate.mole_fractions[i]);
+    check_activity_defect(water, compiled_water, candidate, source_log_k(0, p.temperature.value));
+    std::printf("activity-ideal,lnQ=%.17g,lnK=%.17g,xw=%.17g,analytic=%.17g\n", *read.log_quotient, source_log_k(0, p.temperature.value), x[0], xw);
+    candidate = r1; candidate.mole_fractions = {1,0,0};
+    CHECK(reaction_activities(water, candidate)[0].log_quotient == -INFINITY);
+    auto zero_problem = std::make_shared<EquilibriumProblem>(*candidate.declaration);
+    zero_problem->reactions[0].stoichiometry = {0,-1,1}; candidate.declaration = zero_problem;
+    const auto undefined = reaction_activities(water, candidate)[0];
+    CHECK(!undefined.log_quotient && undefined.cause.find("conflicting infinite") != std::string::npos);
+    candidate.mole_fractions.clear();
+    refused([&] { reaction_activities(water, candidate); }, "physical state or declaration unavailable");
     const auto converted = effective_water_amounts(water, r1, "water", {"OH-", "H3O+"}, {});
     record("R1-effective-water", converted.at("water"), 1.0, 1e-10, input, "mol");
     auto rebased = *p.reactions[0].correlation;

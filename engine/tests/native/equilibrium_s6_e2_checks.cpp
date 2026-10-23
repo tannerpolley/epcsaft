@@ -1558,6 +1558,30 @@ void check_species_thermochemistry() {
     CHECK(source.k_pressure && std::abs(*source.k_pressure/1490.3509615073785-1)<=1e-10);
     std::printf("species-target,T=500,G_P=%.17g,K_P=%.17g,G_rho=%.17g,n_N2O4=%.17g,n_NO2=%.17g,cause=%s\n",
         source.pressure_gibbs,*source.k_pressure,source.gibbs,solved.amounts[0]*solved.mole_fractions[0],solved.amounts[0]*solved.mole_fractions[1],solved.message.c_str());
+    const auto read = reaction_activities(model, solved)[0];
+    CHECK(read.log_quotient && std::abs(*read.log_quotient - source.ln_k_density) <= 1e-10);
+    const double pressure_q = *read.log_quotient + std::log(GAS_CONSTANT_J_PER_MOL_K * 500 / 100000);
+    CHECK(std::abs(pressure_q - source.ln_k_pressure) <= 1e-10);
+    for (const auto& v : model.state(500, solved.molar_densities[0], solved.mole_fractions).residual_chemical_potential_over_rt) CHECK(v && *v == 0);
+    auto candidate = solved;
+    const auto snapshot_point = c.prepare(solved.coordinates);
+    candidate.coordinates[snapshot_point.shape[0].volume] += 0.01;
+    candidate.molar_densities[0] *= std::exp(0.01);
+    const auto shifted = reaction_activities(model, candidate)[0];
+    CHECK(shifted.log_quotient && std::abs(*shifted.log_quotient - *read.log_quotient - 0.01) <= 1e-10);
+    for (std::size_t i = 0; i < 2; ++i)
+        CHECK(std::abs(*shifted.species.log_activities[i] - *read.species.log_activities[i] - 0.01) <= 1e-10);
+    check_activity_defect(model, c, candidate, source.ln_k_density);
+    candidate = solved;
+    const double extent = 1e-4, total = solved.amounts[0] + extent;
+    for (std::size_t i = 0; i < 2; ++i) {
+        candidate.mole_fractions[i] = (solved.amounts[0] * solved.mole_fractions[i] + nu[i] * extent) / total;
+        candidate.coordinates[snapshot_point.shape[0].x[i]] = std::log(candidate.mole_fractions[i]);
+    }
+    candidate.amounts[0] = total; candidate.coordinates[*snapshot_point.shape[0].amount] = total;
+    check_activity_defect(model, c, candidate, source.ln_k_density);
+    std::printf("activity-gas,lnQ=%.17g,lnK=%.17g,pressureQ=%.17g,pressureK=%.17g,densityShift=%.17g\n",
+        *read.log_quotient, source.ln_k_density, pressure_q, source.ln_k_pressure, *shifted.log_quotient - *read.log_quotient);
     for(bool missing:{false,true}) {
         auto unavailable = r; if(missing) unavailable.component_intervals[0].clear();
         const double T = missing?500:499;
