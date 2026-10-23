@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Expire old evidence archives in the main checkout's build/archive (owner, 2026-10-22: 83 GB was unacceptable).
+
+Usage: tools/clean-build [--dry-run]
+Run daily by the user timer epcsaft-clean-build.timer. It deletes regular files directly in build/archive older
+than DAYS whose name carries no open issue or PR number; it never descends, follows a symlink or touches anything
+else. Gate trees need no sweep: tools/check-pr-native removes its own tree when each run ends.
+
+Trust assumption (owner, 2026-10-22): only this repository's tools write build/, so nothing swaps build/archive or its
+ancestors for a symlink while the job runs; three safety reviews (#783) found residual risk only under that adversarial
+case, which the owner accepted.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+import time
+
+DAYS = 3
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    dry = parser.parse_args().dry_run
+    root = Path(subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=Path(__file__).resolve().parent,
+                               check=True, capture_output=True, text=True).stdout.splitlines()[0].removeprefix("worktree "))
+    archive = root / "build" / "archive"
+    if archive.is_symlink() or Path(os.path.realpath(archive)) != archive:
+        sys.exit("clean-build: build/archive is or lies behind a symlink; nothing removed")
+    protected = set()
+    for kind in ("issue", "pr"):
+        try:
+            out = subprocess.run(["gh", kind, "list", "--state", "open", "--limit", "1000", "--json", "number"],
+                                 cwd=root, check=True, capture_output=True, text=True).stdout
+            numbers = {item["number"] for item in json.loads(out)}
+        except (OSError, subprocess.CalledProcessError, ValueError):
+            sys.exit(f"clean-build: open {kind}s unknown (gh failed); nothing removed")
+        if len(numbers) >= 1000:
+            sys.exit(f"clean-build: open {kind} list may be truncated; nothing removed")
+        protected |= numbers
+    cutoff, freed = time.time() - DAYS * 86400, 0
+    for item in sorted(archive.iterdir()):
+        info = item.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_mtime > cutoff:
+            continue
+        if any(int(token) in protected for token in re.findall(r"\d+", item.name)):
+            continue
+        if not dry:
+            item.unlink()
+        freed += info.st_size
+        print(f"{'would remove' if dry else 'removed'} build/archive/{item.name} ({info.st_size / 2**20:.0f} MiB)")
+    print(f"{'would free' if dry else 'freed'} {freed / 2**30:.1f} GiB")
+
+
+if __name__ == "__main__":
+    main()

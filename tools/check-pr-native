@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Prepare and check one frozen PR head in the main checkout's shared instrumented tree."""
+"""Prepare and check one frozen PR head in the main checkout's instrumented tree, removed again after the run."""
 import argparse
+import contextlib
 import fcntl
 import hashlib
 import json
@@ -26,6 +27,21 @@ def run(*command, **kwargs):
     subprocess.run(command, check=True, **kwargs)
 
 
+@contextlib.contextmanager
+def head_tree(root, repo):
+    """Hold the head's lock for the run; on exit keep only its results and pass records (owner, 2026-10-22)."""
+    with (root / 'lock').open('w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            subprocess.run(['git', 'worktree', 'remove', '--force', str(root / 'source')], cwd=repo, capture_output=True)
+            for name in ('meson', 'venv'):
+                shutil.rmtree(root / name, ignore_errors=True)
+            for name in ('python', 'prepared.json', 'external-headers.json', 'dependencies.txt'):
+                (root / name).unlink(missing_ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pr', type=int, required=True)
@@ -42,8 +58,7 @@ def main():
     canonical = Path(output('git', 'worktree', 'list', '--porcelain', cwd=repo).splitlines()[0].removeprefix('worktree '))
     root = canonical / 'build/pr-gates' / f'pr-{args.pr}' / head
     root.mkdir(parents=True, exist_ok=True)
-    with (root / 'lock').open('w') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    with head_tree(root, repo):
         source, build, venv = root / 'source', root / 'meson', root / 'venv'
         if not source.exists():
             run('git', 'worktree', 'add', '--detach', str(source), head, cwd=repo)
