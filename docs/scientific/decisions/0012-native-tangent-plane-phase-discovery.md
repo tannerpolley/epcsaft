@@ -31,7 +31,8 @@ cost diagnostics; they never determine a thermodynamic or solver decision.
   budgets. Numeric ceilings remain in `ARCHITECTURE.yaml:code_budgets`.
 - **D3/D4:** run all enumerated distinct trials. Default supports are union
   Liquid and neutral-only Liquid/Vapor; caller support/label entries replace
-  defaults. Charge-neutral reconstruction admits ionic Liquid only. Declaration
+  defaults. Charge-neutral reconstruction admits ionic Liquid and the explicit
+  `DensityTemperature` Vapor declarations described in the #771 amendment below. Declaration
   solves, trial invocations and trial rounds have separate finite budgets.
 - **D5:** unresolved resolved descent makes discovery unsuccessful, with
   retained diagnostics. Replacement at the balance-rank phase limit and
@@ -174,3 +175,17 @@ forms (`DensityTemperature`, `DipolarPerturbation`) and neutral trials are uncha
 refused under this rule, now for this reason. Compositions with no loop at T are deliberately under-admitted.
 Admission establishes condensed density only. It does not establish that the composition lies within the
 permittivity correlation's fitted range.
+
+## Explicit charged Vapor declarations (#771)
+
+Explicit declared charged Vapor supports are admitted under `DensityTemperature`
+and retain their Vapor kind, supported ions and intensive phase electroneutrality.
+Qualification requires the stated bubble, manufactured trace and supplied-point
+branch checks; implementation alone is insufficient. Explicit charged Vapor under
+`DipolarPerturbation` remains refused pending separate numerical qualification,
+despite its vacuum limit. Its existing Liquid trials remain admitted as before.
+Omitted vapor supports remain neutral-only; default trial families, the #568
+condensed-domain rule, discovery initial candidates and its charged-vapor addition
+veto are unchanged. The scope is explicit declared calculations and supplied-point
+branch evaluation only, with no charged-vapor discovery or physical vapor-validation
+claim.
