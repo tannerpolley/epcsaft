@@ -106,6 +106,13 @@ and EqID: `material_balance`.
 
 One charge row can be omitted only for an ion-containing phase of nonzero
 amount when neutral feed, charge-conserving reactions and balances imply it.
+An explicit charged Vapor declaration that would select Vapor as the
+omitted-charge phase is refused with `charged vapor cannot be the omitted-charge phase`.
+Internal charged Vapor trials instead carry their directly constructed pure-charge
+balance. Their numerical log-charge representation is confined to Newton
+correction and classification (EqID `tangent_plane_trial_balance`); physical
+constraints and Ipopt derivatives are unchanged.
+
 A zero-amount phase does not carry that implication. All returned charged
 phases must satisfy electroneutrality. Support removes coordinates; explicitly
 empty support must not silently mean all species. A support unable to form a
@@ -399,7 +406,12 @@ that packing when recomputing molar volume, without a second root solve. The
 returned packing, density and pressure row describe the final point. Packing
 outside the domain or nonpositive supported composition yields an unavailable
 row with its existing cause, never an invented TPD. Charged-family admission
-below applies even when packing is supplied. Donor slope and estimated
+below applies even when packing is supplied. An explicit charged Vapor support
+requires `DensityTemperature` and must match its own lowest stable pressure root
+after final reconstruction, within the existing root window and residual criterion,
+with positive finite pressure slope. A sole root on the Liquid side is unavailable;
+a sole root with no loop evidence retains the density owner's `Unspecified` meaning.
+This admission supplies no charged-Vapor discovery or physical vapor-validation claim. Donor slope and estimated
 uncertainty remain available when a positive full-support donor exists, but
 optimizer-only values are absent. Exhausting the evaluation sequence, a zero
 or negative TPD, or a donor estimate establishes no stability conclusion.
