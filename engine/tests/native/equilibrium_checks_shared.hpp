@@ -28,6 +28,36 @@
 
 namespace equilibrium_checks {
 
+// EqID reaction_activity_quotient: compare with fresh raw rows, then remove every stored diagnostic.
+template<class Model>
+void check_activity_defect(const Model& model, const epcsaft::equilibrium::CompiledSystem& compiled,
+    epcsaft::equilibrium::EquilibriumResult candidate, double log_k) {
+    using namespace epcsaft::equilibrium;
+    candidate.success = false; candidate.requested_tolerance_met = false;
+    const auto raw = compiled.evaluate(candidate.coordinates).values;
+    const auto& nu = candidate.declaration->reactions[0].stoichiometry;
+    double defect = 0;
+    for (std::size_t j = 0; j < raw.size(); ++j) {
+        const auto& row = compiled.rows[j];
+        if (row.kind == RowKind::Chemical && row.phase == 0) defect += nu[row.index] * raw[j];
+        if (row.kind == RowKind::ReactionMassAction && row.index == 0) defect = raw[j];
+    }
+    const auto read = reaction_activities(model, candidate)[0];
+    CHECK(read.log_quotient && std::abs(*read.log_quotient - log_k) > 1e-4);
+    CHECK(std::abs(*read.log_quotient - log_k - defect) <= 1e-10);
+    candidate.residuals.assign(candidate.residuals.size(), NAN); candidate.classified_residuals = {INFINITY};
+    candidate.multipliers = {NAN}; candidate.constraint_multipliers = {INFINITY};
+    CHECK(reaction_activities(model, candidate)[0].species.log_activities == read.species.log_activities);
+    auto declaration = std::make_shared<EquilibriumProblem>(*candidate.declaration);
+    if (declaration->reactions[0].correlation) declaration->reactions[0].correlation->a += 0.7;
+    else declaration->reactions[0].equilibrium_constant = 2.0;
+    candidate.declaration = declaration;
+    const auto changed = reaction_activities(model, candidate)[0];
+    CHECK(changed.basis == read.basis && changed.log_quotient == read.log_quotient && changed.species.activities == read.species.activities);
+    std::printf("activity-defect,lnQ=%.17g,lnK=%.17g,raw=%.17g,error=%.17g,poison=0,target=0\n",
+        *read.log_quotient, log_k, defect, *read.log_quotient - log_k - defect);
+}
+
 inline double convergence_limit(const epcsaft::core::Convergence& convergence) {
     CHECK(convergence.criterion != nullptr);
     return std::max(convergence.criterion->value, convergence.floor.value_or(0.0));

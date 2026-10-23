@@ -5257,3 +5257,24 @@ def reaction_log10_reciprocal(law: ReactionLogPolynomial) -> list[float]:
     Returns [-b/ln(10), -a/ln(10), -d/ln(10)]. A nonzero logarithmic coefficient c is refused; no refit, standard-state change or validity-range extension is performed.
     """
     ...
+
+class SpeciesActivities:
+    standard_molality_mol_per_kg: float | None
+    solvent_index: int | None
+    log_activities: list[float | None]
+    activities: list[float | None]
+    causes: list[str]
+
+class ReactionActivities:
+    phase_index: int
+    reaction_index: int
+    basis: str
+    cause: str
+    reference_pressure_pa: float | None
+    log_quotient: float | None
+    species: SpeciesActivities
+
+@overload
+def reaction_activities(model: HelmholtzModel, result: EquilibriumResult) -> list[ReactionActivities]: ...
+@overload
+def reaction_activities(model: IdealMoleFraction, result: EquilibriumResult) -> list[ReactionActivities]: ...

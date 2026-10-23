@@ -36,6 +36,11 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
 
 namespace {
 
+// EqIDs single_ion_activity_coefficient, reaction_activity_quotient: retain log differences.
+double activity_log(double finite, double reference, double log_concentration = 0.0) {
+    return log_concentration == 0.0 ? finite - reference : (finite - reference) + log_concentration;
+}
+
 std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
     if (!state.log_fugacity_coefficient.has_value())
         throw std::runtime_error("reference fugacity is unavailable");
@@ -644,7 +649,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
     bool parameter_jets,
-    std::size_t reference_order
+    std::size_t reference_order,
+    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values
 ) {
     core::Scope scope("reaction_references");
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
@@ -672,7 +678,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         inputs.insert(inputs.end(), {double(references[row].reference_pressure_pa.has_value()),
             references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
     }
-    if (auto stored = model.stored_references(inputs, 4, 8)) return std::move(*stored);
+    if (!species_values) if (auto stored = model.stored_references(inputs, 4, 8)) return std::move(*stored);
+    if (species_values) species_values->resize(stoichiometries.size());
     scope.probe("reference_cache_miss", 1.0);
     struct CachedTrace final {
         double pressure = 0.0;
@@ -732,6 +739,24 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
         // Additional consumed columns, each the admitted sqrt(m) limit of its ladder.
         const auto& trace = *found->result.trace;
+        if (species_values && diagnostic.status == NeutralReferenceStatus::Available) {
+            auto& columns = (*species_values)[row];
+            columns.resize(stoichiometries[row].size());
+            for (std::size_t i = 0; i < columns.size(); ++i) {
+                auto& column = columns[i];
+                try {
+                    for (std::size_t k = 0; k < 3; ++k) {
+                        const auto& state = !trace.pure_state.empty() && trace.pure_state[i]
+                            ? *trace.pure_state[i] : trace.state[k + 2];
+                        if (&state == &trace.state[k + 2])
+                            if (const auto cause = properties::vapor_side(state)) throw std::runtime_error(*cause);
+                        column.ladder[k] = std::log(state.molar_density / 1.0)
+                            + require_component_property(state.residual_chemical_potential_over_rt[i]);
+                    }
+                    admit_ladder(column, 1.0, policy::REFERENCE_CONVERGENCE_TOLERANCE.value);
+                } catch (const std::exception& error) { column.message = error.what(); }
+            }
+        }
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
             for (std::size_t d = 2; d <= reference_order; ++d)
@@ -758,7 +783,47 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                 }
 
     }
-    model.store_references(std::move(inputs), result);
+    if (species_values) for (std::size_t r = 0; r < result.size(); ++r) {
+        auto& columns = (*species_values)[r];
+        if (columns.empty()) {
+            columns.resize(stoichiometries[r].size());
+            for (auto& column : columns) column.message = result[r].message;
+        }
+    }
+    if (!species_values) model.store_references(std::move(inputs), result);
+    return result;
+}
+
+SpeciesActivities species_activities(const std::vector<double>& composition, const State* state,
+    const std::vector<NeutralReferenceReactionDiagnostic::Derivative>& references,
+    const Parameters* parameters, const NeutralReferenceDeclaration* declaration, ReferenceSourceBasis basis) {
+    SpeciesActivities result;
+    if (declaration) {
+        result.solvent_index = declaration->solvent_index;
+        result.standard_molality_mol_per_kg = declaration->standard_molality_mol_per_kg;
+    }
+    result.log_activities.resize(composition.size()); result.activities.resize(composition.size());
+    result.causes.resize(composition.size());
+    for (std::size_t i = 0; i < composition.size(); ++i) {
+        try {
+            if (!references.empty() && !references.at(i).value)
+                throw std::runtime_error("species reference unavailable: " + references[i].message);
+            const double standard = references.empty() ? 0.0 : *references[i].value;
+            double log_concentration = std::log(composition[i]);
+            if (declaration && basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution && i != *declaration->solvent_index)
+                log_concentration -= std::log(parameters->molar_mass_kg_per_mol[*declaration->solvent_index]
+                    * declaration->standard_molality_mol_per_kg);
+            const double value = composition[i] == 0.0 ? -INFINITY : state ? activity_log(std::log(state->molar_density / 1.0)
+                + require_component_property(state->residual_chemical_potential_over_rt.at(i)), standard, log_concentration)
+                : log_concentration;
+            if (std::isnan(value) || value == INFINITY) throw std::runtime_error("nonfinite log activity");
+            result.log_activities[i] = value;
+            const double activity = state ? std::exp(value) : composition[i];
+            if (!std::isfinite(activity) || (activity == 0.0 && composition[i] > 0.0))
+                result.causes[i] = "activity exponentiation overflow or underflow";
+            else result.activities[i] = activity;
+        } catch (const std::exception& error) { result.causes[i] = error.what(); }
+    }
     return result;
 }
 
@@ -1082,8 +1147,8 @@ ElectrolyteActivity electrolyte_activity(
     const auto& state = result.state;
     const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient
-    const double first = log_fugacity[0] - reference.log_fugacity[0];
-    const double second = log_fugacity[1] - reference.log_fugacity[1];
+    const double first = activity_log(log_fugacity[0], reference.log_fugacity[0]);
+    const double second = activity_log(log_fugacity[1], reference.log_fugacity[1]);
     const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
     const double mean_log_x = (
@@ -1095,8 +1160,8 @@ ElectrolyteActivity electrolyte_activity(
             * model.parameters().molar_mass_kg_per_mol[component];
     }
     // EqID: molality_activity_conversion
-    const double mean_log_m = mean_log_x
-        - std::log(1.0 + solute_ratio.value_or(solvent_mass * molality * coefficient_sum));
+    const double mean_log_m = activity_log(mean_log_x,
+        std::log(1.0 + solute_ratio.value_or(solvent_mass * molality * coefficient_sum)));
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;

@@ -647,6 +647,27 @@ void density_and_reference() {
             - std::log(1.0 + nine.parameters().molar_mass_kg_per_mol[0] * 2.0 * (acid + background));
         CHECK(std::abs(full.mean_ionic_log_molality_scale - expected) <= 1e-10);
         CHECK(full.osmotic_coefficient && std::holds_alternative<double>(*full.osmotic_coefficient));
+        m[1] = 0.15;  // Occupied molecular solute in addition to both electrolyte pairs.
+        const auto multi = epcsaft::electrolyte_activity(nine, 298.15, 1e5, water, {3, 4}, {1, 1}, acid, mixed_reference, std::nullopt, m);
+        epcsaft::NeutralReferenceDeclaration declaration{0, {0,1,1,4,1,1,1,1,1}, 1.0, {}};
+        std::vector<double> nu(9, 0.0); nu[3] = nu[4] = 1.0;
+        std::vector<std::vector<epcsaft::NeutralReferenceReactionDiagnostic::Derivative>> columns;
+        const auto diagnostics = epcsaft::reaction_references(nine, 298.15, 1e5, declaration, {nu}, {{}}, false, std::nullopt, 0, false, 0, &columns);
+        CHECK(diagnostics[0].status == epcsaft::NeutralReferenceStatus::Available);
+        const double mass = nine.parameters().molar_mass_kg_per_mol[0], total_m = std::accumulate(m.begin(), m.end(), 0.0);
+        std::vector<double> x(9); x[0] = 1.0 / (1.0 + mass * total_m);
+        for (std::size_t i = 1; i < 9; ++i) x[i] = x[0] * mass * m[i];
+        const auto read = epcsaft::species_activities(x, &multi.state, columns[0], &nine.parameters(), &declaration,
+            epcsaft::ReferenceSourceBasis::CommonMolalityInfiniteDilution);
+        const double mean = 0.5 * (*read.log_activities[3] - std::log(m[3]) + *read.log_activities[4] - std::log(m[4]));
+        CHECK(std::abs(mean - multi.mean_ionic_log_molality_scale) <= 1e-10);
+        const auto solvent = epcsaft::solvent_activity(nine, 298.15, 1e5, x, mixed_reference, multi.state);
+        const auto& pure = *mixed_reference.pure_solvent_state;
+        const double standard_gap = *columns[0][0].value - std::log(pure.molar_density) - *pure.residual_chemical_potential_over_rt[0];
+        CHECK(solvent.solvent_activity && std::abs(*read.log_activities[0] - std::log(*solvent.solvent_activity) + standard_gap) <= 1e-10);
+        std::printf("activity-multisolute,acid=%.17g,background=%.17g,mean=%.17g,legacy=%.17g,water=%.17g,standardGap=%.17g\n",
+            acid, background, mean, multi.mean_ionic_log_molality_scale, *read.log_activities[0], standard_gap);
+        m[1] = 0;
         const auto rejects = [&](const std::vector<double>& declaration, const auto& ref) {
             try {
                 epcsaft::electrolyte_activity(nine, 298.15, 1e5, water, {3, 4}, {1, 1}, acid, ref, std::nullopt, declaration);
@@ -1016,6 +1037,25 @@ void liquid_reference_branch_evidence() {
         {std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution});
     CHECK(pure_gas.status == epcsaft::NeutralReferenceStatus::Available && pure_gas.terminal_contraction
           && close(*pure_gas.terminal_contraction, 3.2166161799675423, 1e-10));
+    epcsaft::State extreme; extreme.molar_density = 1; extreme.residual_chemical_potential_over_rt = {1000,-1000};
+    const auto range = epcsaft::species_activities({0.5,0.5}, &extreme);
+    CHECK(range.log_activities[0] && range.log_activities[1] && !range.activities[0] && !range.activities[1]);
+    CHECK(!range.causes[0].empty() && !range.causes[1].empty());
+    for (const auto choice : {epcsaft::SpeciesReference::PureGas, epcsaft::SpeciesReference::PureLiquid}) {
+        const epcsaft::HelmholtzModel fluid(identical_ethane);
+        const double pressure = choice == epcsaft::SpeciesReference::PureGas ? 100.0 : 1e7;
+        const epcsaft::NeutralReferenceDeclaration declaration{0, {0,1}, 1.0, {choice,choice}};
+        const epcsaft::ReactionReference source{pressure, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+        std::vector<std::vector<epcsaft::NeutralReferenceReactionDiagnostic::Derivative>> columns;
+        const auto contracted = epcsaft::reaction_references(fluid, 300, pressure, declaration, {{-2,1}}, {source}, false, std::nullopt, 0, false, 0, &columns);
+        const auto finite = fluid.state_at_pressure(300, pressure, {0.4,0.6}, choice == epcsaft::SpeciesReference::PureGas ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid);
+        const auto read = epcsaft::species_activities({0.4,0.6}, &finite, columns[0]);
+        std::printf("activity-pure,choice=%d,P=%.17g,cause=%s\n", int(choice), pressure, contracted[0].message.c_str());
+        CHECK(contracted[0].terminal_contraction && read.log_activities[0] && read.log_activities[1]);
+        const double expected = -2 * (std::log(0.4 * finite.molar_density) + *finite.residual_chemical_potential_over_rt[0])
+            + std::log(0.6 * finite.molar_density) + *finite.residual_chemical_potential_over_rt[1] - *contracted[0].terminal_contraction;
+        CHECK(std::abs(-2 * *read.log_activities[0] + *read.log_activities[1] - expected) <= 1e-10);
+    }
     const epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     const auto message = [](const auto& call) {
         try { call(); } catch (const std::runtime_error& error) { return std::string(error.what()); }
