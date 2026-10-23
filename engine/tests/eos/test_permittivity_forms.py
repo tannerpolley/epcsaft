@@ -10,6 +10,7 @@ derivative chain through pressure and internal energy.
 import copy
 import json
 import math
+import runpy
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,24 @@ T, RHO, X = 298.15, 55000.0, (0.96, 0.02, 0.02)
 AVOGADRO, BOLTZMANN = 6.02214076e23, 1.380649e-23
 # Debye^2 in J A^3 from the SI Debye (1e-21/c C m), CODATA 2018 epsilon_0 and the angstrom.
 DEBYE_SQUARED_J_A3 = (1.0e-21 / 299792458.0) ** 2 / (4.0 * math.pi * 8.8541878128e-12 * 1.0e-30)
+
+
+def test_component_permittivity_zero_water() -> None:
+    """Bülow 2019 Eq. (7), including support transitions on the same native model."""
+    declarations = runpy.run_path(str(SELECTIONS.parents[2] / "reproduction/2019-bulow/scripts/reproduce.py"))["declarations"]
+    model, _ = declarations()
+    for path in ((0.5, 0.0, 0.5), (0.0, 0.5, 0.0), (1.0, 0.9, 1.0e-8, 1.0e-12)):
+        for t in path:
+            x = (t, (1.0 - t) / 2.0, (1.0 - t) / 2.0)
+            state = model.state(298.15, rho=1000.0, x=x)
+            reference = {0.0: 11.0, 1.0: 80.0, 0.9: 73.1, 0.5: 45.5}.get(t)
+            assert math.isfinite(state.bulk_relative_permittivity)
+            if reference is not None:
+                assert abs(state.bulk_relative_permittivity - reference) <= 1.0e-12
+            fresh, _ = declarations()
+            expected = fresh.state(298.15, rho=1000.0, x=x)
+            for quantity in ("bulk_relative_permittivity", "pressure", "residual_internal_energy", "compressibility_factor"):
+                assert getattr(state, quantity).hex() == getattr(expected, quantity).hex()
 
 
 def _document(name: str) -> dict[str, Any]:
