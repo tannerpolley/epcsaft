@@ -21,6 +21,7 @@ data/packets/**/parameters/parameters.json                      -diff linguist-g
 * text=auto
 
 # Retained numerical CSV hashes include their original line endings.
+analyses/2026-hydrochloric-acid-chloride-basis/inputs/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 analyses/2026-tpd-phase-discovery/results/**/*.csv -text
 analyses/2026-mixed-chloride-water-activity/inputs/** -text
 data/packets/mixed-chloride-water-observations/** -text
