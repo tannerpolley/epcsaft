@@ -800,7 +800,8 @@ epcsaft::ResidualEnergyAction anchored_reference_partial(const epcsaft::Helmholt
     const std::vector<double>& x, const std::vector<double>& nu, std::size_t a, std::size_t b,
     std::optional<std::size_t> parameter, std::optional<double> anchor = std::nullopt) {
     return epcsaft::reference_partial_from_state(model, T, x, nu, a, b, parameter,
-        model.state_at_pressure(T, P, x, epcsaft::DensityBranch::Liquid, anchor));
+        model.state_at_pressure(T, P, x, epcsaft::DensityBranch::Liquid, anchor),
+        [&] { for (std::size_t i=0;i<x.size();++i) if (x[i]>0 && model.parameters().charge_number[i]) return false; return true; }());
 }
 double factorial(unsigned n) { double v = 1; for (unsigned k=2; k<=n; ++k) v *= k; return v; }
 double binomial(unsigned n, unsigned k) { return factorial(n)/(factorial(k)*factorial(n-k)); }
@@ -973,22 +974,26 @@ double reference_lower(const epcsaft::HelmholtzModel& m, double T,
 void reference_f9() {
     const double T=298.15,R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     auto params=properties_support::aqueous_electrolyte();
-    epcsaft::HelmholtzModel model(params,{{PF::DispersionEnergyOverK,{0}}});
+    for (const auto family : {PF::DispersionEnergyOverK, PF::BornDiameter}) {
+    const std::size_t index = family == PF::BornDiameter ? 1 : 0;
+    const double theta = index ? 3.445 : 353.95;
+    epcsaft::HelmholtzModel model(params,{{family,{index}}});
     // Each parameter offset owns one model; T/P shifts use the unchanged model.
     std::map<double, std::unique_ptr<epcsaft::HelmholtzModel>> shifted_models;
     const auto shifted_model = [&](double step) -> const epcsaft::HelmholtzModel& {
         auto& cached = shifted_models[step];
         if (!cached) {
             auto p = params;
-            p.dispersion_energy_over_k[0] += step;
+            if (index) p.born_diameter_angstrom[index] += step;
+            else p.dispersion_energy_over_k[index] += step;
             cached = std::make_unique<epcsaft::HelmholtzModel>(p,
-                std::vector<epcsaft::ActiveParameter>{{PF::DispersionEnergyOverK,{0}}});
+                std::vector<epcsaft::ActiveParameter>{{family,{index}}});
         }
         return *cached;
     };
     for(double P:{1e5,2e5}) for(double ratio:{1.0,2.0}) {
         std::optional<double> anchor;
-        for(double molality:{1e-10,1e-12,1e-14}) {
+        for(double molality:{0.0,1e-10,1e-12,1e-14}) {
             const double salt=molality*params.molar_mass_kg_per_mol[0]*ratio;
             const std::vector<double> x{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
             const auto state=model.state_at_pressure(T,P,x,epcsaft::DensityBranch::Liquid,anchor);
@@ -1003,14 +1008,14 @@ void reference_f9() {
                 if(d==2 && !(a==2 || (a==1 && b==1) || (a==1 && c==1) || (c && b)))continue;
                 const auto exact=anchored_reference_partial(model,T,P,x,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt,*anchor);
-                const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?353.95:1);
+                const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?theta:1);
                 const double value=scale*exact.action.value_or(reference_nan);
                 const auto lower=[&](double step) {
                     double t=T,pressure=P;
                     unsigned la=a,lb=b;
                     if(!c && a){t+=step;--la;}else if(!c){pressure+=step;--lb;}
                     const auto& perturbed = c ? shifted_model(step) : model;
-                    if(la+lb<=2) {
+                    if(molality != 0.0 && la+lb<=2) {
                         const LowerPoint key{c ? step : 0.0, t, pressure};
                         auto found = lower_states.find(key);
                         if (found == lower_states.end()) {
@@ -1025,7 +1030,7 @@ void reference_f9() {
                     }
                     return anchored_reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
                 };
-                double h=c?0.02:a?0.2:2e4;
+                double h=c?(index?0.002:0.02):a?0.2:2e4;
                 bool accepted=false;
                 double coarse=scale*(lower(h)-lower(-h))/(2*h);
                 for(unsigned halving=0;halving<=6;++halving) {
@@ -1036,7 +1041,7 @@ void reference_f9() {
                     const double target=1e-7+1e-6*std::max(std::abs(rich),sigma);
                     const bool resolved=refine<=target/4;
                     accepted=resolved&&std::abs(value-rich)<=target;
-                    const std::string id="F9/partial/"+std::to_string(int(P))+"/"+std::to_string(int(ratio))+"/"+std::to_string(int(-std::log10(molality)))
+                    const std::string id="F9/partial/"+std::to_string(int(P))+"/"+std::to_string(int(ratio))+"/"+std::to_string(molality==0?0:int(-std::log10(molality)))+"/"+std::to_string(index)
                         +"/"+std::to_string(a)+std::to_string(b)+std::to_string(c);
                     const auto inputs=recording_support::fields({recording_support::field("T",T),recording_support::field("P_source",P),
                         recording_support::field("molality",molality),recording_support::field("ratio",ratio),
@@ -1062,6 +1067,7 @@ void reference_f9() {
             }
         }
     }
+}
 }
 void reference_limits() {
     const double T=298.15,P=1e5,R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
@@ -1101,7 +1107,7 @@ void reference_limits() {
                     "Relationship","terminal-ladder","unchanged lower-column admission scales","absolute",ok,"F9-lower-limit");
             }
             const double limit=(10*values[2]-values[1])/9;  // sqrt(m) Richardson limit of the terminal pair (#353)
-            CHECK(std::abs(*admitted-(fixed && b?0:limit))<=1e-12*std::max(1.0,std::abs(limit)));
+            CHECK(scale*std::abs(*admitted-(fixed && b?0:limit))<=tolerance);
         }
         auto doubled=declaration;doubled.solute_molality_ratios={0,2,2};
         const auto jet2=epcsaft::reaction_references(model,T,P,doubled,{{-1,1,1}},{reference},true,std::nullopt,2,true,4)[0];
@@ -1125,16 +1131,24 @@ void reference_limits() {
 
         for(const auto& column:jet.derivatives) {
             CHECK(column.value);
-            for(unsigned k=0;k<2;++k) {
-                const std::string id="F9/limit/"+std::to_string(fixed)+"/"+std::to_string(column.temperature_order)
-                    +std::to_string(column.pressure_order)+std::to_string(column.parameter.has_value())+"/"+std::to_string(k);
-                const bool ok=R*column.scaled_changes[k]<=0.01;
-                recording_support::compare_custom(id.c_str(),"scaled consecutive reference change","J/mol/K",
-                    R*column.scaled_changes[k],0,recording_support::fields({recording_support::field("target",0.01),
-                    recording_support::field("a",double(column.temperature_order)),recording_support::field("b",double(column.pressure_order)),
-                    recording_support::field("theta",column.parameter?1:0),recording_support::field("source_pressure",src)}),
-                    "Relationship","terminal-ladder","independent consumed-column admission","absolute",ok,"F9-limit");
+            if(fixed && column.pressure_order) continue;
+            std::array<double,3> values{};
+            unsigned rung=0;
+            for(double molality:{1e-10,1e-12,1e-14}) {
+                const double salt=molality*params.molar_mass_kg_per_mol[0];
+                const std::vector<double> x{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
+                values[rung++]=anchored_reference_partial(model,T,src,x,{-1,1,1},column.temperature_order,
+                    column.pressure_order,column.parameter).action.value_or(reference_nan);
             }
+            const double limit=(10*values[2]-values[1])/9;
+            const double scale=R*std::pow(T,int(column.temperature_order))*std::pow(src,int(column.pressure_order))
+                *(column.parameter?353.95:1);
+            const double gap=scale*(*column.value-limit);
+            const std::string id="F9/limit/"+std::to_string(fixed)+"/"+std::to_string(column.temperature_order)
+                +std::to_string(column.pressure_order)+std::to_string(column.parameter.has_value());
+            recording_support::compare_custom(id.c_str(),"scaled analytic-minus-ladder reference","J/mol/K",gap,0,
+                recording_support::fields({recording_support::field("target",0.01)}),"Relationship","terminal-ladder",
+                "analytic limit compared with retained finite calculation","absolute",std::abs(gap)<=0.01,"F9-limit");
         }
         // Existing equilibrium driver supplies only the case-center composition.
         // This independent verification completion never supplies runtime calorics.

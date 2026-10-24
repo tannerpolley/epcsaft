@@ -49,7 +49,7 @@ $$
 - Status: Exact derivation
 - Source: Fugacity definition with the raw density-standard reference of `neutral_reaction_reference_transfer`; #566 design
 - Description: Fugacity-based Henry constant in Pa of a neutral solute i in one pure solvent of an all-neutral model: H = lim f_i/x_i, not the partial-pressure volatility p/x.
-- Change note: Admitted per solute on one unit reaction row of `neutral_reaction_reference_transfer` with the terminal pair of `reference_limit_terminal_pair`; that admission measures observed terminal change, not error to infinite dilution. Mixed or saline solvents and charged models are refused (NonNeutralDeclaration). The molality form M_s H^px is not exposed.
+- Change note: Admitted per neutral solute on one unit reaction row of `neutral_reaction_reference_transfer`, using the analytic solvent insertion of `infinite_dilution_reference`. Mixed solvents and charged models are refused (NonNeutralDeclaration). The molality form M_s H^px is not exposed.
 
 $$
 H_i^{px}=\lim_{x_i\to0}\frac{f_i}{x_i}=P\phi_i^\infty=RT\rho_0\exp L_i^\infty,\qquad L_i=\ln\frac{\rho_m}{\rho_0}+\Phi_{n_i},\qquad\rho_0=1\ \mathrm{mol\,m^{-3}}.
@@ -1926,7 +1926,7 @@ $$
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
 - Description: Charge-neutral reaction contraction with a declared neutral solvent and optional per-species pure-liquid, pure-vapor or infinite-dilution references. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and a native positive-slope pressure root on the declared side of the pure isotherm's mechanical loop; a single root on an isotherm whose finite ALG-DENSITY scan finds no loop (in practice above the EOS critical temperature) serves either declared branch. Unsuperscripted C_r means C_r^b under the declared map. Dilute contributions are evaluated at each of the 1e-10, 1e-12 and 1e-14 mol/kg rungs. The returned contraction, and every returned temperature, pressure and parameter column, is not the 1e-14 mol/kg rung but the sqrt(m) Richardson limit of the two terminal rungs; selected pure-state contributions are rung independent and pass through it unchanged. Admission compares that limit with the limit of the 1e-10 and 1e-12 mol/kg rungs (EqID: `reference_limit_terminal_pair`). This is an observed convergence check, not an error bound on infinite-dilution bias. Its limit (falsifier 3 of #353): a perturbation delta of the 1e-12 mol/kg rung moves the returned limit by -delta/9 and the earlier limit by 10 delta/9, so the admitted difference changes by 11 delta/9; a 1e-6 rung error passes a unit-scaled column (1.2e-6 against 5e-5) but fails once scaled by T near 298 K (3.6e-4). Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
+- Change note: The solvent standard uses the exact ion-free liquid state. Pure overrides require neutral species and a positive-slope root on the declared side of the pure isotherm's mechanical loop; a single root with no sampled loop serves either branch. Infinite-dilution species use `infinite_dilution_reference` at the same source pressure. Every returned T/P/parameter column differentiates that reference, with independent numerical availability. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23, specify pure water and solute infinite dilution; the historical CO2 vapor selection at e12a5ff8 is not an unambiguous paper attribution (#274). Per-species activities use raw mole fractions; uniform common molality retains A_r. Declarations are fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions, without an absolute single-ion standard.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
@@ -1948,15 +1948,14 @@ A_r=\left(\sum_{i\ne s}\nu_{ri}\right)\ln(M_s m^\circ),\qquad
 \ln K_{x,r}+C_r^b,&\text{raw mole-fraction source},
 \end{cases}\\
 n_s=1/M_s,\quad n_i=m r_i\ (i\ne s),\quad \sum_i z_i r_i=0,\quad
-\mathcal M=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\\
+\mathbf x^s(0)=\mathbf e_s,\\
 \left.\partial_T L_i\right|_{P_{src}}=-\frac{h_i^{res}+RT}{RT^2},\qquad \partial_{P_{src}}L_i=\frac{v_i}{RT}\quad\text{(pure neutral species)},\\
 L_i-\ln[P_{src}/(RT\rho_0)]\to0,\quad T L_{i,T}+1\to0,\quad P_{src}L_{i,P}-1\to0\quad(P_{src}\to0,\mathrm{pure\ gas}),\\
 C_r^{(k)}=C_r(m_k),\quad m_k\in\{10^{-10},10^{-12},10^{-14}\}\ \text{(rung calculations)},\\
 \widehat C_r=\frac{10\,C_r(10^{-14})-C_r(10^{-12})}{9},\qquad
 \widehat C_r^{-}=\frac{10\,C_r(10^{-12})-C_r(10^{-10})}{9},\qquad
 |\widehat C_r-\widehat C_r^{-}|\le 5\times10^{-5},\\
-\widehat D=\frac{10\,D(10^{-14})-D(10^{-12})}{9},\quad
-s_D|\widehat D-\widehat D^{-}|\le\epsilon_D\quad\text{for every returned column }D=\partial_T^a\partial_{P_{src}}^b\partial_\theta^pC_r.
+D=\partial_T^a\partial_{P_{src}}^b\partial_\theta^p C_r(T,P_{src};\mathbf x^s(0)).
 $$
 
 ## `neutral_reaction_reference_pressure_jet`
@@ -1964,7 +1963,7 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
-- Description: First and second pressure derivatives of the neutral reaction reference. The displayed partials are rung calculations at each of the 1e-10, 1e-12 and 1e-14 mol/kg states; the returned C_P and C_PP are their sqrt(m) Richardson limits, admitted on P and P^2 times the change between the two limits (5e-5 and REFERENCE_HEAT_CAPACITY_TOLERANCE/R; EqID: `reference_limit_terminal_pair`). The extensive residual potential is psi=Ares/(RT), each rung state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
+- Description: First and second source-pressure derivatives of the analytic solvent-limit contraction. The extensive regular residual potential is psi=Ares/(RT), at N=1 mol and V=1/rho_s; its single ionic insertion includes Born and the zero Debye–Hückel limit. DeltaNu is the stoichiometric mole change.
 - Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed single-state partials; for mixed references, sum the masked dilution contribution and each selected pure-state contribution through `reference_single_insertion_taylor`. No runtime finite differences are used. Higher source-pressure derivatives are supplied by `reference_mixed_temperature_pressure_derivatives` in Properties; downstream use is separately qualified. The first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
 
 $$
@@ -1993,9 +1992,9 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
-- Source: Implicit differentiation of the pressure closure at the fixed terminal composition of the neutral reaction reference; Lambda = ln phi + ln(P/(RT rho0)) and RT^2 d ln phi_i/dT|_P = -hbar_i^res
-- Description: First temperature derivative at fixed reference pressure of the returned reference limit and of the density-basis equilibrium constant; the displayed partials are rung calculations. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho, and the source basis term A is temperature independent. The target is transported as s=-ln K_rho, whose slope maps to species through the same minimum-norm owner as its value.
-- Change note: Order one only. The slope is the sqrt(m) Richardson limit of the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg), admitted when T times the change between its two limits is at most 5e-5, the value criterion in RT units (EqID: `reference_limit_terminal_pair`). This is an observed convergence criterion, not a limit-error bound. The limit removes the Debye-Hueckel sqrt(m) tail, whose multiple M = -3/2(1 + d ln eps/d ln T) - T alpha_P/2 of the value's tail refused a steep declared permittivity before #353. A system-pressure row combines this slope with the pressure jet at first order. The second temperature derivative is `standard_state_transfer_temperature_second_derivative`; parameter derivatives are `standard_state_transfer_parameter_derivative`.
+- Source: Implicit differentiation of the pressure closure at the fixed ion-free solvent composition of the neutral reaction reference; Lambda = ln phi + ln(P/(RT rho0)) and RT^2 d ln phi_i/dT|_P = -hbar_i^res
+- Description: First temperature derivative at fixed reference pressure of the returned reference limit and of the density-basis equilibrium constant. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho, and the source basis term A is temperature independent. The target is transported as s=-ln K_rho, whose slope maps to species through the same minimum-norm owner as its value.
+- Change note: Differentiate the returned solvent insertion with `reference_single_insertion_taylor`, retaining the implicit density and site chains. No finite dilution or terminal-change criterion is evaluated. A system-pressure row combines this slope with the pressure jet. The second T derivative and active-parameter derivatives have their own requested columns.
 
 $$
 p_T=R(V^{-1}-\psi_V)-RT\psi_{VT},\quad V_T=-p_T/p_V,\\
@@ -2010,9 +2009,9 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
-- Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and terminal composition of the neutral reaction reference
-- Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the returned reference limit; the displayed partials are rung calculations. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
-- Change note: Order one only. A slope is the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg rungs, admitted when the parameter scale s_theta times its change from the 1e-10/1e-12 limit is at most 5e-5 (EqID: `reference_limit_terminal_pair`). s_theta = max(abs(theta), 1) in native units is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). A dielectric volume d_V, near 4e-4 m3/mol, takes s_theta = max(abs(d_V), 1e-3 m3/mol), its 1 L/mol coordinate unit (#441). Every reference parameter column, the ion reference of `reference_molality_sequence` included, uses this s_theta. It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the limit is linear in the rungs, so the admitted slope is the exact derivative of the returned contraction. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions consume the additional mixed derivatives in `reference_mixed_temperature_pressure_derivatives`.
+- Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and ion-free solvent composition of the neutral reaction reference
+- Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the returned reference limit. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
+- Change note: One active coordinate at fixed T/P and ion-free solvent fractions. The parameter scale used in polarization is max(abs(theta),1) in native units, with max(abs(d_V),1e-3 m3/mol) for dielectric volume. Scaling is restored after extraction; it introduces no approximation or column admission tolerance. Referenced enthalpy additionally consumes `standard_state_transfer_temperature_parameter_derivative`; heat capacity consumes `reference_mixed_temperature_pressure_derivatives`.
 
 $$
 p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
@@ -2025,9 +2024,9 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
-- Source: Mixed implicit differentiation of the isobaric reference contraction and pressure closure along one active EOS coordinate, at fixed temperature, reference pressure and terminal composition
-- Description: Mixed derivative $\partial^2C/\partial T\partial\theta$ of the returned reference limit (displayed partials are rung calculations), with $\psi=A^{res}/(RT)$ at $N=1$ mol. It supplies the EOS-coordinate derivative of referenced reaction enthalpy; $C$ is independent of the solved equilibrium state.
-- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The shared single-insertion Taylor calculation in `reference_single_insertion_taylor` supplies the raw mixed partial after base pressure closure. Return the sqrt(m) Richardson limit of the rungs and admit when $Ts_\theta$ (`standard_state_transfer_parameter_derivative`) times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/s_\theta$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. Higher consumed derivatives and caloric composition follow `reference_mixed_temperature_pressure_derivatives` and `reference_species_calorics`.
+- Source: Mixed implicit differentiation of the isobaric reference contraction and pressure closure along one active EOS coordinate, at fixed temperature, reference pressure and ion-free solvent composition
+- Description: Mixed derivative $\partial^2C/\partial T\partial\theta$ of the returned reference limit, with $\psi=A^{res}/(RT)$ at $N=1$ mol. It supplies the EOS-coordinate derivative of referenced reaction enthalpy; $C$ is independent of the solved equilibrium state.
+- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The shared single-insertion Taylor calculation supplies the mixed partial at the ion-free solvent root, with exact Born, association and density chains. A failed column retains its action cause and does not erase values or sibling directions. Higher consumed derivatives follow `reference_mixed_temperature_pressure_derivatives` and `reference_species_calorics`.
 
 $$
 \mathbf w=\mathbf e_T+V_T\mathbf e_V,\quad
@@ -2051,9 +2050,9 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
-- Source: Second implicit differentiation of the pressure closure at the fixed terminal composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
-- Description: Second temperature derivative at fixed reference pressure of the returned reference limit (displayed partials are rung calculations) along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates this lower partial, including implicit association and pressure closure. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
-- Change note: Evaluated only when a heat-capacity value, an enthalpy temperature action or a second-order temperature action is requested; it supplies s_TT = -(d2 ln K_src/dT2 + d2C/dT2) to the chemical rows. Returned as the sqrt(m) Richardson limit of the rungs and admitted when R T^2 times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K: raw rung differences of 6.0e-4 J/(mol K) decrease by a factor of 10 per ladder step (the sqrt(m) form), and the limit difference is about 1e-8 J/(mol K) (#353). A refusal leaves the value, the first slope and enthalpy available. The same admission serves the order-two chemical-row slope s_TT (lead decision in #147): one owner per slope; the criterion allows about 2e-6 relative change of C_TT; the raw rung change of aqueous NaCl was near 1e-7 relative (T^2 change 7e-5 against 1.2e-3; C_TT = -6.6e-3) before the limit removed its sqrt(m) part. The mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`; third temperature derivatives are not implied.
+- Source: Second implicit differentiation of the pressure closure at the fixed ion-free solvent composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
+- Description: Second temperature derivative at fixed reference pressure of the returned reference limit along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates this lower partial, including implicit association and pressure closure. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
+- Change note: Evaluate only for a consumed heat-capacity value, enthalpy temperature action or second temperature action. The analytic solvent-limit column supplies s_TT=-(d2 ln K_src/dT2 + C_TT). Numerical failures retain their causes independently. Qualification retains the existing 0.01 J/(mol K) scaled comparison with the pinned finite calculation; this comparison is outside runtime.
 
 $$
 \mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad
@@ -2069,9 +2068,9 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
-- Source: Implicit differentiation of C_P = C_V/p_V (`neutral_reaction_reference_pressure_jet`) along the isobaric temperature direction w of `standard_state_transfer_temperature_second_derivative`, at the fixed terminal composition
-- Description: Mixed temperature-pressure derivative of the returned reference limit of a system-pressure reference (displayed partials are rung calculations), with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates the raw source-pressure partial at the resolved terminal state. It supplies s_TP = -d2C/dTdP to the chemical rows of second-order actions that move temperature and pressure, and the pressure slope of the EOS-basis reaction enthalpy, d(Delta_r h_rho)/dP = RT^2 d2C/dTdP, to reference species calorics.
-- Change note: Evaluated at the three ladder points whenever pressure jets and temperature slopes are both requested; a fixed-source-pressure reference has zero. Returned as the sqrt(m) Richardson limit of the rungs and admitted when T P times the change between its two limits (EqID: `reference_limit_terminal_pair`) is at most 5e-5, the value's ln K criterion at the temperature and pressure scales (the analogue of T for the first slope; lead decision recorded in #147). It is an observed convergence criterion, not a limit-error bound. A refusal leaves values, first actions and fixed-temperature actions available. Third-order and d3C/dT2dP derivatives are not implied.
+- Source: Implicit differentiation of C_P = C_V/p_V (`neutral_reaction_reference_pressure_jet`) along the isobaric temperature direction w of `standard_state_transfer_temperature_second_derivative`, at the fixed ion-free solvent composition
+- Description: Mixed temperature-pressure derivative of the returned reference limit of a system-pressure reference, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates the raw source-pressure partial at the resolved terminal state. It supplies s_TP = -d2C/dTdP to the chemical rows of second-order actions that move temperature and pressure, and the pressure slope of the EOS-basis reaction enthalpy, d(Delta_r h_rho)/dP = RT^2 d2C/dTdP, to reference species calorics.
+- Change note: Evaluate when pressure and temperature columns are both requested. A fixed source pressure gives exact zero system-pressure derivatives. Differentiate the same returned solvent insertion; a failed mixed column leaves values and sibling columns available. Higher orders are supplied only by `reference_mixed_temperature_pressure_derivatives`.
 
 $$
 \mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad
@@ -2102,10 +2101,10 @@ $$
 - Status: Exact derivation
 - Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure; issue #225, section 3
 - Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. Orders one and two also supply the lower reference slopes. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
-- Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. For mixed references, mask pure-selected neutral species out of the dilution insertion and add their single-species insertions at their resolved pure states; the remaining ionic insertion stays charge neutral. The displayed C(t) applies to each such state contribution and their sum. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
+- Change note: The same central unweighted site Jacobian eliminates association through degree nine. At an ion-free reference, a separate tape reuses the regular scalar contributions and Born radial work while excluding the analytically zero DH insertion; ordinary state admission is unchanged. Two amount insertions start above the extracted degree. No zero-concentration ionic Hessian is evaluated. Coefficients retain factorials until mixed extraction, and physical normalization is restored once. Mask pure-selected species from the solvent insertion and add their pure-state insertions. Fixed-source system-pressure derivatives are zero.
 
 $$
-z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{1,2,3,4\},\qquad
+z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{0,1,2,3,4\},\qquad
 [t^k]D\psi(z(t))[u]=\frac12[t^{r+1+k}]
 \{\psi(z(t)+ut^{r+1})-\psi(z(t)-ut^{r+1})\},\quad 0\le k\le r,\\
 D^4\psi[u,v,v,v]=\frac{3!}{2}[t^7]\{\psi(z_0+vt+ut^4)-\psi(z_0+vt-ut^4)\},\\
@@ -2122,12 +2121,11 @@ $$
 - Status: Exact derivation
 - Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction; issue #225, sections 2–3 and F8/F9
 - Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. No repeated parameter derivatives or dilution-composition derivatives are consumed.
-- Change note: Each column is the sqrt(m) Richardson limit of EqID `reference_limit_terminal_pair`; the change between its two limits must satisfy the existing heat-capacity change criterion; both raw consecutive changes are reported. This observed convergence does not bound infinite-dilution bias. Columns are independently unavailable when their own calculation or admission fails. Earlier lower-slope admission remains with its existing owner.
+- Change note: Each column differentiates the returned analytic reference at the ion-free solvent state using `reference_single_insertion_taylor`. Columns retain independent action diagnostics and causes. The existing scaled comparison with `reference_limit_terminal_pair` is qualification evidence only; no terminal sequence is evaluated in runtime.
 
 $$
 C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
 C_{ab,\theta}=\partial_T^a\partial_{P_{src}}^b\partial_\theta C,\quad a+b\le3,\\
-E_{abc}=RT^aP_{src}^bs_\theta^c|\delta C_{ab,\theta^c}|\le0.01\ \mathrm{J\,mol^{-1}\,K^{-1}},\quad c\in\{0,1\},\quad a+b+c\ge2,\\
 C_T=\frac{h^{res}+RT}{RT^2},\qquad C_P=-\frac{v}{RT}\quad\text{(identical neutral species, }C=-\Lambda\text{)}.
 $$
 
@@ -2136,7 +2134,7 @@ $$
 - Section: Electrolyte reference states and reported activities
 - Status: Implementation convention
 - Source: Finite terminal-change diagnostic for the declared reference molality sequence.
-- Description: Every reference quantity, an ion log fugacity or a neutral contraction and each of their columns, returns the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg points and is admitted on its change e_f from the 1e-10 and 1e-12 mol/kg limit (#353, #594). The raw consecutive rung changes Delta_k are reported, not admitted.
+- Description: Pinned qualification comparison for the former finite-molality reference. It extrapolates the 1e-12 and 1e-14 mol/kg points and reports its change from the 1e-10/1e-12 pair. It is not the runtime reference after #823.
 - Change note: Convergence diagnostic; neither an error bound nor an estimate of actual bias without additional convergence assumptions. The neutral limit removes the Debye-Hueckel c sqrt(m) tail exactly; an O(m) remainder d m leaves -d 1e-13. For Held 2014 NaCl in water at 298.15 K, e_f is 1.3e-11 against raw rung changes of 1.06e-5.
 
 $$
@@ -2149,11 +2147,27 @@ $$
 - Section: Electrolyte reference states and reported activities
 - Status: Implementation convention
 - Source: EOS convergence sequence for the [Figiel2025] infinite-dilution reference
-- Description: Finite molality ladder and terminal estimate of infinite-dilution log fugacity, accepted only under the declared convergence checks.
-- Change note: A terminal estimate is not mathematical equality with the infinite-dilution limit; retain observed error diagnostics and reference-path failure. The value is admitted when its limit change e_f (`reference_limit_terminal_pair`) is at most 5e-5, and a parameter column when s_theta (`standard_state_transfer_parameter_derivative`) times its limit change is. The limit is linear in the rungs, so each column is the exact derivative of the returned value. The reported reference molality is 1e-14 mol/kg, the finer terminal rung.
+- Description: Historical finite-molality inputs retained only for qualification of `infinite_dilution_reference`. No runtime ladder remains.
+- Change note: The paired baseline declaration and numerical record of #823 identify the old inputs and extrapolation. Terminal changes are convergence diagnostics, not certified error bounds. The runtime molality is now exactly zero and terminal-change fields are unavailable; solvent-root and association diagnostics remain defined.
 
 $$
 \mathcal M_{\mathrm{ref}}=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\qquad \widehat{\ln\phi_i^\infty}=\frac{10\ln\phi_i(10^{-14}\,\mathrm{mol\,kg^{-1}})-\ln\phi_i(10^{-12}\,\mathrm{mol\,kg^{-1}})}{9}.
+$$
+
+## `infinite_dilution_reference`
+
+- Section: Electrolyte reference states and reported activities
+- Status: Exact derivation
+- Source: [Gross2001], A.32–A.33; [Chapman1990], Eqs. 21–24; `born_radial_charging_work`; #823 accepted design D1–D12
+- Description: Fixed-volume first insertion into the extensive residual potential at one ion-free solvent pressure root, for a pure solvent or declared neutral solvent mixture. The reference is dimensionless and uses one total log Z correction.
+- Change note: Hard chain, dispersion, association and admitted polar energy reuse their scalar owners. Association retains solvent-contact response even for a site-free ion. Born has a nonzero insertion; DH and cation pair/triple mixing have zero first insertions. Bulk permittivity and Born shell diameters must be positive, with a regular density root and association Jacobian. A net-neutral charged background is refused as IonicReferenceBackground. T/P and active-coordinate derivatives retain the implicit density/site chains. This defines no ionic-concentration Hessian. No factor of solvent molar mass enters b_i or ln(phi_i); the existing molality conversion remains separate. The retained NaCl comparisons have a case-specific 1e-9 log-fugacity criterion, not a universal error bound or physical validation.
+
+$$
+b_i=\left.\partial_{n_i}\left[\frac{A^r}{RT}\right]\right|_{T,V,n_{j\ne i},\mathbf n=\mathbf y_s},\qquad
+b_i=a_s^r+\rho_s a^r_{\rho}+a^r_{x_i}-\sum_s y_s a^r_{x_s},\\
+P(T,\rho_s,\mathbf y_s)=P_{src},\qquad
+\ell_i^\infty=b_i-\ln\frac{P_{src}}{\rho_s RT},\qquad
+L_i^\infty=b_i+\ln\frac{\rho_s}{\rho_0}.
 $$
 
 ## `residual_chemical_potential`

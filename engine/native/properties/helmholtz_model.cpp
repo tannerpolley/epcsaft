@@ -1292,15 +1292,16 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
 
 ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volume,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-    const PressureActionDirection& direction, std::size_t order) const {
+    const PressureActionDirection& direction, std::size_t order, bool infinite_dilution) const {
     validate_point(temperature, volume, composition);
     validate_composition(composition);
-    require(order > 0 && order <= 4 && stoichiometry.size() == composition.size()
+    require(order <= 4 && stoichiometry.size() == composition.size()
         && finite_vector(stoichiometry) && std::isfinite(direction.temperature)
         && std::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
     ReferenceTaylor result;
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
-    result.status = support_status(*this, composition, insertion)[0];
+    require(!infinite_dilution || !detail::charged_support(composition, parameters_), "ion-free reference solvent required");
+    result.status = infinite_dilution ? PropertyActionStatus::Available : support_status(*this, composition, insertion)[0];
     if (result.status != PropertyActionStatus::Available) return result;
     std::lock_guard<std::mutex> lock(mutex_);
     std::vector<double> key{temperature, volume};
@@ -1337,9 +1338,19 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     }
     if (norm == 0.0) norm = 1.0;
     for (double& v : motion) v /= norm;
-    result.diagnostics.recordings = ensure_tape(point, central.site_fractions,
-        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
-    tape_->site_values = central.site_fractions;
+    const auto signature = predicate_signature(temperature, composition);
+    if (infinite_dilution) {
+        const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
+        (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
+        if (!reference_tape_ || reference_tape_->predicates != signature) {
+            reference_tape_ = detail::HelmholtzTape::record(parameters_, active_, point,
+                central.site_fractions, signature, {}, 0.0, true, true);
+            ++counters_.recordings;
+            result.diagnostics.recordings = 1;
+        }
+    } else result.diagnostics.recordings = ensure_tape(point, central.site_fractions, signature, {}, 0.0, true) ? 1 : 0;
+    auto& tape = infinite_dilution ? *reference_tape_ : *tape_;
+    tape.site_values = central.site_fractions;
     const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
         central.site_fractions, composition, result.status, result.diagnostics);
     if (result.status != PropertyActionStatus::Available) return result;
@@ -1353,7 +1364,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
             auto inserted = path;
             for (std::size_t i = 0; i < width; ++i) inserted[insertion_degree][i] += sign * u[i];
             std::vector<std::vector<double>> outputs;
-            tape_->implicit_taylor(inserted, insertion_degree + last, factorization.get(),
+            tape.implicit_taylor(inserted, insertion_degree + last, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
                 &result.diagnostics.association_residual, &outputs);
             for (std::size_t k = 0; k <= last; ++k)

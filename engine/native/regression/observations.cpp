@@ -302,17 +302,11 @@ Prediction predict(
                     auto key = observation;
                     key.composition = x; key.molality = 0.0; key.reference_composition.clear();
                     for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
-                    const auto first_x = formula_composition(x, model.parameters(), key.ion_indices, key.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value);
-                    const auto old_x = previous_model ? formula_composition(x, previous_model->parameters(), key.ion_indices, key.stoichiometry,
-                        policy::REFERENCE_MOLALITY_ONE.value) : first_x;
-                    const auto first = prior(old ? &old->first_rung_state : nullptr, first_x, old_x, DensityBranch::Liquid);
-                    const auto pure = prior(old && old->pure_solvent_state && *std::max_element(x.begin(), x.end()) == 1.0
-                        ? &*old->pure_solvent_state : nullptr, x, x, DensityBranch::Liquid);
+                    const State* solvent = old && old->solvent_state ? &*old->solvent_state : nullptr;
+                    const auto anchor = prior(solvent, x, x, DensityBranch::Liquid);
                     auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x,
-                        key.ion_indices, key.stoichiometry, first, pure);
-                    accepted(value.first_rung_state, old ? &old->first_rung_state : nullptr, first);
-                    if (value.pure_solvent_state) accepted(*value.pure_solvent_state,
-                        old && old->pure_solvent_state ? &*old->pure_solvent_state : nullptr, pure);
+                        key.ion_indices, key.stoichiometry, anchor);
+                    accepted(*value.solvent_state, solvent, anchor);
                     cache.emplace_back(key, value);
                     return value;
                 };
@@ -649,7 +643,7 @@ PredictionGradient differentiate(
 
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
-    const std::vector<ObservationInputDirection>& inputs, const std::vector<double>& input_sigma
+    const std::vector<ObservationInputDirection>& inputs
 ) {
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
@@ -667,7 +661,7 @@ std::vector<PredictionGradient> differentiate_group(
                 if (electrolyte_observation(row->kind)) {
                     auto action = electrolyte_input_action(model, row->temperature, row->pressure, row->composition,
                         row->ion_indices, row->stoichiometry, row->molality, *prediction.reference, *prediction.activity,
-                        {d.temperature_k, d.pressure_pa, inputs[j].molality}, input_sigma[j]);
+                        {d.temperature_k, d.pressure_pa, inputs[j].molality});
                     value = row->kind == ObservationKind::MeanIonicActivityCoefficient ? action.mean_ionic : action.osmotic;
                     if (action.status != PropertyActionStatus::Available) gradient.message = action.message;
                     gradient.input_actions.push_back(std::move(action));

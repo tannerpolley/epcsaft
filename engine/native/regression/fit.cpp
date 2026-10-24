@@ -778,8 +778,7 @@ struct ObservationEvaluator::Impl final {
                     if (prediction.reference) {
                         out.reference_values[i].assign(prediction.reference->log_fugacity.begin(), prediction.reference->log_fugacity.end());
                         if (prediction.reference->pure_solvent_log_fugacity) out.reference_values[i].push_back(*prediction.reference->pure_solvent_log_fugacity);
-                        for (const auto& state : prediction.reference->ladder_states) out.state_densities[i].push_back(state.molar_density);
-                        if (prediction.reference->pure_solvent_state) out.state_densities[i].push_back(prediction.reference->pure_solvent_state->molar_density);
+                        if (prediction.reference->solvent_state) out.state_densities[i].push_back(prediction.reference->solvent_state->molar_density);
                     }
                 }
                 if (!jacobian) continue;
@@ -789,10 +788,10 @@ struct ObservationEvaluator::Impl final {
                     std::vector<const Observation*> rows;
                     for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
-                    const auto [directions, deviations] = measurement_.directions(request_, i);
+                    const auto directions = measurement_.directions(request_, i).first;
                     gradients[g] = pressure_closed(observation.kind) && directions.empty()
                         ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                        : differentiate_group(model, rows, prediction, request_.coordinates, directions, deviations);
+                        : differentiate_group(model, rows, prediction, request_.coordinates, directions);
                 }
                 const auto& gradient = gradients[g][position[g]++];
                 if (gradient.status != ObservationStatus::Available)

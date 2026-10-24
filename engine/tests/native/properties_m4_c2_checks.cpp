@@ -610,19 +610,14 @@ void density_and_reference() {
         recording_support::field("ions", std::vector<double>{1.0, 2.0}),
         recording_support::field("stoichiometry", std::vector<double>{1.0, 1.0}),
         recording_support::field("activity_tolerance", 1e-8),
-        recording_support::field("reference_convergence_error", reference.convergence_error),
+        recording_support::field("reference_molality", reference.molality),
     });
-    recording_support::observe(
-        "reference-finite", "reference_convergence_error", "1",
-        reference.convergence_error, std::nullopt, reference_inputs, "Relationship", "finite-value",
-        "infinite-dilution reference convergence error is finite", "m8-reference-finite", "state",
-        "\\epsilon", "T,P,\\mathbf{x}", "\\epsilon", "state");
     recording_support::observe(
         "activity-finite", "mean_ionic_log_molality_scale", "1",
         activity.mean_ionic_log_molality_scale, std::nullopt, reference_inputs, "Relationship", "finite-value",
         "electrolyte activity scale is finite", "m8-activity-finite", "state", "\\log\\gamma",
         "T,P,\\mathbf{x}", "\\log\\gamma", "state");
-    CHECK(std::isfinite(reference.convergence_error));
+    CHECK(!reference.convergence_error);
     CHECK(std::isfinite(activity.mean_ionic_log_molality_scale));
     for (double m : {0.001, 0.2, 1.0, 3.0, 7.0}) {
         const auto scalar = epcsaft::electrolyte_activity(model, 298.15, 1e5,
@@ -699,23 +694,9 @@ void density_and_reference() {
                * pure.bulk_relative_permittivity * epcsaft::BOLTZMANN_J_PER_K
                * 298.15)
         );
-    const auto reference_error_inputs = recording_support::fields({
-        reference_inputs, recording_support::field("ionic_strength", 1e-10)
-    });
     const auto activity_scale_inputs = recording_support::fields({
         reference_inputs, recording_support::field("ionic_strength", 1e-8)
     });
-    // The raw 1e-10 -> 1e-12 rung change keeps the Debye tail; the returned reference is its limit.
-    const double rung_change = std::max(std::abs(reference.value_difference[0]), std::abs(reference.value_difference[1]));
-    recording_support::compare(
-        "reference-error", "reference_rung_change", "1", rung_change,
-        gamma_coefficient * (std::sqrt(1e-10) - std::sqrt(1e-12)),
-        reference_error_inputs,
-        "Relationship", "infinite-dilution", "raw reference rung change matches Debye limit",
-        "reference_or_one", 0.0, 1e-3,
-        close(rung_change, gamma_coefficient * (std::sqrt(1e-10) - std::sqrt(1e-12)), 1e-3),
-        "m8-reference-error", "ionic-strength", "\\epsilon", "T,P,\\mathbf{x},I",
-        "\\epsilon=\\Gamma(\\sqrt I-\\sqrt{I_0})", "I");
     recording_support::compare(
         "activity-scale", "mean_ionic_log_molality_scale", "1",
         activity.mean_ionic_log_molality_scale, -gamma_coefficient * std::sqrt(1e-8),
@@ -1063,11 +1044,10 @@ void liquid_reference_branch_evidence() {
     };
     // 650 K, 100 Pa: sole root 0.018503460 mol/m3 below sample 17653.65 mol/m3 gave gamma = 1.000000196209869.
     CHECK(refused(message([&] { epcsaft::infinite_dilution_reference(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}); })));
-    CHECK(refused(message([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, {}); })));
+    CHECK(refused(message([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, [] { epcsaft::InfiniteDilutionReference r; r.ion_indices = {1,2}; return r; }()); })));
     // 630 K keeps its two-root liquid reference (main values).
     const auto reference = epcsaft::infinite_dilution_reference(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1});
     const auto activity = epcsaft::electrolyte_activity(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, reference);
-    CHECK(close(reference.first_rung_state.molar_density, 34616.634815530364, 1e-10));
     CHECK(close(reference.pure_solvent_state->molar_density, 34616.636583442916, 1e-10));
     // gamma before #594 0.9996968293218973 times exp(-(10/9) mean 1e-12 -> 1e-14 rung change) = exp(-3.0408e-7).
     CHECK(close(activity.mean_ionic_molality_scale, 0.9996965253318902, 1e-10));

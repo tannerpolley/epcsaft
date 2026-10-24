@@ -2023,7 +2023,6 @@ class NeutralReferenceStatus:
     """The reference path did not retain its declared density branch."""
     Nonfinite: NeutralReferenceStatus
     """A reference quantity is nonfinite."""
-    TerminalChangeExceeded: NeutralReferenceStatus
     """Consecutive terminal reference estimates differ beyond the admitted criterion."""
 
 class NeutralReferenceReactionDiagnostic:
@@ -2051,6 +2050,9 @@ class NeutralReferenceReactionDiagnostic:
     """Reference availability or specific refusal cause."""
     message: str
     """Native explanation retaining the failing reference calculation."""
+
+    diagnostics: PropertyActionDiagnostics
+    density_convergence: Convergence | None
 
 class ReactionReference:
     """Source activity basis and pressure of a reaction constant."""
@@ -3503,44 +3505,22 @@ def solve_equilibrium(
     ...
 
 class InfiniteDilutionReference:
-    """Ionic infinite-dilution reference and optional same-T/P pure-solvent reference.
-
-    Notes
-    -----
-    See ALG-REFERENCE and reference_molality_sequence in the canonical Engine documents. Each derivative column retains its own availability; a missing column does not erase the reference value.
-    """
+    """Analytic ion reference, with solvent closure and association diagnostics (ALG-REFERENCE)."""
     solver_options: list[dict[str, Any]]
-    """Effective numerical settings for the reference calculation."""
-    parameter_derivative: list[tuple[Optional[float], Optional[float]]]
-    """For an ionic reference, length a of (cation, anion) log-fugacity partials
-    in inverse native parameter units; an unadmitted column has None in both
-    entries. Empty for a solvent-only reference."""
-    parameter_convergence_error: list[float]
-    """For an ionic reference, length a of dimensionless maximum two-ion changes
-    between terminal-pair derivative limits, multiplied by the native parameter
-    scale used for independent column admission. Empty for a solvent-only reference."""
+    parameter_derivative: list[tuple[float | None, float | None]]
+    """Ion log-fugacity partials in inverse native parameter units, independently unavailable."""
     log_fugacity: tuple[float, float]
-    """Extrapolated dimensionless ln fugacity coefficients in (cation, anion) order; solvent-only
-    references carry no ionic limit.
-    """
     molality: float
-    """Terminal finite formula molality in mol/kg solvent for an ionic reference;
-    this rung is not an exact zero-concentration state. Zero for a solvent-only
-    reference, which carries no ionic limit."""
-    convergence_error: float
-    """For an ionic reference, dimensionless maximum two-ion change between the
-    last two extrapolated reference limits. Zero for a solvent-only reference,
-    where it is a placeholder rather than ionic convergence evidence."""
-    pure_solvent_log_fugacity: Optional[float]
-    """Same-T/P pure-solvent ln fugacity coefficient, dimensionless, or None when unavailable."""
-    pure_solvent_state: Optional[State]
-    """Same-T/P pure-solvent liquid state, or None when unavailable."""
+    """Zero mol/kg at the infinite-dilution limit."""
+    convergence_error: float | None
+    """None: no terminal sequence is measured; inner diagnostics are separate."""
+    pure_solvent_log_fugacity: float | None
+    pure_solvent_state: State | None
+    solvent_state: State | None
+    diagnostics: list[PropertyActionDiagnostics]
     solvent_status: PropertyActionStatus
-    """Availability or refusal cause of the pure-solvent reference."""
     solvent_cause: str
-    """Native pure-solvent refusal explanation, possibly empty."""
-    solvent_convergence: Optional[Convergence]
-    """Pure-solvent density convergence evidence, or None without a retained record."""
+    solvent_convergence: Convergence | None
 
 class SolventActivity:
     """Same-temperature/pressure solvent activity and practical osmotic coefficient.

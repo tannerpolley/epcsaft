@@ -581,8 +581,6 @@ void check_minimax_consistency() {
     const auto prior = predict(source_model, gamma);
     const auto warm = predict(shifted_model, gamma, {}, {}, nullptr, &prior, &source_model, false);
     const auto independent = predict(shifted_model, gamma);
-    compare_state(shifted_model, warm.reference->first_rung_state, independent.reference->first_rung_state, gamma.temperature,
-        formula_composition(gamma.composition, promoted.chart.parameters, gamma.ion_indices, gamma.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value), "density-seed/first-rung");
     compare_state(shifted_model, *warm.reference->pure_solvent_state, *independent.reference->pure_solvent_state,
         gamma.temperature, gamma.composition, "density-seed/pure-solvent");
     compare_state(shifted_model, warm.activity->state, independent.activity->state, gamma.temperature,
