@@ -37,9 +37,8 @@ order with native support order. Returned phase compositions can be read with
 | `Molalities` | solute species mol/kg, declared solvent set and solvent mass in kg |
 
 A salt formula feed and an explicit-ion feed have different total species
-amounts. One mol NaCl supplies one mol Na⁺ and one mol Cl⁻. Keep formula-unit
-molality distinct from the sum of ionic molalities; the
-[NaCl notebook](../examples/aqueous-nacl-activity.ipynb) demonstrates the basis.
+amounts. Keep formula-unit molality distinct from the sum of ionic molalities;
+see [formula and explicit-ion feeds](../examples/index.md#formula-and-explicit-ion-feeds).
 
 `Free()` leaves a phase amount or intensive quantity to be solved; for temperature or pressure, `Free(guess)` additionally supplies an initial value in K or Pa, respectively. `Pinned(value)` fixes a
 phase amount condition. With an absolute-amount feed, phase amounts are mol;
@@ -92,8 +91,7 @@ unavailable; UV is deferred. These limits follow the
 A `Solid` declares its formula, source equilibrium constant and reference,
 positive molar volume in m³/mol, and amount condition. The native solve
 handles absent/present complementarity together with fluid balances.
-The [halite notebook](../examples/halite-solubility.ipynb) checks conservation,
-saturation and precipitate amount for one salt at 298.15 K; it does not
-represent a solid solution. See
+See [halite complementarity](../examples/index.md#halite-complementarity)
+for the one-salt numerical example. See
 [solid equations](../theory/algorithms.md#pure-stoichiometric-solids) and the
 [reaction guide](reacting-equilibrium.md) before changing reference bases.

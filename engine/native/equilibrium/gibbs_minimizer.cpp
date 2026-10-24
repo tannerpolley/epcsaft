@@ -794,6 +794,24 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     return result;
 }
 
+static void capture_driver(const GibbsMinimizer& nlp, const EquilibriumResult& result, EquilibriumResult* audit) {
+    if (!audit) return;
+    audit->solver_settings = result.solver_settings;
+    audit->diagnostic_options_file = result.diagnostic_options_file;
+    audit->linear_solver = result.linear_solver;
+    audit->solver_status = solver_status_name(nlp.status());
+    audit->convergence.iterations = audit->iterations = nlp.iterations();
+    audit->convergence.evaluations = audit->evaluations = nlp.evaluations();
+    audit->hessian_calls = nlp.hessian_calls();
+    if (nlp.last_rows()) {
+        audit->residuals = nlp.last_rows()->values;
+        audit->classified_residuals = nlp.last_classified();
+        if (nlp.last_rows()->floor > 0.0) audit->convergence.floor = nlp.last_rows()->floor;
+    }
+    audit->convergence.residual = audit->classified_residuals.empty()
+        ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
+}
+
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 static EquilibriumResult run_driver_once(
     const HelmholtzModel* model, const CompiledSystem& declared,
@@ -817,23 +835,6 @@ static EquilibriumResult run_driver_once(
     auto fallback = limits || newton ? initial : std::vector<double>{};
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(declared, std::move(initial), &scope, limits, physical_amounts);
     if (audit) audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
-    const auto capture_driver = [&] {
-        if (!audit) return;
-        audit->solver_settings = result.solver_settings;
-        audit->diagnostic_options_file = result.diagnostic_options_file;
-        audit->linear_solver = result.linear_solver;
-        audit->solver_status = solver_status_name(nlp->status());
-        audit->convergence.iterations = audit->iterations = nlp->iterations();
-        audit->convergence.evaluations = audit->evaluations = nlp->evaluations();
-        audit->hessian_calls = nlp->hessian_calls();
-        if (nlp->last_rows()) {
-            audit->residuals = nlp->last_rows()->values;
-            audit->classified_residuals = nlp->last_classified();
-            if (nlp->last_rows()->floor > 0.0) audit->convergence.floor = nlp->last_rows()->floor;
-        }
-        audit->convergence.residual = audit->classified_residuals.empty()
-            ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
-    };
     const std::function<bool(double)> warm_start = warm ? std::function<bool(double)>([&](double cap) {
         const bool enabled = nlp->initialize_warm(*warm, cap, predicted);
         if (initialized_warm) *initialized_warm = enabled;
@@ -848,9 +849,9 @@ static EquilibriumResult run_driver_once(
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver);
-        } catch (...) { capture_driver(); throw; }
+        } catch (...) { capture_driver(*nlp, result, audit); throw; }
     }();
-    capture_driver();
+    capture_driver(*nlp, result, audit);
     if (nlp->step_rule_error()) throw std::logic_error(*nlp->step_rule_error());
     const Ipopt::SolverReturn status = newton ? Ipopt::SUCCESS : nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
