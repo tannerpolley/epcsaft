@@ -120,16 +120,14 @@ std::size_t selector(arglist* arguments, int position, std::size_t maximum) {
     return v;
 }
 
-// One context per distinct record content, prepared once; the ceiling bounds the number of prepared records per process.
+// One context per distinct record content, prepared once and retained for the process lifetime.
 template <class Context> struct Prepared final {
-    static constexpr std::size_t max_records = 16;
     std::mutex mutex;
     std::vector<std::unique_ptr<Context>> contexts;
     template <class Prepare> Context& find(std::string_view record, const char* kind, Prepare prepare) {
         for (const auto& item : contexts) if (item->record == record) return *item;
-        if (contexts.size() == max_records) reject(std::string(kind) + " record limit reached");
         auto& result = *contexts.emplace_back(prepare());
-        std::fprintf(stderr, "epcsaft_%s prepared record %zu of at most %zu\n", kind, contexts.size(), max_records);
+        std::fprintf(stderr, "epcsaft_%s prepared record %zu\n", kind, contexts.size());
         return result;
     }
 };

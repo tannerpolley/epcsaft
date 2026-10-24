@@ -324,11 +324,9 @@ otherwise it continues from the immutable anchor, whose stop is the reported
 failure. An admitted state need not be reachable by a straight path from the
 anchor. Each distinct record, by
 exact content, is prepared once per process and keeps its own model, anchor
-and exact-iterate cache; each preparation prints
-`epcsaft_equilibrium prepared record <k> of at most 16` on stderr. At most 16
-records are admitted per process (a count; memory is unmeasured), and a 17th
-distinct record fails with `defining_equations_not_satisfied`. A failed
-preparation takes no slot. An evaluation failure invalidates every record's
+and exact-iterate cache for the process lifetime; each preparation prints
+`epcsaft_equilibrium prepared record <k>` on stderr. A failed
+preparation retains no context. An evaluation failure invalidates every record's
 cached response, and each record recomputes at its next call.
 Failed central/branch/action checks return nonfinite values
 and derivatives with an observable-specific typed error, never a surrogate
@@ -352,8 +350,8 @@ from the native pressure actions plus the exact normalization chain. A zero
 neutral weight follows the exact infinite-dilution limit when the weights sum
 to a positive value. A sole stable root is returned for either phase; the
 public `pressure_actions` diagnostics report `branch` and `stable_root_count`
-for the caller's post-solve audit. Records are prepared once per process, as
-above (`epcsaft_property prepared record <k> of at most 16`). A failure returns
+for the caller's post-solve audit. Each distinct record is prepared once per process
+and kept for its lifetime, as above (`epcsaft_property prepared record <k>`). A failure returns
 nonfinite values with `epcsaft_property:<cause>:<PropertyActionStatus code>:...`,
 the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
 `ambiguous_branch`, `nonmechanical_root`, `inner_iteration_failure` or
