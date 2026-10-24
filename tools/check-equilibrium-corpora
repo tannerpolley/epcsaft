@@ -25,6 +25,7 @@ from contextlib import nullcontext
 import json
 import math
 import os
+import runpy
 from pathlib import Path
 import subprocess
 import sys
@@ -61,7 +62,7 @@ ACCEPTED = dict(
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
-                fitting=dict(rows=215, cases=3, success=0, requested_tolerance_met=0, keys='f206f77b19555b12'),  # #594: held-NaCl recovery stops at 25, not 26, iterations; at the evaluation floor the stop follows noise.
+                fitting=dict(rows=210, cases=3, success=0, requested_tolerance_met=0, keys='6bf548d8e98db3f9'),  # #823: the reference correction changes Held NaCl recovery from 25 to 20 iterations at the objective floor.
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 
@@ -176,6 +177,9 @@ def main():
         if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
             parser.error(f'{label} must identify its prepared source, Meson build, and lock')
         selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
+    inventories = {label: runpy.run_path(str(Path(identity['source_root']) / 'tools/check-equilibrium-corpora'))['ACCEPTED']
+                   for label, identity in identities.items()}
+    (out / 'accepted-inventories.json').write_text(json.dumps(inventories, indent=2) + '\n')
     (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
 
     # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
@@ -305,7 +309,7 @@ def main():
                 found += accepted(f'{label} replay {s}', dict(
                     rows=len(rows), cases=len({r['case'] for r in rows}), success=true('success'),
                     requested_tolerance_met=true('requested_tolerance_met'),
-                    keys=hashlib.sha256(keys.encode()).hexdigest()[:16]), ACCEPTED['replay'][s])
+                    keys=hashlib.sha256(keys.encode()).hexdigest()[:16]), inventories[label]['replay'][s])
         return found
     corpus('replay rows (4 sections)', lambda d: f"{sum(len(table(d / f'replay/{s}.csv')) for s in SECTIONS):,}", replay)
 

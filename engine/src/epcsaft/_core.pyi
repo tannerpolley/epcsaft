@@ -25,6 +25,9 @@ class ParameterError(ValueError):
 class EosError(RuntimeError):
     """A native thermodynamic evaluation cannot supply the requested result."""
     ...
+class IonicReferenceBackground(ParameterError):
+    pass
+
 class DensityStructureError(EosError):
     """The density search cannot establish the requested root structure.
 
@@ -3504,10 +3507,15 @@ def solve_equilibrium(
     """
     ...
 
+class ResidualEnergyAction:
+    action: float | None
+    status: PropertyActionStatus
+    diagnostics: PropertyActionDiagnostics
+
 class InfiniteDilutionReference:
     """Analytic ion reference, with solvent closure and association diagnostics (ALG-REFERENCE)."""
     solver_options: list[dict[str, Any]]
-    parameter_derivative: list[tuple[float | None, float | None]]
+    parameter_derivative: list[tuple[ResidualEnergyAction, ResidualEnergyAction]]
     """Ion log-fugacity partials in inverse native parameter units, independently unavailable."""
     log_fugacity: tuple[float, float]
     molality: float
@@ -3667,6 +3675,7 @@ def solvent_activity(model: HelmholtzModel, temperature: float, pressure: float,
     ...
 
 class ElectrolyteActivity:
+    mean_ionic_parameter_derivative: list[ResidualEnergyAction]
     """One charge-neutral salt activity on an infinite-dilution convention.
 
     Notes
@@ -3949,6 +3958,7 @@ class Prediction:
     """Whether a retained central solve meets the caller criterion, or None without that evidence."""
 
 class PredictionGradient:
+    parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
 
     Notes
@@ -4137,6 +4147,7 @@ class FitControls:
         ...
 
 class TrialFailure:
+    parameter_actions: list[ResidualEnergyAction]
     """Retained refusal at one optimizer trial."""
     trial: int
     """Native trial counter."""

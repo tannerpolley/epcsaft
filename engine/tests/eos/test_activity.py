@@ -53,6 +53,16 @@ def test_solvent_activity_transport() -> None:
     for x in ((0.9,0.1,0,0), (1.1,0,0,-0.1), (0.9,0,0,0), (float("nan"),0,0,0)):
         with pytest.raises(ParameterError):
             ref.solvent_activity(x=x)
+    from epcsaft import _core
+
+    from tests.equilibrium.test_trace_reliability import _mea_mapping
+
+    background_components = ("water", "protonated-monoethanolamine", "carbamate-anion", "hydronium-cation", "hydroxide-anion")
+    background = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)),
+                                                components=background_components))
+    with pytest.raises(_core.IonicReferenceBackground):
+        background.reference(298.15, 1e5, solvent_fractions=(0.8, 0, 0, 0.1, 0.1),
+                             ions=background_components[1:3], stoichiometry=(1, 1))
     water = Pure(Parameters.from_json(parameters_json("figiel-2025-chloride-activity-refit",2),components=("water",)))
     pure = water.reference(298.15,1e5,solvent_fractions=(1,)).solvent_activity(x=(1,))
     assert pure.solvent_activity == 1 and pure.osmotic_cause == "OsmoticUndefinedPureSolvent"
@@ -503,9 +513,13 @@ def test_reference_column_is_the_derivative_of_its_limit(evidence: Any) -> None:
 
     h = 1e-3 * epsilon
     coarse, fine = central(h), central(h / 2)
+    from epcsaft import PropertyActionStatus
+
     column = reference(epsilon).parameter_derivative[0]
+    assert all(c.status == PropertyActionStatus.Available and c.action is not None for c in column)
+    assert all(c.diagnostics.site_rank > 0 and c.diagnostics.association_residual <= 1e-10 for c in column)
     for ion, exact, d1, d2 in zip(components[1:], column, coarse, fine):
-        same(evidence, f"reference-column/{ion}", exact, (4 * d2 - d1) / 3, atol=0.0, rtol=1e-8,
+        same(evidence, f"reference-column/{ion}", exact.action, (4 * d2 - d1) / 3, atol=0.0, rtol=1e-8,
              **packet_metadata(path, components), T=298.15, P=101325.0, step=h)
 
 

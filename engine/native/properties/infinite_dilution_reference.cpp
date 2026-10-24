@@ -891,7 +891,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     (void)formula_composition(solvent_fractions, model.parameters(), ion_indices, stoichiometry, 1.0);
     for (std::size_t i = 0; i < solvent_fractions.size(); ++i)
         if (solvent_fractions[i] > 0.0 && model.parameters().charge_number[i] != 0)
-            throw std::invalid_argument("IonicReferenceBackground: infinite dilution requires an ion-free solvent");
+            throw IonicReferenceBackground("IonicReferenceBackground: infinite dilution requires an ion-free solvent");
     InfiniteDilutionReference result;
     result.solver_options = model.solver_options();
     result.model = &model; result.temperature = temperature; result.pressure = pressure;
@@ -915,7 +915,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         result.diagnostics[i] = value.diagnostics;
         for (std::size_t a = 0; a < columns; ++a)
             result.parameter_derivative[a][i] = reference_partial_from_state(model, temperature, solvent_fractions,
-                insertion, 0, 0, a, state, true).action;
+                insertion, 0, 0, a, state, true);
     }
     if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x > 0.0; }) == 1) {
         const auto solvent = std::size_t(std::max_element(solvent_fractions.begin(), solvent_fractions.end()) - solvent_fractions.begin());
@@ -1023,9 +1023,13 @@ ElectrolyteActivity electrolyte_activity(
         // EqID: electrolyte_activity_parameter_derivative
         const auto& ref = reference.parameter_derivative.at(a);
         const auto g = [&](std::size_t i) { return require_component_property(state.log_fugacity_parameter_derivative.at(i * columns + a)); };
-        result.mean_ionic_parameter_derivative.push_back(ref[0] && ref[1]
-            ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
-                + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
+        auto action = !ref[0].action ? ref[0] : ref[1];
+        if (ref[0].action && ref[1].action) {
+            action.action = result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0].action)
+                + stoichiometry[1] * (g(ion_indices[1]) - *ref[1].action)) / coefficient_sum;
+            if (!std::isfinite(*action.action)) { action.action.reset(); action.status = PropertyActionStatus::Nonfinite; }
+        }
+        result.mean_ionic_parameter_derivative.push_back(action);
     }
     return result;
 }

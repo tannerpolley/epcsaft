@@ -114,6 +114,7 @@ struct PredictionGradient final {
     ObservationStatus status = ObservationStatus::ActionUnavailable;
     std::string message;
     std::vector<ElectrolyteInputAction> input_actions;
+    std::vector<ResidualEnergyAction> parameter_actions{};
     std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
 };
 struct ObservationInputDirection final {

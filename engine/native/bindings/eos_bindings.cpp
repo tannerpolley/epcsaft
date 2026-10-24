@@ -172,6 +172,8 @@ void register_eos(nb::module_& module) {
             association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
             forward_sweeps, branch, stable_root_count);
+    nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
+        EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
     nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, 7)
         EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
@@ -296,7 +298,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, 7)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
-            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient);
+            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative);
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
         return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);

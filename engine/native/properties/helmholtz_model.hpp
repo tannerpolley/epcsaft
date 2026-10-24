@@ -537,6 +537,10 @@ struct HenryConstant final {
 std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices);
 
+struct __attribute__((visibility("default"))) IonicReferenceBackground final : std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
+
 struct InfiniteDilutionReference final {
     policy::SolverOptions solver_options;
     const HelmholtzModel* model = nullptr;
@@ -552,7 +556,7 @@ struct InfiniteDilutionReference final {
     std::optional<double> pure_solvent_log_fugacity;
     std::optional<State> pure_solvent_state, solvent_state;
     std::array<PropertyActionDiagnostics, 2> diagnostics;
-    std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
+    std::vector<std::array<ResidualEnergyAction, 2>> parameter_derivative;
 };
 
 struct SolventActivity final {
@@ -578,7 +582,8 @@ struct ElectrolyteActivity final {
     double mean_ionic_log_molality_scale = 0.0;
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
-    std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
+    std::vector<double> osmotic_parameter_derivative;
+    std::vector<ResidualEnergyAction> mean_ionic_parameter_derivative;
     State state;
 };
 

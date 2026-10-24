@@ -561,26 +561,39 @@ PredictionGradient differentiate(
         const auto width = model.active_parameters().size();
         for (std::size_t a = 0; a < width; ++a) {
             double value = 0.0;
+            ResidualEnergyAction action;
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
                 value = prediction.state->permittivity_parameter_derivative.at(a);
                 if (prediction.reference_state) {
                     const auto& ref = *prediction.reference_state;
                     value = (value - *prediction.value * ref.permittivity_parameter_derivative.at(a)) / ref.bulk_relative_permittivity;
                 }
-            } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient)
-                value = prediction.activity ? prediction.activity->mean_ionic_parameter_derivative.at(a) : 0.0;
-            else if (observation.kind == ObservationKind::OsmoticCoefficient || observation.kind == ObservationKind::MixtureOsmoticCoefficient)
+            } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient) {
+                if (prediction.activity) action = prediction.activity->mean_ionic_parameter_derivative.at(a);
+                value = prediction.activity ? action.action.value_or(NAN) : 0.0;
+            } else if (observation.kind == ObservationKind::OsmoticCoefficient || observation.kind == ObservationKind::MixtureOsmoticCoefficient)
                 value = prediction.activity->osmotic_parameter_derivative.at(a);
             else {
                 const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
                 const auto column = prediction.reference->parameter_derivative.at(a)[ion];
-                const auto ref = prediction.second_reference ? prediction.second_reference->parameter_derivative.at(a)[ion] : std::optional<double>(0.0);
-                value = column && ref ? GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (*column - *ref) : NAN;
+                const auto ref = prediction.second_reference ? prediction.second_reference->parameter_derivative.at(a)[ion]
+                    : ResidualEnergyAction{0.0, PropertyActionStatus::Available, {}};
+                action = !column.action || !prediction.second_reference ? column : ref;
+                value = column.action && ref.action ? GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (*column.action - *ref.action) : NAN;
             }
-            if (!std::isfinite(value)) return {{}, ObservationStatus::ActionUnavailable, "electrolyte column: reference admission or pressure slope"};
+            if (std::isfinite(value)) { action.action = value; action.status = PropertyActionStatus::Available; }
+            else if (action.action || action.status == PropertyActionStatus::Nonfinite) {
+                action.action.reset(); action.status = PropertyActionStatus::Nonfinite;
+            }
+            gradient.parameter_actions.push_back(action);
             gradient.value.push_back(value);
         }
         gradient.status = ObservationStatus::Available;
+        for (const auto& action : gradient.parameter_actions) if (!action.action) {
+            gradient.status = ObservationStatus::ActionUnavailable;
+            gradient.message = "electrolyte column: native action cause " + std::to_string(int(action.status));
+            break;
+        }
         return gradient;
     }
     if (!pressure_closed(observation.kind))
