@@ -363,7 +363,17 @@ weight direction is not charge balanced, and native admission refuses it.
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and
 `stable_root_count` exist only after a pressure-root search, so a T-rho state reports
-`Unspecified` and `None`. `EquilibriumResult.multipliers` are the dimensionless
+`Unspecified` and `None`.
+
+`State.requested_density_branch` retains the branch passed to pressure closure and is
+`Unspecified` for a direct-density State. `returned_density_branch` reads ALG-DENSITY's
+existing finite-search evidence or locally admitted anchor label and is `Unspecified`
+when no side is established. `density_branch_mismatch` is true only for explicit,
+opposite requested and returned branches. False means no established mismatch; it does
+not prove branch agreement or physical stability. A wrongly labelled external anchor
+can conceal a mismatch. These attributes are read-only in Python.
+
+`EquilibriumResult.multipliers` are the dimensionless
 reduced-energy balance and charge coordinates of the solution;
 `constraint_multipliers` are the optimizer's raw duals of its implemented, scaled
 constraints (the non-chemical, non-pressure entries of `rows` in order, or every
