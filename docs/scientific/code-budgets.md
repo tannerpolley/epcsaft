@@ -97,6 +97,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-24, #824 (owner allowance Properties +22 / Bindings +6; rule 1): the State density-branch fields `requested_density_branch`, `returned_density_branch` and `density_branch_mismatch` use Properties +12 and Bindings +4 formatted runtime lines, with zero in every other layer. Bindings **2,155 → 2,179**: count 2,157 plus band 22. Properties 5,801 stays within its ceiling of 5,826. The total count of 27,472 stays under the unchanged ceiling of **27,614**.
 - 2026-10-24, #823 (owner allowance gross +515/net +275 across Properties and Contributions): the analytic solvent insertion reuses the scalar Born, association and pressure-Taylor owners. Contributions **1,235 → 1,254**, count 1,241 plus band 13. Rule-2 reductions: Core **1,107 → 1,058**, Properties **5,981 → 5,826**, parameter Regression **3,745 → 3,728**, after removing the finite-reference calculation and its seed/diagnostic consumers. Core and parameter Regression equal count plus band; Properties stays within one band of its count. Total **27,816 → 27,614**, capped by the layer-ceiling sum. Other ceilings stay fixed. Final task accounting is retained under `build/issue-823/` against `4fd40fe0f`.
 
 

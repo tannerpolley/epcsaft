@@ -734,6 +734,12 @@ void properties_p2() {
             && supercritical_vapor.stable_root_count == std::optional<std::size_t>{1}
             && supercritical_liquid.density_branch == epcsaft::DensityBranch::Unspecified
             && supercritical_liquid.stable_root_count == std::optional<std::size_t>{1}
+            && supercritical_vapor.requested_density_branch == epcsaft::DensityBranch::Vapor
+            && supercritical_liquid.requested_density_branch == epcsaft::DensityBranch::Liquid
+            && supercritical_vapor.returned_density_branch() == epcsaft::DensityBranch::Unspecified
+            && supercritical_liquid.returned_density_branch() == epcsaft::DensityBranch::Unspecified
+            && !supercritical_vapor.density_branch_mismatch()
+            && !supercritical_liquid.density_branch_mismatch()
             && close(supercritical_root.molar_density, supercritical_vapor.molar_density, 1e-12),
         "p2-single-metadata", "root", "rho", "T,P,x", "rho_root=rho_state;branch=count", "state");
 

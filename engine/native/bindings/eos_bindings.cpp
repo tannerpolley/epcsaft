@@ -186,6 +186,9 @@ void register_eos(nb::module_& module) {
     module.def("reaction_thermochemistry_density", &epcsaft::reaction_thermochemistry_density,
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
     nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
+        .def_ro("requested_density_branch", &epcsaft::State::requested_density_branch)
+        .def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
+        .def_prop_ro("density_branch_mismatch", &epcsaft::State::density_branch_mismatch)
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
         EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,

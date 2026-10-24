@@ -193,6 +193,9 @@ struct State final {
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
+    DensityBranch requested_density_branch = DensityBranch::Unspecified;
+    DensityBranch returned_density_branch() const;
+    bool density_branch_mismatch() const;
     std::optional<std::size_t> stable_root_count;
     std::optional<double> negative_slope_density;  // mol/m3, sampled cold mechanical-loop witness
     // Set only by state(..., derived_properties = true); fixed composition, SI molar units.
