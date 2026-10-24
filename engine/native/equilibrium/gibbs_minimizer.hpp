@@ -3,7 +3,6 @@
 #include "equilibrium/ipopt.hpp"
 #include "equilibrium/problem.hpp"
 
-#include <IpIpoptData.hpp>
 #include <IpTNLP.hpp>
 
 #include <cstddef>
@@ -226,6 +225,7 @@ class GibbsMinimizer final : public Ipopt::TNLP {
 public:
     GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
                    core::Scope* scope = nullptr, const DriverLimits* limits = nullptr, bool physical_amounts = false);
+    ~GibbsMinimizer() override;
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
