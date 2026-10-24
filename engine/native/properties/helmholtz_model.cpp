@@ -2076,6 +2076,15 @@ State HelmholtzModel::state(
     return result;
 }
 
+DensityBranch State::returned_density_branch() const {
+    return properties::density_side(density_branch, molar_density, negative_slope_density);
+}
+bool State::density_branch_mismatch() const {
+    const auto returned = returned_density_branch();
+    return requested_density_branch != DensityBranch::Unspecified
+        && returned != DensityBranch::Unspecified && requested_density_branch != returned;
+}
+
 State HelmholtzModel::state_at_pressure(
     double temperature,
     double pressure,
@@ -2097,6 +2106,7 @@ State HelmholtzModel::state_at_pressure(
     }
     result.density_convergence = root.convergence;
     result.density_branch = root.branch;
+    result.requested_density_branch = branch;
     result.stable_root_count = root.stable_root_count;
     result.negative_slope_density = root.negative_slope_density;
     scope.finish(root.convergence);

@@ -1338,6 +1338,17 @@ class State:
     """Availability of the ideal-gas thermochemistry used by ideal and total quantities."""
     density_branch: DensityBranch
     """Established density-root branch or Unspecified for a state without a classified root."""
+    requested_density_branch: DensityBranch
+    """Branch requested by pressure closure; Unspecified for direct density states."""
+    returned_density_branch: DensityBranch
+    """Side from existing finite-search evidence or the locally admitted anchor label.
+    Unspecified when no side is established. A wrongly labelled external anchor can conceal
+    a mismatch; this attribute does not independently validate its physical phase.
+    """
+    density_branch_mismatch: bool
+    """True only for explicit, opposite requested and returned branches. False means no
+    established mismatch, including an unknown side or an Unspecified request.
+    """
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by a pressure search, or None when not
     established.

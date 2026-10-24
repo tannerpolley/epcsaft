@@ -169,6 +169,8 @@ def test_root_and_thermal_diagnostics_accompany_their_states(evidence: Any) -> N
     assert rooted.density_branch == DensityBranch.Liquid and closure.residual <= closure.criterion.value
     direct = model.state(353.15, rho=rooted.molar_density, x=(0.25, 0.75))  # no root search, so no root evidence
     assert direct.density_branch == DensityBranch.Unspecified and direct.stable_root_count is None
+    assert direct.requested_density_branch == direct.returned_density_branch == DensityBranch.Unspecified
+    assert not direct.density_branch_mismatch
     assert direct.density_convergence is None and direct.thermochemistry_status == ThermochemistryStatus.Available
     same(evidence, "charts/h_res", direct.residual_enthalpy, rooted.residual_enthalpy)
     # Missing and out-of-interval records are distinct causes; the residual sibling is the same number.
@@ -185,3 +187,17 @@ def test_root_and_thermal_diagnostics_accompany_their_states(evidence: Any) -> N
     same(evidence, "p3-endpoint/polynomial/250/h", endpoint[0].value)
     assert endpoint[0].status == PropertyActionStatus.ThermalBoundary and endpoint[0].action is None
     assert endpoint[1].status == PropertyActionStatus.Available and endpoint[1].action is not None
+
+
+def test_requested_liquid_returns_the_sole_vapor_root() -> None:
+    # #824, ALG-DENSITY: the retained negative-slope sample establishes the returned side.
+    model = Pure(parameters((ETHANE,)))
+    liquid = model.state(300.0, P=100.0, phase="liquid")
+    vapor = model.state(300.0, P=100.0, phase="vapor")
+    assert liquid.molar_density == vapor.molar_density == 0.04009108203959122
+    assert liquid.pressure == vapor.pressure
+    assert liquid.density_branch == vapor.density_branch == DensityBranch.Unspecified
+    assert liquid.requested_density_branch == DensityBranch.Liquid
+    assert liquid.returned_density_branch == vapor.returned_density_branch == DensityBranch.Vapor
+    assert vapor.requested_density_branch == DensityBranch.Vapor
+    assert liquid.density_branch_mismatch and not vapor.density_branch_mismatch
