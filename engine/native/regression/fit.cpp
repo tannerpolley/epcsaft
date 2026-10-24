@@ -151,10 +151,6 @@ struct MeasurementChart final {
                     require(input.kind != group.inputs[k].kind || (input.kind == K::MoleFraction && input.species != group.inputs[k].species), "duplicate measured input target");
                 require(input.unit == (input.kind == K::Temperature ? "K" : input.kind == K::Pressure ? "Pa"
                     : input.kind == K::MoleFraction ? "mol/mol" : "mol/kg"), "unsupported measured input unit");
-                require(anchor.kind != ObservationKind::AdditionEnthalpy && anchor.kind != ObservationKind::SolvationGibbsEnergy
-                    && anchor.kind != ObservationKind::TransferGibbsEnergy && anchor.kind != ObservationKind::BulkRelativePermittivity
-                    && anchor.kind != ObservationKind::FeedEnthalpy && anchor.kind != ObservationKind::SystemEnthalpy
-                    && !anchor.problem.critical && !anchor.problem.envelope, "uncertain inputs unsupported for this observation kind");
                 require(!law || input.kind == K::Temperature, "source ln K admits only uncertain temperature");
                 if (input.kind == K::Temperature || input.kind == K::Pressure) {
                     const auto& intensive = input.kind == K::Temperature ? anchor.problem.temperature : anchor.problem.pressure;
@@ -210,6 +206,11 @@ struct MeasurementChart final {
                     && hi <= 1.0 + policy::COMPOSITION_SUM_TOLERANCE.value, "nonphysical feed box");
             }
         }
+        factor_measurement_errors(request);
+    }
+
+    void factor_measurement_errors(const FitRequest& request) {
+        const auto& uncertainty = *request.uncertainty;
         // One joint matrix over positive-weight outputs, then active inputs; refused rather than repaired (ALG-FIT).
         const auto& matrix = uncertainty.covariance ? uncertainty.covariance : uncertainty.correlation;
         if (!matrix) return;

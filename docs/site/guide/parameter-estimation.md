@@ -27,9 +27,8 @@ requirements; see [observation calls](../api/regression.rst) and the
 Distinguish a difference residual from a log-ratio residual. A scale makes a
 residual dimensionless according to its declared definition. An absolute
 measurement standard deviation supports a different statistical interpretation
-from a relative weight chosen to balance observations. Unit log-residual
-weights in the propane example are a calibration choice, not a claim about
-measurement uncertainty.
+from a relative weight chosen to balance observations. See [propane calibration](../examples/index.md#propane-calibration)
+for the example's weighting assumption.
 
 ## Coordinates, bounds and holds
 
@@ -53,11 +52,8 @@ workers as appropriate to the calculation. Python supplies the request;
 the Engine owns prediction solves, exact Jacobians and optimization. No Python
 density search, equilibrium loop or numerical optimizer belongs around it.
 
-The propane notebook starts from a published parameter packet, fits pressure
-and mass density at three temperatures, checks a reduced objective, then
-reconstructs fitted parameters and re-evaluates predictions. These checks
-verify the estimate's numerical consistency. They do not adopt a new canonical
-parameter set or establish predictive accuracy beyond those fitted rows.
+See [propane calibration](../examples/index.md#propane-calibration)
+for the bounded estimate and its interpretation.
 
 ## Inspect the point and its uncertainty assumptions
 

@@ -33,10 +33,8 @@ declarations restrict the starts and supports examined. The search uses the
 shared equilibrium driver for admitted subproblems and retains its work and
 stopping causes.
 
-The water/isobutanol notebook uses the neutral binary subset at 293.15 K and
-100,000 Pa. It compares the returned phases without relying on their output
-order and checks feed conservation. This is numerical verification for that
-case, not a measured tie-line validation or a universal search guarantee.
+See [water/isobutanol discovery](../examples/index.md#waterisobutanol-discovery)
+for the bounded numerical comparison.
 
 Once a topology is found, it may seed later declared calculations within a
 qualified domain. Reuse preserves the phase supports and reference choices;

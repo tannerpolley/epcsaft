@@ -62,9 +62,8 @@ native thermodynamics; it does not silently reinterpret a source constant.
 
 ## Separate fixed-temperature chemistry from caloric consistency
 
-The ammonia example is isothermal at 573.15 K. It checks the ideal-gas
-thermochemical scalar and converts the pressure standard to the native density
-standard explicitly. It then solves with the scalar density-basis constant.
+See the [ammonia fixed-temperature standard](../examples/index.md#ammonia-fixed-temperature-standard)
+for an explicit scalar conversion.
 A fixed scalar does not reproduce the temperature derivatives of independent
 thermal source records. Supplying inconsistent reaction and caloric standards
 is refused rather than choosing one silently.
@@ -77,15 +76,7 @@ do not establish reaction enthalpy or total entropy. Read the
 
 ## Read the result as a bounded prediction
 
-For ammonia, check atom balances, positive amounts, pressure closure and the
-independently reconstructed mass-action residual. Agreement with the
-low-pressure analytic ideal limit verifies the limiting mathematics. The
-dense-gas result uses assembled pure records, assumed zero unlike interactions
-and stated extrapolations; it is a model prediction with unquantified physical
-uncertainty. It is not a validated industrial reactor calculation.
-
-For halite, check both dissolved formula amount and precipitated solid amount.
-An absent solid must satisfy its complementary saturation condition; a
-positive solid amount must satisfy saturation. The one-temperature source
-comparison does not establish general salt accuracy, homogeneous reaction
-accuracy or solid-solution behavior.
+Inspect the balances, achieved residuals and reference basis using the
+[declared-equilibrium guide](declared-equilibrium.md),
+[diagnostics](diagnostics.md) and
+[ammonia and halite interpretation](../examples/index.md#ammonia-and-halite-interpretation).

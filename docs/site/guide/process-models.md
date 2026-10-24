@@ -10,40 +10,25 @@ implicit calculations. See the [action algorithm](../theory/algorithms.md#alg-ac
 
 ## Pressure-property callbacks
 
-The [methane ASL notebook](../examples/methane-asl-properties.ipynb) loads
-`libepcsaft_asl.so` beside the installed native extension and prepares
-`property_asl_record`. It evaluates molar density (mol/m³), total molar
-enthalpy (J/mol) and component ln φ (dimensionless) at 298.15 K and 100,000 Pa.
-The callback uses the declared branch and the pressure-property coordinate
-chart, including T, P and its supplied composition weights.
-
-Pyomo `ExternalFunction` transports the values, gradients and Hessians. The
-notebook compares them with public native property actions, retaining units
-and coordinate order. Finding the installed library avoids accidentally
-loading a different checkout's build. These are derivative-transport checks
-for the neutral methane case; they do not qualify an ionic or reacting
-flowsheet. Calling a property callback alone is not a solved process model.
+Load `libepcsaft_asl.so` beside the installed native extension and prepare
+`property_asl_record`. The callback uses the declared branch and the
+pressure-property coordinate chart, including T, P and supplied composition
+weights. Pyomo `ExternalFunction` transports values, gradients and Hessians.
+Finding the installed library avoids loading a different checkout's build.
+Calling a property callback alone is not a solved process model. See
+[methane property transport](../examples/index.md#methane-property-transport)
+for the notebook's conditions, derivative checks and limits.
 
 ## Equilibrium callbacks
 
-The [two-liquid settler notebook](../examples/idaes-two-liquid-settler.ipynb)
-uses a separate `equilibrium.asl_record` and the phase-component-amount
-callback. It declares an affine feed map, phase supports, an anchor and an
-identity gap to distinguish the water-rich and organic phases. The native
-callback performs the declared equilibrium calculation and supplies exact
-first and second actions for the qualified feed controls.
-
-The model uses water/ethanol/isobutanol/Na⁺/Cl⁻ at 293.15 K and 100,000 Pa.
-Formula-feed flows and explicit-ion flows have different totals: a NaCl
-formula flow supplies the same flow to each ion. A one-mol/s formula feed
-therefore contains more than one mol/s of explicit species. Preserve this
-mapping in every inlet and outlet balance.
-
-IDAES owns the flowsheet, ports, outlet equations, recovery constraint and
-feed-scale optimization. The notebook uses one start with fixed T/P and
-checks component/charge closure, derivative transport and independent local
-optimality quantities. The Engine callback's phase amounts are mapped onto
-the declared mol/s feed basis by the process equations.
+Prepare `equilibrium.asl_record` for the phase-component-amount callback.
+Declare an affine feed map, phase supports, an anchor and an identity gap.
+The native callback performs the declared equilibrium calculation and supplies
+exact first and second actions for the qualified feed controls. IDAES owns
+the flowsheet, ports, outlet equations, recovery constraint and optimization.
+Process equations map the Engine's phase amounts onto the declared mol/s feed
+basis. See the [two-liquid settler](../examples/index.md#two-liquid-settler)
+for the formula-flow mapping, numerical checks and qualification limits.
 
 The [equilibrium reference](../api/equilibrium.rst) and
 [native equilibrium callback fields](../api/native/equilibrium.rst) define
