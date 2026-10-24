@@ -311,7 +311,7 @@ void check_s2() {
         "neutral-reference/lambda-identity", "terminal_contraction", "1",
         *first.terminal_contraction, identity,
         recording_support::fields({recording_support::field("rho", terminal.molar_density),
-            recording_support::field("observed_terminal_change", *first.observed_terminal_change)}),
+            recording_support::field("observed_terminal_change", epcsaft::core::optional_number(first.observed_terminal_change))}),
         "Relationship", "fugacity-pressure-identity",
         "Lambda includes log(P/(RT rho0)) in the independent fugacity form",
         "reference_or_one", 0.0, 1.0e-9,
@@ -456,8 +456,7 @@ void check_s2() {
         epcsaft::HelmholtzModel ionic_thermal(properties_support::aqueous_electrolyte(), {}, water_record);
         for (std::size_t row = 0; row < rows.size(); ++row) {
             CHECK(center[row].terminal_contraction_temperature_derivative.has_value()
-                  && center[row].observed_temperature_derivative_change.has_value()
-                  && center[row].observed_terminal_change.has_value()
+                  && !center[row].observed_terminal_change.has_value()
                   && lower[row].terminal_contraction.has_value()
                   && upper[row].terminal_contraction.has_value());
             const double slope = *center[row].terminal_contraction_temperature_derivative;
@@ -475,14 +474,6 @@ void check_s2() {
                 "reference_scale", 0.0, 1.0e-6,
                 std::abs(slope - centered) <= 1.0e-6 * std::abs(centered),
                 "s2-neutral-reference", "temperature-slope", "dC/dT", "T,P,nu", "rel<=1e-6", "slope");
-            const double change = *center[row].observed_temperature_derivative_change;
-            recording_support::compare_custom(
-                ("neutral-reference/temperature-limit/" + label).c_str(),
-                "T_dC_dT_terminal_change", "1", change, 5.0e-5, inputs,
-                "Relationship", "observed-slope-convergence",
-                "the change between the slope's two sqrt(m) limits stays within the value criterion in RT units",
-                "isfinite(model) && model <= reference", change <= 5.0e-5,
-                "s2-neutral-reference", "temperature-limit", "T|dD|", "T,P,nu", "T|dD|<=5e-5", "limit");
             // The same manufactured formula-reaction solve as the Python test; its first-order
             // T and T/P actions of x_Na are the rows that the installed wheel must reproduce.
             auto problem = equilibrium_support::flash(3);
@@ -529,16 +520,6 @@ void check_s2() {
                 "reference_scale", 0.0, 1.0e-6,
                 std::abs(second - second_centered) <= 1.0e-6 * std::abs(second_centered),
                 "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
-            const double second_change = epcsaft::GAS_CONSTANT_J_PER_MOL_K
-                * center[row].observed_temperature_second_derivative_change.value_or(1.0);
-            recording_support::compare_custom(
-                ("neutral-reference/temperature-second-limit/" + label).c_str(),
-                "R_T2_d2C_dT2_terminal_change", "J/(mol K)", second_change, 1.0e-2, inputs,
-                "Relationship", "observed-slope-convergence",
-                "the second slope's terminal ladder change is negligible at the heat-capacity scale",
-                "isfinite(model) && model <= reference", second_change <= 1.0e-2,
-                "s2-neutral-reference", "temperature-second-limit", "R T^2|dD2|", "T,P,nu",
-                "R T^2|dD2|<=0.01 J/(mol K)", "limit");
             const auto thermal_solved = epcsaft::equilibrium::solve_equilibrium(ionic_thermal, problem);
             CHECK(thermal_solved.success);
             epcsaft::equilibrium::SolvedStateObservable enthalpy, capacity;
@@ -559,15 +540,14 @@ void check_s2() {
             }
         }
     }
-    // #333: at solvent permittivity 30 the 1e-10 to 1e-12 mol/kg NaCl contraction change
-    // exceeds 5e-5; the change into the returned 1e-14 value admits it, as the ion witness does.
+    // #333 retains the low-permittivity reference on the same analytic solvent limit.
     {
         auto parameters = properties_support::aqueous_electrolyte();
         parameters.relative_permittivity[0] = 30.0;
         const auto low = epcsaft::reaction_reference(epcsaft::HelmholtzModel(parameters),
             298.15, 1.0e5, ratios({0.0, 1.0, 1.0}), {-1.0, 1.0, 1.0}, reference);
         CHECK(low.status == epcsaft::NeutralReferenceStatus::Available && low.terminal_contraction
-              && *low.observed_terminal_change <= 5.0e-5);
+              && !low.observed_terminal_change);
     }
     // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
     // reaction H2O = MEA: d2C/dT2|_P against the centered difference of dC/dT|_P; floor:
@@ -602,15 +582,7 @@ void check_s2() {
             "d2C/dT2|_P carries the implicit density and association chains through E3",
             "reference_scale", 0.0, 1.0e-6, std::abs(second - centered) <= 1.0e-6 * std::abs(centered),
             "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
-        const double change = epcsaft::GAS_CONSTANT_J_PER_MOL_K
-            * center[0].observed_temperature_second_derivative_change.value_or(1.0);
-        recording_support::compare_custom(
-            "neutral-reference/temperature-second-limit/associating", "R_T2_d2C_dT2_terminal_change", "J/(mol K)",
-            change, 1.0e-2, inputs, "Relationship", "observed-slope-convergence",
-            "the second slope's terminal ladder change is negligible at the heat-capacity scale",
-            "isfinite(model) && model <= reference", change <= 1.0e-2,
-            "s2-neutral-reference", "temperature-second-limit", "R T^2|dD2|", "T,P,nu",
-            "R T^2|dD2|<=0.01 J/(mol K)", "limit");
+
     }
 
     // #210 F1(i): identical ethane keeps the reference species identical, so the
@@ -670,16 +642,8 @@ void check_s2() {
                 recording_support::field("C_Ttheta_s0", mixed_s0),
                 recording_support::field("C_Ttheta_s1", mixed_s1),
                 recording_support::field("C_Ttheta", mixed),
-                recording_support::field("C_Ttheta_ladder_s0", std::vector<double>{
-                    temperature_parameter_column(diagnostic, 0).ladder[0].value_or(std::nan("")),
-                    temperature_parameter_column(diagnostic, 0).ladder[1].value_or(std::nan("")),
-                    temperature_parameter_column(diagnostic, 0).ladder[2].value_or(std::nan(""))}),
-                recording_support::field("C_Ttheta_ladder_s1", std::vector<double>{
-                    temperature_parameter_column(diagnostic, 1).ladder[0].value_or(std::nan("")),
-                    temperature_parameter_column(diagnostic, 1).ladder[1].value_or(std::nan("")),
-                    temperature_parameter_column(diagnostic, 1).ladder[2].value_or(std::nan(""))}),
-                recording_support::field("observed_C_Ttheta_admitted_change_s0", temperature_parameter_column(diagnostic, 0).scaled_changes[1]),
-                recording_support::field("observed_C_Ttheta_admitted_change_s1", temperature_parameter_column(diagnostic, 1).scaled_changes[1]),
+                recording_support::field("C_Ttheta_site_residual_s0", temperature_parameter_column(diagnostic, 0).diagnostics.association_residual),
+                recording_support::field("C_Ttheta_site_residual_s1", temperature_parameter_column(diagnostic, 1).diagnostics.association_residual),
                 recording_support::field("R_T2_C_Ttheta_J_per_mol_K", scaled_mixed),
                 recording_support::field("pure_pressure_action_J_per_mol_K", pure_slope),
                 recording_support::field("observed_C_T_admitted_change",
@@ -774,12 +738,7 @@ void check_s2() {
                     recording_support::field("T_K", temperature),
                     recording_support::field("P_Pa", pressure),
                     recording_support::field("P_ref_Pa", sources[source].reference_pressure_pa.value_or(pressure)),
-                    recording_support::field("C_Ttheta_ladder", std::vector<double>{
-                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[0].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[1].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[2].value_or(std::numeric_limits<double>::quiet_NaN())}),
-                    recording_support::field("observed_C_Ttheta_admitted_change",
-                        temperature_parameter_column(exact_diagnostic, coordinate).scaled_changes[1]),
+                    recording_support::field("C_Ttheta_site_residual", temperature_parameter_column(exact_diagnostic, coordinate).diagnostics.association_residual),
                     recording_support::field("observed_C_T_admitted_change",
                         epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change)),
                     recording_support::field("observed_terminal_change",

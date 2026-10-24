@@ -41,12 +41,11 @@ class Reference:
         Dimensionless natural-log ionic fugacity-coefficient limits in ion
         order; solvent-only references refuse access.
     molality : float
-        Formula molality in mol/kg solvent at the terminal dilution state;
+        Zero formula molality in mol/kg solvent at the analytic limit;
         solvent-only references refuse access.
-    convergence_error : float
-        Dimensionless maximum change of extrapolated natural-log phi limits
-        between terminal and preceding ladder estimates; solvent-only
-        references refuse access. This is not physical model uncertainty.
+    convergence_error : float or None
+        None: the analytic limit has no terminal sequence comparison.
+        Solvent density and association diagnostics describe its inner calculations.
     pure_solvent_log_fugacity : float or None
         Dimensionless natural-log pure-solvent fugacity coefficient at the
         stored T and P. None retains native unavailability, not zero.
@@ -148,7 +147,7 @@ class Reference:
         return self._native.molality
 
     @property
-    def convergence_error(self) -> float:
+    def convergence_error(self) -> float | None:
         """Read ``convergence_error`` from the stored reference.
 
         Returns

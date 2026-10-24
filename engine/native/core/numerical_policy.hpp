@@ -191,56 +191,6 @@ inline constexpr Tolerance OSMOTIC_MOLALITY_FLOOR{"OSMOTIC_MOLALITY_FLOOR",
     "owner decision #214: common-pressure scalar cancellation reporting floor, mol/kg",
 };
 
-// Trace molalities (mol/kg) of the infinite-dilution reference ladder. Single-ion ln(phi)
-// approaches its limit as -A z^2 sqrt(I) (Debye-Hueckel); the 1e-12/1e-14 rung pair extrapolates
-// that tail away (reference_limit_terminal_pair); for Held 2014 NaCl in water at 298.15 K the
-// limit changes 1.3e-11 from the 1e-10/1e-12 pair's, against a raw rung change of 1.06e-5.
-inline constexpr Tolerance REFERENCE_MOLALITY_ONE{"REFERENCE_MOLALITY_ONE",
-    1.0e-6,
-    Category::AlgorithmTolerance,
-    "trace molality of the infinite-dilution ladder, mol/kg",
-};
-inline constexpr Tolerance REFERENCE_MOLALITY_TWO{"REFERENCE_MOLALITY_TWO",
-    1.0e-8,
-    Category::AlgorithmTolerance,
-    "trace molality of the infinite-dilution ladder, mol/kg",
-};
-inline constexpr Tolerance REFERENCE_MOLALITY_THREE{"REFERENCE_MOLALITY_THREE",
-    1.0e-10,
-    Category::AlgorithmTolerance,
-    "trace molality of the infinite-dilution ladder, mol/kg",
-};
-inline constexpr Tolerance REFERENCE_MOLALITY_FOUR{"REFERENCE_MOLALITY_FOUR",
-    1.0e-12,
-    Category::AlgorithmTolerance,
-    "trace molality of the infinite-dilution ladder, mol/kg",
-};
-inline constexpr Tolerance REFERENCE_CONVERGENCE_WITNESS{"REFERENCE_CONVERGENCE_WITNESS",
-    1.0e-14,
-    Category::AlgorithmTolerance,
-    "finest trace molality of the infinite-dilution ladder, mol/kg",
-};
-inline constexpr Tolerance REFERENCE_CONVERGENCE_TOLERANCE{"REFERENCE_CONVERGENCE_TOLERANCE",
-    5.0e-5,
-    Category::AlgorithmTolerance,
-    "admitted change of the terminal-pair limit of ln(phi) and its scaled columns",
-};
-inline constexpr Tolerance REFERENCE_HEAT_CAPACITY_TOLERANCE{"REFERENCE_HEAT_CAPACITY_TOLERANCE",
-    1.0e-2,
-    Category::AlgorithmTolerance,
-    "terminal R T^2 d2C/dT2 change, J/(mol K); ~1e-4 of solution cp, ~40x below calorimetric uncertainty",
-};
-
-// ---------------------------------------------------------------- stability
-//
-// Pereira, Jackson, Galindo and Adjiman, Comput. Chem. Eng. 36 (2012) 99-118.
-
-// Lower box of the ln(x_i) coordinate inside the Ipopt subproblem, lowered for a trace species
-// to EQUILIBRIUM_BOX_INVENTORY_FRACTION u_i/N_feed (ALG-TERMINATION, #172). Its barrier is the
-// step regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
-// so without the barrier the line search takes steps of order 1e4 in ln x and lands in another
-// basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is not the
-// domain: the Newton polish carries a trace solution below it to any positive root (#266).
 inline constexpr Tolerance EQUILIBRIUM_COMPOSITION_BOX{"EQUILIBRIUM_COMPOSITION_BOX",
     1.0e-8,
     Category::AlgorithmTolerance,
@@ -480,9 +430,9 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &DENSITY_ANCHOR_REGULARITY, &DENSITY_SLOPE_SEPARATION, &DENSITY_STRUCTURE_ROUNDOFF,
-    &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
-    &OSMOTIC_MOLALITY_FLOOR, &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
-    &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
+    &COMPOSITION_SUM_TOLERANCE,
+    &OSMOTIC_MOLALITY_FLOOR,
+    &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
     &EQUILIBRIUM_BOX_FLOOR,
     &PHASE_DISAPPEARANCE_AMOUNT, &EQUILIBRIUM_AMOUNT_STEP_RETENTION, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,

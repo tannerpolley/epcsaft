@@ -924,8 +924,7 @@ inline void volume_partial_values() {
 }
 inline void isothermal_row_columns() {
     auto c=input(true,true);c.active={{ParameterFamily::BornDiameter,{1}}};
-    // At this manufactured fixed-T center the dielectric value is unchanged,
-    // but its steep local T slope refuses C_Ttheta while C_theta remains resolved.
+    // A steep declared dielectric slope no longer has a finite-dilution truncation gate.
     c.parameters.permittivity_term_component={0};c.parameters.permittivity_term_power={1};
     c.parameters.permittivity_term_coefficient={1e10};
     HelmholtzModel model(c.parameters,c.active);const auto compiled=compile_problem(model,c.problem);
@@ -933,35 +932,19 @@ inline void isothermal_row_columns() {
     const auto diagnostics=reaction_references(model,298.15,1e5,*c.problem.source_reference,
         {c.problem.reactions[0].stoichiometry},{*c.problem.reactions[0].reference},false,std::nullopt,1,true);
     CHECK(diagnostics[0].terminal_contraction_parameter_derivative[0]);
-    CHECK(!diagnostics[0].terminal_contraction_temperature_parameter_derivative[0]);
+    CHECK(diagnostics[0].terminal_contraction_temperature_parameter_derivative[0]);
     const auto lower_entry=std::find_if(diagnostics[0].lower_derivatives.begin(),diagnostics[0].lower_derivatives.end(),
         [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
     CHECK(lower_entry!=diagnostics[0].lower_derivatives.end());
     const auto& lower=*lower_entry;
-    CHECK(lower.criterion);
-    CHECK(lower.scaled_changes[1]>*lower.criterion);
-    HelmholtzModel caloric_model(c.parameters,c.active,c.records);
-    const auto caloric_compiled=compile_problem(caloric_model,c.problem);
-    const auto calorics=reference_calorics(caloric_compiled,298.15,1e5,true,true,true,2);
-    const auto consumed_entry=std::find_if(calorics.gibbs.begin(),calorics.gibbs.end(),
-        [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
-    CHECK(consumed_entry!=calorics.gibbs.end());
-    const auto& consumed=*consumed_entry;
-    // Still refused with the sqrt(m) limit (#353): at a 1e10 /K slope its two limits differ by 2.6e21 scaled.
-    CHECK(consumed.column.status==SolvedStateActionStatus::ReferenceUnavailable);
     const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
         recording_support::field("dielectric_T_slope_per_K",1e10),
-        recording_support::field("born_direction_angstrom",1),recording_support::field("water_feed_direction_mol",1),
         recording_support::field("C_theta",*diagnostics[0].terminal_contraction_parameter_derivative[0]),
-        recording_support::field("C_Ttheta_scaled_change",lower.scaled_changes[1]),
-        recording_support::field("C_Ttheta_criterion",*lower.criterion),
-        recording_support::field("lower_reference_cause",lower.message),
-        recording_support::field("caloric_completion_cause",consumed.column.message)});
-    Quantity theta{"C_theta","1/angstrom",1e-10,{}},change{"C_Ttheta_scaled_change","1",0,{}};
+        recording_support::field("C_Ttheta",*lower.value),
+        recording_support::field("site_residual",lower.diagnostics.association_residual)});
+    Quantity theta{"C_theta","1/angstrom",1e-10,{}};
     compare("reference-calorics/dependencies/lower-column/available-theta",theta,
         *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
-    compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
-        lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
     const auto shifted_rows=[&](double delta) {
         auto p=c.parameters;auto problem=c.problem;p.born_diameter_angstrom[1]+=delta;problem.feed.values[0]+=delta;
         HelmholtzModel shifted_model(p,c.active);const auto shifted_compiled=compile_problem(shifted_model,problem);

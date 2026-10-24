@@ -142,7 +142,8 @@ struct HelmholtzTape final {
         PredicateSignature predicates,
         const std::vector<IdealCorrelation>& ideal_correlations = {},
         double ideal_pressure = 0.0,
-        bool include_residual = true
+        bool include_residual = true,
+        bool reference_insertion = false
     ) {
         const std::size_t components = parameters.component_count();
         const std::size_t point_size = point.size();
@@ -187,9 +188,13 @@ struct HelmholtzTape final {
                     independent.begin() + static_cast<std::ptrdiff_t>(point_size)));
             const auto sigma = segment_sigma(independent[0], tape_parameters);
             const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
-            const auto [electrolyte, born] = supported_electrostatics(
+            auto [electrolyte, born] = supported_electrostatics(
                 independent[0], density,
                 composition, reference_composition, tape_parameters);
+            // EqIDs born_residual_helmholtz, reference_single_insertion_taylor: DH is zero;
+            // retain the Born first insertion only on the separate ion-free reference tape.
+            if (reference_insertion) born = born_contribution(independent[0], composition,
+                tape_parameters, electrolyte.bulk_relative_permittivity);
             const auto contributions = residual_helmholtz(
                 independent[0], density, composition, tape_parameters, sigma,
                 diameter, sites, electrolyte.debye_huckel, born);

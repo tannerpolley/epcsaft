@@ -812,16 +812,18 @@ C_Ttheta and C_TP and the bounded higher-order reference columns in EqID:
 qualifies the stated finite-terminal derivatives and observed dilution changes.
 It does not extend reacting caloric/action consumers by implication.
 
-The five-molality method and its terminal-pair limit are EqID:
-`reference_molality_sequence` and EqID: `reference_limit_terminal_pair`.
-This finite sequence estimates a limit within its accepted case and tolerance;
-it is not a theorem of convergence for every model. Return the observed change,
-terminal molality, source applicability and failure reason. Do not silently
-replace a failed limit by the last finite iterate or assign it zero error.
+The analytic first insertion is EqID `infinite_dilution_reference`. One ion-free
+solvent root and the existing association solution supply its values and exact
+T/P/parameter derivatives. Born remains nonzero; DH has zero first insertion.
+Neutral solvent mixtures use the same amount insertion. Charged backgrounds
+are refused, even if net neutral. The former EqIDs `reference_molality_sequence`
+and `reference_limit_terminal_pair` are retained qualification calculations.
+No terminal-change error is measured by the analytic method; retain actual
+density and site diagnostics without assigning a zero error estimate.
 
 A neutral solute in one pure solvent of an all-neutral model has the
 fugacity-based Henry constant of EqID: `henry_constant_px`, read from one unit
-reaction row of the same reference owner and terminal pair. It is
+reaction row of the same reference owner and analytic solvent insertion. It is
 `lim f/x`, not the partial-pressure volatility `p/x`. Normalized
 infinite-dilution activity coefficients tend to one and carry no absolute
 fugacity scale.
