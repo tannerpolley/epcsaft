@@ -1019,12 +1019,23 @@ charge must be zero. Source-reference conversion, diagnostic options and
 optimizer-state transfer exclude this added domain, as do the other #476
 exclusions.
 
-Only the #545 attempt checks the finite seed against the actual physical
+For discovery declarations, #828 extends the same free-amount attempt to one
+free fluid phase on exactly the positive-feed support and to the existing
+admitted two-phase support structure. Non-ideal square fixed-positive-T/P
+systems alone qualify; ions, reactions, source-reference conversion, solids,
+caloric, critical, envelope, azeotrope, diagnostic-options, vapor/vapor and
+three-phase declarations remain excluded. One shared operation owns the
+attempt and density-branch admission. A rejected attempt leaves the original
+seed for unchanged Ipopt. Discovery retains all donor, objective-decrease and
+final phase-set checks. Its work map counts actual Ipopt calls separately from
+`declaration_newton_attempts`, retaining rejected-attempt work too.
+
+The free-amount attempts check the finite seed against the actual physical
 primal box and topology before preparing iterations, then requires finite
 Jacobians/corrections and full numerical LU rank. Finite amount bounds from
 `GibbsMinimizer::get_bounds_info` are multiplied by the existing amount chart;
 infinite bounds retain their meaning. Candidate boxes precede preparation.
-Only #545 permits a trial whose raw rows already meet the caller criterion
+The free-amount attempts permit a trial whose raw rows already meet the caller criterion
 past the falling-contraction-ratio test. #476's iteration remains unchanged.
 In both domains, once the raw criterion is met, one compulsory full exact
 correction uses a fresh Jacobian and solve. The corrected point must meet the
