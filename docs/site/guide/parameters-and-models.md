@@ -48,11 +48,8 @@ refer to two selected, distinct components. A constant override replaces that
 pair's corresponding temperature law as well as its constant coefficient.
 Keep a caller override labelled as an assumption or a fitted value.
 
-The [ammonia notebook](../examples/ammonia-synthesis-equilibrium.ipynb) shows
-why compatible physical contributions may still require an explicit combined
-declaration when source packets declare different polar choices. It preserves
-the published pure records and explicitly assumes zero unlike interactions;
-it is not a published ternary parameter fit.
+See the [ammonia parameter combination](../examples/index.md#ammonia-parameter-combination)
+for an explicit combined declaration.
 
 ## Construct and reuse the model
 
@@ -75,8 +72,8 @@ The EOS includes the declared hard-chain, dispersion and association terms,
 and optional electrostatic and polar contributions. A dipole-dipole residual
 term and a bulk-permittivity choice are distinct declarations. The
 [EOS theory](../theory/eos.md) defines the admitted families and exclusions.
-The [aqueous NaCl notebook](../examples/aqueous-nacl-activity.ipynb) keeps the
-Held source's electrolyte choices with its water/ion parameters.
+See [aqueous NaCl inputs](../examples/index.md#aqueous-nacl-inputs)
+for the Held source selection.
 
 Charged ordinary states must be electroneutral. Mathematical admission does
 not establish parameter accuracy at a temperature, concentration or solvent

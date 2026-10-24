@@ -114,84 +114,8 @@ The common Helmholtz definition owns thermodynamic derivatives. Independent
 finite-difference formulas belong to numerical verification, not an alternate
 production equation owner.
 
-### Adopted Figiel input and model identity
-
-The source-complete starting input is the immutable
-[figiel-yu-held-2025/3 packet](../../../data/packets/figiel-yu-held-2025/3/packet.toml),
-with parameter JSON SHA-256
-3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c.
-Its packet fingerprint is retained in [packet-locks.json](../../../data/packet-locks.json).
-Supply the JSON to Parameters.from_json and an ordered component subset;
-no paper name selects physics. For the fixed-density equation control, the
-subset is (water, sodium-cation, chloride-anion), T = 298.15 K,
-rho_m = 56000 mol m^-3, and x = (0.98, 0.01, 0.01) in that order. The
-calculated pressure is about 17.1 MPa, outside the packet's reported 1-bar
-conditions; it tests admission and equations, not empirical accuracy.
-
-The document declares base: pc-saft with the Gross reference and
-dispersion rules of §4; association: general-site with explicit water A/B
-sites and no ion sites (§5); electrolyte: born with Debye--Huckel,
-same-sign ionic dispersion exclusion, and corrected SSM+DS Born (§§6–7);
-and permittivity: ion-fraction-suppression with salt-free solvent mass
-averaging and source coefficient 7.01 (§6). Its explicit charge, pair,
-association, and correlation records supply units and source locators.
-Segment, ionic packing, Debye--Huckel, and fitted Born diameters are distinct
-inputs; their source relations are stated in §§4, 6, and 7. Equilibrium and
-reported activities use the existing reference conventions in §10.
-The packet's reported evidence domain is 298.15 K, 1 bar, and ion mole
-fraction up to about 0.38. It does not provide missing ideal caloric inputs.
-
-The [current-wheel admission control](../../../docs/scientific/reviews/modular-baseline-admission-2026-09-22.md)
-retains sampled values, derivative outputs, exact input identities, and limits.
-
-Figiel parameter roles and calibration rows remain with the existing
-[reproduction source manifest](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
-the canonical Data packet owns reusable model inputs, while the reproduction
-analysis owns paper-specific fitted targets and partitions. Its
-[parameter-role ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv)
-(SHA-256 `932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b`)
-covers 122 source cells from Tables 2–5, their association/segment-count
-footnotes, and Eq. 11. It classifies 57 cells as fitted in Figiel, 33 inherited
-from cited sources, 13 fixed or assumed, and 19 blank or unpublished. Explicit
-published zero interactions stay fitted records; blank cells remain absent.
-Table 1 solvent-permittivity values and the fixed ionic-region value are
-source-provided inputs in the version-3 Data packet, outside that census and
-not regression targets. The parameter document preserves compatible identities:
-Table 2 water `f_k` is `component/water/solvation_factor`; Table 3 sodium
-`d_i^Born` is `component/sodium-cation/born_diameter`; Table 4 sodium–chloride
-`k_ij` is `pair/chloride-anion/sodium-cation/k_ij`; Table 5 sodium–water `k_ij`
-is `pair/sodium-cation/water/k_ij`; the Eq. 11 coefficient 7.01 is
-`model/relative_permittivity/ion_fraction_suppression_coefficient`; and Table 1
-`epsilon_r,ion = 8` is
-`model/relative_permittivity/ionic_region_relative_permittivity`. The source
-`2B` association choice is materialized as explicit A/B sites, and the Table 3
-segment sigma remains distinct from the fitted Born diameter; packing and
-Debye–Huckel diameters use the source transformation
-`d_i^pack = d_i^DH = 0.88 sigma_i`.
-
-The 407-row [calibration-observation ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv)
-(SHA-256 `4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7`)
-records each row's role, value and unit, species/solvent, temperature,
-pressure, composition basis/value, thermodynamic basis, source locator and
-row, extraction or construction, source hash, and uncertainty status. It retains
-the published order: SI Table S5 water solvation, NaBr MIAC, aqueous MIAC,
-Eq. 19 transfer construction, dielectric correlation, then SI Table S4 density
-and osmotic-coefficient data. The current five-ion Born-diameter tracer uses
-only five SI Table S5 reported averages as targets and their 27 underlying
-literature values as support: `T = 298.15 K`, `P = 1 bar`, `x_ion -> 0`, with
-the x-treatment from gas at 1 bar to a hypothetical dilute-ideal solution at
-1 bar. The SI reports no pointwise uncertainty.
-
-The ledger classifies 191 rows as direct, 47 table-derived, 90 digitized, 43
-constructed, and 36 missing-primary-source. In particular, its 36 NaBr MIAC
-rows for methanol and ethanol remain explicitly missing-primary-source: each
-is dimensionless at 298.15 K and 1 bar on a formula-unit molality basis, but
-the retained lab CSVs have no primary-paper extraction result. Digitized and
-constructed values remain marked as such; Eq. 19 constructed solvation rows
-are not source observations. The ledger preserves calibration roles and
-conditions without asserting a complete replay of the paper's objective,
-weights, or uncertainty model. It is source-design evidence, not a new fit or
-an extension of the baseline's numerical claim.
+See [Figiel input identity and calibration evidence](#figiel-input-identity-and-calibration-evidence)
+for the adopted packet and its source limits.
 
 ## 4. Neutral PC-SAFT
 
@@ -314,10 +238,8 @@ strength here carries `sigma_ij^3`, the PC-SAFT convention written explicitly by
 Nasrifar and Tafazzol 2010 (DOI `10.1021/ie901181n`, Eq. 34). A parameter set
 regressed with `d_ij^3` is a different model: its volume must be converted in the
 packet, and no constant conversion is exact because `(d/sigma)^3` depends on
-temperature. The MEA nine-species packet from version 5 converts the Fakouri
-Baygi 2015 (DOI `10.1016/j.cherd.2014.07.017`, Eq. 4) MEA 2B volume this way;
-the [conversion analysis](../../../analyses/2026-mea-association-diameter/README.md)
-owns the evidence. Every admitted site pair is an explicit
+temperature. See [association source conversions](#association-source-conversions)
+for packet-specific evidence. Every admitted site pair is an explicit
 topology edge whose source is either a direct coefficient record or one of two
 named closed-registry rules. For unlike components `i` and `j`, both rules
 resolve
@@ -344,11 +266,8 @@ recorded derivative chain is `1/2` for each energy input and
 parameter derivatives propagate through the rule without treating its output
 as an independent fit coefficient.
 
-The Figiel2025, Figiel–Yu–Held 2025, Khudaida2026 and MEA nine-species packets
-name `wolbach-sandler` from their current versions onward, with its
-pure-component self-edge inputs and its provenance for both admitted cross
-directions. Their earlier versions name `arithmetic-energy-geometric-volume`
-and stay unchanged as immutable records. An omitted unlike-site pair remains inactive,
+See [association source conversions](#association-source-conversions)
+for the immutable packet history. An omitted unlike-site pair remains inactive,
 not inferred. String schemes, inferred donor/acceptor pairs, implicit combining,
 and default insertion are forbidden.
 
@@ -442,7 +361,6 @@ and dielectric source correlations stay fixed. Parameter admission and fitting
 execution belong to [ALG-PARAMETERS](algorithms.md#alg-parameters) and
 [ALG-FIT](algorithms.md#alg-fit).
 
-
 The relative-permittivity topology is selected by a complete, source-bearing
 parameter family. It is not a caller option and there is no phase label or
 runtime fallback. Mixed or incomplete topology records fail during model
@@ -525,7 +443,9 @@ values Na+ `(5.407 D2, 0 A3, 0.215)` and Cl- `(2.563 D2, 0 A3, 0.138)`.
 All three records are required for every selected component. The equation gives
 `epsilon_r,bulk -> 1` as all partial densities approach zero.
 
-### 6.5 Common electrostatic owner and bounded comparison
+<a id="65-common-electrostatic-owner-and-bounded-comparison"></a>
+
+### 6.5 Common electrostatic owner
 
 The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
 owner and is consumed unchanged by both Debye--Huckel and the selected Born
@@ -534,80 +454,8 @@ remain inside the common CppAD tape. The parameter record identifies the generic
 bundle-defined formulation, and `State.bulk_relative_permittivity` reports the evaluated
 state value.
 
-The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
-`P=2508 Pa`, with explicit-species compositions in EOS order
-`(water,Na+,Cl-)`:
-
-```text
-x_v = (1-2(1.41063e-116), 1.41063e-116, 1.41063e-116),
-x_l = (0.826112, 0.086944, 0.086944).
-```
-
-At the corrected retained vapor volume `V=0.9841 m3 mol^-1`, Figiel gives
-`epsilon_r=78.09`, while Schreckenberg and Rueben give approximately
-`1.00142` and `1.000324`. Thus the density topologies repair the dilute-vapor
-limit at the equation level. The retained SAFT-gamma Mie liquid volume
-`1.787e-5 m3 mol^-1` is not an ePC-SAFT pressure root: direct ePC-SAFT pressures
-are about `-2.08e8` to `-2.16e8 Pa` across the four topologies. Comparisons of
-chemical potentials therefore use each topology's own pressure-certified
-root, not the retained foreign-EOS liquid volume.
-
-The diagnostic changes only the permittivity records on the explicit
-Figiel2025 ePC-SAFT/SSM+DS parameter base. Its immutable fingerprints are:
-
-```text
-Figiel          sha256:79faf0da75ddb6dfe44d0282f93c5c9497941bee82227d8d76dd1149618838ef
-Zuber           sha256:bb00c286a3d36a14485b96ae72577716a3a8813708d7ec5907f1da7cc03bcc1f
-Schreckenberg   sha256:07d3034eb210e89c6a2ecb736735c85fafeb6161c03c4febd473428c8883d47a
-Rueben          sha256:9d7ae94f2cda937ea541a3d65da3d04c66d62cca0af8fff23896456f3602cbf2
-```
-
-The vapor root is `V=0.9862436645 m3 mol^-1` for every topology. The liquid
-root and electrostatic results are:
-
-| topology | liquid `rho_m` / mol m^-3 | `epsilon_v` | `epsilon_l` | `a_l^DH` | `a_l^Born` | mean-ion gap / `RT` | water gap / `RT` |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Figiel composition-only | 59380.0341 | 78.0900 | 35.1922 | -0.350489 | -24.5552 | -269.7235 | 0.0170 |
-| Zuber ion-specific | 59364.9061 | 78.0900 | 40.9716 | -0.292775 | -24.6290 | -269.5921 | 0.0089 |
-| Schreckenberg density | 59466.9217 | 1.001419 | 69.7591 | -0.154498 | -24.8146 | -170.8193 | -0.0177 |
-| Rueben perturbation | 59456.7965 | 1.000323 | 74.7311 | -0.142058 | -24.8321 | -170.6547 | -0.0231 |
-
-Here the reported phase-equilibrium diagnostic is evaluated from EOS
-fugacity coefficients,
-
-```text
-Delta_mu_ion/(RT) = (1/2) sum_(i=Na+,Cl-)
-                     ln[(x_i^v phi_i^v)/(x_i^l phi_i^l)],
-Delta_mu_water/(RT) = ln[(x_water^v phi_water^v)/
-                          (x_water^l phi_water^l)].
-```
-
-All displayed roots have positive `dP/d(rho_m)` and pressure closure within
-`3e-6 Pa`. Zuber's explicit ion coefficients barely change the approximately
-`270 RT` mismatch. Schreckenberg and Rueben improve it by about `99 RT`, but a
-remaining `171 RT` mean-ion gap is still far from equilibrium. The water gap is
-already within `0.024 RT`, which localizes this endpoint disagreement to ionic
-solvation rather than solvent phase equality.
-
-As a liquid-property cross-check at `298.15 K`, `1 bar`, and `1 mol kg^-1`
-aqueous NaCl, HamerWu1972 Table 16 reports `gamma_+/-=0.657`. With all other
-Figiel parameters unchanged, the EOS returns `0.70721` for Figiel,
-`0.66422` for Zuber, and `0.55220` for Rueben. Their corresponding practical
-osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
-is assigned to those three osmotic numbers here. The Schreckenberg reference
-path, which formerly failed on a lone stable root, now completes and gives
-`0.56348`. The #27 common-data comparison
-([analyses/2026-dielectric-alternatives](../../../analyses/2026-dielectric-alternatives/README.md))
-supersedes these single-point diagnostics for water/NaCl at 298.15 K and 1 bar.
-
-Since the retained ePC-SAFT ion, Born, and interaction parameters were not
-fitted with the density topologies, this is equation and topology evidence,
-not VLE validation or authority to change a caller-owned default. The next
-scientific step is a Regression-owned sensitivity/refit study with liquid
-dielectric-decrement, density, MIAC, and osmotic anchors before cross-package
-equilibrium validation. The density-based topology is worth pursuing; changing
-only the Zuber suppression coefficients is not supported as the next priority
-by this comparison.
+See [permittivity comparisons on the Figiel parameter base](#permittivity-comparisons-on-the-figiel-parameter-base)
+for the retained endpoint and liquid-property evidence.
 
 The defining Debye screening quantity is
 
@@ -650,7 +498,6 @@ dependent coordinate through EqID: `dependent_born_diameter_derivative`; the
 observed target uses the single-ion x-process J/mol convention. The hold is not
 a high-weight residual. Stored-diameter acceptance is separate from the inner
 root solve. No cross-family diameter tie or coupled hold is qualified here.
-
 
 Figiel2025 defines a fitted `d_i^Born` and the shell thickness
 
@@ -864,13 +711,10 @@ an organic phase. Omitting either cation from
 a component selection omits the term; a zero amount in a retained component set
 keeps its insertion derivatives when the declared solvent amount is positive.
 With no declaration, arithmetic is unchanged.
-The coefficients are qualified only for retained aqueous water/chloride-salt
-cases at 298.15 K and 1 bar; the #658 Yao
-calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
-mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
-In particular, it has no ideal-gas residual limit at fixed composition.
-Occupied additional neutrals and organic-phase effects are unqualified
-extrapolation. At exact $x_s=0$, if $x_i=0$ or $x_j=0$, define the contribution
+The [cation-mixing qualification](#cation-mixing-qualification) records
+the retained domain and extrapolation limits.
+
+At exact $x_s=0$, if $x_i=0$ or $x_j=0$, define the contribution
 as zero on that fixed support. Every derivative within that support, including
 thermal, volume and active-coefficient derivatives, is exactly zero. Dense
 arrays store zero transverse mixing entries; these are defined storage, not
@@ -892,38 +736,12 @@ admits neutral pure-organic reference evaluations without qualifying organic
 ions or predicting Lithium extraction. Other neutral components retain their
 existing effects on the other EOS contributions.
 
-For an **illustrative**, electroneutral organic-rich composition, take water
-$x_s=10^{-3}$, Li and Mg $x_i=x_j=10^{-6}$, chloride $x_k=3\times10^{-6}$,
-and the remainder neutral organic. Substituting $M_s=0.01801528$ kg/mol,
-$\theta=-0.2205$ kg/mol and $\psi=0.024$ kg²/mol² gives
-$\Delta a^r\simeq-2.426\times10^{-8}$, about $-6.0\times10^{-5}$ J/mol
-of phase at 298.15 K. The Li chemical-potential contribution is nevertheless
-$\Delta\mu_i/(RT)=2\theta m_j+\psi m_jm_k\simeq-0.02426$, about
-$-60$ J/mol of inserted Li or $-0.0105$ decade in its activity contribution.
-These rounded formula substitutions are neither an Engine run nor a predicted
-phase or physical validation. At fixed water molalities the molar energy scales
-with $x_s$ while ion chemical potentials stay finite. At fixed nonzero ion
-fractions the pair and triple terms instead grow as $x_s^{-1}$ and $x_s^{-2}$
-as $x_s\to0$; there is no universal small-organic-phase bound.
-
 Finite temperature bounds attached to the selected source records are
 intersected by the resolver and enforced for every topology. A record whose
 source domain is explicitly unknown contributes no invented numerical bound.
 
-The first electrolyte model is bounded to the Figiel source records for water,
-methanol, ethanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
-`0 <= x_ion <= 0.38`. A distinct aqueous bundle admits source-complete NaI and
-KI at the same conditions without changing established model fingerprints.
-LiI remains excluded because Figiel Table 4 publishes no `Li+/I-` interaction.
-Each admitted MIAC calculation selects one solvent
-composition, one cation, and one anion. A mixed-solvent selection additionally
-requires every solvent pair and cross-association record. The ordinary-state
-composition is electroneutral. The
-retained Figiel records report `p = 1 bar`; evaluation at another pressure is
-a mathematical EOS result, not source-backed physical validation at that
-pressure. The dielectric suppression relation is not evidence for another
-solvent, temperature, component topology, or larger ion fraction. Solver
-convergence does not expand that evidence.
+See the [Figiel and iodide input domain](#figiel-and-iodide-input-domain)
+for the source-specific selection and pressure restriction.
 
 Relative-permittivity behavior is selected by one source-neutral Model Family
 choice in the canonical Parameters document. The public builder admits
@@ -938,27 +756,11 @@ provide every coefficient and one complete fixed topology needed by the
 selected model. No model choice or topology broadens the temperature,
 pressure, composition, or fitted-parameter evidence recorded by its sources.
 
-The Ascani Case Study 2 bundle is a separate exact selection of water,
-1-butanol, `Na+`, `K+`, and `Cl-` at `T = 298.15 K` and `p = 1 bar`. It requires
-all ten unordered `k_ij` and `l_ij` pair classifications explicitly. The
-same-sign `Na+/K+` dispersion pair is source-marked not applicable; its
-equation-level zero cannot be used as source evidence for another pair. The
-bundle also carries the source-derived water/1-butanol cross-association
-energy and volume while preserving the distinct `k_ij_hb` provenance. Its
-source records preserve the combined-dielectric and uncorrected-Born
-provenance, while it and the Figiel records resolve through the same canonical
-`born` equation with explicit fixed coefficients. Those source distinctions
-remain packet provenance and do not create runtime variants or alter packet
-fingerprints.
+See [Ascani Case Study 2 input selection](#ascani-case-study-2-input-selection)
+for the source-specific pair classifications.
 
-The Held2008 bundle is a source-complete selection of water plus all 29 Table 2
-ions at `T = 298.15 K` and `p = 1 bar`. It requires explicit water--ion
-`k_ij = 0` and ion--ion `k_ij = 1`, so no ion--ion dispersion is silently
-introduced. It uses the source's fully dissociated Debye--Huckel formulation
-with concentration-independent water permittivity and has no Born term,
-ion-pairing, or reaction-equilibrium behavior. Evaluation or the
-standard-reference evaluator outside the recorded source state is not
-source-backed, and the evaluator fails closed outside that state.
+The [Held2008 input selection and reference restriction](#held2008-input-selection-and-reference-restriction)
+retains its fail-closed source-state requirement.
 
 The fully dissociated Debye--Huckel model family also accepts explicitly
 declared neutral--ion and opposite-charge `k_ij` records when a different
@@ -1042,3 +844,243 @@ at zero component amount. Positive total amount suffices for mole fractions;
 logarithmic coordinates and insertion chemical potentials require separate
 interior/limit treatment. An incipient phase at zero total amount uses the
 independent intensive chart in the equilibrium formulation.
+
+## Appendix: Special cases and numerical qualification
+
+### Figiel input identity and calibration evidence
+
+<a id="adopted-figiel-input-and-model-identity"></a>
+
+The source-complete starting input is the immutable
+[figiel-yu-held-2025/3 packet](../../../data/packets/figiel-yu-held-2025/3/packet.toml),
+with parameter JSON SHA-256
+3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c.
+Its packet fingerprint is retained in [packet-locks.json](../../../data/packet-locks.json).
+Supply the JSON to Parameters.from_json and an ordered component subset;
+no paper name selects physics. For the fixed-density equation control, the
+subset is (water, sodium-cation, chloride-anion), T = 298.15 K,
+rho_m = 56000 mol m^-3, and x = (0.98, 0.01, 0.01) in that order. The
+calculated pressure is about 17.1 MPa, outside the packet's reported 1-bar
+conditions; it tests admission and equations, not empirical accuracy.
+
+The document declares base: pc-saft with the Gross reference and
+dispersion rules of §4; association: general-site with explicit water A/B
+sites and no ion sites (§5); electrolyte: born with Debye--Huckel,
+same-sign ionic dispersion exclusion, and corrected SSM+DS Born (§§6–7);
+and permittivity: ion-fraction-suppression with salt-free solvent mass
+averaging and source coefficient 7.01 (§6). Its explicit charge, pair,
+association, and correlation records supply units and source locators.
+Segment, ionic packing, Debye--Huckel, and fitted Born diameters are distinct
+inputs; their source relations are stated in §§4, 6, and 7. Equilibrium and
+reported activities use the existing reference conventions in §10.
+The packet's reported evidence domain is 298.15 K, 1 bar, and ion mole
+fraction up to about 0.38. It does not provide missing ideal caloric inputs.
+
+The [current-wheel admission control](../../../docs/scientific/reviews/modular-baseline-admission-2026-09-22.md)
+retains sampled values, derivative outputs, exact input identities, and limits.
+
+Figiel parameter roles and calibration rows remain with the existing
+[reproduction source manifest](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
+the canonical Data packet owns reusable model inputs, while the reproduction
+analysis owns paper-specific fitted targets and partitions. Its
+[parameter-role ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv)
+(SHA-256 `932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b`)
+covers 122 source cells from Tables 2–5, their association/segment-count
+footnotes, and Eq. 11. It classifies 57 cells as fitted in Figiel, 33 inherited
+from cited sources, 13 fixed or assumed, and 19 blank or unpublished. Explicit
+published zero interactions stay fitted records; blank cells remain absent.
+Table 1 solvent-permittivity values and the fixed ionic-region value are
+source-provided inputs in the version-3 Data packet, outside that census and
+not regression targets. The parameter document preserves compatible identities:
+Table 2 water `f_k` is `component/water/solvation_factor`; Table 3 sodium
+`d_i^Born` is `component/sodium-cation/born_diameter`; Table 4 sodium–chloride
+`k_ij` is `pair/chloride-anion/sodium-cation/k_ij`; Table 5 sodium–water `k_ij`
+is `pair/sodium-cation/water/k_ij`; the Eq. 11 coefficient 7.01 is
+`model/relative_permittivity/ion_fraction_suppression_coefficient`; and Table 1
+`epsilon_r,ion = 8` is
+`model/relative_permittivity/ionic_region_relative_permittivity`. The source
+`2B` association choice is materialized as explicit A/B sites, and the Table 3
+segment sigma remains distinct from the fitted Born diameter; packing and
+Debye–Huckel diameters use the source transformation
+`d_i^pack = d_i^DH = 0.88 sigma_i`.
+
+The 407-row [calibration-observation ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv)
+(SHA-256 `4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7`)
+records each row's role, value and unit, species/solvent, temperature,
+pressure, composition basis/value, thermodynamic basis, source locator and
+row, extraction or construction, source hash, and uncertainty status. It retains
+the published order: SI Table S5 water solvation, NaBr MIAC, aqueous MIAC,
+Eq. 19 transfer construction, dielectric correlation, then SI Table S4 density
+and osmotic-coefficient data. The current five-ion Born-diameter tracer uses
+only five SI Table S5 reported averages as targets and their 27 underlying
+literature values as support: `T = 298.15 K`, `P = 1 bar`, `x_ion -> 0`, with
+the x-treatment from gas at 1 bar to a hypothetical dilute-ideal solution at
+1 bar. The SI reports no pointwise uncertainty.
+
+The ledger classifies 191 rows as direct, 47 table-derived, 90 digitized, 43
+constructed, and 36 missing-primary-source. In particular, its 36 NaBr MIAC
+rows for methanol and ethanol remain explicitly missing-primary-source: each
+is dimensionless at 298.15 K and 1 bar on a formula-unit molality basis, but
+the retained lab CSVs have no primary-paper extraction result. Digitized and
+constructed values remain marked as such; Eq. 19 constructed solvation rows
+are not source observations. The ledger preserves calibration roles and
+conditions without asserting a complete replay of the paper's objective,
+weights, or uncertainty model. It is source-design evidence, not a new fit or
+an extension of the baseline's numerical claim.
+
+### Figiel and iodide input domain
+
+The first electrolyte model is bounded to the Figiel source records for water,
+methanol, ethanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
+`0 <= x_ion <= 0.38`. A distinct aqueous bundle admits source-complete NaI and
+KI at the same conditions without changing established model fingerprints.
+LiI remains excluded because Figiel Table 4 publishes no `Li+/I-` interaction.
+Each admitted MIAC calculation selects one solvent
+composition, one cation, and one anion. A mixed-solvent selection additionally
+requires every solvent pair and cross-association record. The ordinary-state
+composition is electroneutral. The
+retained Figiel records report `p = 1 bar`; evaluation at another pressure is
+a mathematical EOS result, not source-backed physical validation at that
+pressure. The dielectric suppression relation is not evidence for another
+solvent, temperature, component topology, or larger ion fraction. Solver
+convergence does not expand that evidence.
+
+### Association source conversions
+
+The MEA nine-species packet from version 5 converts the Fakouri
+Baygi 2015 (DOI `10.1016/j.cherd.2014.07.017`, Eq. 4) MEA 2B volume this way;
+the [conversion analysis](../../../analyses/2026-mea-association-diameter/README.md)
+owns the evidence.
+
+The Figiel2025, Figiel–Yu–Held 2025, Khudaida2026 and MEA nine-species packets
+name `wolbach-sandler` from their current versions onward, with its
+pure-component self-edge inputs and its provenance for both admitted cross
+directions. Their earlier versions name `arithmetic-energy-geometric-volume`
+and stay unchanged as immutable records.
+
+### Permittivity comparisons on the Figiel parameter base
+
+The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
+`P=2508 Pa`, with explicit-species compositions in EOS order
+`(water,Na+,Cl-)`:
+
+```text
+x_v = (1-2(1.41063e-116), 1.41063e-116, 1.41063e-116),
+x_l = (0.826112, 0.086944, 0.086944).
+```
+
+At the corrected retained vapor volume `V=0.9841 m3 mol^-1`, Figiel gives
+`epsilon_r=78.09`, while Schreckenberg and Rueben give approximately
+`1.00142` and `1.000324`. Thus the density topologies repair the dilute-vapor
+limit at the equation level. The retained SAFT-gamma Mie liquid volume
+`1.787e-5 m3 mol^-1` is not an ePC-SAFT pressure root: direct ePC-SAFT pressures
+are about `-2.08e8` to `-2.16e8 Pa` across the four topologies. Comparisons of
+chemical potentials therefore use each topology's own pressure-certified
+root, not the retained foreign-EOS liquid volume.
+
+The diagnostic changes only the permittivity records on the explicit
+Figiel2025 ePC-SAFT/SSM+DS parameter base. Its immutable fingerprints are:
+
+```text
+Figiel          sha256:79faf0da75ddb6dfe44d0282f93c5c9497941bee82227d8d76dd1149618838ef
+Zuber           sha256:bb00c286a3d36a14485b96ae72577716a3a8813708d7ec5907f1da7cc03bcc1f
+Schreckenberg   sha256:07d3034eb210e89c6a2ecb736735c85fafeb6161c03c4febd473428c8883d47a
+Rueben          sha256:9d7ae94f2cda937ea541a3d65da3d04c66d62cca0af8fff23896456f3602cbf2
+```
+
+The vapor root is `V=0.9862436645 m3 mol^-1` for every topology. The liquid
+root and electrostatic results are:
+
+| topology | liquid `rho_m` / mol m^-3 | `epsilon_v` | `epsilon_l` | `a_l^DH` | `a_l^Born` | mean-ion gap / `RT` | water gap / `RT` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Figiel composition-only | 59380.0341 | 78.0900 | 35.1922 | -0.350489 | -24.5552 | -269.7235 | 0.0170 |
+| Zuber ion-specific | 59364.9061 | 78.0900 | 40.9716 | -0.292775 | -24.6290 | -269.5921 | 0.0089 |
+| Schreckenberg density | 59466.9217 | 1.001419 | 69.7591 | -0.154498 | -24.8146 | -170.8193 | -0.0177 |
+| Rueben perturbation | 59456.7965 | 1.000323 | 74.7311 | -0.142058 | -24.8321 | -170.6547 | -0.0231 |
+
+Here the reported phase-equilibrium diagnostic is evaluated from EOS
+fugacity coefficients,
+
+```text
+Delta_mu_ion/(RT) = (1/2) sum_(i=Na+,Cl-)
+                     ln[(x_i^v phi_i^v)/(x_i^l phi_i^l)],
+Delta_mu_water/(RT) = ln[(x_water^v phi_water^v)/
+                          (x_water^l phi_water^l)].
+```
+
+All displayed roots have positive `dP/d(rho_m)` and pressure closure within
+`3e-6 Pa`. Zuber's explicit ion coefficients barely change the approximately
+`270 RT` mismatch. Schreckenberg and Rueben improve it by about `99 RT`, but a
+remaining `171 RT` mean-ion gap is still far from equilibrium. The water gap is
+already within `0.024 RT`, which localizes this endpoint disagreement to ionic
+solvation rather than solvent phase equality.
+
+As a liquid-property cross-check at `298.15 K`, `1 bar`, and `1 mol kg^-1`
+aqueous NaCl, HamerWu1972 Table 16 reports `gamma_+/-=0.657`. With all other
+Figiel parameters unchanged, the EOS returns `0.70721` for Figiel,
+`0.66422` for Zuber, and `0.55220` for Rueben. Their corresponding practical
+osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
+is assigned to those three osmotic numbers here. The Schreckenberg reference
+path, which formerly failed on a lone stable root, now completes and gives
+`0.56348`. The #27 common-data comparison
+([analyses/2026-dielectric-alternatives](../../../analyses/2026-dielectric-alternatives/README.md))
+supersedes these single-point diagnostics for water/NaCl at 298.15 K and 1 bar.
+
+Since the retained ePC-SAFT ion, Born, and interaction parameters were not
+fitted with the density topologies, this is equation and topology evidence,
+not VLE validation or authority to change a caller-owned default. The next
+scientific step is a Regression-owned sensitivity/refit study with liquid
+dielectric-decrement, density, MIAC, and osmotic anchors before cross-package
+equilibrium validation. The density-based topology is worth pursuing; changing
+only the Zuber suppression coefficients is not supported as the next priority
+by this comparison.
+
+### Cation-mixing qualification
+
+The coefficients are qualified only for retained aqueous water/chloride-salt
+cases at 298.15 K and 1 bar; the #658 Yao
+calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
+mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
+In particular, it has no ideal-gas residual limit at fixed composition.
+Occupied additional neutrals and organic-phase effects are unqualified
+extrapolation.
+
+For an **illustrative**, electroneutral organic-rich composition, take water
+$x_s=10^{-3}$, Li and Mg $x_i=x_j=10^{-6}$, chloride $x_k=3\times10^{-6}$,
+and the remainder neutral organic. Substituting $M_s=0.01801528$ kg/mol,
+$\theta=-0.2205$ kg/mol and $\psi=0.024$ kg²/mol² gives
+$\Delta a^r\simeq-2.426\times10^{-8}$, about $-6.0\times10^{-5}$ J/mol
+of phase at 298.15 K. The Li chemical-potential contribution is nevertheless
+$\Delta\mu_i/(RT)=2\theta m_j+\psi m_jm_k\simeq-0.02426$, about
+$-60$ J/mol of inserted Li or $-0.0105$ decade in its activity contribution.
+These rounded formula substitutions are neither an Engine run nor a predicted
+phase or physical validation. At fixed water molalities the molar energy scales
+with $x_s$ while ion chemical potentials stay finite. At fixed nonzero ion
+fractions the pair and triple terms instead grow as $x_s^{-1}$ and $x_s^{-2}$
+as $x_s\to0$; there is no universal small-organic-phase bound.
+
+### Ascani Case Study 2 input selection
+
+The Ascani Case Study 2 bundle is a separate exact selection of water,
+1-butanol, `Na+`, `K+`, and `Cl-` at `T = 298.15 K` and `p = 1 bar`. It requires
+all ten unordered `k_ij` and `l_ij` pair classifications explicitly. The
+same-sign `Na+/K+` dispersion pair is source-marked not applicable; its
+equation-level zero cannot be used as source evidence for another pair. The
+bundle also carries the source-derived water/1-butanol cross-association
+energy and volume while preserving the distinct `k_ij_hb` provenance. Its
+source records preserve the combined-dielectric and uncorrected-Born
+provenance, while it and the Figiel records resolve through the same canonical
+`born` equation with explicit fixed coefficients. Those source distinctions
+remain packet provenance and do not create runtime variants or alter packet
+fingerprints.
+
+### Held2008 input selection and reference restriction
+
+The Held2008 bundle is a source-complete selection of water plus all 29 Table 2
+ions at `T = 298.15 K` and `p = 1 bar`. It requires explicit water--ion
+`k_ij = 0` and ion--ion `k_ij = 1`, so no ion--ion dispersion is silently
+introduced. It uses the source's fully dissociated Debye--Huckel formulation
+with concentration-independent water permittivity and has no Born term,
+ion-pairing, or reaction-equilibrium behavior. Evaluation or the
+standard-reference evaluator outside the recorded source state is not
+source-backed, and the evaluator fails closed outside that state.

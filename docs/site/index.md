@@ -8,24 +8,9 @@ then use the [example gallery](examples/index.md) for executed calculations.
 The [equations](theory/equations.md) and
 [algorithms](theory/algorithms.md) define the thermodynamics and methods.
 
-For a first liquid-water state at 298.15 K and 100,000 Pa, run from the
-repository root in the prepared environment:
-
-```python
-from epcsaft import Parameters, Pure
-
-water = Pure(Parameters.from_packets(
-    "data/packets", [("held-cameretti-sadowski-2008/4", ["water"])]))
-state = water.state(298.15, P=100_000.0, phase="liquid")
-print(state.molar_density)  # mol/m³
-```
-
-The [water notebook](examples/parameters-and-water-state.ipynb) identifies the
-published parameter source and checks pressure closure. The
-[density algorithm](theory/algorithms.md#alg-density) defines the branch solve;
-the [model reference](api/eos.rst) documents the call. This is a
-source-parameter prediction with numerical closure verification, not a
-comparison with measured water density.
+Follow the [quickstart](quickstart.md) for a first state declaration and the
+[water notebook](examples/parameters-and-water-state.ipynb) for its source,
+pressure-closure check and prediction limits.
 
 Choose the next guide by the quantity you need. Parameters and reference
 states remain explicit; unavailable outputs carry causes. Read
@@ -62,7 +47,7 @@ Read the source-owned equations, conventions and algorithms.
 installation
 quickstart
 guide/index
-examples/index
+Special-case appendix <examples/index>
 api/index
 theory/index
 limits
