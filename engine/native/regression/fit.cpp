@@ -294,6 +294,7 @@ struct Failure final {
     ObservationStatus status = ObservationStatus::Nonfinite;
     bool jacobian = false;
     std::string message;
+    std::vector<ResidualEnergyAction> parameter_actions{};
 };
 
 FitHost fit_host;
@@ -334,7 +335,7 @@ FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
 FIELDS(HydrationHold, a, b, c, d, e, f)
-FIELDS(Failure, a, b, c, d, e)
+FIELDS(Failure, a, b, c, d, e, f)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
@@ -570,11 +571,11 @@ struct ObservationEvaluator::Impl final {
             out.statuses[i] = ObservationStatus::NotEvaluated;
             if (jacobian) std::fill_n(out.gradient.begin() + i * width, width, 0.0);
         }
-        const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged) {
+        const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged, std::vector<ResidualEnergyAction> actions = {}) {
             for (const int fd : workers_.sockets) put(fd, false);
-            return fail(index, optimizer, status, std::move(message), flagged);
+            return fail(index, optimizer, status, std::move(message), flagged, std::move(actions));
         };
-        if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian);
+        if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian, std::move(failure->parameter_actions));
         out.weighted.resize(n);
         for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
         // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
@@ -680,8 +681,8 @@ struct ObservationEvaluator::Impl final {
     }
 
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
-              std::string message, bool jacobian) {
-        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian});
+              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}) {
+        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions)});
         ++result_.trial_failures;
         return false;
     }
@@ -778,8 +779,7 @@ struct ObservationEvaluator::Impl final {
                     if (prediction.reference) {
                         out.reference_values[i].assign(prediction.reference->log_fugacity.begin(), prediction.reference->log_fugacity.end());
                         if (prediction.reference->pure_solvent_log_fugacity) out.reference_values[i].push_back(*prediction.reference->pure_solvent_log_fugacity);
-                        for (const auto& state : prediction.reference->ladder_states) out.state_densities[i].push_back(state.molar_density);
-                        if (prediction.reference->pure_solvent_state) out.state_densities[i].push_back(prediction.reference->pure_solvent_state->molar_density);
+                        if (prediction.reference->solvent_state) out.state_densities[i].push_back(prediction.reference->solvent_state->molar_density);
                     }
                 }
                 if (!jacobian) continue;
@@ -789,14 +789,14 @@ struct ObservationEvaluator::Impl final {
                     std::vector<const Observation*> rows;
                     for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
-                    const auto [directions, deviations] = measurement_.directions(request_, i);
+                    const auto directions = measurement_.directions(request_, i).first;
                     gradients[g] = pressure_closed(observation.kind) && directions.empty()
                         ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                        : differentiate_group(model, rows, prediction, request_.coordinates, directions, deviations);
+                        : differentiate_group(model, rows, prediction, request_.coordinates, directions);
                 }
                 const auto& gradient = gradients[g][position[g]++];
                 if (gradient.status != ObservationStatus::Available)
-                    return Failure{i, i, gradient.status, true, gradient.message};
+                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions};
                 std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
                 std::size_t local = width;

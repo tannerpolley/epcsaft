@@ -535,10 +535,9 @@ A genuine sole root remains unlabelled. Its side is read from the stored
 negative-slope sample of the same scan (single-loop case, #423): below the sample
 it is vapor-side, above it liquid-side, and with no sample it stays unlabelled; no
 evaluation, density cutoff or tolerance is added. Liquid references (the
-neutral trace, the ionic ladder's first rung, its pure solvent and the finite
+neutral trace, the ion-free ionic solvent reference, its pure solvent and the finite
 electrolyte-activity state) refuse a consumed root on the established vapor side;
-pure-species overrides retain their own branch admission, and unused dilution
-states do not cause refusal. Fit observations keep the unlabelled root and its count. An anchored request uses the same
+pure-species overrides retain their own branch admission, and unused reference states do not cause refusal. Fit observations keep the unlabelled root and its count. An anchored request uses the same
 partition and counting method within its existing local window and keeps the
 requested branch only after local uniqueness is established. It returns the sole
 stable root already refined by that local scan, with its own convergence record,
@@ -1020,12 +1019,23 @@ charge must be zero. Source-reference conversion, diagnostic options and
 optimizer-state transfer exclude this added domain, as do the other #476
 exclusions.
 
-Only the #545 attempt checks the finite seed against the actual physical
+For discovery declarations, #828 extends the same free-amount attempt to one
+free fluid phase on exactly the positive-feed support and to the existing
+admitted two-phase support structure. Non-ideal square fixed-positive-T/P
+systems alone qualify; ions, reactions, source-reference conversion, solids,
+caloric, critical, envelope, azeotrope, diagnostic-options, vapor/vapor and
+three-phase declarations remain excluded. One shared operation owns the
+attempt and density-branch admission. A rejected attempt leaves the original
+seed for unchanged Ipopt. Discovery retains all donor, objective-decrease and
+final phase-set checks. Its work map counts actual Ipopt calls separately from
+`declaration_newton_attempts`, retaining rejected-attempt work too.
+
+The free-amount attempts check the finite seed against the actual physical
 primal box and topology before preparing iterations, then requires finite
 Jacobians/corrections and full numerical LU rank. Finite amount bounds from
 `GibbsMinimizer::get_bounds_info` are multiplied by the existing amount chart;
 infinite bounds retain their meaning. Candidate boxes precede preparation.
-Only #545 permits a trial whose raw rows already meet the caller criterion
+The free-amount attempts permit a trial whose raw rows already meet the caller criterion
 past the falling-contraction-ratio test. #476's iteration remains unchanged.
 In both domains, once the raw criterion is met, one compulsory full exact
 correction uses a fresh Jacobian and solve. The corrected point must meet the
@@ -1207,6 +1217,13 @@ mapping or Ipopt's own variable scaling, which would put its iterate and bounds 
 callback coordinates, stops the solve with a named error, and a compile-time
 check refuses another Ipopt release, which must requalify the rule (3.14's
 `get_curr_iterate` returns iterates, not these relaxed bounds).
+Only `gibbs_minimizer.cpp` includes the private algorithm headers and dereferences
+these objects. Its declaration keeps opaque types; destruction is defined in
+the implementation so the reference-counted live iterate owner remains intact.
+The #821 qualification rejected 3.14.20 on the unchanged near-critical
+methane/ethane comparisons with MUMPS and MA57. The deployed dependency remains
+exactly 3.11.9; confinement does not remove the private dependency or qualify
+another release.
 
 The primary Ipopt attempt measures each free phase amount of a Gibbs minimization in units of its own start amount (#243): it works in $y_p=n_p/S_p$ with
 $S_p=\max(n_p^0,\epsilon_N N_{\mathrm{feed}})$, $\epsilon_N=$`PHASE_DISAPPEARANCE_AMOUNT`$=10^{-8}$,
@@ -2374,40 +2391,32 @@ owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
 
-Native fitting may supply separate optional first-rung, pure-solvent and finite
-activity densities. Each external anchor is admitted for regularity before its
-State is consumed. A caught anchor failure is recorded and retried once cold at
-that closure. Later ladder anchors keep their existing
-failure behavior; no entire reference calculation is retried.
+Native fitting may supply solvent-reference and finite-activity density anchors.
+Each anchor is checked for regularity before use; an anchor failure is recorded
+and retried cold by the existing density owner. There is no reference-wide retry.
 
+One ion-free solvent state per distinct source pressure supplies the analytic
+reference of EqID `infinite_dilution_reference`. Pure neutral solvents and neutral
+solvent mixtures are admitted for ionic activity references. A charged background,
+even with zero net charge, is refused as IonicReferenceBackground. Reaction
+reference declarations retain their single neutral solvent and source-basis rules.
 
-Properties additionally owns the bounded reference Taylor calculation in EqID:
-`reference_single_insertion_taylor` and the consumed columns in EqID:
-`reference_mixed_temperature_pressure_derivatives`. At each fixed terminal
-composition, close the base volume coefficients through order four with the
-central pressure slope. Insert the reaction amount direction only after that
-closure, at fixed volume. Degree seven supplies third-order reference terms;
-degree nine supplies fourth-order terms. Polarization moves only temperature,
-source pressure and EOS coordinates; it never polarizes the ionic insertion.
-The same single-insertion owner supplies raw C_T, C_TT, C_theta,
-C_Ttheta and C_TP at the three literal terminal compositions, reusing each
-resolved liquid State. Each requested column retains independent availability.
-The existing lower-slope admission remains unchanged: T times each C_T change,
-s_theta times each C_theta change, T s_theta times each C_Ttheta change (s_theta
-from `standard_state_transfer_parameter_derivative`), and T P_source times each
-C_TP change must be at most 5e-5;
-R T^2 times each C_TT change must be at most 0.01 J/(mol K).
-Each column returns the sqrt(m) Richardson limit (10 f(1e-14) - f(1e-12))/9 and
-is admitted on its change from the (1e-10, 1e-12) limit, as for the contraction;
-both raw changes are reported. The same reference diagnostic
-retains each requested lower column's literal ladder, criterion, evaluation
-failure classification or exception, and admission cause. Chemical rows and
-record-anchored caloric completion consume this cause directly, preserving
-available sibling columns. They do not reconstruct an admission rule from a
-missing value. Requested higher columns report both consecutive scaled ladder changes and their own
-unavailability cause. Equilibrium consumes only the admitted columns for the
-record-anchored completion above; it does not differentiate the reference again.
-A model keeps its last 16 `reaction_references` results by exact inputs (temperature,
+Properties uses EqID `reference_single_insertion_taylor` for values and every
+consumed derivative. The separate solvent-reference tape retains the shared Born
+radial coefficient and regular contributions, with a zero DH insertion. It never
+enters the ordinary-state tape cache or relaxes ordinary ionic-insertion admission.
+The existing association Jacobian and implicit pressure coefficients supply all
+T/P derivatives through order four and one parameter through T/P order three.
+One amount insertion appears at degree r+1; extraction through degree 2r+1
+cannot contain two such insertions. No ionic-concentration Hessian is required.
+
+Values and columns have independent availability, actual association residuals,
+site conditioning and pressure response diagnostics. Density convergence is
+retained separately. No terminal sequence or terminal error estimate is measured;
+those optional fields are unavailable. No failed column erases a value or sibling.
+The frozen finite ladder remains qualification evidence only. Chemical rows and
+record-anchored caloric completion consume the same returned columns and causes.
+A model keeps its last 256 `reaction_references` results by exact inputs (temperature,
 system pressure, declaration, reactions, solvent anchor, orders and jets); a repeated call,
 such as each endpoint of the finite-addition rows at one (T, P), returns the stored
 diagnostics unchanged (#380).
@@ -2455,42 +2464,28 @@ retained aqueous chloride packets at 298.15 K and 1 bar; neither the floor nor
 the observed trace error is a universal accuracy guarantee.
 
 For an explicitly referenced neutral reaction, use
-`neutral_reaction_reference_transfer`: one pure neutral solvent, positive
-all-solute molality ratios with zero net charge, and one declared source basis
-per reaction. At each resolved source pressure, evaluate the five molalities
-from 1e-6 through 1e-14 mol/kg on the requested liquid branch. The density owner
-admits a unique mechanically stable cold root with an unspecified branch label;
-this is not a physical liquid/vapor classification. Subsequent anchored roots
-retain the requested branch. Require finite
-states, positive pressure slope, branch continuity and the change between the
-sqrt(m) Richardson limits (10 C(m/100) - C(m))/9 from 1e-10/1e-12 and 1e-12/1e-14
-mol/kg within 5e-5 (EqID: `reference_limit_terminal_pair`). Return the second
-limit and the observed change. The pressure slopes C_P and C_PP use the same
-limit, so every neutral reaction reference value and derivative carries no c sqrt(m)
-tail (#353). The reported-activity ion reference (EqID: `reference_molality_sequence`)
-is unchanged: it returns its 1e-12 mol/kg rung with a sqrt(m) bias near A 1e-6, left
-as a follow-up.
+`neutral_reaction_reference_transfer`: one pure neutral solvent, charge-neutral
+positive solute ratios and one declared source basis per reaction. Resolve one
+ion-free solvent liquid root per distinct source pressure, requiring positive
+pressure slope and regular association. The exact solvent state replaces the
+former near-pure terminal state. Activity and reaction references share the same
+insertion owner, with the density-standard conversion applied once.
 An optional `species_reference` map assigns `InfiniteDilution`, `PureLiquid`
 or `PureGas` independently. Omitted species retain solvent liquid and all
 solute infinite-dilution references. Empty and full explicit default maps use
 the original calculation directly, with no pure-state allocation or EOS call.
-The solvent's default liquid selection retains the terminal near-pure state.
+The solvent's default liquid selection reuses the exact solvent state.
 For each effective pure override, resolve one neutral pure-component State per
 source-pressure trace on the declared native liquid or vapor branch. A single
 stable root is admitted only when the pure isotherm's ALG-DENSITY scan finds no
 mechanical loop (above the EOS critical temperature it serves either declared
 branch) or the root lies on the declared side of the loop. A failed or absent
-root retains its species index and native cause. Check the terminal change
-of the final mixed contraction, rather than first admitting an unused dilute
-contribution. Every consumed derivative masks those pure species out of the
+root retains its species index and native cause. Retain independent availability of each requested mixed contraction and column. Every consumed derivative masks those pure species out of the
 dilution insertion and adds their pure-state insertions through the existing
 single-insertion Taylor owner, reusing the resolved States. Fixed-source
 system-pressure columns remain analytic zeros. Nondefault mixed declarations
 with `CommonMolalityInfiniteDilution` are refused with a source-basis cause;
 raw mole fractions are the qualified mixed basis in issue #274.
-Do not extrapolate this sequence: electrolyte terms can scale as sqrt(m).
-Qualify the finite estimate against a second charge-neutral dilution path;
-agreement is an observed domain check, not a universal limit-error certificate.
 
 Convert the correlation to the density target through the existing reaction/SVD
 owner. Common-molality inputs

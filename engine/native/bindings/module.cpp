@@ -22,6 +22,7 @@ NB_MODULE(_core, module) {
     nb::exception<epcsaft::DensityStructureError>(module, "DensityStructureError", module.attr("EosError").ptr());
     nb::exception<epcsaft::core::ConvergenceFailure>(module, "ConvergenceError", module.attr("EosError").ptr());
     nb::exception<epcsaft::core::DeclarationError>(module, "DeclarationError", module.attr("ParameterError").ptr());
+    nb::exception<epcsaft::IonicReferenceBackground>(module, "IonicReferenceBackground", module.attr("ParameterError").ptr());
     register_eos(module);
     register_diagnostics(module);
     epcsaft::equilibrium::register_equilibrium(module);

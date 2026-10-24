@@ -115,7 +115,7 @@ void register_regression(nb::module_& module) {
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
             requested_tolerance_met);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, status, message);
+        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")
@@ -152,7 +152,7 @@ void register_regression(nb::module_& module) {
             bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
         }, nb::for_setter(nb::arg("v").none()));
     nb::class_<TrialFailure>(module, "TrialFailure")
-        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian);
+        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions);
     nb::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);

@@ -550,6 +550,36 @@ void check_minimax_consistency() {
     epsilon.form = ResidualForm::Difference;
     epsilon.composition = formula_composition({1, 0, 0}, parameters, {1, 2}, {1, 1}, .1);
     request.observations = {gamma, phi, epsilon, energy};
+    {
+        HelmholtzModel columns(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::Kij, {1, 3}}});
+        auto prediction = predict(columns, energy);
+        const auto intact = *prediction.reference;
+        auto& failed = prediction.reference->parameter_derivative[0][0];
+        failed.action.reset(); failed.status = PropertyActionStatus::AssociationResidual;
+        failed.diagnostics.association_residual = 2e-8;
+        const auto check = [&](const PredictionGradient& gradient) {
+            CHECK(gradient.status == ObservationStatus::ActionUnavailable && gradient.value.size() == 2);
+            CHECK(!gradient.parameter_actions[0].action && gradient.parameter_actions[0].status == PropertyActionStatus::AssociationResidual);
+            CHECK(gradient.parameter_actions[0].diagnostics.association_residual == 2e-8);
+            CHECK(gradient.parameter_actions[1].action && std::isfinite(gradient.value[1]));
+        };
+        check(differentiate(columns, energy, prediction));
+        auto transfer = energy; transfer.kind = ObservationKind::TransferGibbsEnergy;
+        prediction.second_reference = prediction.reference; prediction.reference = intact;
+        check(differentiate(columns, transfer, prediction));
+        prediction.reference = prediction.second_reference;
+        prediction.activity = electrolyte_activity(columns, gamma.temperature, gamma.pressure, {1, 0, 0}, {1, 2}, {1, 1}, .1, *prediction.reference);
+        CHECK(std::isfinite(prediction.activity->mean_ionic_molality_scale));
+        CHECK(prediction.reference->log_fugacity == intact.log_fugacity);
+        CHECK(prediction.reference->parameter_derivative[0][1].action == intact.parameter_derivative[0][1].action);
+        check(differentiate(columns, gamma, prediction));
+        bool refused = false;
+        try {
+            HelmholtzModel nine(properties_support::nine_species());
+            (void)infinite_dilution_reference(nine, 298.15, 1e5, {.7, 0, 0, 0, 0, 0, .1, .2, 0}, {3, 4}, {1, 1});
+        } catch (const IonicReferenceBackground&) { refused = true; }
+        CHECK(refused);
+    }
     const auto u = request.coordinates.start(parameters);
     request.observations = observations_at(request, u, {0, 0, .1, 0});
     request.weights = {1, 1, 0, 0};
@@ -581,8 +611,6 @@ void check_minimax_consistency() {
     const auto prior = predict(source_model, gamma);
     const auto warm = predict(shifted_model, gamma, {}, {}, nullptr, &prior, &source_model, false);
     const auto independent = predict(shifted_model, gamma);
-    compare_state(shifted_model, warm.reference->first_rung_state, independent.reference->first_rung_state, gamma.temperature,
-        formula_composition(gamma.composition, promoted.chart.parameters, gamma.ion_indices, gamma.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value), "density-seed/first-rung");
     compare_state(shifted_model, *warm.reference->pure_solvent_state, *independent.reference->pure_solvent_state,
         gamma.temperature, gamma.composition, "density-seed/pure-solvent");
     compare_state(shifted_model, warm.activity->state, independent.activity->state, gamma.temperature,

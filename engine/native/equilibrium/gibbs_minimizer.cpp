@@ -10,6 +10,7 @@
 #include <IpCompoundVector.hpp>
 #include <IpIpoptApplication.hpp>
 #include <IpIpoptCalculatedQuantities.hpp>
+#include <IpIpoptData.hpp>
 #include <IpOrigIpoptNLP.hpp>
 #include <IpTNLPAdapter.hpp>
 #include <IpoptConfig.h>
@@ -348,6 +349,8 @@ EquilibriumProblem optimizer_declaration(EquilibriumProblem p) {
 }
 
 }
+
+GibbsMinimizer::~GibbsMinimizer() = default;
 
 bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bool predicted) {
     const auto refuse = [&](const char* cause) { if (scope_) scope_->probe("warm_ineligible", {}, 0, cause); return false; };
@@ -1788,20 +1791,44 @@ bool newton_eligible(const CompiledSystem& compiled) {
     return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));
 }
 
-static bool free_amount_newton_eligible(const CompiledSystem& compiled) {
+static bool free_amount_newton_eligible(const CompiledSystem& compiled, bool discovery = false) {
     const auto& p = compiled.problem;
     if (compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
         || compiled.free_intensive_count != 0 || !p.temperature.is_positive() || !p.pressure.is_positive()
         || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery || p.source_reference
-        || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2) return false;
+        || compiled.has_reaction || compiled.has_ions
+        || (p.phases.size() != 2 && !(discovery && p.phases.size() == 1))) return false;
     if (std::any_of(compiled.model->parameters().charge_number.begin(), compiled.model->parameters().charge_number.end(),
         [](double z) { return z != 0.0; })) return false;
-    const auto& a = p.phases[0]; const auto& b = p.phases[1];
-    if (!a.is_free() || !b.is_free() || a.support != b.support || a.support.size() < 2
-        || (a.kind == PhaseKind::Vapor && b.kind == PhaseKind::Vapor)) return false;
+    const auto& a = p.phases[0]; const auto& b = p.phases.back();
+    if (!a.is_free() || !b.is_free() || a.support != b.support || (p.phases.size() == 2 && (a.support.size() < 2
+        || (a.kind == PhaseKind::Vapor && b.kind == PhaseKind::Vapor)))) return false;
     for (std::size_t i = 0; i < compiled.n_feed.size(); ++i)
         if ((compiled.n_feed[i] > 0.0) != (std::find(a.support.begin(), a.support.end(), i) != a.support.end())) return false;
     return true;
+}
+
+bool discovery_newton_eligible(const CompiledSystem& compiled) {
+    return !compiled.ideal && !compiled.problem.azeotrope && compiled.problem.solids.empty()
+        && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled, true);
+}
+
+EquilibriumResult newton_attempt(const CompiledSystem& compiled, const std::vector<double>& initial,
+    const EquilibriumResult& structural, const DriverLimits* limits, std::vector<double>* attempt) {
+    core::Scope scope("newton_fast_path");
+    auto fast = structural;
+    std::vector<double> coordinates;
+    try {
+        fast = run_driver(*compiled.model, compiled, initial, structural, scope, &coordinates, &fast, limits, true);
+        const bool accepted = fast.success && check_density_branches(*compiled.model, compiled, fast, {}, true, scope, limits).accepted;
+        scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
+            accepted ? "accepted" : fast.success ? "admission" : fast.message.c_str());
+        if (accepted) { if (attempt) *attempt = std::move(coordinates); return fast; }
+    } catch (const std::exception& error) {
+        scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0, error.what());
+    }
+    fast.success = false;
+    return fast;
 }
 
 // The #565 recovery domain: a neutral nonreacting non-associating L+V boundary or TP flash on the full positive feed,
@@ -1865,17 +1892,8 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
-            core::Scope fast_scope("newton_fast_path");
-            auto fast = structural;
-            try {
-                fast = run_driver(model, compiled, initial, structural, fast_scope, nullptr, &fast, limits, true);
-                const bool accepted = fast.success && check_density_branches(model, compiled, fast, {}, true, fast_scope, limits).accepted;
-                fast_scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
-                    accepted ? "accepted" : fast.success ? "admission" : fast.message.c_str());
-                if (accepted) { stages.report(fast); return fast; }
-            } catch (const std::exception& error) {
-                fast_scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0, error.what());
-            }
+            auto fast = newton_attempt(compiled, initial, structural, limits);
+            if (fast.success) { stages.report(fast); return fast; }
             stages.add(fast);
         }
         try {

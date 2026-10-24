@@ -281,32 +281,28 @@ enum class NeutralReferenceStatus {
     DensityUnavailable,
     BranchChange,
     Nonfinite,
-    TerminalChangeExceeded,
 };
 
 struct NeutralReferenceReactionDiagnostic final {
     policy::SolverOptions solver_options;
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
+    PropertyActionDiagnostics diagnostics;
+    std::optional<core::Convergence> density_convergence;
     std::optional<double> observed_terminal_change;
     // Pressure derivatives of the reference contraction, admitted like dC/dT at scales P and P^2;
     // explicit fixed-pressure sources carry exact zero system-pressure derivatives.
     std::optional<double> terminal_contraction_pressure_derivative;
     std::optional<double> terminal_contraction_pressure_second_derivative;
-    // Values and columns are sqrt(m) Richardson limits of the 1e-10..1e-14 mol/kg ladder, admitted
-    // on scale times the change between the two limits (EqID: reference_limit_terminal_pair).
-    // dC/dT at the reference pressure, set only when requested and when T times its
-    // limit change is within the value's terminal criterion.
+    // Exact solvent-limit partials, supplied only when requested and numerically regular.
     std::optional<double> terminal_contraction_temperature_derivative;
     std::optional<double> observed_temperature_derivative_change;
-    // d2C/dT2 at the reference pressure, set only for temperature order two and when T^2
-    // times its limit change is within the same criterion.
+    // d2C/dT2 at the reference pressure, set only for temperature order two.
     std::optional<double> terminal_contraction_temperature_second_derivative;
     std::optional<double> observed_temperature_second_derivative_change;
-    // d2C/dTdP, only with temperature and pressure jets; admitted like the first slope at scales T, P.
+    // d2C/dTdP, only with temperature and pressure jets.
     std::optional<double> terminal_contraction_temperature_pressure_derivative;
-    // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
-    // where max(|theta_a|, 1) times its limit change exceeds the value's criterion.
+    // dC/dtheta_a at the reference pressure, nullopt for an unavailable requested column.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
     double reference_pressure_pa = 0.0;
@@ -316,12 +312,10 @@ struct NeutralReferenceReactionDiagnostic final {
     struct Derivative final {
         std::size_t temperature_order = 0, pressure_order = 0;
         std::optional<std::size_t> parameter;
-        std::array<std::optional<double>, 3> ladder;
-        std::array<double, 2> scaled_changes{};
+        PropertyActionDiagnostics diagnostics;
         std::optional<double> value;
         std::string message;
         std::optional<PropertyActionStatus> action_status;
-        std::optional<double> criterion;
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
     std::vector<Derivative> lower_derivatives;
@@ -372,7 +366,7 @@ public:
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-        const PressureActionDirection& direction, std::size_t order) const;
+        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -464,6 +458,7 @@ private:
     std::optional<ThermochemistryRecord> thermochemistry_;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
+    mutable std::unique_ptr<detail::HelmholtzTape> reference_tape_;
     mutable SweepCounters counters_;
     mutable std::deque<std::pair<std::vector<double>, std::vector<NeutralReferenceReactionDiagnostic>>> references_;
     // reference_taylor central Hessians of this immutable model by exact (T, V, n): a short FIFO (#449).
@@ -496,11 +491,11 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-// Fixed terminal composition and source-pressure state, raw partial; no ladder reselection.
+// Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, const State& state);
+    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false);
 
 struct SpeciesActivities final {
     std::optional<double> standard_molality_mol_per_kg;
@@ -514,7 +509,7 @@ SpeciesActivities species_activities(const std::vector<double>&, const State*,
     const Parameters* = nullptr, const NeutralReferenceDeclaration* = nullptr,
     ReferenceSourceBasis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
 
-// Evaluate multiple reaction references while reusing one validated ladder per
+// Evaluate multiple reaction references while reusing one solvent closure per
 // resolved source pressure within the call.  This remains a native owner; the
 // Python surface exposes only the established singular diagnostic/result path.
 std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
@@ -545,6 +540,10 @@ struct HenryConstant final {
 std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices);
 
+struct __attribute__((visibility("default"))) IonicReferenceBackground final : std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
+
 struct InfiniteDilutionReference final {
     policy::SolverOptions solver_options;
     const HelmholtzModel* model = nullptr;
@@ -553,17 +552,14 @@ struct InfiniteDilutionReference final {
     PropertyActionStatus solvent_status = PropertyActionStatus::CentralPropertyUnavailable;
     std::string solvent_cause;
     std::optional<core::Convergence> solvent_convergence;
-    std::array<double, 2> log_fugacity{};  // ion ln(phi) limit of the 1e-12/1e-14 rungs
-    double molality = 0.0;  // 1e-14, the finer terminal rung; zero for a solvent-only reference
-    double convergence_error = 0.0;  // max change of the limit from the 1e-10/1e-12 limit
+    std::optional<std::array<std::size_t, 2>> ion_indices;
+    std::array<double, 2> log_fugacity{};  // analytic ion ln(phi) limit
+    double molality = 0.0;  // the zero-solute limit, mol/kg
+    std::optional<double> convergence_error;  // no terminal sequence is measured
     std::optional<double> pure_solvent_log_fugacity;
-    std::optional<State> pure_solvent_state;
-    std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
-    std::vector<double> parameter_convergence_error;
-    State first_rung_state;
-    std::vector<State> ladder_states;  // all five rungs
-    std::array<double, 2> value_difference{}, witness_difference{};  // raw 1e-10->1e-12, 1e-12->1e-14 changes
-    std::vector<std::array<double, 2>> parameter_difference, witness_parameter_difference;
+    std::optional<State> pure_solvent_state, solvent_state;
+    std::array<PropertyActionDiagnostics, 2> diagnostics;
+    std::vector<std::array<ResidualEnergyAction, 2>> parameter_derivative;
 };
 
 struct SolventActivity final {
@@ -589,7 +585,8 @@ struct ElectrolyteActivity final {
     double mean_ionic_log_molality_scale = 0.0;
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
-    std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
+    std::vector<double> osmotic_parameter_derivative;
+    std::vector<ResidualEnergyAction> mean_ionic_parameter_derivative;
     State state;
 };
 
@@ -599,16 +596,15 @@ struct ElectrolyteInputDirection final {
 struct ElectrolyteInputAction final {
     policy::SolverOptions solver_options;
     double mean_ionic = NAN, osmotic = NAN;
-    std::array<double, 2> reference_column{}, reference_difference{}, witness_difference{};  // limit; raw changes
+    std::array<double, 2> reference_column{};  // analytic limit column
     std::vector<PropertyActionDiagnostics> diagnostics;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     std::string message;
-    bool witness_evaluated = false;
 };
 ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel&, double temperature, double pressure,
     const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
     double molality, const InfiniteDilutionReference&, const ElectrolyteActivity&,
-    const ElectrolyteInputDirection&, double standard_deviation);
+    const ElectrolyteInputDirection&);
 
 std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
@@ -625,8 +621,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     const std::vector<double>& solvent_fractions,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    std::optional<double> first_rung_density = std::nullopt,
-    std::optional<double> pure_solvent_density = std::nullopt
+    std::optional<double> solvent_density = std::nullopt
 );
 
 ElectrolyteActivity electrolyte_activity(

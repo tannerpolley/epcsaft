@@ -97,6 +97,9 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-24, #823 (owner allowance gross +515/net +275 across Properties and Contributions): the analytic solvent insertion reuses the scalar Born, association and pressure-Taylor owners. Contributions **1,235 → 1,254**, count 1,241 plus band 13. Rule-2 reductions: Core **1,107 → 1,058**, Properties **5,981 → 5,826**, parameter Regression **3,745 → 3,728**, after removing the finite-reference calculation and its seed/diagnostic consumers. Core and parameter Regression equal count plus band; Properties stays within one band of its count. Total **27,816 → 27,614**, capped by the layer-ceiling sum. Other ceilings stay fixed. Final task accounting is retained under `build/issue-823/` against `4fd40fe0f`.
+
+
 - 2026-10-23, #814 (rule 2): removing the one-anion count requirement adds
   zero runtime lines and removes two from Properties against `e4d87ac8`.
   Lower Properties **5,983 → 5,981** (count 5,921 plus band 60) and total

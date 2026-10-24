@@ -3,7 +3,6 @@
 #include "equilibrium/ipopt.hpp"
 #include "equilibrium/problem.hpp"
 
-#include <IpIpoptData.hpp>
 #include <IpTNLP.hpp>
 
 #include <cstddef>
@@ -29,6 +28,9 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
+bool discovery_newton_eligible(const CompiledSystem&);
+EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
+    const EquilibriumResult& structural, const DriverLimits* limits = nullptr, std::vector<double>* attempt = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
@@ -226,6 +228,7 @@ class GibbsMinimizer final : public Ipopt::TNLP {
 public:
     GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
                    core::Scope* scope = nullptr, const DriverLimits* limits = nullptr, bool physical_amounts = false);
+    ~GibbsMinimizer() override;
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;

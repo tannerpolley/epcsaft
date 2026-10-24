@@ -118,6 +118,7 @@ struct TrialFailure final {
     ObservationStatus status = ObservationStatus::Nonfinite;
     std::string message;
     bool jacobian = false;
+    std::vector<ResidualEnergyAction> parameter_actions{};
 };
 
 // (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.

@@ -92,12 +92,11 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(ReferenceSourceBasis, CommonMolalityInfiniteDilution, RawMoleFractionInfiniteDilution);
     nb::enum_<NeutralReferenceStatus>(module, "NeutralReferenceStatus")
         EPCSAFT_VALUES(NeutralReferenceStatus, Available, InvalidDeclaration, NonNeutralDeclaration,
-            UnsupportedSourceBasis, FreeTemperature, FreePressure, DensityUnavailable, BranchChange, Nonfinite,
-            TerminalChangeExceeded);
+            UnsupportedSourceBasis, FreeTemperature, FreePressure, DensityUnavailable, BranchChange, Nonfinite);
     nb::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
         EPCSAFT_SOLVER_OPTIONS(NeutralReferenceReactionDiagnostic, 7)
         EPCSAFT_READONLY(NeutralReferenceReactionDiagnostic, reaction_index, terminal_contraction,
-            observed_terminal_change, terminal_contraction_pressure_derivative,
+            observed_terminal_change, diagnostics, density_convergence, terminal_contraction_pressure_derivative,
             terminal_contraction_pressure_second_derivative, reference_pressure_pa, status, message);
     nb::class_<ReactionReference>(module, "ReactionReference")
         .def("__init__", [](ReactionReference* self, ReferenceSourceBasis basis, std::optional<double> pressure) {

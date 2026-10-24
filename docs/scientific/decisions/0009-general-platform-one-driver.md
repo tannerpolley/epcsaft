@@ -136,3 +136,21 @@ budget. Ipopt remains the sole failure, refusal and floor-limited-state owner.
 Solved-state actions use the same accepted coordinates, rows and derivatives.
 #545's numerical equivalence and timing evidence qualify this bounded widening;
 further widening requires an owner decision.
+
+**Amendment 2026-10-24 (#828, owner).** Neutral, nonreacting discovery
+declarations may reuse the same free-amount Newton attempt. The domain is a
+non-ideal square system at fixed positive T/P, with either one free fluid
+phase on exactly the positive-feed support or the existing admitted two-phase
+liquid/liquid or liquid/vapor support structure. Every model charge must be
+zero. Reactions, source-reference conversion, solids, caloric, critical,
+envelope and azeotrope conditions, diagnostic options, vapor/vapor and
+three-phase declarations remain excluded.
+
+The shared driver owns the attempt, exact rows and derivatives, original-start
+Ipopt fallback and admission. Discovery retains its declaration budgets,
+topology changes, donor descent, objective ordering and final phase-set checks.
+`driver_invocations` continues to count actual Ipopt calls;
+`declaration_newton_attempts` counts the added attempts, including rejected
+ones. Retain their work without counting them as Ipopt invocations. This
+extension changes no trial minimizer, ionic/reacting refusal or ordinary-call
+eligibility. The #828 A/B evidence qualifies only its retained finite cases.

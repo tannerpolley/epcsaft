@@ -264,7 +264,7 @@ remaining work.
 The shared active `ParameterRecord<Scalar>` includes Born, Debye-Huckel and
 packing diameters (Angstrom) and ion suppression (dimensionless charged slots).
 Properties owns the exact pressure-closed fugacity/permittivity columns,
-terminal-reference admission and electrolyte contractions. Parameter regression
+analytic solvent-limit references and electrolyte contractions. Parameter regression
 owns five observations, the dependent hydration chart, unweighted final checks
 and local SVD/covariance diagnostics; [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit)
 owns execution doctrine. `CoordinateTarget` means one physical family and its
