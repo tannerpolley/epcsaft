@@ -1207,6 +1207,13 @@ mapping or Ipopt's own variable scaling, which would put its iterate and bounds 
 callback coordinates, stops the solve with a named error, and a compile-time
 check refuses another Ipopt release, which must requalify the rule (3.14's
 `get_curr_iterate` returns iterates, not these relaxed bounds).
+Only `gibbs_minimizer.cpp` includes the private algorithm headers and dereferences
+these objects. Its declaration keeps opaque types; destruction is defined in
+the implementation so the reference-counted live iterate owner remains intact.
+The #821 qualification rejected 3.14.20 on the unchanged near-critical
+methane/ethane comparisons with MUMPS and MA57. The deployed dependency remains
+exactly 3.11.9; confinement does not remove the private dependency or qualify
+another release.
 
 The primary Ipopt attempt measures each free phase amount of a Gibbs minimization in units of its own start amount (#243): it works in $y_p=n_p/S_p$ with
 $S_p=\max(n_p^0,\epsilon_N N_{\mathrm{feed}})$, $\epsilon_N=$`PHASE_DISAPPEARANCE_AMOUNT`$=10^{-8}$,

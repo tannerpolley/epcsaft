@@ -10,6 +10,7 @@
 #include <IpCompoundVector.hpp>
 #include <IpIpoptApplication.hpp>
 #include <IpIpoptCalculatedQuantities.hpp>
+#include <IpIpoptData.hpp>
 #include <IpOrigIpoptNLP.hpp>
 #include <IpTNLPAdapter.hpp>
 #include <IpoptConfig.h>
@@ -348,6 +349,8 @@ EquilibriumProblem optimizer_declaration(EquilibriumProblem p) {
 }
 
 }
+
+GibbsMinimizer::~GibbsMinimizer() = default;
 
 bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bool predicted) {
     const auto refuse = [&](const char* cause) { if (scope_) scope_->probe("warm_ineligible", {}, 0, cause); return false; };
