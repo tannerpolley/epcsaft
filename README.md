@@ -50,8 +50,8 @@ Eigen >=3.4, Ceres >=2.2.0 and <2.3.0, and their solver dependencies.
 The first build downloads the checksum-pinned CppAD and HiGHS archives.
 
 ```bash
-uv venv --python 3.13
-uv pip install --python .venv/bin/python ./engine
+uv sync --python 3.13 --locked --all-packages --no-install-workspace
+uv pip install --python .venv/bin/python --no-build-isolation ./engine
 .venv/bin/python -c 'import epcsaft; print(epcsaft.__file__)'
 ```
 
