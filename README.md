@@ -35,6 +35,39 @@ and `nm`. `ccache` is optional. The line budgets in both check commands also nee
 `clang-format-18`, and count Python with the locked `.venv` Ruff, so run setup
 before them.
 
+## Public installation from source
+
+Public releases are source releases from the public release repository. Download
+and unpack the release source archive, then run these commands from its root.
+The archive includes the Engine, documentation, retained analyses and paper
+source; it contains no Git history. No public package-index or binary-wheel
+installation route is provided.
+
+Use Linux, Python 3.13, `uv`, a C/C++ compiler, Ninja, CMake and pkg-config.
+Install the native development packages listed in
+[engine/README.md](engine/README.md#native-dependency-graph): Ipopt 3.11.9,
+Eigen >=3.4, Ceres >=2.2.0 and <2.3.0, and their solver dependencies.
+The first build downloads the checksum-pinned CppAD and HiGHS archives.
+
+```bash
+uv venv --python 3.13
+uv pip install --python .venv/bin/python ./engine
+.venv/bin/python -c 'import epcsaft; print(epcsaft.__file__)'
+```
+
+The code uses GPLv3 with an additional permission under section 7 for linking
+with EPL-licensed Ipopt; see [LICENSE](LICENSE). Retained third-party data have
+separate terms, including non-commercial restrictions; see [NOTICE](NOTICE).
+`tools/refresh-main-wheel` distributes private development wheels and requires
+a private repository. Public source releases do not use that tool.
+
+Maintainers prepare a local snapshot with `python3 tools/release-snapshot` after
+committing the candidate. It writes a new tree and a JSON manifest under
+`build/release/`, excludes ignored files and `build/`, and replaces files larger
+than 50 MiB with SHA-256 notes. The manifest records the HSL and journal-PDF
+path checks and personal-path counts. Complete the secret scan before any
+publication; snapshot generation does not publish or tag a release.
+
 ## Setup and installation
 
 Run commands from the repository root:

@@ -315,7 +315,7 @@
       "packet_id": "feos-esper-2023",
       "packet_version": "1",
       "packet_path": "data/packets/feos-esper-2023/1",
-      "packet_fingerprint": "a81f3030fd0603c34895aa58cb893f96b267951b93e42bd35a11e8f986afe7f9",
+      "packet_fingerprint": "fe1d01dd6dfefcdf1bacdae5652b921512cc13d94794a52985eb63f5d28b6345",
       "materialization": "byte-for-byte"
     },
     {

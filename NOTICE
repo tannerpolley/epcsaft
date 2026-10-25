@@ -1,0 +1,48 @@
+ePC-SAFT third-party notices
+
+The project code is licensed under GNU GPL version 3, with the section 7
+additional permission for linking with EPL-licensed Ipopt in LICENSE and
+engine/LICENSE. That permission does not relicense third-party components
+or data. Public releases contain source; tools/refresh-main-wheel remains
+private-only. Retain each component's upstream notices when redistributing it.
+
+Native dependencies (not all are bundled in the source tree)
+
+* Ipopt 3.11.9: Eclipse Public License 1.0 (EPL-1.0).
+  https://github.com/coin-or/Ipopt/blob/releases/3.11.9/Ipopt/LICENSE
+* CppAD 20250000.3: EPL-2.0 or GPL-2.0-or-later.
+  https://github.com/coin-or/CppAD/blob/20250000.3/user_guide.xrst
+* Eigen 3.4: Mozilla Public License 2.0 (MPL-2.0).
+  https://gitlab.com/libeigen/eigen/-/blob/3.4.0/COPYING.MPL2
+* Ceres 2.2: BSD terms, with Apache-2.0 third-party terms.
+  https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
+* HiGHS 1.15.1: MIT.
+  https://github.com/ERGO-Code/HiGHS/blob/v1.15.1/LICENSE.txt
+* ASL interface headers: Lucent notice retained in
+  engine/build/subprojects/packagefiles/asl/funcadd.h and stdio1.h.
+  Optional solver dependencies keep their own terms; the Ipopt permission
+  grants no permission for HSL or other separately licensed solver libraries.
+
+Retained data
+
+* analyses/reproduction/2025-figiel/inputs/source/
+  figiel-2025-regression-target-ledger.yaml and its SI-derived digitizations:
+  CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/.
+  Figiel, Yu and Held (2025), DOI 10.1021/acs.iecr.5c00475.s001.
+  See the adjacent LICENSE-NOTICE.md for attribution and derived paths.
+* data/packets/feos-esper-2023/1/: CC BY-NC 4.0 at packet level;
+  Esper, Bauer, Rehner and Gross (2023), DOI 10.1021/acs.iecr.3c02255.s001.
+  The FeOs parameter distribution, parameters/parameters.json, separately
+  retains the FeOs MIT terms. See parameters/LICENSE-NOTICE.md and packet.toml.
+* analyses/reproduction/2025-perdomo/inputs/source/
+  perdomo-2025-held2-source-ledger.yaml records CC BY 4.0 for its source
+  workbook, DOI 10.5281/zenodo.13646853; workbook bytes are not included.
+* analyses/2026-ascani-carboxylic-acid-lle/README.md records CC BY 3.0
+  for its source ESI; the source PDF is not included.
+* data/packets/nist-srd69-pure-saturation-properties/1/packet.toml and
+  analyses/reproduction/2004-glos/inputs/source/
+  nist-srd69-propane-reference-eos.yaml record NIST SRD use terms.
+  https://www.nist.gov/srd
+
+Other source attributions and use bases remain in their source ledgers.
+This list does not assign the project's GPL terms to third-party data.
